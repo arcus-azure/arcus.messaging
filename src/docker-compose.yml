@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  arcus.messaging.tests.worker:
+    image: arcusazure/azure-messaging-tests.worker
+    build:
+      context: .
+      dockerfile: Arcus.Messaging.Tests.Worker/Dockerfile
