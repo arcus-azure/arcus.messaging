@@ -76,7 +76,7 @@ stages:
           - task: Docker@1
             displayName: 'Build Docker image from test worker'
             inputs:
-              dockerFile: /$(Project).Tests.Worker/Dockerfile
+              dockerFile: src/$(Project).Tests.Worker/Dockerfile
               imageName: '$(Project).Tests.Worker:$(Build.BuildId)'
           - task: Docker@1
             displayName: 'Run test worker from Docker image'
