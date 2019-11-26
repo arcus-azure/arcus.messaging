@@ -1,7 +1,7 @@
-FROM mcr.microsoft.com/dotnet/core/runtime:3.0-buster-slim AS base
+FROM mcr.microsoft.com/dotnet/core/aspnet:2.2.7-alpine3.9 AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0-buster AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:2.2.402-alpine3.9 AS build
 WORKDIR /src
 COPY ["Arcus.Messaging.Tcp/Arcus.Messaging.Tcp.csproj", "Arcus.Messaging.Tcp/"]
 RUN dotnet restore "Arcus.Messaging.Tcp/Arcus.Messaging.Tcp.csproj"

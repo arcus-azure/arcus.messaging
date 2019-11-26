@@ -7,11 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Worke
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests", "Arcus.Messaging.Tests\Arcus.Messaging.Tests.csproj", "{ECBC0F80-31D0-452B-8EEA-B4BC2A9975A3}"
 EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "Arcus.Messaging.Tests.Orchestrator", "Arcus.Messaging.Tests.Orchestrator.dcproj", "{49D85A35-F341-47A3-887F-68DEC06CEBCA}"
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "Arcus.Messaging.Tests.Docker", "Arcus.Messaging.Tests.Docker.dcproj", "{49D85A35-F341-47A3-887F-68DEC06CEBCA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Messaging.Health", "Arcus.Messaging.Health\Arcus.Messaging.Health.csproj", "{1C456BF4-4947-4171-BF6F-80A9A511F740}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Health", "Arcus.Messaging.Health\Arcus.Messaging.Health.csproj", "{1C456BF4-4947-4171-BF6F-80A9A511F740}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

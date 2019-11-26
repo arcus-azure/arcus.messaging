@@ -19,6 +19,8 @@ namespace Arcus.Messaging.Health.Tcp
     /// </summary>
     public class TcpHealthServer : BackgroundService
     {
+        private const string TcpHealthPort = "ARCUS_HEALTH_PORT";
+
         private readonly HealthCheckService _healthService;
         private readonly TcpListener _listener;
         private readonly ILogger<TcpHealthServer> _logger;
@@ -39,19 +41,18 @@ namespace Arcus.Messaging.Health.Tcp
             _healthService = healthService;
             _logger = logger;
 
-            int tcpPort = GetConfiguredTcpPort(configuration);
-            _listener = new TcpListener(IPAddress.Any, tcpPort);
+            Port = GetConfiguredTcpPort(configuration);
+            _listener = new TcpListener(IPAddress.Any, Port);
             _serializerSettings = CreateDefaultSerializerSettings();
         }
 
         private static int GetConfiguredTcpPort(IConfiguration configuration)
         {
-            const string arcusTcpPort = "ARCUS_TCP_PORT";
-            string tcpPortString = configuration[arcusTcpPort];
+            string tcpPortString = configuration[TcpHealthPort];
             var tcpPort = 0;
             Guard.For<ArgumentException>(
                 () => !Int32.TryParse(tcpPortString, out tcpPort), 
-                $"Requires a configuration implementation with a '{arcusTcpPort}' key containing a TCP port number");
+                $"Requires a configuration implementation with a '{TcpHealthPort}' key containing a TCP port number");
 
             return tcpPort;
         }
@@ -71,6 +72,11 @@ namespace Arcus.Messaging.Health.Tcp
         }
 
         /// <summary>
+        /// Gets the port on which the TCP health server is listening to.
+        /// </summary>
+        public int Port { get; }
+
+        /// <summary>
         /// Triggered when the application host is ready to start the service.
         /// </summary>
         /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
@@ -83,9 +89,9 @@ namespace Arcus.Messaging.Health.Tcp
 
             try
             {
-                _logger.LogTrace("Starting TCP server...");
+                _logger.LogTrace("Starting TCP server on port {Port}...", Port);
                 _listener.Start();
-                _logger.LogInformation("TCP server started!");
+                _logger.LogInformation("TCP server started on port {Port}!", Port);
 
                 return base.StartAsync(cancellationToken);
             }
@@ -105,29 +111,26 @@ namespace Arcus.Messaging.Health.Tcp
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-
                 await AcceptConnectionAsync();
             }
         }
 
         private async Task AcceptConnectionAsync()
         {
-            _logger.LogTrace("Accepting TCP client...");
+            _logger.LogTrace("Accepting TCP client on port {Port}...", Port);
             using (TcpClient client = await _listener.AcceptTcpClientAsync())
             {
-                _logger.LogInformation("TCP client accepted!");
-                using (NetworkStream ns = client.GetStream())
+                _logger.LogInformation("TCP client accepted on port {Port}!", Port);
+                using (NetworkStream networkStream = client.GetStream())
                 {
-                    // TODO: something to serialize as BSON instead?
                     HealthReport report = await _healthService.CheckHealthAsync();
                     string serialized = JsonConvert.SerializeObject(report, _serializerSettings);
 
                     byte[] response = Encoding.UTF8.GetBytes(serialized);
-                    ns.Write(response, 0, response.Length);
-                    _logger.LogInformation("Return health report: {status}", report.Status);
+                    networkStream.Write(response, 0, response.Length);
+                    _logger.LogInformation("Return health report: {Status}", report.Status);
 
-                    ns.Close();
+                    networkStream.Close();
                     client.Close();
                 }
             }
@@ -146,9 +149,9 @@ namespace Arcus.Messaging.Health.Tcp
 
             try
             {
-                _logger.LogTrace("Stopping TCP server...");
+                _logger.LogTrace("Stopping TCP server on port {Port}...", Port);
                 _listener.Stop();
-                _logger.LogInformation("TCP server stopped!");
+                _logger.LogInformation("TCP server stopped on port {Port}!", Port);
 
                 return base.StopAsync(cancellationToken);
             }

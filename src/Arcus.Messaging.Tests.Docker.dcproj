@@ -5,7 +5,7 @@
     <DockerTargetOS>Linux</DockerTargetOS>
     <ProjectGuid>49d85a35-f341-47a3-887f-68dec06cebca</ProjectGuid>
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
-    <DockerServiceName>arcus.messaging.tests.orchestrator</DockerServiceName>
+    <DockerServiceName>arcus.messaging.tests.docker</DockerServiceName>
   </PropertyGroup>
   <ItemGroup>
     <None Include="docker-compose.override.yml">
