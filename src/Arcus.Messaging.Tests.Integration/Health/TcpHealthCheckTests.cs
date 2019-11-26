@@ -27,18 +27,21 @@ namespace Arcus.Messaging.Tests.Integration.Health
         public async Task TcpHealthServer_ProbeForHealthReport_ResponseHealthy()
         {
             // Arrange
-            using var client = new TcpClient();
-            await client.ConnectAsync(IPAddress.Parse("127.0.0.1"), _healthTcpPort);
-            await using NetworkStream networkStream = client.GetStream();
-            using var reader = new StreamReader(networkStream);
-            
-            // Act
-            string healthReport = await reader.ReadLineAsync();
+            using (var client = new TcpClient())
+            {
+                await client.ConnectAsync(IPAddress.Parse("127.0.0.1"), _healthTcpPort);
+                using (NetworkStream networkStream = client.GetStream())
+                using (var reader = new StreamReader(networkStream))
+                {
+                    // Act
+                    string healthReport = await reader.ReadLineAsync();
 
-            // Assert
-            var report = JsonConvert.DeserializeObject<HealthReport>(healthReport);
-            Assert.NotNull(report);
-            Assert.Equal(HealthStatus.Healthy, report.Status);
+                    // Assert
+                    var report = JsonConvert.DeserializeObject<HealthReport>(healthReport);
+                    Assert.NotNull(report);
+                    Assert.Equal(HealthStatus.Healthy, report.Status);
+                }
+            }
         }
     }
 }
