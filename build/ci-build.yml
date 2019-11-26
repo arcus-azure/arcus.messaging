@@ -29,7 +29,7 @@ variables:
     value: '3.0.101'
   - name: 'Project'
     value: 'Arcus.Messaging'
-  - name: 'Http.Port'
+  - name: 'Arcus_Health_Port'
     value: '42063'
     # 'Package.Version.ManualTrigger' is added as queue-time variable on build in Azure DevOps
 
@@ -86,9 +86,9 @@ stages:
               command: 'Run an image'
               imageName: '$(Project).Tests.Worker:$(Build.BuildId)'
               containerName: '$(Project).Tests.Worker'
-              ports: '$(Http.Port):$(Http.Port)'
+              ports: '$(Arcus_Health_Port):$(Arcus_Health_Port)'
               envVars: |
-                ARCUS_HEALTH_PORT=$(Http.Port)
+                ARCUS_HEALTH_PORT=$(Arcus_Health_Port)
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
