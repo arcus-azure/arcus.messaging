@@ -14,9 +14,8 @@ namespace Arcus.Messaging.Tests.Worker
                 .Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args)
-        {
-            return new HostBuilder()
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration(configuration =>
                 {
                     configuration.AddCommandLine(args);
@@ -27,6 +26,5 @@ namespace Arcus.Messaging.Tests.Worker
                     services.AddHostedService<TcpHealthServer>();
                     services.AddHealthChecks();
                 });
-        }
     }
 }

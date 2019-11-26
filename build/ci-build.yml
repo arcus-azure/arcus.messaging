@@ -26,7 +26,7 @@ variables:
   - group: 'Build Configuration'
   # Always use fixed version for .NET Core SDK
   - name: 'DotNet.Sdk.Version'
-    value: '2.2.105'
+    value: '3.0.101'
   - name: 'Project'
     value: 'Arcus.Messaging'
   - name: 'Http.Port'
