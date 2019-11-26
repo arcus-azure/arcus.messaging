@@ -78,6 +78,8 @@ stages:
             inputs:
               dockerFile: src/$(Project).Tests.Worker/Dockerfile
               imageName: '$(Project).Tests.Worker:$(Build.BuildId)'
+              useDefaultContext: false
+              buildContext: src
           - task: Docker@1
             displayName: 'Run test worker from Docker image'
             inputs:
