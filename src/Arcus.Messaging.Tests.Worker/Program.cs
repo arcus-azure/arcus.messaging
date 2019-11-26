@@ -1,4 +1,3 @@
-using Arcus.Messaging.Health;
 using Arcus.Messaging.Health.Tcp;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

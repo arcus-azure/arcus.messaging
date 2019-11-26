@@ -2,20 +2,33 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Newtonsoft.Json;
 using Xunit;
+using Xunit.Abstractions;
 
-namespace Arcus.Messaging.Tests.Health
+namespace Arcus.Messaging.Tests.Integration.Health
 {
-    public class TcpHealthCheckTests
+    [Trait("Category", "Integration")]
+    public class TcpHealthCheckTests : IntegrationTest
     {
+        private readonly int _healthTcpPort;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TcpHealthCheckTests"/> class.
+        /// </summary>
+        public TcpHealthCheckTests(ITestOutputHelper testOutput) : base(testOutput)
+        {
+            _healthTcpPort = Configuration.GetValue<int>("Arcus:Health:Port");
+        }
+
         [Fact]
         public async Task TcpHealthServer_ProbeForHealthReport_ResponseHealthy()
         {
             // Arrange
             using var client = new TcpClient();
-            await client.ConnectAsync(IPAddress.Parse("127.0.0.1"), 42063);
+            await client.ConnectAsync(IPAddress.Parse("127.0.0.1"), _healthTcpPort);
             await using NetworkStream networkStream = client.GetStream();
             using var reader = new StreamReader(networkStream);
             
