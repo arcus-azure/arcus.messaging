@@ -17,22 +17,22 @@ namespace Arcus.Messaging.Health.Tcp
     /// <summary>
     /// Representing a TCP server as a background process to expose an endpoint where the <see cref="HealthReport"/> is being broadcasted.
     /// </summary>
-    public class TcpHealthServer : BackgroundService
+    public class TcpHealthListener : BackgroundService
     {
         private const string TcpHealthPort = "ARCUS_HEALTH_PORT";
 
         private readonly HealthCheckService _healthService;
         private readonly TcpListener _listener;
-        private readonly ILogger<TcpHealthServer> _logger;
+        private readonly ILogger<TcpHealthListener> _logger;
         private readonly JsonSerializerSettings _serializerSettings;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TcpHealthServer"/> class.
+        /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
         /// </summary>
         /// <param name="configuration">The configuration to control the hosting settings of the TCP server.</param>
         /// <param name="healthService">The service to retrieve the current health of the application.</param>
         /// <param name="logger">The logging implementation to write diagnostic messages during the running of the TCP server.</param>
-        public TcpHealthServer(IConfiguration configuration, HealthCheckService healthService, ILogger<TcpHealthServer> logger)
+        public TcpHealthListener(IConfiguration configuration, HealthCheckService healthService, ILogger<TcpHealthListener> logger)
         {
             Guard.NotNull(configuration, nameof(configuration), "Requires a configuration implementation to retrieve hosting information for the TCP server");
             Guard.NotNull(healthService, nameof(healthService), "Requires a health service to retrieve the current health status of the application");
@@ -121,16 +121,17 @@ namespace Arcus.Messaging.Health.Tcp
             using (TcpClient client = await _listener.AcceptTcpClientAsync())
             {
                 _logger.LogInformation("TCP client accepted on port {Port}!", Port);
-                using (NetworkStream networkStream = client.GetStream())
+                using (NetworkStream clientStream = client.GetStream())
                 {
                     HealthReport report = await _healthService.CheckHealthAsync();
+                    string clientId = client.Client?.RemoteEndPoint?.ToString() ?? String.Empty;
+                    _logger.LogInformation("Return '{Status}' health report to client {ClientId}", report.Status, clientId);
+
                     string serialized = JsonConvert.SerializeObject(report, _serializerSettings);
-
                     byte[] response = Encoding.UTF8.GetBytes(serialized);
-                    networkStream.Write(response, 0, response.Length);
-                    _logger.LogInformation("Return health report: {Status}", report.Status);
+                    clientStream.Write(response, 0, response.Length);
 
-                    networkStream.Close();
+                    clientStream.Close();
                     client.Close();
                 }
             }

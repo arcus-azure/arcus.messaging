@@ -30,8 +30,8 @@ namespace Arcus.Messaging.Tests.Integration.Health
             using (var client = new TcpClient())
             {
                 await client.ConnectAsync(IPAddress.Parse("127.0.0.1"), _healthTcpPort);
-                using (NetworkStream networkStream = client.GetStream())
-                using (var reader = new StreamReader(networkStream))
+                using (NetworkStream clientStream = client.GetStream())
+                using (var reader = new StreamReader(clientStream))
                 {
                     // Act
                     string healthReport = await reader.ReadLineAsync();

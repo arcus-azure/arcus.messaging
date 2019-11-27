@@ -23,7 +23,7 @@ namespace Arcus.Messaging.Tests.Worker
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddHostedService<TcpHealthServer>();
+                    services.AddHostedService<TcpHealthListener>();
                     services.AddHealthChecks();
                 });
     }
