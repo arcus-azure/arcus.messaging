@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29509.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Worker", "Arcus.Messaging.Tests.Worker\Arcus.Messaging.Tests.Worker.csproj", "{1BB395CD-EF62-4207-B3B9-2EAE9D9CEAD4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Integration", "Arcus.Messaging.Tests.Integration\Arcus.Messaging.Tests.Integration.csproj", "{ECBC0F80-31D0-452B-8EEA-B4BC2A9975A3}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "Arcus.Messaging.Tests.Docker", "Arcus.Messaging.Tests.Docker.dcproj", "{49D85A35-F341-47A3-887F-68DEC06CEBCA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Health", "Arcus.Messaging.Health\Arcus.Messaging.Health.csproj", "{1C456BF4-4947-4171-BF6F-80A9A511F740}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1BB395CD-EF62-4207-B3B9-2EAE9D9CEAD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BB395CD-EF62-4207-B3B9-2EAE9D9CEAD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BB395CD-EF62-4207-B3B9-2EAE9D9CEAD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BB395CD-EF62-4207-B3B9-2EAE9D9CEAD4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECBC0F80-31D0-452B-8EEA-B4BC2A9975A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECBC0F80-31D0-452B-8EEA-B4BC2A9975A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECBC0F80-31D0-452B-8EEA-B4BC2A9975A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECBC0F80-31D0-452B-8EEA-B4BC2A9975A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49D85A35-F341-47A3-887F-68DEC06CEBCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49D85A35-F341-47A3-887F-68DEC06CEBCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49D85A35-F341-47A3-887F-68DEC06CEBCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49D85A35-F341-47A3-887F-68DEC06CEBCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C456BF4-4947-4171-BF6F-80A9A511F740}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C456BF4-4947-4171-BF6F-80A9A511F740}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C456BF4-4947-4171-BF6F-80A9A511F740}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C456BF4-4947-4171-BF6F-80A9A511F740}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1BB395CD-EF62-4207-B3B9-2EAE9D9CEAD4} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
+		{ECBC0F80-31D0-452B-8EEA-B4BC2A9975A3} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
+		{49D85A35-F341-47A3-887F-68DEC06CEBCA} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {066FD85A-3DDE-4615-B550-BF67ACCDAA51}
+	EndGlobalSection
+EndGlobal

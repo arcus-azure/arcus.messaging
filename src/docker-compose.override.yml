@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  arcus.messaging.tests.worker:
+    environment:
+      - ARCUS_HEALTH_PORT=5001
+    ports:
+      - '42063:5001'
