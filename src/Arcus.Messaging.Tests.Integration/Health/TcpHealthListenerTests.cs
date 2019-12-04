@@ -11,20 +11,20 @@ using Xunit.Abstractions;
 namespace Arcus.Messaging.Tests.Integration.Health
 {
     [Trait("Category", "Integration")]
-    public class TcpHealthCheckTests : IntegrationTest
+    public class TcpHealthListenerTests : IntegrationTest
     {
         private readonly int _healthTcpPort;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TcpHealthCheckTests"/> class.
+        /// Initializes a new instance of the <see cref="TcpHealthListenerTests"/> class.
         /// </summary>
-        public TcpHealthCheckTests(ITestOutputHelper testOutput) : base(testOutput)
+        public TcpHealthListenerTests(ITestOutputHelper testOutput) : base(testOutput)
         {
             _healthTcpPort = Configuration.GetValue<int>("Arcus:Health:Port");
         }
 
         [Fact]
-        public async Task TcpHealthServer_ProbeForHealthReport_ResponseHealthy()
+        public async Task TcpHealthListener_ProbeForHealthReport_ResponseHealthy()
         {
             // Arrange
             using (var client = new TcpClient())

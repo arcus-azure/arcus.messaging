@@ -1,6 +1,6 @@
-using Arcus.Messaging.Health.Tcp;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
 namespace Arcus.Messaging.Tests.Worker
@@ -23,8 +23,10 @@ namespace Arcus.Messaging.Tests.Worker
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddHostedService<TcpHealthListener>();
-                    services.AddHealthChecks();
+                    services.AddTcpHealthProbes(healthCheckBuilder =>
+                    {
+                        healthCheckBuilder.AddCheck("sample", () => HealthCheckResult.Healthy());
+                    });
                 });
     }
 }
