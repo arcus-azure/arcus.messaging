@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,7 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Arcus.EventGrid.Testing" Version="3.0.0-preview-1" />
+    <PackageReference Include="Bogus" Version="28.4.3" />
     <PackageReference Include="Guard.Net" Version="1.2.0" />
+    <PackageReference Include="Microsoft.Azure.ServiceBus" Version="4.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.0" />
@@ -23,6 +27,11 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.Tests.Contracts\Arcus.Messaging.Tests.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

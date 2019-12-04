@@ -6,7 +6,7 @@ using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Contracts.Events.v1;
-using Arcus.Messaging.Tests.Contracts.v1;
+using Arcus.Messaging.Tests.Contracts.Messages.v1;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -39,16 +39,16 @@ namespace Arcus.Messaging.Tests.Worker.MessageHandlers
 
             await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
 
-            await PublishEventToEventGridAsync(orderMessage);
+            await PublishEventToEventGridAsync(orderMessage, correlationInfo.OperationId);
 
             Logger.LogInformation("Order {OrderId} processed", orderMessage.Id);
         }
 
-        private async Task PublishEventToEventGridAsync(Order orderMessage)
+        private async Task PublishEventToEventGridAsync(Order orderMessage, string operationId)
         {
-            var orderCreatedEvent = new OrderCreatedEvent(orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber,
+            var orderCreatedEvent = new OrderCreatedEvent(operationId, orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber,
                 $"{orderMessage.Customer.FirstName} {orderMessage.Customer.LastName}");
-            await _eventGridPublisher.Publish(orderCreatedEvent);
+            await _eventGridPublisher.PublishAsync(orderCreatedEvent);
 
             Logger.LogInformation("Event {EventId} was published with subject {EventSubject}", orderCreatedEvent.Id, orderCreatedEvent.Subject);
         }

@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Arcus.Messaging.Tests.Contracts.v1
+namespace Arcus.Messaging.Tests.Contracts.Messages.v1
 {
     public class Customer
     {

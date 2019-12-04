@@ -1,23 +1,22 @@
-﻿using System;
-using Arcus.EventGrid.Contracts;
+﻿using Arcus.EventGrid.Contracts;
+using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Tests.Contracts.Events.v1
 {
-    public class OrderCreatedEvent : Event<OrderCreatedEventData>
+    public class OrderCreatedEvent : EventGridEvent<OrderCreatedEventData>
     {
-        public override string DataVersion { get; } = "1";
-        public override string EventType { get; } = "Arcus.Samples.Orders.OrderCreated";
+        private const string DefaultDataVersion = "1";
+        private const string DefaultEventType = "Arcus.Samples.Orders.OrderCreated";
 
-        public OrderCreatedEvent(string id, int amount, string articleNumber, string customerName)
-        : base(Guid.NewGuid().ToString(), $"customer/{customerName}")
+        public OrderCreatedEvent(string eventId, string orderId, int amount, string articleNumber, string customerName)
+            : base(eventId, $"customer/{customerName}",
+                new OrderCreatedEventData(orderId, amount, articleNumber, customerName), DefaultDataVersion,
+                DefaultEventType)
         {
-            Data.Id = id;
-            Data.Amount = amount;
-            Data.ArticleNumber = articleNumber;
-            Data.CustomerName = customerName;
         }
 
-        public OrderCreatedEvent()
+        [JsonConstructor]
+        private OrderCreatedEvent()
         {
         }
     }

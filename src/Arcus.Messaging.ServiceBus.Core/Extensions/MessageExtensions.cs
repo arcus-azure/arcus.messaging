@@ -1,7 +1,8 @@
-﻿using GuardNet;
-using Microsoft.Azure.ServiceBus;
+﻿using Arcus.Messaging.ServiceBus.Core;
+using GuardNet;
 
-namespace Arcus.Messaging.Pumps.ServiceBus.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Azure.ServiceBus
 {
     public static class MessageExtensions
     {

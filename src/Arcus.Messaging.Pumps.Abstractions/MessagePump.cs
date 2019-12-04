@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Pumps.Abstractions
 {
@@ -43,6 +45,25 @@ namespace Arcus.Messaging.Pumps.Abstractions
         {
             Logger.LogError(receiveException, "Unable to process message");
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawMessageBody"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        protected TMessage DeserializeMessageBody(byte[] rawMessageBody, Encoding encoding)
+        {
+            var serializedMessageBody = encoding.GetString(rawMessageBody);
+          
+            var messageBody = JsonConvert.DeserializeObject<TMessage>(serializedMessageBody);
+            if (messageBody == null)
+            {
+                Logger.LogError("Unable to deserialize to message contract {ContractName} for message {MessageBody}", typeof(TMessage), rawMessageBody);
+            }
+
+            return messageBody;
         }
 
         /// <summary>

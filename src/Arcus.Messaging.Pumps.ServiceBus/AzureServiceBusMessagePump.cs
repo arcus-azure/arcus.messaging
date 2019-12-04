@@ -3,8 +3,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions;
-using Arcus.Messaging.Pumps.ServiceBus.Extensions;
+using Arcus.Messaging.ServiceBus.Core;
 using Microsoft.Azure.ServiceBus;
+using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -25,14 +26,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // TODO: Make this configurable
             var connectionString = Configuration.GetValue<string>("ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING");
 
             var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
 
-            var queueClient = new QueueClient(serviceBusConnectionStringBuilder.GetNamespaceConnectionString(), serviceBusConnectionStringBuilder.EntityPath, ReceiveMode.PeekLock);
+            var messageReceiver = new MessageReceiver(serviceBusConnectionStringBuilder.GetNamespaceConnectionString(), serviceBusConnectionStringBuilder.EntityPath, ReceiveMode.PeekLock);
 
             Logger.LogInformation("Starting message pump");
-            queueClient.RegisterMessageHandler(HandleMessage, HandleReceivedException);
+            messageReceiver.RegisterMessageHandler(HandleMessage, HandleReceivedException);
             Logger.LogInformation("Message pump started");
 
             while (!stoppingToken.IsCancellationRequested)
@@ -41,7 +43,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
 
             Logger.LogInformation("Closing message pump");
-            await queueClient.CloseAsync();
+            await messageReceiver.CloseAsync();
             Logger.LogInformation("Message pump closed : {Time}", DateTimeOffset.UtcNow);
         }
 
@@ -55,20 +57,38 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), message.CorrelationId);
             var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
 
-            var rawMessageBody = Encoding.UTF8.GetString(message.Body);
-            Logger.LogInformation("Received message {MessageId} with body {MessageBody} (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})", messageContext.MessageId, rawMessageBody, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
+            Logger.LogInformation("Received message {MessageId} (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})", messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
 
-            var order = JsonConvert.DeserializeObject<TMessage>(rawMessageBody);
+            var encoding = DetermineEncoding(messageContext);
+            var order = DeserializeMessageBody(message.Body, encoding);
             if (order != null)
             {
                 await ProcessMessageAsync(order, messageContext, correlationInfo, cancellationToken);
             }
             else
             {
-                Logger.LogError("Unable to deserialize to message contract {ContractName} for message {MessageBody}", typeof(TMessage), rawMessageBody);
+                Logger.LogError("Unable to deserialize to message contract {ContractName} for message {MessageId}", typeof(TMessage), messageContext.MessageId);
             }
 
             Logger.LogInformation("Message {MessageId} processed", message.MessageId);
+        }
+
+        private Encoding DetermineEncoding(AzureServiceBusMessageContext messageContext)
+        {
+            var encoding = Encoding.UTF8;
+            if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
+            {
+                try
+                {
+                    encoding = Encoding.GetEncoding(annotatedEncoding.ToString());
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogCritical(ex, "Unable to determine encoding with name '{Encoding}'. Falling back to UTF8.", annotatedEncoding.ToString());
+                }
+            }
+
+            return encoding;
         }
     }
 }
