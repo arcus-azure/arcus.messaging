@@ -29,9 +29,16 @@ variables:
     value: '3.0.101'
   - name: 'Project'
     value: 'Arcus.Messaging'
-  - name: 'Arcus_Health_Port'
+  - name: 'Arcus.Health.Port'
+    value: '42063'
+  - name: 'Arcus.EventGrid.Topic.Uri'
+    value: '42063'
+  - name: 'Arcus.TestInfra.Topic.Name'
     value: '42063'
     # 'Package.Version.ManualTrigger' is added as queue-time variable on build in Azure DevOps
+    # 'Arcus.ServiceBus.Queue.ConnectionString' is added as secret variable on build in Azure DevOps
+    # 'Arcus.TestInfra.Topic.ConnectionString' is added as secret variable on build in Azure DevOps
+    # 'EventGrid.Auth.Key' is added as secret variable on build in Azure DevOps    
 
 stages:
   - stage: Build
@@ -86,9 +93,12 @@ stages:
               command: 'Run an image'
               imageName: '$(Project).Tests.Worker:$(Build.BuildId)'
               containerName: '$(Project).Tests.Worker'
-              ports: '$(Arcus_Health_Port):$(Arcus_Health_Port)'
+              ports: '$(Arcus.Health.Port):$(Arcus.Health.Port)'
               envVars: |
-                ARCUS_HEALTH_PORT=$(Arcus_Health_Port)
+                ARCUS_HEALTH_PORT=$(Arcus.Health.Port)
+                EVENTGRID_TOPIC_URI=$(Arcus.EventGrid.Topic.Uri)
+                EVENTGRID_AUTH_KEY=$(Arcus.EventGrid.Auth.Key)
+                ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING=$(Arcus.ServiceBus.Queue.ConnectionString)
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
