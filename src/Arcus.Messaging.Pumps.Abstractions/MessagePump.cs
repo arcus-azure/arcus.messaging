@@ -50,7 +50,11 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// </summary>
         /// <param name="message">Message that was received</param>
         /// <param name="messageContext">Context providing more information concerning the processing</param>
+        /// <param name="correlationInfo">
+        ///     Information concerning correlation of telemetry & processes by using a variety of unique
+        ///     identifiers
+        /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
-        protected abstract Task ProcessMessageAsync(TMessage message, TMessageContext messageContext, CancellationToken cancellationToken);
+        protected abstract Task ProcessMessageAsync(TMessage message, TMessageContext messageContext, MessageCorrelationInfo correlationInfo, CancellationToken cancellationToken);
     }
 }

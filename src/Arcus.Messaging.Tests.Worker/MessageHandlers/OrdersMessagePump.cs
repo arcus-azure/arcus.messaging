@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Pumps;
+using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Contracts.v1;
 using Microsoft.Extensions.Configuration;
@@ -16,7 +16,7 @@ namespace Arcus.Messaging.Tests.Worker.MessageHandlers
         {
         }
 
-        protected override async Task ProcessMessageAsync(Order orderMessage, AzureServiceBusMessageContext messageContext, CancellationToken cancellationToken)
+        protected override async Task ProcessMessageAsync(Order orderMessage, AzureServiceBusMessageContext messageContext, MessageCorrelationInfo correlationInfo, CancellationToken cancellationToken)
         {
             Logger.LogInformation(
                 "Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}",

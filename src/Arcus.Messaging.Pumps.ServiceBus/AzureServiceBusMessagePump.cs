@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Pumps.ServiceBus.Extensions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -18,7 +19,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="configuration">Configuration of the application</param>
         /// <param name="logger">Logger to write telemetry to</param>
         protected AzureServiceBusMessagePump(IConfiguration configuration, ILogger logger)
-        :base(configuration, logger)
+        : base(configuration, logger)
         {
         }
 
@@ -51,15 +52,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private async Task HandleMessage(Message message, CancellationToken cancellationToken)
         {
+            var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), message.CorrelationId);
             var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
 
             var rawMessageBody = Encoding.UTF8.GetString(message.Body);
-            Logger.LogInformation("Received message {MessageId} with body {MessageBody}", messageContext.MessageId, rawMessageBody);
+            Logger.LogInformation("Received message {MessageId} with body {MessageBody} (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})", messageContext.MessageId, rawMessageBody, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
 
             var order = JsonConvert.DeserializeObject<TMessage>(rawMessageBody);
             if (order != null)
             {
-                await ProcessMessageAsync(order, messageContext, cancellationToken);
+                await ProcessMessageAsync(order, messageContext, correlationInfo, cancellationToken);
             }
             else
             {
