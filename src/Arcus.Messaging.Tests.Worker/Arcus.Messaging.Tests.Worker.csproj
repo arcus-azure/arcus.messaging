@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Guard.NET" Version="1.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
@@ -15,5 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.Health\Arcus.Messaging.Health.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.Tests.Contracts\Arcus.Messaging.Tests.Contracts.csproj" />
   </ItemGroup>
 </Project>
