@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -34,7 +35,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
                 using (var reader = new StreamReader(clientStream))
                 {
                     // Act
-                    string healthReport = await reader.ReadLineAsync();
+                    string healthReport = await reader.ReadToEndAsync();
 
                     // Assert
                     var report = JsonConvert.DeserializeObject<HealthReport>(healthReport);
