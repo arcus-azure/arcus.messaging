@@ -111,5 +111,3 @@ stages:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
           - template: nuget/publish-preview-package.yml@templates
-            parameters:
-              packagesToPush: '$(Build.SourcesDirectory)/**/*.nupkg'
