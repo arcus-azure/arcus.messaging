@@ -37,8 +37,6 @@ namespace Arcus.Messaging.Tests.Worker.MessageHandlers
                 orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber, orderMessage.Customer.FirstName,
                 orderMessage.Customer.LastName);
 
-            await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
-
             await PublishEventToEventGridAsync(orderMessage, correlationInfo.OperationId);
 
             Logger.LogInformation("Order {OrderId} processed", orderMessage.Id);
