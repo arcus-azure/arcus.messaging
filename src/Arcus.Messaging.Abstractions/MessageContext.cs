@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using GuardNet;
 
-namespace Arcus.Messaging.Pumps.Abstractions
+namespace Arcus.Messaging.Abstractions
 {
     /// <summary>
     ///     Contextual information concerning a message

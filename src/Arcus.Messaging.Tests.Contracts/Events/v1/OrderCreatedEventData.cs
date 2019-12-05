@@ -1,4 +1,4 @@
-﻿using Arcus.Messaging.Pumps.Abstractions;
+﻿using Arcus.Messaging.Abstractions;
 
 namespace Arcus.Messaging.Tests.Contracts.Events.v1
 {

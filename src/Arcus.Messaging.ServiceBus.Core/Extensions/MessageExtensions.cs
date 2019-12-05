@@ -1,4 +1,4 @@
-﻿using Arcus.Messaging.ServiceBus.Core;
+﻿using Arcus.Messaging.Abstractions;
 using GuardNet;
 
 // ReSharper disable once CheckNamespace

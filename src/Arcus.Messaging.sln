@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Pumps.Abstr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.ServiceBus.Core", "Arcus.Messaging.ServiceBus.Core\Arcus.Messaging.ServiceBus.Core.csproj", "{71FCD6E8-B586-4F4B-AA26-0C2F698B837E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Abstractions", "Arcus.Messaging.Abstractions\Arcus.Messaging.Abstractions.csproj", "{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,10 @@ Global
 		{71FCD6E8-B586-4F4B-AA26-0C2F698B837E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71FCD6E8-B586-4F4B-AA26-0C2F698B837E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71FCD6E8-B586-4F4B-AA26-0C2F698B837E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

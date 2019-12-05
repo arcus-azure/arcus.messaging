@@ -24,6 +24,7 @@ namespace Arcus.Messaging.Tests.Worker
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
+                    // TODO: Provide capability to configure connection string via IConfiguration & secret
                     services.AddServiceBusMessageHandler<OrdersMessagePump>();
                     services.AddHostedService<TcpHealthListener>();
                     services.AddHealthChecks();

@@ -1,4 +1,4 @@
-﻿namespace Arcus.Messaging.Pumps.Abstractions
+﻿namespace Arcus.Messaging.Abstractions
 {
     public class PropertyNames
     {

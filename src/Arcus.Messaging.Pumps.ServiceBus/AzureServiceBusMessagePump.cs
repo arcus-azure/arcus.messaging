@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
@@ -23,15 +24,21 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // TODO: How does it work with subscriptions?
             // TODO: Make this configurable
             var connectionString = Configuration.GetValue<string>("ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING");
 
             var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
-
-            var messageReceiver = new MessageReceiver(serviceBusConnectionStringBuilder.GetNamespaceConnectionString(), serviceBusConnectionStringBuilder.EntityPath, ReceiveMode.PeekLock);
-
+            var messageReceiver = new MessageReceiver(serviceBusConnectionStringBuilder, ReceiveMode.PeekLock);
+            
             Logger.LogInformation("Starting message pump");
-            messageReceiver.RegisterMessageHandler(HandleMessage, HandleReceivedException);
+
+            // TODO: Message pump options to not delete for example
+            var messageHandlerOptions = new MessageHandlerOptions(HandleReceivedException)
+            {
+                
+            };
+            messageReceiver.RegisterMessageHandler(HandleMessage,messageHandlerOptions);
             Logger.LogInformation("Message pump started");
 
             await UntilCancelledAsync(stoppingToken);
@@ -51,6 +58,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), message.CorrelationId);
             var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
 
+            // TODO: Include entity (and opt namespace) in telemetry
             Logger.LogInformation("Received message {MessageId} (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})", messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
 
             var encoding = DetermineMessageEncoding(messageContext);

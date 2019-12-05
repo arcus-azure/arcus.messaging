@@ -8,4 +8,8 @@
   <ItemGroup>
     <PackageReference Include="Guard.NET" Version="1.2.0" />
     <PackageReference Include="Microsoft.Azure.ServiceBus" Version="4.1.1" />  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Arcus.Messaging.Abstractions\Arcus.Messaging.Abstractions.csproj" />
+  </ItemGroup>
 </Project>

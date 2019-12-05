@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Arcus.EventGrid.Publishing;
 using Arcus.EventGrid.Publishing.Interfaces;
-using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Contracts.Events.v1;
 using Arcus.Messaging.Tests.Contracts.Messages.v1;
@@ -27,14 +27,9 @@ namespace Arcus.Messaging.Tests.Worker.MessageHandlers
                 .Build();
         }
 
-        protected override async Task ProcessMessageAsync(Order orderMessage,
-            AzureServiceBusMessageContext messageContext, MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
+        protected override async Task ProcessMessageAsync(Order orderMessage, AzureServiceBusMessageContext messageContext, MessageCorrelationInfo correlationInfo, CancellationToken cancellationToken)
         {
-            Logger.LogInformation(
-                "Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}",
-                orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber, orderMessage.Customer.FirstName,
-                orderMessage.Customer.LastName);
+            Logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber, orderMessage.Customer.FirstName, orderMessage.Customer.LastName);
 
             await PublishEventToEventGridAsync(orderMessage, correlationInfo.OperationId, correlationInfo);
 

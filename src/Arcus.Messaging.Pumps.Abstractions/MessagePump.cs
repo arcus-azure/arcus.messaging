@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -95,7 +96,9 @@ namespace Arcus.Messaging.Pumps.Abstractions
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogCritical(ex, $"Unable to determine encoding with name '{{Encoding}}'. Falling back to {encoding.WebName}.", annotatedEncoding.ToString());
+                    Logger.LogCritical(ex,
+                        $"Unable to determine encoding with name '{{Encoding}}'. Falling back to {encoding.WebName}.",
+                        annotatedEncoding.ToString());
                 }
             }
 

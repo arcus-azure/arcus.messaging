@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 

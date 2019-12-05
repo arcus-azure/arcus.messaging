@@ -1,5 +1,5 @@
 ﻿using Arcus.EventGrid.Contracts;
-using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Abstractions;
 using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Tests.Contracts.Events.v1
