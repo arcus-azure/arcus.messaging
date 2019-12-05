@@ -1,4 +1,5 @@
 ﻿using Arcus.EventGrid.Contracts;
+using Arcus.Messaging.Pumps.Abstractions;
 using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Tests.Contracts.Events.v1
@@ -8,9 +9,9 @@ namespace Arcus.Messaging.Tests.Contracts.Events.v1
         private const string DefaultDataVersion = "1";
         private const string DefaultEventType = "Arcus.Samples.Orders.OrderCreated";
 
-        public OrderCreatedEvent(string eventId, string orderId, int amount, string articleNumber, string customerName)
+        public OrderCreatedEvent(string eventId, string orderId, int amount, string articleNumber, string customerName, MessageCorrelationInfo correlationInfo)
             : base(eventId, $"customer/{customerName}",
-                new OrderCreatedEventData(orderId, amount, articleNumber, customerName), DefaultDataVersion,
+                new OrderCreatedEventData(orderId, amount, articleNumber, customerName, correlationInfo), DefaultDataVersion,
                 DefaultEventType)
         {
         }
