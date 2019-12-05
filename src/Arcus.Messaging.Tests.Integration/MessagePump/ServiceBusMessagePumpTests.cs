@@ -12,6 +12,7 @@ using Arcus.Messaging.Tests.Contracts.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Health;
 using Bogus;
 using Microsoft.Azure.EventGrid.Models;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
 using Xunit;
@@ -80,8 +81,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         private MessageSender CreateServiceBusSender()
         {
-            var connectionString = Configuration.GetValue<string>("Arcus:ServiceBus:ConnectionString");
-            var messageSender = new MessageSender(connectionString, "orders");
+            var connectionString = Configuration.GetValue<string>("Arcus:ServiceBus:ConnectionStringWithQueue");
+            var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
+            var messageSender = new MessageSender(serviceBusConnectionStringBuilder.GetNamespaceConnectionString(), serviceBusConnectionStringBuilder.EntityPath);
             return messageSender;
         }
 
@@ -90,10 +92,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var connectionString = Configuration.GetValue<string>("Arcus:Infra:ConnectionString");
             var topicName = Configuration.GetValue<string>("Arcus:Infra:TopicName");
 
-            var serviceBusEventConsumerHostOptions =
-                new ServiceBusEventConsumerHostOptions(topicName, connectionString);
-            _serviceBusEventConsumerHost =
-                await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, Logger);
+            var serviceBusEventConsumerHostOptions = new ServiceBusEventConsumerHostOptions(topicName, connectionString);
+            _serviceBusEventConsumerHost = await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, Logger);
         }
 
         public async Task DisposeAsync()

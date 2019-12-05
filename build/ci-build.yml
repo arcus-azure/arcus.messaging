@@ -21,6 +21,10 @@ resources:
       name: arcus-azure/azure-devops-templates
       endpoint: arcus-azure
 
+# 'Package.Version.ManualTrigger' is added as queue-time variable on build in Azure DevOps
+# 'Arcus.ServiceBus.ConnectionStringWithQueue' is added as secret variable on build in Azure DevOps
+# 'Arcus.TestInfra.Topic.ConnectionString' is added as secret variable on build in Azure DevOps
+# 'EventGrid.Auth.Key' is added as secret variable on build in Azure DevOps
 variables:
   - group: 'Arcus - GitHub Package Registry'
   - group: 'Build Configuration'
@@ -34,11 +38,7 @@ variables:
   - name: 'Arcus.EventGrid.Topic.Uri'
     value: '42063'
   - name: 'Arcus.TestInfra.Topic.Name'
-    value: '42063'
-    # 'Package.Version.ManualTrigger' is added as queue-time variable on build in Azure DevOps
-    # 'Arcus.ServiceBus.Queue.ConnectionString' is added as secret variable on build in Azure DevOps
-    # 'Arcus.TestInfra.Topic.ConnectionString' is added as secret variable on build in Azure DevOps
-    # 'EventGrid.Auth.Key' is added as secret variable on build in Azure DevOps    
+    value: 'received-event-grid-events' # We are re-using the Event Grid integration infrastructure
 
 stages:
   - stage: Build
@@ -98,7 +98,7 @@ stages:
                 ARCUS_HEALTH_PORT=$(Arcus.Health.Port)
                 EVENTGRID_TOPIC_URI=$(Arcus.EventGrid.Topic.Uri)
                 EVENTGRID_AUTH_KEY=$(Arcus.EventGrid.Auth.Key)
-                ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING=$(Arcus.ServiceBus.Queue.ConnectionString)
+                ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING=$(Arcus.ServiceBus.ConnectionStringWithQueue)
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
