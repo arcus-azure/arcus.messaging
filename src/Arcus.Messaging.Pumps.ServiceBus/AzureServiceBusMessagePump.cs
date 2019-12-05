@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions;
-using Arcus.Messaging.ServiceBus.Core;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Pumps.ServiceBus
 {
@@ -56,7 +53,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             Logger.LogInformation("Received message {MessageId} (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})", messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
 
-            var encoding = DetermineEncoding(messageContext);
+            var encoding = DetermineMessageEncoding(messageContext);
             var order = DeserializeMessageBody(message.Body, encoding);
             if (order != null)
             {
@@ -68,24 +65,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
 
             Logger.LogInformation("Message {MessageId} processed", message.MessageId);
-        }
-
-        private Encoding DetermineEncoding(AzureServiceBusMessageContext messageContext)
-        {
-            var encoding = Encoding.UTF8;
-            if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
-            {
-                try
-                {
-                    encoding = Encoding.GetEncoding(annotatedEncoding.ToString());
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogCritical(ex, "Unable to determine encoding with name '{Encoding}'. Falling back to UTF8.", annotatedEncoding.ToString());
-                }
-            }
-
-            return encoding;
         }
 
         private static Task UntilCancelledAsync(CancellationToken cancellationToken)

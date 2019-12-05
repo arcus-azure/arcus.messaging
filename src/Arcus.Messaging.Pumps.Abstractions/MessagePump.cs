@@ -48,7 +48,6 @@ namespace Arcus.Messaging.Pumps.Abstractions
         }
 
         /// <summary>
-        /// 
         /// </summary>
         /// <param name="rawMessageBody"></param>
         /// <param name="encoding"></param>
@@ -56,7 +55,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         protected TMessage DeserializeMessageBody(byte[] rawMessageBody, Encoding encoding)
         {
             var serializedMessageBody = encoding.GetString(rawMessageBody);
-          
+
             var messageBody = JsonConvert.DeserializeObject<TMessage>(serializedMessageBody);
             if (messageBody == null)
             {
@@ -76,6 +75,31 @@ namespace Arcus.Messaging.Pumps.Abstractions
         ///     identifiers
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
-        protected abstract Task ProcessMessageAsync(TMessage message, TMessageContext messageContext, MessageCorrelationInfo correlationInfo, CancellationToken cancellationToken);
+        protected abstract Task ProcessMessageAsync(TMessage message, TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo, CancellationToken cancellationToken);
+
+        /// <summary>
+        ///     Determines the encoding used for a given message
+        /// </summary>
+        /// <remarks>If no encoding was specified, UTF-8 will be used by default</remarks>
+        /// <param name="messageContext">Context concerning the message</param>
+        /// <returns>Encoding that was used for the message body</returns>
+        protected Encoding DetermineMessageEncoding(MessageContext messageContext)
+        {
+            var encoding = Encoding.UTF8;
+            if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
+            {
+                try
+                {
+                    encoding = Encoding.GetEncoding(annotatedEncoding.ToString());
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogCritical(ex, $"Unable to determine encoding with name '{{Encoding}}'. Falling back to {encoding.WebName}.", annotatedEncoding.ToString());
+                }
+            }
+
+            return encoding;
+        }
     }
 }
