@@ -18,27 +18,30 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="configuration">Configuration of the application</param>
         /// <param name="logger">Logger to write telemetry to</param>
         protected AzureServiceBusMessagePump(IConfiguration configuration, ILogger logger)
-        : base(configuration, logger)
+            : base(configuration, logger)
         {
         }
 
+        /// <summary>
+        ///     Path of the entity to process
+        /// </summary>
+        public string EntityPath { get; private set; }
+
+        /// <summary>
+        ///     Service Bus namespace that contains the entity
+        /// </summary>
+        public string Namespace { get; private set; }
+
+        /// <inheritdoc/>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // TODO: How does it work with subscriptions?
-            // TODO: Make this configurable
-            var connectionString = Configuration.GetValue<string>("ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING");
-
-            var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
-            var messageReceiver = new MessageReceiver(serviceBusConnectionStringBuilder, ReceiveMode.PeekLock);
-            
-            Logger.LogInformation("Starting message pump");
+            Logger.LogInformation("Creating message pump");
+            var messageReceiver = CreateMessageReceiver();
+            Logger.LogInformation("Starting message pump on entity path {EntityPath} in namespace {Namespace}", EntityPath, Namespace);
 
             // TODO: Message pump options to not delete for example
-            var messageHandlerOptions = new MessageHandlerOptions(HandleReceivedException)
-            {
-                
-            };
-            messageReceiver.RegisterMessageHandler(HandleMessage,messageHandlerOptions);
+            var messageHandlerOptions = new MessageHandlerOptions(HandleReceivedException);
+            messageReceiver.RegisterMessageHandler(HandleMessage, messageHandlerOptions);
             Logger.LogInformation("Message pump started");
 
             await UntilCancelledAsync(stoppingToken);
@@ -46,6 +49,20 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Logger.LogInformation("Closing message pump");
             await messageReceiver.CloseAsync();
             Logger.LogInformation("Message pump closed : {Time}", DateTimeOffset.UtcNow);
+        }
+
+        private MessageReceiver CreateMessageReceiver()
+        {
+            var connectionString = Configuration.GetValue<string>("ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING");
+
+            var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
+
+            var messageReceiver = new MessageReceiver(serviceBusConnectionStringBuilder);
+            
+            EntityPath = serviceBusConnectionStringBuilder.EntityPath;
+            Namespace = messageReceiver.ServiceBusConnection.Endpoint.Host;
+
+            return messageReceiver;
         }
 
         private async Task HandleReceivedException(ExceptionReceivedEventArgs exceptionEvent)
@@ -56,22 +73,20 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private async Task HandleMessage(Message message, CancellationToken cancellationToken)
         {
             var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), message.CorrelationId);
-            var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
+            var messageContext =
+                new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
 
-            // TODO: Include entity (and opt namespace) in telemetry
-            Logger.LogInformation("Received message {MessageId} (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})", messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
+            Logger.LogInformation("Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
+                messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId,
+                correlationInfo.CycleId);
+            
+            // Deserialize the message
+            var typedMessageBody = DeserializeJsonMessageBody(message.Body, messageContext);
 
-            var encoding = DetermineMessageEncoding(messageContext);
-            var order = DeserializeMessageBody(message.Body, encoding);
-            if (order != null)
-            {
-                await ProcessMessageAsync(order, messageContext, correlationInfo, cancellationToken);
-            }
-            else
-            {
-                Logger.LogError("Unable to deserialize to message contract {ContractName} for message {MessageId}", typeof(TMessage), messageContext.MessageId);
-            }
-
+            // Process the message
+            // Note - We are not checking for exceptions here as the pump wil handle those and call our exception handling after which it abandons it
+            await ProcessMessageAsync(typedMessageBody, messageContext, correlationInfo, cancellationToken);
+            
             Logger.LogInformation("Message {MessageId} processed", message.MessageId);
         }
 
