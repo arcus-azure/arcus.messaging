@@ -23,10 +23,8 @@ resources:
 
 variables:
   - group: 'Arcus - GitHub Package Registry'
+  - group: 'Arcus Messaging - .NET'
   - group: 'Build Configuration'
-  # Always use fixed version for .NET Core SDK
-  - name: 'DotNet.Sdk.Version'
-    value: '3.0.101'
   - name: 'Project'
     value: 'Arcus.Messaging'
   - name: 'Arcus_Health_Port'
