@@ -78,6 +78,10 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
+          - template: templates/run-service-bus-test-worker.yml
+            parameters:
+              buildVersion: $(Arcus_Health_Port)
+              healthPort: $(Package.Version.ManualTrigger)
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
