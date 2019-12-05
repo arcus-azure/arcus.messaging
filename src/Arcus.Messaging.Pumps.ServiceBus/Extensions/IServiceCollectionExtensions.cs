@@ -8,7 +8,7 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class IServiceCollectionExtensions
     {
         /// <summary>
-        ///     Adds a message handler to consume messages from Azure Service Bus health probing
+        ///     Adds a message handler to consume messages from Azure Service Bus Queue
         /// </summary>
         /// <param name="services">Collection of services to use in the application</param>
         /// <returns>Collection of services to use in the application</returns>
@@ -23,7 +23,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        ///     Adds a message handler to consume messages from Azure Service Bus health probing
+        ///     Adds a message handler to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <param name="services">Collection of services to use in the application</param>
         /// <returns>Collection of services to use in the application</returns>
