@@ -80,8 +80,8 @@ stages:
               path: '$(Build.SourcesDirectory)'
           - template: templates/run-service-bus-test-worker.yml
             parameters:
-              buildVersion: $(Arcus_Health_Port)
-              healthPort: $(Package.Version.ManualTrigger)
+              buildVersion: $(Build.BuildId)
+              healthPort: $(Arcus_Health_Port)
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
