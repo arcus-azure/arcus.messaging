@@ -31,4 +31,4 @@ steps:
     containerName: 'Arcus.Messaging.Tests.Worker'
     ports: '${{ parameters.healthPort }}:${{ parameters.healthPort }}'
     envVars: |
-    ARCUS_HEALTH_PORT=${{ parameters.healthPort }}
+      ARCUS_HEALTH_PORT=${{ parameters.healthPort }}
