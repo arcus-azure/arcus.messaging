@@ -2,6 +2,20 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Arcus.Messaging.Health</PackageId>
+    <Authors>Arcus</Authors>
+    <Company>Arcus</Company>
+    <Product>Arcus.Messaging</Product>
+    <Description>Provide capability to expose health endpoint for messaging workloads</Description>
+    <Copyright>Copyright (c) Arcus</Copyright>
+    <PackageLicenseUrl>https://github.com/arcus-azure/arcus.messaging/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/arcus-azure/arcus.messaging</PackageProjectUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/arcus-azure/arcus.security</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageTags>Azure;Messaging;Health;Operations</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
