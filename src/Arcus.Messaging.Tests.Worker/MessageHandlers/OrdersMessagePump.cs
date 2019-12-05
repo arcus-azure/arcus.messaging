@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Arcus.EventGrid.Publishing;
 using Arcus.EventGrid.Publishing.Interfaces;
@@ -37,15 +36,15 @@ namespace Arcus.Messaging.Tests.Worker.MessageHandlers
                 orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber, orderMessage.Customer.FirstName,
                 orderMessage.Customer.LastName);
 
-            await PublishEventToEventGridAsync(orderMessage, correlationInfo.OperationId);
+            await PublishEventToEventGridAsync(orderMessage, correlationInfo.OperationId, correlationInfo);
 
             Logger.LogInformation("Order {OrderId} processed", orderMessage.Id);
         }
 
-        private async Task PublishEventToEventGridAsync(Order orderMessage, string operationId)
+        private async Task PublishEventToEventGridAsync(Order orderMessage, string operationId, MessageCorrelationInfo correlationInfo)
         {
             var orderCreatedEvent = new OrderCreatedEvent(operationId, orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber,
-                $"{orderMessage.Customer.FirstName} {orderMessage.Customer.LastName}");
+                $"{orderMessage.Customer.FirstName} {orderMessage.Customer.LastName}", correlationInfo);
             await _eventGridPublisher.PublishAsync(orderCreatedEvent);
 
             Logger.LogInformation("Event {EventId} was published with subject {EventSubject}", orderCreatedEvent.Id, orderCreatedEvent.Subject);
