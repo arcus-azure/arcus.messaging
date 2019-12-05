@@ -39,6 +39,12 @@ stages:
       - job: Compile
         pool:
           vmImage: 'ubuntu-16.04'
+        strategy:
+          matrix:
+            netcore22:
+              DotNet.Sdk.Version: '3.0.101'
+            netcore30:
+              DotNet.Sdk.Version: '2.2.105'
         steps:
           - template: 'nuget/determine-pr-version.yml@templates'
             parameters:
