@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.ServiceBus.Core;
 using Arcus.Messaging.ServiceBus.Core.Extensions;
 using Arcus.Messaging.Tests.Contracts.Events.v1;
 using Arcus.Messaging.Tests.Contracts.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Health;
 using Bogus;
-using Microsoft.Azure.ServiceBus;
+using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -29,7 +28,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 yield return new object[] { Encoding.UTF8 };
                 yield return new object[] { Encoding.UTF7 };
-                yield return new object[] { Encoding.UTF32};
+                yield return new object[] { Encoding.UTF32 };
                 yield return new object[] { Encoding.ASCII };
                 yield return new object[] { Encoding.Unicode };
                 yield return new object[] { Encoding.BigEndianUnicode };
@@ -54,18 +53,29 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var transactionId = Guid.NewGuid().ToString();
             var messageSender = CreateServiceBusSender();
 
-            var orderMessage = GenerateOrder().AsServiceBusMessage(encoding: messageEncoding);
-            orderMessage.CorrelationId = operationId;
+            var order = GenerateOrder();
+            var orderMessage = order.AsServiceBusMessage(operationId, encoding: messageEncoding);
             orderMessage.UserProperties.Add(PropertyNames.TransactionId, transactionId);
 
             // Act
             await messageSender.SendAsync(orderMessage);
 
             // Assert
-            var receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId); Assert.NotEqual(String.Empty, receivedEvent);
-
+            var receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);
+            Assert.NotEmpty(receivedEvent);
             var deserializedEventGridMessage = EventGridParser.Parse<OrderCreatedEvent>(receivedEvent);
             Assert.NotNull(deserializedEventGridMessage);
+            Assert.Single(deserializedEventGridMessage.Events);
+            var orderCreatedEvent = deserializedEventGridMessage.Events.SingleOrDefault();
+            var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
+            Assert.NotNull(orderCreatedEventData);
+            Assert.NotNull(orderCreatedEventData.CorrelationInfo);
+            Assert.Equal(order.Id, orderCreatedEventData.Id);
+            Assert.Equal(order.Amount, orderCreatedEventData.Amount);
+            Assert.Equal(order.ArticleNumber, orderCreatedEventData.ArticleNumber);
+            Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
+            Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
+            Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
         }
 
         private MessageSender CreateServiceBusSender()
@@ -80,8 +90,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var connectionString = Configuration.GetValue<string>("Arcus:Infra:ConnectionString");
             var topicName = Configuration.GetValue<string>("Arcus:Infra:TopicName");
 
-            var serviceBusEventConsumerHostOptions = new ServiceBusEventConsumerHostOptions(topicName, connectionString);
-            _serviceBusEventConsumerHost = await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, Logger);
+            var serviceBusEventConsumerHostOptions =
+                new ServiceBusEventConsumerHostOptions(topicName, connectionString);
+            _serviceBusEventConsumerHost =
+                await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, Logger);
         }
 
         public async Task DisposeAsync()
