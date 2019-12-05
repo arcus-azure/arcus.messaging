@@ -110,7 +110,7 @@ stages:
                 ```shell
                 PM > Install-Package Arcus.Messaging.Health --Version $(Build.BuildNumber)
                 ```
-            condition: not(contains(variables['Package.Version'], '-'))
+            condition: not(contains(variables['Build.BuildNumber'], '-'))
           - template: create-pre-release.yml@templates
             parameters:
               repositoryName: 'arcus-azure/arcus.messaging'
