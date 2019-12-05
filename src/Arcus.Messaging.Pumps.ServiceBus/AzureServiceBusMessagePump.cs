@@ -37,10 +37,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             messageReceiver.RegisterMessageHandler(HandleMessage, HandleReceivedException);
             Logger.LogInformation("Message pump started");
 
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(1));
-            }
+            await UntilCancelledAsync(stoppingToken);
 
             Logger.LogInformation("Closing message pump");
             await messageReceiver.CloseAsync();
@@ -89,6 +86,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
 
             return encoding;
+        }
+
+        private static Task UntilCancelledAsync(CancellationToken cancellationToken)
+        {
+            var taskCompletionSource = new TaskCompletionSource<bool>();
+            cancellationToken.Register(s => ((TaskCompletionSource<bool>)s).SetResult(true), taskCompletionSource);
+
+            return taskCompletionSource.Task;
         }
     }
 }
