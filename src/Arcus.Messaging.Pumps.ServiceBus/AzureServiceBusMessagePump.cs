@@ -90,12 +90,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Logger.LogInformation("Message {MessageId} processed", message.MessageId);
         }
 
-        private static Task UntilCancelledAsync(CancellationToken cancellationToken)
+        private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
         {
-            var taskCompletionSource = new TaskCompletionSource<bool>();
-            cancellationToken.Register(s => ((TaskCompletionSource<bool>)s).SetResult(true), taskCompletionSource);
-
-            return taskCompletionSource.Task;
+            await Task.Delay(Timeout.Infinite, cancellationToken);
         }
     }
 }
