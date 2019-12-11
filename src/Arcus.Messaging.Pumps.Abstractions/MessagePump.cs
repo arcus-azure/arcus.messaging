@@ -56,10 +56,10 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <returns>Deserialized message</returns>
         protected TMessage DeserializeJsonMessageBody(byte[] rawMessageBody, MessageContext messageContext)
         {
-            var encoding = DetermineMessageEncoding(messageContext);
-            var serializedMessageBody = encoding.GetString(rawMessageBody);
+            Encoding encoding = DetermineMessageEncoding(messageContext);
+            string serializedMessageBody = encoding.GetString(rawMessageBody);
 
-            var messageBody = JsonConvert.DeserializeObject<TMessage>(serializedMessageBody);
+            TMessage messageBody = JsonConvert.DeserializeObject<TMessage>(serializedMessageBody);
             if (messageBody == null)
             {
                 Logger.LogError("Unable to deserialize to message contract {ContractName} for message {MessageBody}",

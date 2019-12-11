@@ -36,7 +36,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             Logger.LogInformation("Creating message pump");
-            var messageReceiver = CreateMessageReceiver();
+            MessageReceiver messageReceiver = CreateMessageReceiver();
             Logger.LogInformation("Starting message pump on entity path {EntityPath} in namespace {Namespace}", EntityPath, Namespace);
 
             // TODO: Message pump options to not delete for example
@@ -79,9 +79,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Logger.LogInformation("Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
                 messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId,
                 correlationInfo.CycleId);
-            
+
             // Deserialize the message
-            var typedMessageBody = DeserializeJsonMessageBody(message.Body, messageContext);
+            TMessage typedMessageBody = DeserializeJsonMessageBody(message.Body, messageContext);
 
             // Process the message
             // Note - We are not checking for exceptions here as the pump wil handle those and call our exception handling after which it abandons it

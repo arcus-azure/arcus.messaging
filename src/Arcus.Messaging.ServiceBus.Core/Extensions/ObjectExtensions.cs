@@ -22,8 +22,8 @@ namespace Arcus.Messaging.ServiceBus.Core.Extensions
 
             encoding = encoding ?? Encoding.UTF8;
 
-            var serializedMessageBody = JsonConvert.SerializeObject(messageBody);
-            var rawMessage = encoding.GetBytes(serializedMessageBody);
+            string serializedMessageBody = JsonConvert.SerializeObject(messageBody);
+            byte[] rawMessage = encoding.GetBytes(serializedMessageBody);
 
             var serviceBusMessage = new Message(rawMessage)
             {
