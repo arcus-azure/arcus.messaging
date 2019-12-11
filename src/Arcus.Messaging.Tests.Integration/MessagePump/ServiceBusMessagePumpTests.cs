@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.ServiceBus.Core.Extensions;
 using Arcus.Messaging.Tests.Contracts.Events.v1;
 using Arcus.Messaging.Tests.Contracts.Messages.v1;

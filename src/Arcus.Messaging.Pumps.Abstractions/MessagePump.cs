@@ -24,18 +24,27 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// </summary>
         protected IConfiguration Configuration { get; }
 
+
+        /// <summary>
+        ///     Collection of services that are configured
+        /// </summary>
+        protected IServiceProvider ServiceProvider { get; }
+
         /// <summary>
         ///     Constructor
         /// </summary>
         /// <param name="configuration">Configuration of the application</param>
+        /// <param name="serviceProvider">Collection of services that are configured</param>
         /// <param name="logger">Logger to write telemetry to</param>
-        protected MessagePump(IConfiguration configuration, ILogger logger)
+        protected MessagePump(IConfiguration configuration, IServiceProvider serviceProvider, ILogger logger)
         {
             Guard.NotNull(logger, nameof(logger));
             Guard.NotNull(configuration, nameof(configuration));
+            Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
             Logger = logger;
             Configuration = configuration;
+            ServiceProvider = serviceProvider;
         }
 
         /// <summary>
@@ -61,10 +70,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             TMessage messageBody = JsonConvert.DeserializeObject<TMessage>(serializedMessageBody);
             if (messageBody == null)
-            {
                 Logger.LogError("Unable to deserialize to message contract {ContractName} for message {MessageBody}",
                     typeof(TMessage), rawMessageBody);
-            }
 
             return messageBody;
         }
@@ -92,7 +99,6 @@ namespace Arcus.Messaging.Pumps.Abstractions
         {
             var encoding = Encoding.UTF8;
             if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
-            {
                 try
                 {
                     encoding = Encoding.GetEncoding(annotatedEncoding.ToString());
@@ -103,7 +109,6 @@ namespace Arcus.Messaging.Pumps.Abstractions
                         $"Unable to determine encoding with name '{{Encoding}}'. Falling back to {encoding.WebName}.",
                         annotatedEncoding.ToString());
                 }
-            }
 
             return encoding;
         }

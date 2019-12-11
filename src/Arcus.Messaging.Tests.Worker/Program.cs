@@ -1,5 +1,7 @@
+using System.Threading.Tasks;
 using Arcus.Messaging.Health.Tcp;
 using Arcus.Messaging.Tests.Worker.MessageHandlers;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

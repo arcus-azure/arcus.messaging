@@ -7,6 +7,7 @@ using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.ServiceBus
@@ -17,10 +18,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         ///     Constructor
         /// </summary>
         /// <param name="configuration">Configuration of the application</param>
+        /// <param name="serviceProvider">Collection of services that are configured</param>
         /// <param name="logger">Logger to write telemetry to</param>
-        protected AzureServiceBusMessagePump(IConfiguration configuration, ILogger logger)
-            : base(configuration, logger)
+        protected AzureServiceBusMessagePump( IConfiguration configuration, IServiceProvider serviceProvider, ILogger logger)
+            : base(configuration, serviceProvider, logger)
         {
+
         }
 
         /// <summary>
@@ -40,8 +43,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             MessageReceiver messageReceiver = CreateMessageReceiver();
             Logger.LogInformation("Starting message pump on entity path {EntityPath} in namespace {Namespace}", EntityPath, Namespace);
 
-            // TODO: Message pump options to not delete for example
-            var messageHandlerOptions = new MessageHandlerOptions(HandleReceivedException);
+            MessageHandlerOptions messageHandlerOptions = DetermineMessageHandlerOptions();
             messageReceiver.RegisterMessageHandler(HandleMessage, messageHandlerOptions);
             Logger.LogInformation("Message pump started");
 
@@ -52,6 +54,26 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Logger.LogInformation("Message pump closed : {Time}", DateTimeOffset.UtcNow);
         }
 
+        private MessageHandlerOptions DetermineMessageHandlerOptions()
+        {
+            var messageHandlerOptions = new MessageHandlerOptions(HandleReceivedException);
+
+            var messagePumpOptions = ServiceProvider.GetService<AzureServiceBusMessagePumpOptions>();
+            if (messagePumpOptions != null)
+            {
+                // Assign the configured defaults
+                messageHandlerOptions.AutoComplete = messagePumpOptions.AutoComplete;
+                messageHandlerOptions.MaxConcurrentCalls = messagePumpOptions.MaxConcurrentCalls ?? messageHandlerOptions.MaxConcurrentCalls;
+                Logger.LogInformation("Message pump options were configured instead of Azure Service Bus defaults.");
+            }
+            else
+            {
+                Logger.LogWarning("No message pump options were configured, using Azure Service Bus defaults instead.");
+            }
+
+            return messageHandlerOptions;
+        }
+
         private MessageReceiver CreateMessageReceiver()
         {
             var connectionString = Configuration.GetValue<string>("ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING");
@@ -59,7 +81,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
 
             var messageReceiver = new MessageReceiver(serviceBusConnectionStringBuilder);
-            
+
             EntityPath = serviceBusConnectionStringBuilder.EntityPath;
             Namespace = messageReceiver.ServiceBusConnection.Endpoint.Host;
 
@@ -88,7 +110,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             // Process the message
             // Note - We are not checking for exceptions here as the pump wil handle those and call our exception handling after which it abandons it
             await ProcessMessageAsync(typedMessageBody, messageContext, correlationInfo, cancellationToken);
-            
+
             Logger.LogInformation("Message {MessageId} processed", message.MessageId);
         }
 
