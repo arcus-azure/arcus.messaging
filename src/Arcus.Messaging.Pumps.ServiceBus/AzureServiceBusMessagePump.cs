@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
+using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
@@ -72,9 +73,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private async Task HandleMessage(Message message, CancellationToken cancellationToken)
         {
+            Guard.NotNull(message, nameof(message));
+
             var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), message.CorrelationId);
-            var messageContext =
-                new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
+            var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
 
             Logger.LogInformation("Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
                 messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId,
