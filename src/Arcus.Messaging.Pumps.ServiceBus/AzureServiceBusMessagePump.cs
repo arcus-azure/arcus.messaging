@@ -69,6 +69,18 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         }
 
         /// <summary>
+        ///     Abandons the current message that is being processed
+        /// </summary>
+        /// <param name="lockToken">Token used to lock an individual message for processing. See <see cref="AzureServiceBusMessageContext.LockToken"/></param>
+        /// <param name="messageProperties">Collection of message properties to include and/or modify</param>
+        protected virtual async Task AbandonMessageAsync(string lockToken, IDictionary<string, object> messageProperties = null)
+        {
+            Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
+
+            await _messageReceiver.AbandonAsync(lockToken, messageProperties);
+        }
+
+        /// <summary>
         ///     Deadletters the current message
         /// </summary>
         /// <param name="lockToken">Token used to lock an individual message for processing. See <see cref="AzureServiceBusMessageContext.LockToken"/></param>
@@ -91,18 +103,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
 
             await _messageReceiver.DeadLetterAsync(lockToken, reason, errorDescription);
-        }
-
-        /// <summary>
-        ///     Abandons the current message that is being processed
-        /// </summary>
-        /// <param name="lockToken">Token used to lock an individual message for processing. See <see cref="AzureServiceBusMessageContext.LockToken"/></param>
-        /// <param name="messageProperties">Collection of message properties to include and/or modify</param>
-        protected virtual async Task AbandonMessageAsync(string lockToken, IDictionary<string, object> messageProperties = null)
-        {
-            Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
-
-            await _messageReceiver.AbandonAsync(lockToken, messageProperties);
         }
 
         private MessageHandlerOptions DetermineMessageHandlerOptions()
