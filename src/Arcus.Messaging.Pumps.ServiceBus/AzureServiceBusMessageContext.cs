@@ -16,6 +16,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         public Message.SystemPropertiesCollection SystemProperties { get; }
 
         /// <summary>
+        ///     Token used to lock an individual message for processing
+        /// </summary>
+        public string LockToken { get; }
+
+        /// <summary>
+        ///     Amount of times a message was delivered
+        /// </summary>
+        /// <remarks>This increases when a message is abandoned and re-delivered for processing</remarks>
+        public int DeliveryCount { get; }
+
+        /// <summary>
         ///     Constructor
         /// </summary>
         /// <param name="messageId">Unique identifier of the message</param>
@@ -28,6 +39,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Guard.NotNull(systemProperties, nameof(systemProperties));
 
             SystemProperties = systemProperties;
+            LockToken = systemProperties.LockToken;
+            DeliveryCount = systemProperties.DeliveryCount;
         }
     }
 }

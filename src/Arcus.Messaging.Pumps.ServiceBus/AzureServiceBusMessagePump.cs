@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -14,16 +15,20 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 {
     public abstract class AzureServiceBusMessagePump<TMessage> : MessagePump<TMessage, AzureServiceBusMessageContext>
     {
+        private readonly MessageReceiver _messageReceiver;
+        private readonly MessageHandlerOptions _messageHandlerOptions;
+
         /// <summary>
         ///     Constructor
         /// </summary>
         /// <param name="configuration">Configuration of the application</param>
         /// <param name="serviceProvider">Collection of services that are configured</param>
         /// <param name="logger">Logger to write telemetry to</param>
-        protected AzureServiceBusMessagePump( IConfiguration configuration, IServiceProvider serviceProvider, ILogger logger)
+        protected AzureServiceBusMessagePump(IConfiguration configuration, IServiceProvider serviceProvider, ILogger logger)
             : base(configuration, serviceProvider, logger)
         {
-
+            _messageReceiver = CreateMessageReceiver();
+            _messageHandlerOptions = DetermineMessageHandlerOptions();
         }
 
         /// <summary>
@@ -39,24 +44,70 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <inheritdoc/>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            Logger.LogInformation("Creating message pump");
-            MessageReceiver messageReceiver = CreateMessageReceiver();
             Logger.LogInformation("Starting message pump on entity path {EntityPath} in namespace {Namespace}", EntityPath, Namespace);
 
-            MessageHandlerOptions messageHandlerOptions = DetermineMessageHandlerOptions();
-            messageReceiver.RegisterMessageHandler(HandleMessage, messageHandlerOptions);
+            _messageReceiver.RegisterMessageHandler(HandleMessageAsync, _messageHandlerOptions);
             Logger.LogInformation("Message pump started");
 
             await UntilCancelledAsync(stoppingToken);
 
             Logger.LogInformation("Closing message pump");
-            await messageReceiver.CloseAsync();
+            await _messageReceiver.CloseAsync();
             Logger.LogInformation("Message pump closed : {Time}", DateTimeOffset.UtcNow);
+        }
+
+        /// <summary>
+        ///     Marks a message as completed
+        /// </summary>
+        /// <remarks>This should only be called if <see cref="AzureServiceBusMessagePumpOptions.AutoComplete"/> is disabled</remarks>
+        /// <param name="lockToken">Token used to lock an individual message for processing. See <see cref="AzureServiceBusMessageContext.LockToken"/></param>
+        protected virtual async Task CompleteMessageAsync(string lockToken)
+        {
+            Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
+
+            await _messageReceiver.CompleteAsync(lockToken);
+        }
+
+        /// <summary>
+        ///     Deadletters the current message
+        /// </summary>
+        /// <param name="lockToken">Token used to lock an individual message for processing. See <see cref="AzureServiceBusMessageContext.LockToken"/></param>
+        /// <param name="messageProperties">Collection of message properties to include and/or modify</param>
+        protected virtual async Task DeadletterMessageAsync(string lockToken, IDictionary<string, object> messageProperties = null)
+        {
+            Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
+
+            await _messageReceiver.DeadLetterAsync(lockToken, messageProperties);
+        }
+
+        /// <summary>
+        ///     Deadletters the current message
+        /// </summary>
+        /// <param name="lockToken">Token used to lock an individual message for processing. See <see cref="AzureServiceBusMessageContext.LockToken"/></param>
+        /// <param name="reason">Reason why it's being deadlettered</param>
+        /// <param name="errorDescription">Description related to the error</param>
+        protected virtual async Task DeadletterMessageAsync(string lockToken, string reason, string errorDescription)
+        {
+            Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
+
+            await _messageReceiver.DeadLetterAsync(lockToken, reason, errorDescription);
+        }
+
+        /// <summary>
+        ///     Abandons the current message that is being processed
+        /// </summary>
+        /// <param name="lockToken">Token used to lock an individual message for processing. See <see cref="AzureServiceBusMessageContext.LockToken"/></param>
+        /// <param name="messageProperties">Collection of message properties to include and/or modify</param>
+        protected virtual async Task AbandonMessageAsync(string lockToken, IDictionary<string, object> messageProperties = null)
+        {
+            Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
+
+            await _messageReceiver.AbandonAsync(lockToken, messageProperties);
         }
 
         private MessageHandlerOptions DetermineMessageHandlerOptions()
         {
-            var messageHandlerOptions = new MessageHandlerOptions(HandleReceivedException);
+            var messageHandlerOptions = new MessageHandlerOptions(HandleReceivedExceptionAsync);
 
             var messagePumpOptions = ServiceProvider.GetService<AzureServiceBusMessagePumpOptions>();
             if (messagePumpOptions != null)
@@ -88,12 +139,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             return messageReceiver;
         }
 
-        private async Task HandleReceivedException(ExceptionReceivedEventArgs exceptionEvent)
+        private async Task HandleReceivedExceptionAsync(ExceptionReceivedEventArgs exceptionEvent)
         {
             await HandleReceiveExceptionAsync(exceptionEvent.Exception);
         }
 
-        private async Task HandleMessage(Message message, CancellationToken cancellationToken)
+        private async Task HandleMessageAsync(Message message, CancellationToken cancellationToken)
         {
             Guard.NotNull(message, nameof(message));
 
