@@ -87,8 +87,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         public async Task InitializeAsync()
         {
-            var connectionString = Configuration.GetValue<string>("Arcus:Infra:ConnectionString");
-            var topicName = Configuration.GetValue<string>("Arcus:Infra:TopicName");
+            var connectionString = Configuration.GetValue<string>("Arcus:Infra:ServiceBus:ConnectionString");
+            var topicName = Configuration.GetValue<string>("Arcus:Infra:ServiceBus:TopicName");
 
             var serviceBusEventConsumerHostOptions = new ServiceBusEventConsumerHostOptions(topicName, connectionString);
             _serviceBusEventConsumerHost = await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, Logger);

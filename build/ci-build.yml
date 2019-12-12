@@ -1,3 +1,6 @@
+# We are using 2 types of testing infrastructure:
+# 1. Service Bus to test the message pump itself which emits Event Grid events
+# 2. Testing infrastructure to loop the Event Grid events back in our tests (depends on Service Bus)
 name: $(date:yyyyMMdd)$(rev:.r)
 
 trigger:
@@ -23,8 +26,8 @@ resources:
 
 # 'Package.Version.ManualTrigger' is added as queue-time variable on build in Azure DevOps
 # 'Arcus.ServiceBus.ConnectionStringWithQueue' is added as secret variable on build in Azure DevOps
-# 'Arcus.TestInfra.Topic.ConnectionString' is added as secret variable on build in Azure DevOps
-# 'EventGrid.Auth.Key' is added as secret variable on build in Azure DevOps
+# 'Arcus.TestInfra.ServiceBus.Topic.ConnectionString' is added as secret variable on build in Azure DevOps
+# 'Arcus.TestInfra.EventGrid.Auth.Key' is added as secret variable on build in Azure DevOps
 variables:
   - group: 'Arcus - GitHub Package Registry'
   - group: 'Build Configuration'
@@ -35,9 +38,9 @@ variables:
     value: 'Arcus.Messaging'
   - name: 'Arcus.Health.Port'
     value: '42063'
-  - name: 'Arcus.EventGrid.Topic.Uri'
-    value: '42063'
-  - name: 'Arcus.TestInfra.Topic.Name'
+  - name: 'Arcus.TestInfra.EventGrid.Topic.Uri'
+    value: 'https://arcus-event-grid-dev-we-integration-tests.westeurope-1.eventgrid.azure.net/api/events'
+  - name: 'Arcus.TestInfra.ServiceBus.Topic.Name'
     value: 'received-event-grid-events' # We are re-using the Event Grid integration infrastructure
 
 stages:
@@ -96,8 +99,8 @@ stages:
               ports: '$(Arcus.Health.Port):$(Arcus.Health.Port)'
               envVars: |
                 ARCUS_HEALTH_PORT=$(Arcus.Health.Port)
-                EVENTGRID_TOPIC_URI=$(Arcus.EventGrid.Topic.Uri)
-                EVENTGRID_AUTH_KEY=$(Arcus.EventGrid.Auth.Key)
+                EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
+                EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
                 ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING=$(Arcus.ServiceBus.ConnectionStringWithQueue)
           - template: test/run-integration-tests.yml@templates
             parameters:
