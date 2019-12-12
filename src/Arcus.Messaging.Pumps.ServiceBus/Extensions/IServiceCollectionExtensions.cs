@@ -47,7 +47,8 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services));
 
             var messagePumpOptions = AzureServiceBusMessagePumpOptions.Default;
-            configureMessagePump(messagePumpOptions);
+            configureMessagePump?.Invoke(messagePumpOptions);
+
             services.AddTransient(serviceProvider => messagePumpOptions);
             services.AddHostedService<TMessagePump>();
         }
