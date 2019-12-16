@@ -190,9 +190,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             Guard.NotNull(message, nameof(message));
 
-            var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), message.CorrelationId);
-            var messageContext =
-                new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
+            var operationId = DetermineOperationId(message.CorrelationId);
+            var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), operationId);
+            var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
 
             Logger.LogInformation(
                 "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
@@ -207,6 +207,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             await ProcessMessageAsync(typedMessageBody, messageContext, correlationInfo, cancellationToken);
 
             Logger.LogInformation("Message {MessageId} processed", message.MessageId);
+        }
+
+        private string DetermineOperationId(string messageCorrelationId)
+        {
+            if (string.IsNullOrWhiteSpace(messageCorrelationId))
+            {
+                var generatedOperationId = Guid.NewGuid().ToString();
+                Logger.LogInformation("Generating operation id {OperationId} given no correlation id was found on the message", generatedOperationId);
+
+                return generatedOperationId;
+            }
+
+            return messageCorrelationId;
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
