@@ -23,13 +23,10 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services));
 
-            services.AddHostedService<TcpHealthListener>();
+            var healthCheckBuilder = services.AddHealthChecks();
+            configureHealthChecks?.Invoke(healthCheckBuilder);
 
-            if (configureHealthChecks != null)
-            {
-                var healthCheckBuilder = services.AddHealthChecks();
-                configureHealthChecks(healthCheckBuilder);
-            }
+            services.AddHostedService<TcpHealthListener>();
 
             return services;
         }

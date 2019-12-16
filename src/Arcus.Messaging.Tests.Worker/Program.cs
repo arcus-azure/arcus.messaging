@@ -24,7 +24,6 @@ namespace Arcus.Messaging.Tests.Worker
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddTcpHealthProbes();
-                    services.AddHealthChecks();
                 });
     }
 }
