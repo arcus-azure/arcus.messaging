@@ -1,4 +1,6 @@
-﻿namespace Arcus.Messaging.Abstractions
+﻿using GuardNet;
+
+namespace Arcus.Messaging.Abstractions
 {
     /// <summary>
     ///     Information related to correlation of telemetry & processes
@@ -26,8 +28,11 @@
         ///     transaction/session
         /// </param>
         /// <param name="operationId">Unique identifier that spans one operation end-to-end</param>
+        /// <exception cref="System.ArgumentException">Exception thrown when <see cref="operationId" /> is not specified</exception>
         public CorrelationInfo(string transactionId, string operationId)
         {
+            Guard.NotNullOrWhitespace(operationId, nameof(operationId));
+
             OperationId = operationId;
             TransactionId = transactionId;
         }
