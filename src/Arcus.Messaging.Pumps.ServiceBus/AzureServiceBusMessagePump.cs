@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -192,6 +193,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             var operationId = DetermineOperationId(message.CorrelationId);
             var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), operationId);
+
             var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
 
             Logger.LogInformation(

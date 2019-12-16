@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.EventGrid.Publishing;
@@ -8,7 +7,6 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Contracts.Events.v1;
 using Arcus.Messaging.Tests.Contracts.Messages.v1;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
