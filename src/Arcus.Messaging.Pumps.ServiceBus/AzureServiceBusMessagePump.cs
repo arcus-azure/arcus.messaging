@@ -24,11 +24,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="configuration">Configuration of the application</param>
         /// <param name="serviceProvider">Collection of services that are configured</param>
         /// <param name="logger">Logger to write telemetry to</param>
-        protected AzureServiceBusMessagePump(IConfiguration configuration, IServiceProvider serviceProvider, ILogger logger)
+        protected AzureServiceBusMessagePump(IConfiguration configuration, IServiceProvider serviceProvider,
+            ILogger logger)
             : base(configuration, serviceProvider, logger)
         {
-            _messageReceiver = CreateMessageReceiver();
             _messageHandlerOptions = DetermineMessageHandlerOptions();
+            _messageReceiver = CreateMessageReceiver();
         }
 
         /// <summary>
@@ -41,10 +42,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// </summary>
         public string Namespace { get; private set; }
 
-        /// <inheritdoc/>
+        /// <inheritdoc />
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            Logger.LogInformation("Starting message pump on entity path {EntityPath} in namespace {Namespace}", EntityPath, Namespace);
+            Logger.LogInformation("Starting message pump on entity path {EntityPath} in namespace {Namespace}",
+                EntityPath, Namespace);
 
             _messageReceiver.RegisterMessageHandler(HandleMessageAsync, _messageHandlerOptions);
             Logger.LogInformation("Message pump started");
@@ -59,8 +61,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Marks a message as completed
         /// </summary>
-        /// <remarks>This should only be called if <see cref="AzureServiceBusMessagePumpOptions.AutoComplete"/> is disabled</remarks>
-        /// <param name="lockToken">Token used to lock an individual message for processing. See <see cref="AzureServiceBusMessageContext.LockToken"/></param>
+        /// <remarks>This should only be called if <see cref="AzureServiceBusMessagePumpOptions.AutoComplete" /> is disabled</remarks>
+        /// <param name="lockToken">
+        ///     Token used to lock an individual message for processing. See
+        ///     <see cref="AzureServiceBusMessageContext.LockToken" />
+        /// </param>
         protected virtual async Task CompleteMessageAsync(string lockToken)
         {
             Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
@@ -71,9 +76,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Abandons the current message that is being processed
         /// </summary>
-        /// <param name="lockToken">Token used to lock an individual message for processing. See <see cref="AzureServiceBusMessageContext.LockToken"/></param>
+        /// <param name="lockToken">
+        ///     Token used to lock an individual message for processing. See
+        ///     <see cref="AzureServiceBusMessageContext.LockToken" />
+        /// </param>
         /// <param name="messageProperties">Collection of message properties to include and/or modify</param>
-        protected virtual async Task AbandonMessageAsync(string lockToken, IDictionary<string, object> messageProperties = null)
+        protected virtual async Task AbandonMessageAsync(string lockToken,
+            IDictionary<string, object> messageProperties = null)
         {
             Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
 
@@ -83,9 +92,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Deadletters the current message
         /// </summary>
-        /// <param name="lockToken">Token used to lock an individual message for processing. See <see cref="AzureServiceBusMessageContext.LockToken"/></param>
+        /// <param name="lockToken">
+        ///     Token used to lock an individual message for processing. See
+        ///     <see cref="AzureServiceBusMessageContext.LockToken" />
+        /// </param>
         /// <param name="messageProperties">Collection of message properties to include and/or modify</param>
-        protected virtual async Task DeadletterMessageAsync(string lockToken, IDictionary<string, object> messageProperties = null)
+        protected virtual async Task DeadletterMessageAsync(string lockToken,
+            IDictionary<string, object> messageProperties = null)
         {
             Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
 
@@ -95,7 +108,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Deadletters the current message
         /// </summary>
-        /// <param name="lockToken">Token used to lock an individual message for processing. See <see cref="AzureServiceBusMessageContext.LockToken"/></param>
+        /// <param name="lockToken">
+        ///     Token used to lock an individual message for processing. See
+        ///     <see cref="AzureServiceBusMessageContext.LockToken" />
+        /// </param>
         /// <param name="reason">Reason why it's being deadlettered</param>
         /// <param name="errorDescription">Description related to the error</param>
         protected virtual async Task DeadletterMessageAsync(string lockToken, string reason, string errorDescription)
@@ -114,7 +130,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 // Assign the configured defaults
                 messageHandlerOptions.AutoComplete = messagePumpOptions.AutoComplete;
-                messageHandlerOptions.MaxConcurrentCalls = messagePumpOptions.MaxConcurrentCalls ?? messageHandlerOptions.MaxConcurrentCalls;
+                messageHandlerOptions.MaxConcurrentCalls =
+                    messagePumpOptions.MaxConcurrentCalls ?? messageHandlerOptions.MaxConcurrentCalls;
+
                 Logger.LogInformation("Message pump options were configured instead of Azure Service Bus defaults.");
             }
             else
@@ -136,7 +154,31 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             EntityPath = serviceBusConnectionStringBuilder.EntityPath;
             Namespace = messageReceiver.ServiceBusConnection.Endpoint.Host;
 
+            ConfigurePlugins();
+
             return messageReceiver;
+        }
+
+        private void ConfigurePlugins()
+        {
+            var registeredPlugins = DefineServiceBusPlugins();
+            if (registeredPlugins != null)
+            {
+                foreach (var plugin in registeredPlugins)
+                {
+                    _messageReceiver.RegisterPlugin(plugin);
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Provides capability to define Service Bus plugins to register
+        /// </summary>
+        /// <remarks>All Service Bus plugins will be registered in the same order</remarks>
+        /// <returns>List of Service Bus plugins that will be used by the message pump</returns>
+        protected virtual List<ServiceBusPlugin> DefineServiceBusPlugins()
+        {
+            return new List<ServiceBusPlugin>();
         }
 
         private async Task HandleReceivedExceptionAsync(ExceptionReceivedEventArgs exceptionEvent)
@@ -149,9 +191,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Guard.NotNull(message, nameof(message));
 
             var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), message.CorrelationId);
-            var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
+            var messageContext =
+                new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
 
-            Logger.LogInformation("Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
+            Logger.LogInformation(
+                "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
                 messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId,
                 correlationInfo.CycleId);
 
