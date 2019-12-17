@@ -15,6 +15,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 {
     public abstract class AzureServiceBusMessagePump<TMessage> : MessagePump<TMessage, AzureServiceBusMessageContext>
     {
+        private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
         private readonly MessageHandlerOptions _messageHandlerOptions;
         private readonly AzureServiceBusMessagePumpSettings _messagePumpSettings;
@@ -220,6 +221,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
+            if (_isHostShuttingDown)
+            {
+                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the host is shutting down.", message.MessageId);
+                await AbandonMessageAsync(message.SystemProperties.LockToken);
+            }
+
             var operationId = DetermineOperationId(message.CorrelationId);
             var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), operationId);
 
@@ -259,6 +266,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 await Task.Delay(Timeout.Infinite, cancellationToken);
             }
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await base.StopAsync(cancellationToken);
+            _isHostShuttingDown = true;
         }
     }
 }

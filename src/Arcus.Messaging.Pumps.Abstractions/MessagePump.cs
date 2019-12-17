@@ -114,5 +114,11 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             return encoding;
         }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await base.StopAsync(cancellationToken);
+            Logger.LogWarning("Host is shutting down");
+        }
     }
 }
