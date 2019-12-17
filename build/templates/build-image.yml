@@ -17,7 +17,7 @@ steps:
     IMAGE_NAME: ${{ parameters.imageName }}
   displayName: Check for required parameters in YAML template
 - task: Docker@1
-  displayName: 'Build Docker image from test worker'
+  displayName: 'Build ''${{ parameters.imageName }}'' Docker image'
   inputs:
     dockerFile: src/${{ parameters.projectName }}/Dockerfile
     imageName: '${{ parameters.imageName }}:$(Build.BuildId)'

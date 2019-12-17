@@ -17,7 +17,7 @@ steps:
     HEALTH_PORT: ${{ parameters.healthPort }}
   displayName: Check for required parameters in YAML template
 - task: Docker@1
-  displayName: 'Run test worker from Docker image'
+  displayName: 'Run ''${{ parameters.imageName }}'' Docker image'
   inputs:
     command: 'Run an image'
     imageName: '${{ parameters.imageName }}:$(Build.BuildId)'
