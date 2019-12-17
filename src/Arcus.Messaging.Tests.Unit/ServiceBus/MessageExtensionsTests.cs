@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Arcus.Messaging.Abstractions;
 using Microsoft.Azure.ServiceBus;
 using Xunit;
@@ -8,7 +6,7 @@ using Xunit;
 namespace Arcus.Messaging.Tests.Unit.ServiceBus
 {
     [Trait("Category", "Unit")]
-    public class MessageExtensionTests
+    public class MessageExtensionsTests
     {
         [Fact]
         public void GetTransactionId_NoTransactionIdSpecified_ReturnsEmptyString()
