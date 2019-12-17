@@ -22,6 +22,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     [Trait("Category", "Integration")]
     public class ServiceBusMessagePumpTests : IntegrationTest, IAsyncLifetime
     {
+        private const string QueueConnectionStringKey = "Arcus:ServiceBus:ConnectionStringWithQueue";
+        private const string TopicConnectionStringKey = "Arcus:ServiceBus:ConnectionStringWithTopic";
+
         public static IEnumerable<object[]> Encodings
         {
             get
@@ -46,12 +49,24 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         [Theory]
         [MemberData(nameof(Encodings))]
-        public async Task MessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding)
+        public async Task ServiceBusQueueMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding)
+        {
+            await ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(messageEncoding, QueueConnectionStringKey);
+        }
+
+        [Theory]
+        [MemberData(nameof(Encodings))]
+        public async Task ServiceBusTopicMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding)
+        {
+            await ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(messageEncoding, TopicConnectionStringKey);
+        }
+
+        public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding, string connectionStringKey)
         {
             // Arrange
             var operationId = Guid.NewGuid().ToString();
             var transactionId = Guid.NewGuid().ToString();
-            var messageSender = CreateServiceBusSender();
+            var messageSender = CreateServiceBusSender(connectionStringKey);
 
             var order = GenerateOrder();
             var orderMessage = order.WrapInServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
@@ -77,11 +92,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
         }
 
-        private MessageSender CreateServiceBusSender()
+        private MessageSender CreateServiceBusSender(string connectionStringKey)
         {
-            var connectionString = Configuration.GetValue<string>("Arcus:ServiceBus:ConnectionStringWithQueue");
+            var connectionString = Configuration.GetValue<string>(connectionStringKey);
             var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
-            var messageSender = new MessageSender(serviceBusConnectionStringBuilder.GetNamespaceConnectionString(), serviceBusConnectionStringBuilder.EntityPath);
+            var messageSender = new MessageSender(serviceBusConnectionStringBuilder);
             return messageSender;
         }
 
