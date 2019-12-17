@@ -203,7 +203,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// </summary>
         /// <remarks>All Service Bus plugins will be registered in the same order</remarks>
         /// <returns>List of Service Bus plugins that will be used by the message pump</returns>
-        protected virtual List<ServiceBusPlugin> DefineServiceBusPlugins()
+        protected virtual IEnumerable<ServiceBusPlugin> DefineServiceBusPlugins()
         {
             return new List<ServiceBusPlugin>();
         }
