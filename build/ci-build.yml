@@ -26,6 +26,7 @@ resources:
 
 # 'Package.Version.ManualTrigger' is added as queue-time variable on build in Azure DevOps
 # 'Arcus.ServiceBus.ConnectionStringWithQueue' is added as secret variable on build in Azure DevOps
+# 'Arcus.ServiceBus.ConnectionStringWithTopic' is added as secret variable on build in Azure DevOps
 # 'Arcus.TestInfra.ServiceBus.Topic.ConnectionString' is added as secret variable on build in Azure DevOps
 # 'Arcus.TestInfra.EventGrid.Auth.Key' is added as secret variable on build in Azure DevOps
 variables:
@@ -72,6 +73,11 @@ stages:
     displayName: Integration Tests
     dependsOn: Build
     condition: succeeded()
+    variables:
+    - name: 'Images.ServiceBus.Queue'
+      value: 'workers-service-bus-queue'
+    - name: 'Images.ServiceBus.Topic'
+      value: 'workers-service-bus-topic'
     jobs:
       - job: IntegrationTests
         displayName: 'Run integration tests'
@@ -83,25 +89,20 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
-          - task: Docker@1
-            displayName: 'Build Docker image from test worker'
-            inputs:
-              dockerFile: src/$(Project).Tests.Worker/Dockerfile
-              imageName: '$(Project).Tests.Worker:$(Build.BuildId)'
-              useDefaultContext: false
-              buildContext: src
-          - task: Docker@1
-            displayName: 'Run test worker from Docker image'
-            inputs:
-              command: 'Run an image'
-              imageName: '$(Project).Tests.Worker:$(Build.BuildId)'
-              containerName: '$(Project).Tests.Worker'
-              ports: '$(Arcus.Health.Port):$(Arcus.Health.Port)'
-              envVars: |
-                ARCUS_HEALTH_PORT=$(Arcus.Health.Port)
-                EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
-                EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
-                ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING=$(Arcus.ServiceBus.ConnectionStringWithQueue)
+          - template: ./templates/build-image.yml
+            parameters:
+              projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Queue'
+              imageName: '$(Images.ServiceBus.Queue)'
+          - template: ./templates/build-image.yml
+            parameters:
+              projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Topic'
+              imageName: '$(Images.ServiceBus.Topic)'
+          - template: ./templates/run-test-image.yml
+            parameters:
+              imageName: '$(Images.ServiceBus.Queue)'
+          - template: ./templates/run-test-image.yml
+            parameters:
+              imageName: '$(Images.ServiceBus.Topic)'
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'

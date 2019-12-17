@@ -1,0 +1,24 @@
+parameters:
+  imageName: ''
+
+steps:
+- bash: |
+    if [ -z "$IMAGE_NAME" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"imageName\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+  env:
+    IMAGE_NAME: ${{ parameters.imageName }}
+  displayName: Check for required parameters in YAML template
+- task: Docker@1
+  displayName: 'Run test worker from Docker image'
+  inputs:
+    command: 'Run an image'
+    imageName: '${{ parameters.imageName }}:$(Build.BuildId)'
+    containerName: '${{ parameters.imageName }}'
+    ports: '$(Arcus.Health.Port):$(Arcus.Health.Port)'
+    envVars: |
+      ARCUS_HEALTH_PORT=$(Arcus.Health.Port)
+      EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
+      EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
+      ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING=$(Arcus.ServiceBus.ConnectionStringWithQueue)
