@@ -1,7 +1,5 @@
-using System.Threading.Tasks;
 using Arcus.Messaging.Health.Tcp;
 using Arcus.Messaging.Tests.Worker.MessageHandlers;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -26,7 +24,8 @@ namespace Arcus.Messaging.Tests.Worker
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddServiceBusQueueMessagePump<OrdersMessagePump>();
+                    services.AddServiceBusQueueMessagePump<OrdersMessagePump>(configuration => configuration["ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING"]);
+                    //services.AddServiceBusTopicMessagePump<OrdersMessagePump>("Receive-All", configuration => configuration["ARCUS_SERVICEBUS_TOPIC_CONNECTIONSTRING"]);
                     services.AddHostedService<TcpHealthListener>();
                     services.AddHealthChecks();
                 });
