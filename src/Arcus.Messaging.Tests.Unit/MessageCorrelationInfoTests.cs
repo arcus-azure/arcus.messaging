@@ -41,13 +41,13 @@ namespace Arcus.Messaging.Tests.Unit
         }
 
         [Fact]
-        public void Constructor_NoOperationIdSpecified_Succeeds()
+        public void Constructor_NoOperationIdSpecified_ThrowsException()
         {
             // Arrange
             var transactionId = Guid.NewGuid().ToString();
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => new MessageCorrelationInfo(transactionId, operationId: null));
+            Assert.Throws<ArgumentException>(() => new MessageCorrelationInfo(transactionId, operationId: null));
         }
     }
 }

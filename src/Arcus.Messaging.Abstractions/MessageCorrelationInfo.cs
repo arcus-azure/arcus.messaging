@@ -24,8 +24,8 @@ namespace Arcus.Messaging.Abstractions
         ///     transaction/session
         /// </param>
         /// <param name="operationId">Unique identifier that spans one operation end-to-end</param>
-        public MessageCorrelationInfo(string transactionId, string operationId) : base(transactionId,
-            operationId)
+        public MessageCorrelationInfo(string transactionId, string operationId)
+            : base(transactionId, operationId)
         {
             CycleId = Guid.NewGuid().ToString("D");
         }
