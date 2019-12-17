@@ -10,7 +10,7 @@ using Arcus.Messaging.Tests.Contracts.Messages.v1;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Arcus.Messaging.Tests.Worker.MessageHandlers
+namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class OrdersMessagePump : AzureServiceBusMessagePump<Order>
     {

@@ -1,12 +1,19 @@
 version: '3.4'
 
 services:
-  arcus.messaging.tests.worker:
+  arcus.messaging.tests.workers.servicebus.queue:
     environment:
       - ARCUS_HEALTH_PORT=5001
       - ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING=Endpoint=sb://arcus-messaging-dev-we-integration-tests.servicebus.windows.net/;SharedAccessKeyName=Integration-Tests;SharedAccessKey=ySk88As/NZclNHWu1flBf0BYvgrzV6+/I9yZ+b7r3j8=;EntityPath=orders
-      - ARCUS_SERVICEBUS_TOPIC_CONNECTIONSTRING=Endpoint=sb://arcus-messaging-dev-we-integration-tests.servicebus.windows.net/;SharedAccessKeyName=Manage;SharedAccessKey=tpSSgUZ74Tumu3cRiYmU68gs/wO4YdZvqGs1UEoJXm0=;EntityPath=order-archive
       - EVENTGRID_TOPIC_URI=https://arcus-event-grid-dev-we-integration-tests.westeurope-1.eventgrid.azure.net/api/events
       - EVENTGRID_AUTH_KEY=B7rqeccGOOhhI0arirZNx5fyM/yJ2RZizPsybLZXkMI=
     ports:
       - '42063:5001'
+  arcus.messaging.tests.workers.servicebus.topic:
+    environment:
+      - ARCUS_HEALTH_PORT=5001
+      - ARCUS_SERVICEBUS_TOPIC_CONNECTIONSTRING=Endpoint=sb://arcus-messaging-dev-we-integration-tests.servicebus.windows.net/;SharedAccessKeyName=Manage;SharedAccessKey=tpSSgUZ74Tumu3cRiYmU68gs/wO4YdZvqGs1UEoJXm0=;EntityPath=order-archive
+      - EVENTGRID_TOPIC_URI=https://arcus-event-grid-dev-we-integration-tests.westeurope-1.eventgrid.azure.net/api/events
+      - EVENTGRID_AUTH_KEY=B7rqeccGOOhhI0arirZNx5fyM/yJ2RZizPsybLZXkMI=
+    ports:
+      - '42064:5001'
