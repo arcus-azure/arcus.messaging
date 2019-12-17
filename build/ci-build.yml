@@ -119,10 +119,12 @@ stages:
               imageName: '$(Images.ServiceBus.Topic)'
           - template: ./templates/run-test-image.yml
             parameters:
+              connectionString: '$(Arcus.ServiceBus.ConnectionStringWithQueue)'
               imageName: '$(Images.ServiceBus.Queue)'
               healthPort: '$(Arcus.Health.Port)'
           - template: ./templates/run-test-image.yml
             parameters:
+              connectionString: '$(Arcus.ServiceBus.ConnectionStringWithTopic)'
               imageName: '$(Images.ServiceBus.Topic)'
               healthPort: '42064'
           - template: test/run-integration-tests.yml@templates

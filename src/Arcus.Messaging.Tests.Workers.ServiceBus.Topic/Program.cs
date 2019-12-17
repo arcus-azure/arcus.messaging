@@ -24,7 +24,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Topic
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddServiceBusTopicMessagePump<OrdersMessagePump>("Receive-All", configuration => configuration["ARCUS_SERVICEBUS_TOPIC_CONNECTIONSTRING"]);
+                    services.AddServiceBusTopicMessagePump<OrdersMessagePump>("Receive-All", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"]);
                     services.AddHostedService<TcpHealthListener>();
                     services.AddHealthChecks();
                 });

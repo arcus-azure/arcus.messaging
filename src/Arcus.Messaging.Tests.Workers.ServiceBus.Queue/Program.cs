@@ -24,7 +24,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Queue
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddServiceBusQueueMessagePump<OrdersMessagePump>(configuration => configuration["ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING"]);
+                    services.AddServiceBusQueueMessagePump<OrdersMessagePump>(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"]);
                     services.AddHostedService<TcpHealthListener>();
                     services.AddHealthChecks();
                 });

@@ -1,6 +1,7 @@
 parameters:
   imageName: ''
   healthPort: ''
+  connectionString: ''
 
 steps:
 - bash: |
@@ -12,9 +13,14 @@ steps:
       echo "##vso[task.logissue type=error;]Missing template parameter \"healthPort\""
       echo "##vso[task.complete result=Failed;]"
     fi
+    if [ -z "$CONNECTION_STRING" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"connectionString\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
   env:
     IMAGE_NAME: ${{ parameters.imageName }}
     HEALTH_PORT: ${{ parameters.healthPort }}
+    CONNECTION_STRING: ${{ parameters.connectionString }}
   displayName: Check for required parameters in YAML template
 - task: Docker@1
   displayName: 'Run ''${{ parameters.imageName }}'' Docker image'
@@ -27,4 +33,4 @@ steps:
       ARCUS_HEALTH_PORT=${{ parameters.healthPort }}
       EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
       EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
-      ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING=$(Arcus.ServiceBus.ConnectionStringWithQueue)
+      ARCUS_SERVICEBUS_CONNECTIONSTRING=${{ parameters.connectionString }}
