@@ -48,7 +48,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             _messageReceiver = await CreateMessageReceiverAsync(_messagePumpSettings);
 
-            Logger.LogInformation("Starting message pump on entity path {EntityPath} in namespace {Namespace}",
+            Logger.LogInformation("Starting message pump on entity path '{EntityPath}' in namespace '{Namespace}'",
                 EntityPath, Namespace);
 
             _messageReceiver.RegisterMessageHandler(HandleMessageAsync, _messageHandlerOptions);
