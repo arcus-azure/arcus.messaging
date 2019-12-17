@@ -255,7 +255,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
         {
-            await Task.Delay(Timeout.Infinite, cancellationToken);
+            if (cancellationToken.IsCancellationRequested == false)
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
         }
     }
 }
