@@ -20,6 +20,6 @@
         /// <summary>
         ///     Default settings
         /// </summary>
-        internal static AzureServiceBusMessagePumpOptions Default => new AzureServiceBusMessagePumpOptions { AutoComplete = true };
+        internal static AzureServiceBusMessagePumpOptions Default => new AzureServiceBusMessagePumpOptions {AutoComplete = true};
     }
 }
