@@ -37,7 +37,7 @@ namespace Arcus.Messaging.Tests.Unit
             // Assert
             Assert.Equal(operationId, messageCorrelationInfo.OperationId);
             Assert.NotEmpty(messageCorrelationInfo.CycleId);
-            Assert.Empty(messageCorrelationInfo.TransactionId);
+            Assert.Null(messageCorrelationInfo.TransactionId);
         }
 
         [Fact]
