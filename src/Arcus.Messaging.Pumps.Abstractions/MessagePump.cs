@@ -51,7 +51,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         ///     Handles an exception that occured during the receiving of a message
         /// </summary>
         /// <param name="receiveException">Exception that occured</param>
-        protected Task HandleReceiveExceptionAsync(Exception receiveException)
+        protected virtual Task HandleReceiveExceptionAsync(Exception receiveException)
         {
             Logger.LogError(receiveException, "Unable to process message");
             return Task.CompletedTask;
@@ -63,15 +63,17 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="rawMessageBody">Raw message body to deserialize</param>
         /// <param name="messageContext">Context concerning the message</param>
         /// <returns>Deserialized message</returns>
-        protected TMessage DeserializeJsonMessageBody(byte[] rawMessageBody, MessageContext messageContext)
+        protected virtual TMessage DeserializeJsonMessageBody(byte[] rawMessageBody, MessageContext messageContext)
         {
             Encoding encoding = DetermineMessageEncoding(messageContext);
             string serializedMessageBody = encoding.GetString(rawMessageBody);
 
             TMessage messageBody = JsonConvert.DeserializeObject<TMessage>(serializedMessageBody);
             if (messageBody == null)
+            {
                 Logger.LogError("Unable to deserialize to message contract {ContractName} for message {MessageBody}",
                     typeof(TMessage), rawMessageBody);
+            }
 
             return messageBody;
         }
