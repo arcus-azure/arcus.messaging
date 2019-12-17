@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -16,8 +15,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 {
     public abstract class AzureServiceBusMessagePump<TMessage> : MessagePump<TMessage, AzureServiceBusMessageContext>
     {
-        private readonly MessageReceiver _messageReceiver;
+        private MessageReceiver _messageReceiver;
         private readonly MessageHandlerOptions _messageHandlerOptions;
+        private readonly AzureServiceBusMessagePumpSettings _messagePumpSettings;
 
         /// <summary>
         ///     Constructor
@@ -29,8 +29,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ILogger logger)
             : base(configuration, serviceProvider, logger)
         {
-            _messageHandlerOptions = DetermineMessageHandlerOptions();
-            _messageReceiver = CreateMessageReceiver();
+            _messagePumpSettings = serviceProvider.GetRequiredService<AzureServiceBusMessagePumpSettings>();
+            _messageHandlerOptions = DetermineMessageHandlerOptions(_messagePumpSettings);
         }
 
         /// <summary>
@@ -46,6 +46,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <inheritdoc />
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _messageReceiver = await CreateMessageReceiverAsync(_messagePumpSettings);
+
             Logger.LogInformation("Starting message pump on entity path {EntityPath} in namespace {Namespace}",
                 EntityPath, Namespace);
 
@@ -122,17 +124,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             await _messageReceiver.DeadLetterAsync(lockToken, reason, errorDescription);
         }
 
-        private MessageHandlerOptions DetermineMessageHandlerOptions()
+        private MessageHandlerOptions DetermineMessageHandlerOptions(AzureServiceBusMessagePumpSettings messagePumpSettings)
         {
             var messageHandlerOptions = new MessageHandlerOptions(HandleReceivedExceptionAsync);
-
-            var messagePumpOptions = ServiceProvider.GetService<AzureServiceBusMessagePumpOptions>();
-            if (messagePumpOptions != null)
+            if (messagePumpSettings.Options != null)
             {
                 // Assign the configured defaults
-                messageHandlerOptions.AutoComplete = messagePumpOptions.AutoComplete;
-                messageHandlerOptions.MaxConcurrentCalls =
-                    messagePumpOptions.MaxConcurrentCalls ?? messageHandlerOptions.MaxConcurrentCalls;
+                messageHandlerOptions.AutoComplete = messagePumpSettings.Options.AutoComplete;
+                messageHandlerOptions.MaxConcurrentCalls = messagePumpSettings.Options.MaxConcurrentCalls ?? messageHandlerOptions.MaxConcurrentCalls;
 
                 Logger.LogInformation("Message pump options were configured instead of Azure Service Bus defaults.");
             }
@@ -144,20 +143,46 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             return messageHandlerOptions;
         }
 
-        private MessageReceiver CreateMessageReceiver()
+        private async Task<MessageReceiver> CreateMessageReceiverAsync(AzureServiceBusMessagePumpSettings messagePumpSettings)
         {
-            var connectionString = Configuration.GetValue<string>("ARCUS_SERVICEBUS_QUEUE_CONNECTIONSTRING");
+            var rawConnectionString = await messagePumpSettings.GetConnectionStringAsync();
+            var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(rawConnectionString);
 
-            var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
+            MessageReceiver messageReceiver;
+            if (string.IsNullOrWhiteSpace(serviceBusConnectionStringBuilder.EntityPath))
+            {
+                // Connection string doesn't include the entity so we're using the message pump settings
+                if (string.IsNullOrWhiteSpace(messagePumpSettings.EntityName))
+                {
+                    throw new ArgumentNullException(nameof(messagePumpSettings.EntityName), "No entity name was specified while the connection string is scoped to the namespace");
+                }
 
-            var messageReceiver = new MessageReceiver(serviceBusConnectionStringBuilder);
+                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, messagePumpSettings.EntityName, messagePumpSettings.SubscriptionName);
+            }
+            else
+            {
+                // Connection string includes the entity so we're using that instead of the message pump settings
+                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, serviceBusConnectionStringBuilder.EntityPath, messagePumpSettings.SubscriptionName);
+            }
 
-            EntityPath = serviceBusConnectionStringBuilder.EntityPath;
-            Namespace = messageReceiver.ServiceBusConnection.Endpoint.Host;
+            Namespace = messageReceiver.ServiceBusConnection?.Endpoint?.Host;
 
             ConfigurePlugins();
 
             return messageReceiver;
+        }
+
+        private MessageReceiver CreateReceiver(ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder, string entityName, string subscriptionName)
+        {
+            EntityPath = entityName;
+
+            if (string.IsNullOrWhiteSpace(subscriptionName) == false)
+            {
+                EntityPath = $"{EntityPath}/subscriptions/{subscriptionName}";
+            }
+
+            var connectionString = serviceBusConnectionStringBuilder.GetNamespaceConnectionString();
+            return new MessageReceiver(connectionString, EntityPath);
         }
 
         private void ConfigurePlugins()
@@ -189,7 +214,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private async Task HandleMessageAsync(Message message, CancellationToken cancellationToken)
         {
-            Guard.NotNull(message, nameof(message));
+            if (message == null)
+            {
+                Logger.LogWarning("Received message was null, skipping.");
+                return;
+            }
 
             var operationId = DetermineOperationId(message.CorrelationId);
             var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), operationId);
