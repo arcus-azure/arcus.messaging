@@ -8,6 +8,8 @@ namespace Arcus.Messaging.ServiceBus.Core.Extensions
 {
     public static class MessageExtensions
     {
+        private const string JsonContentType = "application/json";
+
         /// <summary>
         ///     Creates an Azure Service Bus Message for a message body
         /// </summary>
@@ -29,11 +31,16 @@ namespace Arcus.Messaging.ServiceBus.Core.Extensions
             {
                 UserProperties =
                 {
-                    { PropertyNames.Encoding, encoding.WebName },
-                    { PropertyNames.TransactionId, transactionId }
+                    { PropertyNames.ContentType, JsonContentType },
+                    { PropertyNames.Encoding, encoding.WebName }
                 },
                 CorrelationId = operationId
             };
+
+            if (string.IsNullOrWhiteSpace(transactionId) == false)
+            {
+                serviceBusMessage.UserProperties.Add(PropertyNames.TransactionId, transactionId);
+            }
 
             return serviceBusMessage;
         }
