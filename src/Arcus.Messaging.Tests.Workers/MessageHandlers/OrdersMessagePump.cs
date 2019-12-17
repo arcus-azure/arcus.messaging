@@ -5,8 +5,8 @@ using Arcus.EventGrid.Publishing;
 using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Tests.Contracts.Events.v1;
-using Arcus.Messaging.Tests.Contracts.Messages.v1;
+using Arcus.Messaging.Tests.Core.Events.v1;
+using Arcus.Messaging.Tests.Core.Messages.v1;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 

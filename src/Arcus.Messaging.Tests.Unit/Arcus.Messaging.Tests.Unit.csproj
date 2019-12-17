@@ -6,15 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="appsettings.local.json" Condition="'$(Configuration)' == 'Debug'">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Arcus.EventGrid.Testing" Version="3.0.0-preview-1" />
     <PackageReference Include="Bogus" Version="28.4.3" />
     <PackageReference Include="Guard.Net" Version="1.2.0" />

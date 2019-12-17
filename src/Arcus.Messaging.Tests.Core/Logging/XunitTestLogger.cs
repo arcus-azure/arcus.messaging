@@ -3,7 +3,7 @@ using GuardNet;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace Arcus.Messaging.Tests.Integration.Logging
+namespace Arcus.Messaging.Tests.Core.Logging
 {
     /// <summary>
     /// <see cref="ILogger"/> representation of a xUnit <see cref="ITestOutputHelper"/> logger.

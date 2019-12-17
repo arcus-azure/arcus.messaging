@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.ServiceBus.Core.Extensions;
-using Arcus.Messaging.Tests.Contracts.Events.v1;
-using Arcus.Messaging.Tests.Contracts.Messages.v1;
+using Arcus.Messaging.Tests.Core.Events.v1;
+using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Health;
 using Bogus;
 using Microsoft.Azure.EventGrid.Models;
@@ -61,7 +61,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(messageEncoding, TopicConnectionStringKey);
         }
 
-        public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding, string connectionStringKey)
+        private async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding, string connectionStringKey)
         {
             // Arrange
             var operationId = Guid.NewGuid().ToString();

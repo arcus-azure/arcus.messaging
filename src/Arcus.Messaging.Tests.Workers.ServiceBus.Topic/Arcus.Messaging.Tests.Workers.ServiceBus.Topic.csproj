@@ -20,7 +20,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.Health\Arcus.Messaging.Health.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj" />
-    <ProjectReference Include="..\Arcus.Messaging.Tests.Contracts\Arcus.Messaging.Tests.Contracts.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Workers\Arcus.Messaging.Tests.Workers.csproj" />
   </ItemGroup>
 </Project>

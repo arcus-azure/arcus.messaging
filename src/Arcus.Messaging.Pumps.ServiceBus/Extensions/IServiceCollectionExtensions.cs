@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Security.Core;
 using GuardNet;
