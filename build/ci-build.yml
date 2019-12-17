@@ -100,9 +100,11 @@ stages:
           - template: ./templates/run-test-image.yml
             parameters:
               imageName: '$(Images.ServiceBus.Queue)'
+              healthPort: '$(Arcus.Health.Port)'
           - template: ./templates/run-test-image.yml
             parameters:
               imageName: '$(Images.ServiceBus.Topic)'
+              healthPort: '42064'
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
