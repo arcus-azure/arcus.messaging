@@ -1,6 +1,6 @@
 ﻿namespace Arcus.Messaging.Abstractions
 {
-    public class PropertyNames
+    public static class PropertyNames
     {
         public const string TransactionId = "Transaction-Id";
         public const string Encoding = "Message-Encoding";
