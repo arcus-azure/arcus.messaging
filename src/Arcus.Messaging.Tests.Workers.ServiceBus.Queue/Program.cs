@@ -2,6 +2,7 @@ using Arcus.Messaging.Health.Tcp;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 
 namespace Arcus.Messaging.Tests.Workers.ServiceBus.Queue
@@ -25,8 +26,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Queue
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddServiceBusQueueMessagePump<OrdersMessagePump>(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"]);
-                    services.AddHostedService<TcpHealthListener>();
-                    services.AddHealthChecks();
+                    services.AddTcpHealthProbes();
                 });
     }
 }
