@@ -5,7 +5,7 @@ layout: default
 
 # TCP Health probe
 
-We provide a TCP health probe endpoint that allows a runtime to periodically check the liveness/readiness of the host based on the .NET Core health approach.
+We provide a TCP health probe endpoint that allows a runtime to periodically check the liveness/readiness of the host based on the [.NET Core health checks](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks).
 
 ## Installation
 
