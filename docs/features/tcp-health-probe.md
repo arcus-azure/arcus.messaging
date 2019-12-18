@@ -5,7 +5,7 @@ layout: default
 
 # TCP Health probe
 
-A `BackgroundService` can be added to the <span>ASP.NET</span> hosted services to expose a TCP health endpoint that allows a runtime to periodically check the liveness/readiness of the host.
+We provide a TCP health probe endpoint that allows a runtime to periodically check the liveness/readiness of the host based on the .NET Core health approach.
 
 ## Installation
 
@@ -22,6 +22,10 @@ To include the TCP endpoint, add the following line of code in the `Startup.Conf
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
+    // Add TCP health probe without extra health checks.
+    services.AddTcpHealthProbes();
+
+    // Or, add your extra health checks in a configuration delegate.
     services.AddTcpHealthProbes(healthBuilder => 
     {
         healthBuilder.AddCheck("Example", () => HealthCheckResult.Healthy("Example is OK!"), tags: new[] { "example" })
