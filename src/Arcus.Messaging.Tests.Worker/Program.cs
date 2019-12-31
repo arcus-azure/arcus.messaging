@@ -23,7 +23,7 @@ namespace Arcus.Messaging.Tests.Worker
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddTcpHealthProbes();
+                    services.AddTcpHealthProbes(builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
                 });
     }
 }
