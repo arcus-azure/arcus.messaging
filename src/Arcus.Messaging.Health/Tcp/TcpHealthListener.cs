@@ -9,8 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+using Microsoft.Extensions.Options;
 
 namespace Arcus.Messaging.Health.Tcp
 {
@@ -23,27 +22,34 @@ namespace Arcus.Messaging.Health.Tcp
 
         private readonly HealthCheckService _healthService;
         private readonly TcpListener _listener;
+        private readonly TcpHealthListenerOptions _tcpListenerOptions;
         private readonly ILogger<TcpHealthListener> _logger;
-        private readonly JsonSerializerSettings _serializerSettings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
         /// </summary>
-        /// <param name="configuration">The configuration to control the hosting settings of the TCP server.</param>
+        /// <param name="configuration">The configuration to control the hosting settings of the TCP listener.</param>
+        /// <param name="tcpListenerOptions">The additional options to configure the TCP listener.</param>
         /// <param name="healthService">The service to retrieve the current health of the application.</param>
-        /// <param name="logger">The logging implementation to write diagnostic messages during the running of the TCP server.</param>
-        public TcpHealthListener(IConfiguration configuration, HealthCheckService healthService, ILogger<TcpHealthListener> logger)
+        /// <param name="logger">The logging implementation to write diagnostic messages during the running of the TCP listener.</param>
+        public TcpHealthListener(
+            IConfiguration configuration, 
+            IOptions<TcpHealthListenerOptions> tcpListenerOptions,
+            HealthCheckService healthService, 
+            ILogger<TcpHealthListener> logger)
         {
-            Guard.NotNull(configuration, nameof(configuration), "Requires a configuration implementation to retrieve hosting information for the TCP server");
+            Guard.NotNull(configuration, nameof(configuration), "Requires a configuration implementation to retrieve hosting information for the TCP listener");
+            Guard.NotNull(tcpListenerOptions, nameof(tcpListenerOptions), "Requires a set of TCP listener options to correctly run the TCP listener");
             Guard.NotNull(healthService, nameof(healthService), "Requires a health service to retrieve the current health status of the application");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger implementation to write diagnostic messages during the running of the TCP server");
+            Guard.NotNull(logger, nameof(logger), "Requires a logger implementation to write diagnostic messages during the running of the TCP listener");
+            Guard.For<ArgumentException>(() => tcpListenerOptions.Value is null, "Requires a set of TCP listener options to correctly run the TCP listener");
 
+            _tcpListenerOptions = tcpListenerOptions.Value;
             _healthService = healthService;
             _logger = logger;
 
             Port = GetConfiguredTcpPort(configuration);
             _listener = new TcpListener(IPAddress.Any, Port);
-            _serializerSettings = CreateDefaultSerializerSettings();
         }
 
         private static int GetConfiguredTcpPort(IConfiguration configuration)
@@ -55,20 +61,6 @@ namespace Arcus.Messaging.Health.Tcp
                 $"Requires a configuration implementation with a '{TcpHealthPort}' key containing a TCP port number");
 
             return tcpPort;
-        }
-
-        private static JsonSerializerSettings CreateDefaultSerializerSettings()
-        {
-            var serializingSettings = new JsonSerializerSettings
-            {
-                Formatting = Formatting.None, 
-                NullValueHandling = NullValueHandling.Ignore
-            };
-
-            var enumConverter = new StringEnumConverter { AllowIntegerValues = false };
-            serializingSettings.Converters.Add(enumConverter);
-
-            return serializingSettings;
         }
 
         /// <summary>
@@ -127,8 +119,7 @@ namespace Arcus.Messaging.Health.Tcp
                     string clientId = client.Client?.RemoteEndPoint?.ToString() ?? String.Empty;
                     _logger.LogInformation("Return '{Status}' health report to client {ClientId}", report.Status, clientId);
 
-                    string serialized = JsonConvert.SerializeObject(report, _serializerSettings);
-                    byte[] response = Encoding.UTF8.GetBytes(serialized);
+                    byte[] response = _tcpListenerOptions.ReportSerializer(report);
                     clientStream.Write(response, 0, response.Length);
 
                     clientStream.Close();
