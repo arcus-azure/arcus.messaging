@@ -11,6 +11,11 @@ using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Pumps.Abstractions
 {
+    /// <summary>
+    ///     Foundation for building message pumps
+    /// </summary>
+    /// <typeparam name="TMessage">Type of message we are interested in</typeparam>
+    /// <typeparam name="TMessageContext">Type of message context for the provider</typeparam>
     public abstract class MessagePump<TMessage, TMessageContext> : BackgroundService
         where TMessageContext : MessageContext
     {
@@ -115,6 +120,10 @@ namespace Arcus.Messaging.Pumps.Abstractions
             return encoding;
         }
 
+        /// <summary>
+        ///     Triggered when the message pump is performing a graceful shutdown.
+        /// </summary>
+        /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
             await base.StopAsync(cancellationToken);

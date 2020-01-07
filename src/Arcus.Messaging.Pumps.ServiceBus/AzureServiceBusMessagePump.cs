@@ -209,7 +209,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             return Enumerable.Empty<ServiceBusPlugin>();
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        ///     Triggered when the Azure Service Bus message pump is performing a graceful shutdown.
+        /// </summary>
+        /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
             await base.StopAsync(cancellationToken);
