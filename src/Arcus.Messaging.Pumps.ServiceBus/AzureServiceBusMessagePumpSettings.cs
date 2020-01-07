@@ -67,12 +67,22 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             if (_getConnectionStringFromSecretFunc != null)
             {
-                var secretProvider = _serviceProvider.GetRequiredService<ISecretProvider>();
-                return await _getConnectionStringFromSecretFunc(secretProvider);
+                return await GetConnectionStringFromSecretAsync();
             }
 
+            return GetConnectionStringFromConfiguration();
+        }
+
+        private string GetConnectionStringFromConfiguration()
+        {
             var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
             return _getConnectionStringFromConfigurationFunc(configuration);
+        }
+
+        private async Task<string> GetConnectionStringFromSecretAsync()
+        {
+            var secretProvider = _serviceProvider.GetRequiredService<ISecretProvider>();
+            return await _getConnectionStringFromSecretFunc(secretProvider);
         }
     }
 }
