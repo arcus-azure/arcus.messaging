@@ -126,8 +126,9 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            await base.StopAsync(cancellationToken);
             Logger.LogWarning("Host is shutting down");
+
+            await base.StopAsync(cancellationToken);
         }
     }
 }
