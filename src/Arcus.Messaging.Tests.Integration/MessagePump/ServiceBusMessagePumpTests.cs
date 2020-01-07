@@ -8,9 +8,6 @@ using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.ServiceBus.Core.Extensions;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
-using Arcus.Messaging.Tests.Core.Messages.v1;
-using Arcus.Messaging.Tests.Integration.Health;
-using Bogus;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
@@ -42,7 +39,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private ServiceBusEventConsumerHost _serviceBusEventConsumerHost;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="TcpHealthCheckTests" /> class.
+        ///     Initializes a new instance of the <see cref="ServiceBusMessagePumpTests" /> class.
         /// </summary>
         public ServiceBusMessagePumpTests(ITestOutputHelper testOutput) : base(testOutput)
         {
