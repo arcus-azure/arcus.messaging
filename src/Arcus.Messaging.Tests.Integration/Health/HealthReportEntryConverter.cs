@@ -9,6 +9,8 @@ namespace Arcus.Messaging.Tests.Integration.Health
 {
     /// <summary>
     /// JSON converter to deserialize <see cref="HealthReportEntry"/> <c>struct</c>.
+    /// The <see cref="HealthReportEntry"/> <c>struct</c>s is not correctly deserialized since it was not especially made to be deserialized;
+    /// also <c>struct</c>s are naturally not made for deserialization using Newtonsoft.Json.
     /// </summary>
     public class HealthReportEntryConverter : JsonConverter
     {
