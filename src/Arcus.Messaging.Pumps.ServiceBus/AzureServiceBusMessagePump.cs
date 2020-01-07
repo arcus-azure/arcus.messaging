@@ -233,6 +233,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 Logger.LogWarning("Abandoning message with ID '{MessageId}' as the host is shutting down.", message.MessageId);
                 await AbandonMessageAsync(message.SystemProperties.LockToken);
+
+                return;
             }
 
             var operationId = DetermineOperationId(message.CorrelationId);
