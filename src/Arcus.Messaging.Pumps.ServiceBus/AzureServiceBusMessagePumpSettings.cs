@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Arcus.Security.Core;
+using Arcus.Security.Core.Caching;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -81,8 +83,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private async Task<string> GetConnectionStringFromSecretAsync()
         {
-            var secretProvider = _serviceProvider.GetRequiredService<ISecretProvider>();
-            return await _getConnectionStringFromSecretFunc(secretProvider);
+            ISecretProvider userDefinedSecretProvider = _serviceProvider.GetService<ICachedSecretProvider>()
+                                                        ?? _serviceProvider.GetService<ISecretProvider>();
+
+            if (userDefinedSecretProvider == null)
+            {
+                throw new KeyNotFoundException(
+                    $"No configured {nameof(ICachedSecretProvider)} or {nameof(ISecretProvider)} implementation found in the service container. "
+                    + "Please configure such an implementation (ex. in the Startup) of your application");
+            }
+
+            return await _getConnectionStringFromSecretFunc(userDefinedSecretProvider);
         }
     }
 }
