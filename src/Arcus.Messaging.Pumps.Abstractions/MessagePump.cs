@@ -108,8 +108,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
                 catch (Exception ex)
                 {
                     Logger.LogCritical(ex,
-                        $"Unable to determine encoding with name '{{Encoding}}'. Falling back to {encoding.WebName}.",
-                        annotatedEncoding.ToString());
+                        $"Unable to determine encoding with name '{{Encoding}}'. Falling back to {{FallbackEncoding}}.",
+                        annotatedEncoding.ToString(), encoding.WebName);
                 }
 
             return encoding;
