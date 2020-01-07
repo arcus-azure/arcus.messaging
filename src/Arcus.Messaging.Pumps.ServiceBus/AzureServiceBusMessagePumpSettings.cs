@@ -48,18 +48,18 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         ///     Name of the entity to process
         /// </summary>
         /// <remarks>This is optional as the connection string can contain the entity name</remarks>
-        public string EntityName { get; set; }
+        public string EntityName { get; }
 
         /// <summary>
         ///     Name of the subscription to process
         /// </summary>
         /// <remarks>This is only applicable when using Azure Service Bus Topics</remarks>
-        public string SubscriptionName { get; set; }
+        public string SubscriptionName { get; }
 
         /// <summary>
         ///     Options that influence the behavior of the message pump
         /// </summary>
-        public AzureServiceBusMessagePumpOptions Options { get; set; }
+        public AzureServiceBusMessagePumpOptions Options { get; }
 
         /// <summary>
         ///     Gets the configured connection string
