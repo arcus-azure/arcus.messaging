@@ -221,7 +221,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private async Task HandleReceivedExceptionAsync(ExceptionReceivedEventArgs exceptionEvent)
         {
-            await HandleReceiveExceptionAsync(exceptionEvent.Exception);
+            await HandleReceiveExceptionAsync(exceptionEvent.Exception, exceptionEvent.ExceptionReceivedContext?.EntityPath, exceptionEvent.ExceptionReceivedContext?.ClientId);
         }
 
         private async Task HandleMessageAsync(Message message, CancellationToken cancellationToken)
