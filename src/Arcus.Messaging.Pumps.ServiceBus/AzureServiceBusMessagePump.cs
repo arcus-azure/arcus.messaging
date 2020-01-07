@@ -189,7 +189,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private void ConfigurePlugins()
         {
-            var registeredPlugins = DefineServiceBusPlugins();
+            IEnumerable<ServiceBusPlugin> registeredPlugins = DefineServiceBusPlugins();
             if (registeredPlugins != null)
             {
                 foreach (var plugin in registeredPlugins)
