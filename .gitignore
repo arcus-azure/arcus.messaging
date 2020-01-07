@@ -328,4 +328,6 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
-src/Arcus.Messaging.Tests.Integration/appsettings.local.json
+
+# Custom
+**/appsettings.local.json
