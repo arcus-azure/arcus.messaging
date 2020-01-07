@@ -18,7 +18,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             get => _maxConcurrentCalls;
             set
             {
-                Guard.For<ArgumentException>(() => value <= 0, "Max concurrent calls has to be 1 or above.");
+                if (value != null)
+                {
+                    Guard.For<ArgumentException>(() => value <= 0, "Max concurrent calls has to be 1 or above.");
+                }
+
                 _maxConcurrentCalls = value;
             }
         }
