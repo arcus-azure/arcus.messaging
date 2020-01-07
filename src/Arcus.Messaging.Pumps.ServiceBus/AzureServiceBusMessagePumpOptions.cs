@@ -18,7 +18,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             get => _maxConcurrentCalls;
             set
             {
-                Guard.For<ArgumentException>(() => value <= 0);
+                Guard.For<ArgumentException>(() => value <= 0, "Max concurrent calls has to be 1 or above.");
                 _maxConcurrentCalls = value;
             }
         }
@@ -33,6 +33,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Default settings
         /// </summary>
-        internal static AzureServiceBusMessagePumpOptions Default => new AzureServiceBusMessagePumpOptions {AutoComplete = true};
+        internal static AzureServiceBusMessagePumpOptions Default => new AzureServiceBusMessagePumpOptions { AutoComplete = true };
     }
 }
