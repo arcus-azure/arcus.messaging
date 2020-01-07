@@ -20,6 +20,11 @@ namespace Arcus.Messaging.Pumps.Abstractions
         where TMessageContext : MessageContext
     {
         /// <summary>
+        ///     Default encoding used
+        /// </summary>
+        protected Encoding DefaultEncoding { get; } = Encoding.UTF8;
+
+        /// <summary>
         ///     Logger to write telemetry to
         /// </summary>
         protected ILogger Logger { get; }
@@ -104,20 +109,21 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <returns>Encoding that was used for the message body</returns>
         protected Encoding DetermineMessageEncoding(MessageContext messageContext)
         {
-            var encoding = Encoding.UTF8;
             if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
+            {
                 try
                 {
-                    encoding = Encoding.GetEncoding(annotatedEncoding.ToString());
+                    return Encoding.GetEncoding(annotatedEncoding.ToString());
                 }
                 catch (Exception ex)
                 {
                     Logger.LogCritical(ex,
                         $"Unable to determine encoding with name '{{Encoding}}'. Falling back to {{FallbackEncoding}}.",
-                        annotatedEncoding.ToString(), encoding.WebName);
+                        annotatedEncoding.ToString(), DefaultEncoding.WebName);
                 }
+            }
 
-            return encoding;
+            return DefaultEncoding;
         }
 
         /// <summary>
