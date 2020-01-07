@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -205,7 +206,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <returns>List of Service Bus plugins that will be used by the message pump</returns>
         protected virtual IEnumerable<ServiceBusPlugin> DefineServiceBusPlugins()
         {
-            return new List<ServiceBusPlugin>();
+            return Enumerable.Empty<ServiceBusPlugin>();
+        }
+
+        /// <inheritdoc />
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await base.StopAsync(cancellationToken);
+            _isHostShuttingDown = true;
         }
 
         private async Task HandleReceivedExceptionAsync(ExceptionReceivedEventArgs exceptionEvent)
@@ -266,12 +274,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 await Task.Delay(Timeout.Infinite, cancellationToken);
             }
-        }
-
-        public override async Task StopAsync(CancellationToken cancellationToken)
-        {
-            await base.StopAsync(cancellationToken);
-            _isHostShuttingDown = true;
         }
     }
 }
