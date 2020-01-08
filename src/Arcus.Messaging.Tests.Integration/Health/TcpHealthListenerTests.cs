@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -38,9 +37,12 @@ namespace Arcus.Messaging.Tests.Integration.Health
                     string healthReport = await reader.ReadToEndAsync();
 
                     // Assert
-                    var report = JsonConvert.DeserializeObject<HealthReport>(healthReport);
+                    var report = JsonConvert.DeserializeObject<HealthReport>(healthReport, new HealthReportEntryConverter());
                     Assert.NotNull(report);
                     Assert.Equal(HealthStatus.Healthy, report.Status);
+                    (string entryName, HealthReportEntry entry) = Assert.Single(report.Entries);
+                    Assert.Equal("sample", entryName);
+                    Assert.Equal(HealthStatus.Healthy, entry.Status);
                 }
             }
         }
