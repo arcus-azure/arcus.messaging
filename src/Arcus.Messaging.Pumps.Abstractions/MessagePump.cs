@@ -25,6 +25,16 @@ namespace Arcus.Messaging.Pumps.Abstractions
         protected Encoding DefaultEncoding { get; } = Encoding.UTF8;
 
         /// <summary>
+        ///     Id of the client being used to connect to the messaging service
+        /// </summary>
+        protected string ClientId { get; private set; }
+
+        /// <summary>
+        ///     Entity path that is being processed
+        /// </summary>
+        protected string EntityPath { get; private set; }
+
+        /// <summary>
         ///     Logger to write telemetry to
         /// </summary>
         protected ILogger Logger { get; }
@@ -61,11 +71,9 @@ namespace Arcus.Messaging.Pumps.Abstractions
         ///     Handles an exception that occured during the receiving of a message
         /// </summary>
         /// <param name="receiveException">Exception that occured</param>
-        /// <param name="entityPath">Entity path that is being processed</param>
-        /// <param name="clientId">Id of client that is being used</param>
-        protected virtual Task HandleReceiveExceptionAsync(Exception receiveException, string entityPath, string clientId)
+        protected virtual Task HandleReceiveExceptionAsync(Exception receiveException)
         {
-            Logger.LogError(receiveException, "Unable to process message from {EntityPath} with client {ClientId}", entityPath, clientId);
+            Logger.LogCritical(receiveException, "Unable to process message from {EntityPath} with client {ClientId}", EntityPath, ClientId);
             return Task.CompletedTask;
         }
 
@@ -137,6 +145,19 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Logger.LogWarning("Host is shutting down");
 
             await base.StopAsync(cancellationToken);
+        }
+
+        /// <summary>
+        ///     Register information about the client connected to the messaging service
+        /// </summary>
+        /// <param name="clientId">Id of the client being used to connect to the messaging service</param>
+        /// <param name="entityPath">Entity path that is being processed</param>
+        protected void RegisterClientInformation(string clientId, string entityPath)
+        {
+            Guard.NotNullOrWhitespace(clientId,nameof(clientId));
+
+            ClientId = clientId;
+            EntityPath = entityPath;
         }
     }
 }

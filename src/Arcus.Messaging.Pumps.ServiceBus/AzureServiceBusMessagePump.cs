@@ -48,19 +48,26 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <inheritdoc />
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _messageReceiver = await CreateMessageReceiverAsync(_messagePumpSettings);
+            try
+            {
+                _messageReceiver = await CreateMessageReceiverAsync(_messagePumpSettings);
 
-            Logger.LogInformation("Starting message pump on entity path '{EntityPath}' in namespace '{Namespace}'",
-                EntityPath, Namespace);
+                Logger.LogInformation("Starting message pump on entity path '{EntityPath}' in namespace '{Namespace}'",
+                    EntityPath, Namespace);
 
-            _messageReceiver.RegisterMessageHandler(HandleMessageAsync, _messageHandlerOptions);
-            Logger.LogInformation("Message pump started");
+                _messageReceiver.RegisterMessageHandler(HandleMessageAsync, _messageHandlerOptions);
+                Logger.LogInformation("Message pump started");
 
-            await UntilCancelledAsync(stoppingToken);
+                await UntilCancelledAsync(stoppingToken);
 
-            Logger.LogInformation("Closing message pump");
-            await _messageReceiver.CloseAsync();
-            Logger.LogInformation("Message pump closed : {Time}", DateTimeOffset.UtcNow);
+                Logger.LogInformation("Closing message pump");
+                await _messageReceiver.CloseAsync();
+                Logger.LogInformation("Message pump closed : {Time}", DateTimeOffset.UtcNow);
+            }
+            catch (Exception exception)
+            {
+                await HandleReceiveExceptionAsync(exception);
+            }
         }
 
         /// <summary>
@@ -128,7 +135,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private MessageHandlerOptions DetermineMessageHandlerOptions(AzureServiceBusMessagePumpSettings messagePumpSettings)
         {
-            var messageHandlerOptions = new MessageHandlerOptions(HandleReceivedExceptionAsync);
+            var messageHandlerOptions = new MessageHandlerOptions(exceptionReceivedEventArgs => HandleReceiveExceptionAsync(exceptionReceivedEventArgs.Exception));
             if (messagePumpSettings.Options != null)
             {
                 // Assign the configured defaults
@@ -170,6 +177,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Namespace = messageReceiver.ServiceBusConnection?.Endpoint?.Host;
 
             ConfigurePlugins();
+
+            RegisterClientInformation(messageReceiver.ClientId, messageReceiver.Path);
 
             return messageReceiver;
         }
@@ -219,11 +228,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             _isHostShuttingDown = true;
         }
 
-        private async Task HandleReceivedExceptionAsync(ExceptionReceivedEventArgs exceptionEvent)
-        {
-            await HandleReceiveExceptionAsync(exceptionEvent.Exception, exceptionEvent.ExceptionReceivedContext?.EntityPath, exceptionEvent.ExceptionReceivedContext?.ClientId);
-        }
-
         private async Task HandleMessageAsync(Message message, CancellationToken cancellationToken)
         {
             if (message == null)
@@ -240,24 +244,32 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
-            var operationId = DetermineOperationId(message.CorrelationId);
-            var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), operationId);
+            try
+            {
+                var operationId = DetermineOperationId(message.CorrelationId);
+                var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), operationId);
 
-            var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
+                var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
+                    message.UserProperties);
 
-            Logger.LogInformation(
-                "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
-                messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId,
-                correlationInfo.CycleId);
+                Logger.LogInformation(
+                    "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
+                    messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId,
+                    correlationInfo.CycleId);
 
-            // Deserialize the message
-            TMessage typedMessageBody = DeserializeJsonMessageBody(message.Body, messageContext);
+                // Deserialize the message
+                TMessage typedMessageBody = DeserializeJsonMessageBody(message.Body, messageContext);
 
-            // Process the message
-            // Note - We are not checking for exceptions here as the pump wil handle those and call our exception handling after which it abandons it
-            await ProcessMessageAsync(typedMessageBody, messageContext, correlationInfo, cancellationToken);
+                // Process the message
+                // Note - We are not checking for exceptions here as the pump wil handle those and call our exception handling after which it abandons it
+                await ProcessMessageAsync(typedMessageBody, messageContext, correlationInfo, cancellationToken);
 
-            Logger.LogInformation("Message {MessageId} processed", message.MessageId);
+                Logger.LogInformation("Message {MessageId} processed", message.MessageId);
+            }
+            catch (Exception ex)
+            {
+                await HandleReceiveExceptionAsync(ex);
+            }
         }
 
         private string DetermineOperationId(string messageCorrelationId)
