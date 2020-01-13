@@ -1,7 +1,6 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using GuardNet;
@@ -18,8 +17,6 @@ namespace Arcus.Messaging.Health.Tcp
     /// </summary>
     public class TcpHealthListener : BackgroundService
     {
-        private const string TcpHealthPort = "ARCUS_HEALTH_PORT";
-
         private readonly HealthCheckService _healthService;
         private readonly TcpListener _listener;
         private readonly TcpHealthListenerOptions _tcpListenerOptions;
@@ -28,17 +25,16 @@ namespace Arcus.Messaging.Health.Tcp
         /// <summary>
         /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
         /// </summary>
-        /// <param name="configuration">The configuration to control the hosting settings of the TCP listener.</param>
+        /// <param name="serviceProvider">The service object to retrieve built-in and custom object instances.</param>
         /// <param name="tcpListenerOptions">The additional options to configure the TCP listener.</param>
         /// <param name="healthService">The service to retrieve the current health of the application.</param>
         /// <param name="logger">The logging implementation to write diagnostic messages during the running of the TCP listener.</param>
         public TcpHealthListener(
-            IConfiguration configuration, 
+            IServiceProvider serviceProvider,
             IOptions<TcpHealthListenerOptions> tcpListenerOptions,
             HealthCheckService healthService, 
             ILogger<TcpHealthListener> logger)
         {
-            Guard.NotNull(configuration, nameof(configuration), "Requires a configuration implementation to retrieve hosting information for the TCP listener");
             Guard.NotNull(tcpListenerOptions, nameof(tcpListenerOptions), "Requires a set of TCP listener options to correctly run the TCP listener");
             Guard.NotNull(healthService, nameof(healthService), "Requires a health service to retrieve the current health status of the application");
             Guard.NotNull(logger, nameof(logger), "Requires a logger implementation to write diagnostic messages during the running of the TCP listener");
@@ -48,19 +44,8 @@ namespace Arcus.Messaging.Health.Tcp
             _healthService = healthService;
             _logger = logger;
 
-            Port = GetConfiguredTcpPort(configuration);
+            Port = _tcpListenerOptions.GetTcpHealthPort(serviceProvider);
             _listener = new TcpListener(IPAddress.Any, Port);
-        }
-
-        private static int GetConfiguredTcpPort(IConfiguration configuration)
-        {
-            string tcpPortString = configuration[TcpHealthPort];
-            var tcpPort = 0;
-            Guard.For<ArgumentException>(
-                () => !Int32.TryParse(tcpPortString, out tcpPort), 
-                $"Requires a configuration implementation with a '{TcpHealthPort}' key containing a TCP port number");
-
-            return tcpPort;
         }
 
         /// <summary>
