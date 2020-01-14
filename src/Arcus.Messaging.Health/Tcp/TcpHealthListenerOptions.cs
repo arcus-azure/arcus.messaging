@@ -56,7 +56,7 @@ namespace Arcus.Messaging.Health.Tcp
         /// <summary>
         /// Gets or sets the TCP health port on which the health report is exposed.
         /// </summary>
-        public string TcpHealthPort
+        public string TcpPortConfigurationKey
         {
             get => _tcpHealthPort;
             set

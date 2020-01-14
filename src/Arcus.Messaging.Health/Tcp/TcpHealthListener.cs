@@ -44,7 +44,7 @@ namespace Arcus.Messaging.Health.Tcp
             _healthService = healthService;
             _logger = logger;
 
-            Port = GetTcpHealthPort(configuration, _tcpListenerOptions.TcpHealthPort);
+            Port = GetTcpHealthPort(configuration, _tcpListenerOptions.TcpPortConfigurationKey);
             _listener = new TcpListener(IPAddress.Any, Port);
         }
 
