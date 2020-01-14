@@ -14,7 +14,7 @@ namespace Arcus.Messaging.Health.Tcp
     /// </summary>
     public class TcpHealthListenerOptions
     {
-        private const string TcpHealthPort = "ARCUS_HEALTH_PORT";
+        private string _tcpHealthPort = "ARCUS_HEALTH_PORT";
 
         private static readonly JsonSerializerSettings SerializationSettings = CreateDefaultSerializerSettings();
 
@@ -24,20 +24,6 @@ namespace Arcus.Messaging.Health.Tcp
             byte[] response = Encoding.UTF8.GetBytes(json);
 
             return response;
-        };
-
-        private Func<IServiceProvider, int> _getTcpHealthPort = serviceProvider =>
-        {
-            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            string tcpPortString = configuration[TcpHealthPort];
-            
-            if (!Int32.TryParse(tcpPortString, out int tcpPort))
-            {
-                throw new ArithmeticException(
-                    $"Requires a configuration implementation with a '{TcpHealthPort}' key containing a TCP port number");
-            }
-
-            return tcpPort;
         };
 
         private static JsonSerializerSettings CreateDefaultSerializerSettings()
@@ -68,15 +54,15 @@ namespace Arcus.Messaging.Health.Tcp
         }
 
         /// <summary>
-        /// Gets or sets the function that gets the TCP health check port, using the service object with a registered collection of instances.
+        /// Gets or sets the TCP health port on which the health report is exposed.
         /// </summary>
-        public Func<IServiceProvider, int> GetTcpHealthPort
+        public string TcpHealthPort
         {
-            get => _getTcpHealthPort;
+            get => _tcpHealthPort;
             set
             {
-                Guard.NotNull(value, nameof(value), "Cannot set a 'null' function to get the TCP health check port");
-                _getTcpHealthPort = value;
+                Guard.NotNullOrWhitespace(value, nameof(value), "Requires a non-blank configuration key for the TCP health port");
+                _tcpHealthPort = value;
             }
         }
     }

@@ -25,12 +25,12 @@ namespace Arcus.Messaging.Health.Tcp
         /// <summary>
         /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
         /// </summary>
-        /// <param name="serviceProvider">The service object to retrieve built-in and custom object instances.</param>
+        /// <param name="configuration">The key-value application configuration properties.</param>
         /// <param name="tcpListenerOptions">The additional options to configure the TCP listener.</param>
         /// <param name="healthService">The service to retrieve the current health of the application.</param>
         /// <param name="logger">The logging implementation to write diagnostic messages during the running of the TCP listener.</param>
         public TcpHealthListener(
-            IServiceProvider serviceProvider,
+            IConfiguration configuration,
             IOptions<TcpHealthListenerOptions> tcpListenerOptions,
             HealthCheckService healthService, 
             ILogger<TcpHealthListener> logger)
@@ -44,8 +44,20 @@ namespace Arcus.Messaging.Health.Tcp
             _healthService = healthService;
             _logger = logger;
 
-            Port = _tcpListenerOptions.GetTcpHealthPort(serviceProvider);
+            Port = GetTcpHealthPort(configuration, _tcpListenerOptions.TcpHealthPort);
             _listener = new TcpListener(IPAddress.Any, Port);
+        }
+
+        private static int GetTcpHealthPort(IConfiguration configuration, string tcpHealthPortKey)
+        {
+            string tcpPortString = configuration[tcpHealthPortKey];
+            if (!Int32.TryParse(tcpPortString, out int tcpPort))
+            {
+                throw new ArithmeticException(
+                    $"Requires a configuration implementation with a '{tcpHealthPortKey}' key containing a TCP port number");
+            }
+
+            return tcpPort;
         }
 
         /// <summary>
