@@ -78,9 +78,9 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
-          - template: templates/run-service-bus-test-worker.yml
+          - template: templates/build-and-run-worker-container.yml
             parameters:
-              buildVersion: $(Build.BuildId)
+              imageTag: $(Build.BuildId)
               healthPort: $(Arcus_Health_Port)
           - template: test/run-integration-tests.yml@templates
             parameters:
