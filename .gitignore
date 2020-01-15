@@ -330,4 +330,4 @@ ASALocalRun/
 .mfractor/
 
 # Custom
-**/*/appsettings.local.json
+src/*/appsettings.local.json
