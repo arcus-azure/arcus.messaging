@@ -167,7 +167,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 // Connection string doesn't include the entity so we're using the message pump settings
                 if (string.IsNullOrWhiteSpace(messagePumpSettings.EntityName))
                 {
-                    throw new ArgumentNullException(nameof(messagePumpSettings.EntityName), "No entity name was specified while the connection string is scoped to the namespace");
+                    throw new ArgumentException("No entity name was specified while the connection string is scoped to the namespace");
                 }
 
                 messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, messagePumpSettings.EntityName, messagePumpSettings.SubscriptionName);
