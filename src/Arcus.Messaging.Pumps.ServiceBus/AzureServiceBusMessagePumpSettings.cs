@@ -9,6 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Arcus.Messaging.Pumps.ServiceBus
 {
+    /// <summary>
+    ///     Settings for an Azure Service Bus message pump
+    /// </summary>
     public class AzureServiceBusMessagePumpSettings
     {
         private readonly Func<ISecretProvider, Task<string>> _getConnectionStringFromSecretFunc;
