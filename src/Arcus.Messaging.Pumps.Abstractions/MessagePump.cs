@@ -25,6 +25,11 @@ namespace Arcus.Messaging.Pumps.Abstractions
         protected Encoding DefaultEncoding { get; } = Encoding.UTF8;
 
         /// <summary>
+        ///     Unique id of this message pump instance
+        /// </summary>
+        protected string Id { get; } = Guid.NewGuid().ToString();
+
+        /// <summary>
         ///     Id of the client being used to connect to the messaging service
         /// </summary>
         protected string ClientId { get; private set; }

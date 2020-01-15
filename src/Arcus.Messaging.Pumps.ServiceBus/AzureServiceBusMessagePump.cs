@@ -56,17 +56,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 _messageReceiver = await CreateMessageReceiverAsync(Settings);
 
-                Logger.LogInformation("Starting message pump on entity path '{EntityPath}' in namespace '{Namespace}'",
-                    EntityPath, Namespace);
+                Logger.LogInformation("Starting message pump {MessagePumpId} on entity path '{EntityPath}' in namespace '{Namespace}'", Id, EntityPath, Namespace);
 
                 _messageReceiver.RegisterMessageHandler(HandleMessageAsync, _messageHandlerOptions);
-                Logger.LogInformation("Message pump started");
+                Logger.LogInformation("Message pump {MessagePumpId} started", Id);
 
                 await UntilCancelledAsync(stoppingToken);
 
-                Logger.LogInformation("Closing message pump");
+                Logger.LogInformation("Closing message pump {MessagePumpId}", Id);
                 await _messageReceiver.CloseAsync();
-                Logger.LogInformation("Message pump closed : {Time}", DateTimeOffset.UtcNow);
+                Logger.LogInformation("Message pump {MessagePumpId} closed : {Time}", Id, DateTimeOffset.UtcNow);
             }
             catch (Exception exception)
             {
