@@ -207,7 +207,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 foreach (var plugin in registeredPlugins)
                 {
-                    _messageReceiver.RegisterPlugin(plugin);
+                    if (plugin != null)
+                    {
+                        _messageReceiver.RegisterPlugin(plugin);
+                    }
                 }
             }
         }
