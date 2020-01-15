@@ -1,11 +1,5 @@
-﻿using System;
-using System.Text;
-using GuardNet;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using GuardNet;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace Arcus.Messaging.Health.Tcp
 {
@@ -16,42 +10,10 @@ namespace Arcus.Messaging.Health.Tcp
     {
         private string _tcpHealthPort = "ARCUS_HEALTH_PORT";
 
-        private static readonly JsonSerializerSettings SerializationSettings = CreateDefaultSerializerSettings();
-
-        private Func<HealthReport, byte[]> _reportSerializer = report =>
-        {
-            string json = JsonConvert.SerializeObject(report, SerializationSettings);
-            byte[] response = Encoding.UTF8.GetBytes(json);
-
-            return response;
-        };
-
-        private static JsonSerializerSettings CreateDefaultSerializerSettings()
-        {
-            var serializingSettings = new JsonSerializerSettings
-            {
-                Formatting = Formatting.None, 
-                NullValueHandling = NullValueHandling.Ignore
-            };
-
-            var enumConverter = new StringEnumConverter { AllowIntegerValues = false };
-            serializingSettings.Converters.Add(enumConverter);
-
-            return serializingSettings;
-        }
-
         /// <summary>
         /// Gets or sets the function that serializes the <see cref="HealthReport"/> to a series of bytes.
         /// </summary>
-        public Func<HealthReport, byte[]> ReportSerializer
-        {
-            get => _reportSerializer;
-            set
-            {
-                Guard.NotNull(value, nameof(value), "Cannot set a 'null' health report serializer for the TCP listener");
-                _reportSerializer = value;
-            }
-        }
+        public IHealthReportSerializer HealthReportSerializer { get; set; }
 
         /// <summary>
         /// Gets or sets the TCP health port on which the health report is exposed.

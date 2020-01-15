@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using GuardNet;
@@ -9,6 +10,8 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Arcus.Messaging.Health.Tcp
 {
@@ -21,6 +24,8 @@ namespace Arcus.Messaging.Health.Tcp
         private readonly TcpListener _listener;
         private readonly TcpHealthListenerOptions _tcpListenerOptions;
         private readonly ILogger<TcpHealthListener> _logger;
+
+        private static readonly JsonSerializerSettings SerializationSettings = CreateDefaultSerializerSettings();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
@@ -58,6 +63,20 @@ namespace Arcus.Messaging.Health.Tcp
             }
 
             return tcpPort;
+        }
+
+        private static JsonSerializerSettings CreateDefaultSerializerSettings()
+        {
+            var serializingSettings = new JsonSerializerSettings
+            {
+                Formatting = Formatting.None, 
+                NullValueHandling = NullValueHandling.Ignore
+            };
+
+            var enumConverter = new StringEnumConverter { AllowIntegerValues = false };
+            serializingSettings.Converters.Add(enumConverter);
+
+            return serializingSettings;
         }
 
         /// <summary>
@@ -116,12 +135,35 @@ namespace Arcus.Messaging.Health.Tcp
                     string clientId = client.Client?.RemoteEndPoint?.ToString() ?? String.Empty;
                     _logger.LogInformation("Return '{Status}' health report to client {ClientId}", report.Status, clientId);
 
-                    byte[] response = _tcpListenerOptions.ReportSerializer(report);
+                    byte[] response = SerializeHealthReport(report);
                     clientStream.Write(response, 0, response.Length);
 
                     clientStream.Close();
                     client.Close();
                 }
+            }
+        }
+
+        private byte[] SerializeHealthReport(HealthReport healthReport)
+        {
+            IHealthReportSerializer reportSerializer = _tcpListenerOptions.HealthReportSerializer;
+            if (reportSerializer is null)
+            {
+                string json = JsonConvert.SerializeObject(healthReport, SerializationSettings);
+                byte[] response = Encoding.UTF8.GetBytes(json);
+
+                return response;
+            }
+            else
+            {
+                byte[] response = reportSerializer.Serialize(healthReport);
+                if (response is null)
+                {
+                    _logger.LogWarning("The custom HealthReport serializer {CustomSerializer}' returned 'null' when serializing the report", reportSerializer.GetType().Name);
+                    return Array.Empty<byte>();
+                }
+
+                return response;
             }
         }
 
