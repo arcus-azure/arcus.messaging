@@ -16,7 +16,7 @@ using Newtonsoft.Json.Converters;
 namespace Arcus.Messaging.Health.Tcp
 {
     /// <summary>
-    /// Representing a TCP server as a background process to expose an endpoint where the <see cref="HealthReport"/> is being broadcasted.
+    /// Representing a TCP listener as a background process to expose an endpoint where the <see cref="HealthReport"/> is being broadcasted.
     /// </summary>
     public class TcpHealthListener : BackgroundService
     {
