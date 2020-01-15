@@ -47,7 +47,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Service Bus namespace that contains the entity
         /// </summary>
-        public string Namespace { get; private set; }
+        protected string Namespace { get; private set; }
 
         /// <inheritdoc />
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -187,17 +187,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             return messageReceiver;
         }
 
-        private MessageReceiver CreateReceiver(ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder, string entityName, string subscriptionName)
+        private static MessageReceiver CreateReceiver(ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder, string entityName, string subscriptionName)
         {
-            EntityPath = entityName;
+            var entityPath = entityName;
 
             if (string.IsNullOrWhiteSpace(subscriptionName) == false)
             {
-                EntityPath = $"{EntityPath}/subscriptions/{subscriptionName}";
+                entityPath = $"{entityPath}/subscriptions/{subscriptionName}";
             }
 
             var connectionString = serviceBusConnectionStringBuilder.GetNamespaceConnectionString();
-            return new MessageReceiver(connectionString, EntityPath);
+            return new MessageReceiver(connectionString, entityPath);
         }
 
         private void ConfigurePlugins()

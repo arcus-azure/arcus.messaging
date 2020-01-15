@@ -32,7 +32,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <summary>
         ///     Entity path that is being processed
         /// </summary>
-        protected string EntityPath { get; set; }
+        protected string EntityPath { get; private set; }
 
         /// <summary>
         ///     Logger to write telemetry to
@@ -117,7 +117,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <remarks>If no encoding was specified, UTF-8 will be used by default</remarks>
         /// <param name="messageContext">Context concerning the message</param>
         /// <returns>Encoding that was used for the message body</returns>
-        protected Encoding DetermineMessageEncoding(MessageContext messageContext)
+        protected virtual Encoding DetermineMessageEncoding(MessageContext messageContext)
         {
             if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
             {
@@ -154,7 +154,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="entityPath">Entity path that is being processed</param>
         protected void RegisterClientInformation(string clientId, string entityPath)
         {
-            Guard.NotNullOrWhitespace(clientId,nameof(clientId));
+            Guard.NotNullOrWhitespace(clientId, nameof(clientId));
 
             ClientId = clientId;
             EntityPath = entityPath;
