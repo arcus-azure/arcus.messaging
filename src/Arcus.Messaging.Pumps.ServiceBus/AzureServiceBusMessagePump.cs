@@ -14,12 +14,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.ServiceBus
 {
+    /// <summary>
+    ///     Message pump for processing messages on an Azure Service Bus entity
+    /// </summary>
+    /// <typeparam name="TMessage">Type of expected message payload</typeparam>
     public abstract class AzureServiceBusMessagePump<TMessage> : MessagePump<TMessage, AzureServiceBusMessageContext>
     {
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
         private readonly MessageHandlerOptions _messageHandlerOptions;
-        private readonly AzureServiceBusMessagePumpSettings _messagePumpSettings;
 
         /// <summary>
         ///     Constructor
@@ -31,14 +34,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ILogger logger)
             : base(configuration, serviceProvider, logger)
         {
-            _messagePumpSettings = serviceProvider.GetRequiredService<AzureServiceBusMessagePumpSettings>();
-            _messageHandlerOptions = DetermineMessageHandlerOptions(_messagePumpSettings);
+            Settings = serviceProvider.GetRequiredService<AzureServiceBusMessagePumpSettings>();
+
+            _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
         }
 
         /// <summary>
         ///     Path of the entity to process
         /// </summary>
-        public string EntityPath { get; private set; }
+        protected AzureServiceBusMessagePumpSettings Settings { get; }
 
         /// <summary>
         ///     Service Bus namespace that contains the entity
@@ -50,7 +54,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             try
             {
-                _messageReceiver = await CreateMessageReceiverAsync(_messagePumpSettings);
+                _messageReceiver = await CreateMessageReceiverAsync(Settings);
 
                 Logger.LogInformation("Starting message pump on entity path '{EntityPath}' in namespace '{Namespace}'",
                     EntityPath, Namespace);
