@@ -35,10 +35,30 @@ public void ConfigureServices(IServiceCollection services)
 
 ## Configuration
 
-To make the TCP health check fully functional, you'll  require some configuration values. 
+The TCP probe allows several additional configuration options.
 
-| Configuration key   | Usage        | Type  | Description                                                         |
-| ------------------- | ------------ | ----- | ------------------------------------------------------------------- |
-| `ARCUS_HEALTH_PORT` | **required** | `int` | The TCP port on which the health report is exposed.                 |
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    // Add TCP health probe with or whitout extra health checks.
+    services.AddTcpHealthProbes(
+        configureTcpListenerOptions: options =>
+        {
+            // Configure the configuration key on which the health report is exposed.
+            options.TcpPortConfigurationKey = "MyConfigurationKey";
+
+            // Configure how the health report should be serialized.
+            options.HealthReportSerializer = new MyHealthReportSerializer();
+        });
+}
+
+public class MyHealthReportSerializer : IHealthReportSerializer
+{
+    public byte[] Serialize(HealthReport healthReport)
+    {
+        return Array.Empty<byte>();
+	}
+}
+```
 
 [&larr; back](/)
