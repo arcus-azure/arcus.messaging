@@ -8,7 +8,7 @@ namespace Arcus.Messaging.Health.Tcp
     /// </summary>
     public class TcpHealthListenerOptions
     {
-        private string _tcpHealthPort = "ARCUS_HEALTH_PORT";
+        private string _tcpHealthPort;
 
         /// <summary>
         /// Gets or sets the function that serializes the <see cref="HealthReport"/> to a series of bytes.
