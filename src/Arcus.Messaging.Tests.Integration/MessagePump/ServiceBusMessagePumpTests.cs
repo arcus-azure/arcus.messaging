@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Arcus.EventGrid.Parsers;
@@ -77,8 +76,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Assert.NotEmpty(receivedEvent);
             var deserializedEventGridMessage = EventGridParser.Parse<OrderCreatedEvent>(receivedEvent);
             Assert.NotNull(deserializedEventGridMessage);
-            Assert.Single(deserializedEventGridMessage.Events);
-            var orderCreatedEvent = deserializedEventGridMessage.Events.SingleOrDefault();
+            var orderCreatedEvent = Assert.Single(deserializedEventGridMessage.Events);
             var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
             Assert.NotNull(orderCreatedEventData);
             Assert.NotNull(orderCreatedEventData.CorrelationInfo);
