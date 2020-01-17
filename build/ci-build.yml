@@ -112,14 +112,14 @@ stages:
               projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Queue'
               imageName: '$(Images.ServiceBus.Queue)'
               imageTag: $(Build.BuildId)
-              healthPort: $(Arcus_Health_Port)
+              healthPort: $(Arcus.Health.Port)
               connectionString: '$(Arcus.ServiceBus.ConnectionStringWithQueue)'
           - template: templates/build-and-run-worker-container.yml
             parameters:
               projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Topic'
               imageName: '$(Images.ServiceBus.Topic)'
               imageTag: $(Build.BuildId)
-              healthPort: $(Arcus_Health_Port)
+              healthPort: $(Arcus.Health.Port)
               connectionString: '$(Arcus.ServiceBus.ConnectionStringWithTopic)'
           - template: test/run-integration-tests.yml@templates
             parameters:
