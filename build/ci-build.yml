@@ -35,8 +35,6 @@ variables:
   - group: 'Build Configuration'
   - name: 'Project'
     value: 'Arcus.Messaging'
-  - name: 'Arcus.Health.Port'
-    value: '42063'
   - name: 'Arcus.TestInfra.EventGrid.Topic.Uri'
     value: 'https://arcus-event-grid-dev-we-integration-tests.westeurope-1.eventgrid.azure.net/api/events'
   - name: 'Arcus.TestInfra.ServiceBus.Topic.Name'
@@ -96,6 +94,10 @@ stages:
       value: 'workers-service-bus-queue'
     - name: 'Images.ServiceBus.Topic'
       value: 'workers-service-bus-topic'
+    - name: 'Arcus.Health.Port.Queue'
+      value: '42063'
+    - name: 'Arcus.Health.Port.Topic'
+      value: '42064'
     jobs:
       - job: IntegrationTests
         displayName: 'Run integration tests'
@@ -113,7 +115,7 @@ stages:
               containerName: '$(Images.ServiceBus.Queue)'
               imageName: '$(Images.ServiceBus.Queue)'
               imageTag: $(Build.BuildId)
-              healthPort: $(Arcus.Health.Port)
+              healthPort: $(Arcus.Health.Port.Queue)
               connectionString: '$(Arcus.ServiceBus.ConnectionStringWithQueue)'
           - template: templates/build-and-run-worker-container.yml
             parameters:
@@ -121,7 +123,7 @@ stages:
               containerName: '$(Images.ServiceBus.Topic)'
               imageName: '$(Images.ServiceBus.Topic)'
               imageTag: $(Build.BuildId)
-              healthPort: $(Arcus.Health.Port)
+              healthPort: $(Arcus.Health.Port.Topic)
               connectionString: '$(Arcus.ServiceBus.ConnectionStringWithTopic)'
           - template: test/run-integration-tests.yml@templates
             parameters:
