@@ -96,7 +96,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     + "Please configure such an implementation (ex. in the Startup) of your application");
             }
 
-            return await _getConnectionStringFromSecretFunc(userDefinedSecretProvider);
+            var getConnectionStringTask = _getConnectionStringFromSecretFunc(userDefinedSecretProvider);
+            if (getConnectionStringTask == null)
+            {
+                throw new InvalidOperationException("Get connection string function return a task that is null.");
+            }
+
+            return await getConnectionStringTask;
         }
     }
 }
