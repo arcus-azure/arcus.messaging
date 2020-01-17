@@ -85,6 +85,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
 
+            if (_messageReceiver == null)
+            {
+                throw new InvalidOperationException("Message receiver is not initialized yet.");
+            }
+
             await _messageReceiver.CompleteAsync(lockToken);
         }
 
@@ -100,6 +105,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             IDictionary<string, object> messageProperties = null)
         {
             Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
+
+            if (_messageReceiver == null)
+            {
+                throw new InvalidOperationException("Message receiver is not initialized yet.");
+            }
 
             await _messageReceiver.AbandonAsync(lockToken, messageProperties);
         }
@@ -117,6 +127,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
 
+            if (_messageReceiver == null)
+            {
+                throw new InvalidOperationException("Message receiver is not initialized yet.");
+            }
+
             await _messageReceiver.DeadLetterAsync(lockToken, messageProperties);
         }
 
@@ -132,6 +147,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         protected virtual async Task DeadletterMessageAsync(string lockToken, string reason, string errorDescription)
         {
             Guard.NotNullOrEmpty(lockToken, nameof(lockToken));
+
+            if (_messageReceiver == null)
+            {
+                throw new InvalidOperationException("Message receiver is not initialized yet.");
+            }
 
             await _messageReceiver.DeadLetterAsync(lockToken, reason, errorDescription);
         }
