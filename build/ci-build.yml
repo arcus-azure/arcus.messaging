@@ -110,6 +110,7 @@ stages:
           - template: templates/build-and-run-worker-container.yml
             parameters:
               projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Queue'
+              containerName: '$(Images.ServiceBus.Queue)'
               imageName: '$(Images.ServiceBus.Queue)'
               imageTag: $(Build.BuildId)
               healthPort: $(Arcus.Health.Port)
@@ -117,6 +118,7 @@ stages:
           - template: templates/build-and-run-worker-container.yml
             parameters:
               projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Topic'
+              containerName: '$(Images.ServiceBus.Topic)'
               imageName: '$(Images.ServiceBus.Topic)'
               imageTag: $(Build.BuildId)
               healthPort: $(Arcus.Health.Port)

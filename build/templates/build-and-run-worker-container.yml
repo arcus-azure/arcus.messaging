@@ -1,7 +1,7 @@
 parameters:
-  containerName: 'Arcus.Messaging.Tests.Worker'
-  projectName: 'Arcus.Messaging.Tests.Worker'
-  imageName: 'Arcus.Messaging.Tests.Worker'
+  containerName: ''
+  projectName: ''
+  imageName: ''
   imageTag: ''
   healthPort: ''
   connectionString: ''
