@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.EventGrid.Publishing;
 using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -16,16 +16,12 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
     {
         private readonly IEventGridPublisher _eventGridPublisher;
 
-        public OrdersMessagePump(IConfiguration configuration, IServiceProvider serviceProvider, ILogger<OrdersMessagePump> logger)
+        public OrdersMessagePump(IEventGridPublisher eventGridPublisher, IConfiguration configuration, IServiceProvider serviceProvider, ILogger<OrdersMessagePump> logger)
             : base(configuration, serviceProvider, logger)
         {
-            var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
-            var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
+            Guard.NotNull(eventGridPublisher, nameof(eventGridPublisher));
 
-            _eventGridPublisher = EventGridPublisherBuilder
-                .ForTopic(eventGridTopic)
-                .UsingAuthenticationKey(eventGridKey)
-                .Build();
+            _eventGridPublisher = eventGridPublisher;
         }
 
         protected override async Task ProcessMessageAsync(Order orderMessage, AzureServiceBusMessageContext messageContext, MessageCorrelationInfo correlationInfo, CancellationToken cancellationToken)
