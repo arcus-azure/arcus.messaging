@@ -9,50 +9,58 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 namespace Arcus.Messaging.Health.Tcp
 {
     /// <summary>
-    /// Representing a TCP server as a background process to expose an endpoint where the <see cref="HealthReport"/> is being broadcasted.
+    /// Representing a TCP listener as a background process to expose an endpoint where the <see cref="HealthReport"/> is being broadcasted.
     /// </summary>
     public class TcpHealthListener : BackgroundService
     {
-        private const string TcpHealthPort = "ARCUS_HEALTH_PORT";
-
         private readonly HealthCheckService _healthService;
         private readonly TcpListener _listener;
+        private readonly TcpHealthListenerOptions _tcpListenerOptions;
         private readonly ILogger<TcpHealthListener> _logger;
-        private readonly JsonSerializerSettings _serializerSettings;
+
+        private static readonly JsonSerializerSettings SerializationSettings = CreateDefaultSerializerSettings();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
         /// </summary>
-        /// <param name="configuration">The configuration to control the hosting settings of the TCP server.</param>
+        /// <param name="configuration">The key-value application configuration properties.</param>
+        /// <param name="tcpListenerOptions">The additional options to configure the TCP listener.</param>
         /// <param name="healthService">The service to retrieve the current health of the application.</param>
-        /// <param name="logger">The logging implementation to write diagnostic messages during the running of the TCP server.</param>
-        public TcpHealthListener(IConfiguration configuration, HealthCheckService healthService, ILogger<TcpHealthListener> logger)
+        /// <param name="logger">The logging implementation to write diagnostic messages during the running of the TCP listener.</param>
+        public TcpHealthListener(
+            IConfiguration configuration,
+            IOptions<TcpHealthListenerOptions> tcpListenerOptions,
+            HealthCheckService healthService, 
+            ILogger<TcpHealthListener> logger)
         {
-            Guard.NotNull(configuration, nameof(configuration), "Requires a configuration implementation to retrieve hosting information for the TCP server");
+            Guard.NotNull(tcpListenerOptions, nameof(tcpListenerOptions), "Requires a set of TCP listener options to correctly run the TCP listener");
             Guard.NotNull(healthService, nameof(healthService), "Requires a health service to retrieve the current health status of the application");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger implementation to write diagnostic messages during the running of the TCP server");
+            Guard.NotNull(logger, nameof(logger), "Requires a logger implementation to write diagnostic messages during the running of the TCP listener");
+            Guard.For<ArgumentException>(() => tcpListenerOptions.Value is null, "Requires a set of TCP listener options to correctly run the TCP listener");
 
+            _tcpListenerOptions = tcpListenerOptions.Value;
             _healthService = healthService;
             _logger = logger;
 
-            Port = GetConfiguredTcpPort(configuration);
+            Port = GetTcpHealthPort(configuration, _tcpListenerOptions.TcpPortConfigurationKey);
             _listener = new TcpListener(IPAddress.Any, Port);
-            _serializerSettings = CreateDefaultSerializerSettings();
         }
 
-        private static int GetConfiguredTcpPort(IConfiguration configuration)
+        private static int GetTcpHealthPort(IConfiguration configuration, string tcpHealthPortKey)
         {
-            string tcpPortString = configuration[TcpHealthPort];
-            var tcpPort = 0;
-            Guard.For<ArgumentException>(
-                () => !Int32.TryParse(tcpPortString, out tcpPort), 
-                $"Requires a configuration implementation with a '{TcpHealthPort}' key containing a TCP port number");
+            string tcpPortString = configuration[tcpHealthPortKey];
+            if (!Int32.TryParse(tcpPortString, out int tcpPort))
+            {
+                throw new ArithmeticException(
+                    $"Requires a configuration implementation with a '{tcpHealthPortKey}' key containing a TCP port number");
+            }
 
             return tcpPort;
         }
@@ -127,13 +135,35 @@ namespace Arcus.Messaging.Health.Tcp
                     string clientId = client.Client?.RemoteEndPoint?.ToString() ?? String.Empty;
                     _logger.LogInformation("Return '{Status}' health report to client {ClientId}", report.Status, clientId);
 
-                    string serialized = JsonConvert.SerializeObject(report, _serializerSettings);
-                    byte[] response = Encoding.UTF8.GetBytes(serialized);
+                    byte[] response = SerializeHealthReport(report);
                     clientStream.Write(response, 0, response.Length);
 
                     clientStream.Close();
                     client.Close();
                 }
+            }
+        }
+
+        private byte[] SerializeHealthReport(HealthReport healthReport)
+        {
+            IHealthReportSerializer reportSerializer = _tcpListenerOptions.Serializer;
+            if (reportSerializer is null)
+            {
+                string json = JsonConvert.SerializeObject(healthReport, SerializationSettings);
+                byte[] response = Encoding.UTF8.GetBytes(json);
+
+                return response;
+            }
+            else
+            {
+                byte[] response = reportSerializer.Serialize(healthReport);
+                if (response is null)
+                {
+                    _logger.LogWarning("The custom HealthReport serializer {CustomSerializer}' returned 'null' when serializing the report", reportSerializer.GetType().Name);
+                    return Array.Empty<byte>();
+                }
+
+                return response;
             }
         }
 

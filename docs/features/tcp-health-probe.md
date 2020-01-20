@@ -23,22 +23,45 @@ To include the TCP endpoint, add the following line of code in the `Startup.Conf
 public void ConfigureServices(IServiceCollection services)
 {
     // Add TCP health probe without extra health checks.
-    services.AddTcpHealthProbes();
+    services.AddTcpHealthProbes("MyConfigurationKeyToTcpHealthPort");
 
     // Or, add your extra health checks in a configuration delegate.
-    services.AddTcpHealthProbes(healthBuilder => 
-    {
-        healthBuilder.AddCheck("Example", () => HealthCheckResult.Healthy("Example is OK!"), tags: new[] { "example" })
-    });
+    services.AddTcpHealthProbes(
+        "MyConfigurationkeyToTcpHealthPort",
+        configureHealthChecks: healthBuilder => 
+        {
+            healthBuilder.AddCheck("Example", () => HealthCheckResult.Healthy("Example is OK!"), tags: new[] { "example" })
+        });
 }
 ```
 
 ## Configuration
 
-To make the TCP health check fully functional, you'll  require some configuration values. 
+The TCP probe allows several additional configuration options.
 
-| Configuration key   | Usage        | Type  | Description                                                         |
-| ------------------- | ------------ | ----- | ------------------------------------------------------------------- |
-| `ARCUS_HEALTH_PORT` | **required** | `int` | The TCP port on which the health report is exposed.                 |
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    // Add TCP health probe with or whitout extra health checks.
+    services.AddTcpHealthProbes(
+        "MyConfigurationKeyToTcpHealthPort",
+        configureTcpListenerOptions: options =>
+        {
+            // Configure the configuration key on which the health report is exposed.
+            options.TcpPortConfigurationKey = "MyConfigurationKey";
+
+            // Configure how the health report should be serialized.
+            options.HealthReportSerializer = new MyHealthReportSerializer();
+        });
+}
+
+public class MyHealthReportSerializer : IHealthReportSerializer
+{
+    public byte[] Serialize(HealthReport healthReport)
+    {
+        return Array.Empty<byte>();
+	}
+}
+```
 
 [&larr; back](/)
