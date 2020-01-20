@@ -5,6 +5,9 @@ using GuardNet;
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
 {
+    /// <summary>
+    /// Extensions on the <see cref="IServiceCollection"/> to provide dev-friendly approach to add TCP health check service.
+    /// </summary>
     // ReSharper disable once InconsistentNaming
     public static class IServiceCollectionExtensions
     {
@@ -15,10 +18,10 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     In order for the TCP health probes to work, ASP.NET Core Health Checks must be configured. You can configure
         ///     it here or do it yourself as well.
         /// </remarks>
-        /// <param name="services">Collection of services to use in the application</param>
-        /// <param name="tcpConfigurationKey">The TCP health port on which the health report is exposed.</param>
-        /// <param name="configureHealthChecks">Capability to configure the required health checks to expose, if required</param>
-        /// <param name="configureTcpListenerOptions">Capability to configure additional options how the <see cref="TcpHealthListener"/> works, if required</param>
+        /// <param name="services">The collection of services to use in the application</param>
+        /// <param name="tcpConfigurationKey">The configuration key that defines TCP health port on which the health report is exposed.</param>
+        /// <param name="configureHealthChecks">The capability to configure the required health checks to expose, if required</param>
+        /// <param name="configureTcpListenerOptions">The capability to configure additional options how the <see cref="TcpHealthListener"/> works, if required</param>
         /// <returns>Collection of services to use in the application</returns>
         public static IServiceCollection AddTcpHealthProbes(
             this IServiceCollection services,

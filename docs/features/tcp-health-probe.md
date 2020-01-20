@@ -23,13 +23,15 @@ To include the TCP endpoint, add the following line of code in the `Startup.Conf
 public void ConfigureServices(IServiceCollection services)
 {
     // Add TCP health probe without extra health checks.
-    services.AddTcpHealthProbes();
+    services.AddTcpHealthProbes("MyConfigurationKeyToTcpHealthPort");
 
     // Or, add your extra health checks in a configuration delegate.
-    services.AddTcpHealthProbes(healthBuilder => 
-    {
-        healthBuilder.AddCheck("Example", () => HealthCheckResult.Healthy("Example is OK!"), tags: new[] { "example" })
-    });
+    services.AddTcpHealthProbes(
+        "MyConfigurationkeyToTcpHealthPort",
+        configureHealthChecks: healthBuilder => 
+        {
+            healthBuilder.AddCheck("Example", () => HealthCheckResult.Healthy("Example is OK!"), tags: new[] { "example" })
+        });
 }
 ```
 
@@ -42,6 +44,7 @@ public void ConfigureServices(IServiceCollection services)
 {
     // Add TCP health probe with or whitout extra health checks.
     services.AddTcpHealthProbes(
+        "MyConfigurationKeyToTcpHealthPort",
         configureTcpListenerOptions: options =>
         {
             // Configure the configuration key on which the health report is exposed.

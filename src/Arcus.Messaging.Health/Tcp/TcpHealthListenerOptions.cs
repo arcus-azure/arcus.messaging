@@ -13,7 +13,7 @@ namespace Arcus.Messaging.Health.Tcp
         /// <summary>
         /// Gets or sets the function that serializes the <see cref="HealthReport"/> to a series of bytes.
         /// </summary>
-        public IHealthReportSerializer HealthReportSerializer { get; set; }
+        public IHealthReportSerializer Serializer { get; set; }
 
         /// <summary>
         /// Gets or sets the TCP health port on which the health report is exposed.

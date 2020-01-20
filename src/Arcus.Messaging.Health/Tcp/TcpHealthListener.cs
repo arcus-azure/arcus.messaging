@@ -146,7 +146,7 @@ namespace Arcus.Messaging.Health.Tcp
 
         private byte[] SerializeHealthReport(HealthReport healthReport)
         {
-            IHealthReportSerializer reportSerializer = _tcpListenerOptions.HealthReportSerializer;
+            IHealthReportSerializer reportSerializer = _tcpListenerOptions.Serializer;
             if (reportSerializer is null)
             {
                 string json = JsonConvert.SerializeObject(healthReport, SerializationSettings);
