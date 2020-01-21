@@ -32,10 +32,6 @@ variables:
   - group: 'Build Configuration'
   - name: 'Project'
     value: 'Arcus.Messaging'
-  - name: 'Arcus.TestInfra.EventGrid.Topic.Uri'
-    value: 'https://arcus-event-grid-dev-we-integration-tests.westeurope-1.eventgrid.azure.net/api/events'
-  - name: 'Arcus.TestInfra.ServiceBus.Topic.Name'
-    value: 'received-event-grid-events' # We are re-using the Event Grid integration infrastructure
 
 stages:
   - stage: Build
