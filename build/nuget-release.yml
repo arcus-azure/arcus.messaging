@@ -131,7 +131,7 @@ stages:
                 ```shell
                 PM > Install-Package Arcus.Messaging.Health --Version $(Build.BuildNumber)
                 ```
-          - template: create-pre-release.yml@templates
+          - template: github/create-pre-release.yml@templates
             parameters:
               repositoryName: 'arcus-azure/arcus.messaging'
               releaseNotes: |
