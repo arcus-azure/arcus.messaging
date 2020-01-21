@@ -25,11 +25,8 @@ resources:
       endpoint: arcus-azure
 
 # 'Package.Version.ManualTrigger' is added as queue-time variable on build in Azure DevOps
-# 'Arcus.ServiceBus.ConnectionStringWithQueue' is added as secret variable on build in Azure DevOps
-# 'Arcus.ServiceBus.ConnectionStringWithTopic' is added as secret variable on build in Azure DevOps
-# 'Arcus.TestInfra.ServiceBus.Topic.ConnectionString' is added as secret variable on build in Azure DevOps
-# 'Arcus.TestInfra.EventGrid.Auth.Key' is added as secret variable on build in Azure DevOps
 variables:
+  - group: 'Arcus Messaging - Integration Testing'
   - group: 'Arcus - GitHub Package Registry'
   - group: 'Arcus Messaging - .NET'
   - group: 'Build Configuration'
