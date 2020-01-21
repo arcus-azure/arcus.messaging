@@ -1,8 +1,13 @@
 version: '3.4'
 
 services:
-  arcus.messaging.tests.worker:
-    image: arcusazure/azure-messaging-tests.worker
+  arcus.messaging.tests.workers.servicebus.queue:
+    image: arcusazure/arcus.messaging.tests.workers.servicebus.queue
     build:
       context: .
-      dockerfile: Arcus.Messaging.Tests.Worker/Dockerfile
+      dockerfile: Arcus.Messaging.Tests.Workers.ServiceBus.Queue/Dockerfile
+  arcus.messaging.tests.workers.servicebus.topic:
+    image: arcusazure/arcus.messaging.tests.workers.servicebus.topic
+    build:
+      context: .
+      dockerfile: Arcus.Messaging.Tests.Workers.ServiceBus.Topic/Dockerfile

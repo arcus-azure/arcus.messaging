@@ -17,9 +17,9 @@ variables:
   - group: 'Build Configuration'
   - name: 'Project'
     value: 'Arcus.Messaging'
-  - name: 'Arcus_Health_Port'
-    value: '42063'
-  # 'Package.Version' is added as queue-time variable on build in Azure DevOps
+# 'Package.Version' is added as queue-time variable on build in Azure DevOps
+# 'Arcus.ServiceBus.ConnectionStringWithQueue' is added as secret variable on build in Azure DevOps
+# 'Arcus.ServiceBus.ConnectionStringWithTopic' is added as secret variable on build in Azure DevOps
 
 stages:
   - stage: Build
@@ -67,6 +67,15 @@ stages:
     displayName: Integration Tests
     dependsOn: Build
     condition: succeeded()
+    variables:
+    - name: 'Images.ServiceBus.Queue'
+      value: 'workers-service-bus-queue'
+    - name: 'Images.ServiceBus.Topic'
+      value: 'workers-service-bus-topic'
+    - name: 'Arcus.Health.Port.Queue'
+      value: '42063'
+    - name: 'Arcus.Health.Port.Topic'
+      value: '42064'
     jobs:
       - job: IntegrationTests
         displayName: 'Run integration tests'
@@ -80,8 +89,20 @@ stages:
               path: '$(Build.SourcesDirectory)'
           - template: templates/build-and-run-worker-container.yml
             parameters:
+              projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Queue'
+              containerName: '$(Images.ServiceBus.Queue)'
+              imageName: '$(Images.ServiceBus.Queue)'
               imageTag: $(Build.BuildId)
-              healthPort: $(Arcus_Health_Port)
+              healthPort: $(Arcus.Health.Port.Queue)
+              connectionString: '$(Arcus.ServiceBus.ConnectionStringWithQueue)'
+          - template: templates/build-and-run-worker-container.yml
+            parameters:
+              projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Topic'
+              containerName: '$(Images.ServiceBus.Topic)'
+              imageName: '$(Images.ServiceBus.Topic)'
+              imageTag: $(Build.BuildId)
+              healthPort: $(Arcus.Health.Port.Topic)
+              connectionString: '$(Arcus.ServiceBus.ConnectionStringWithTopic)'
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
