@@ -330,4 +330,4 @@ ASALocalRun/
 .mfractor/
 
 # Custom
-src\Arcus.Messaging.Tests.Integration\appsettings.local.json
+*.local.json
