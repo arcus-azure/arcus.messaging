@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Security.Core;
 using GuardNet;
@@ -170,6 +173,55 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddSingleton(serviceProvider => new AzureServiceBusMessagePumpSettings(entityName, subscriptionName, getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, messagePumpOptions, serviceProvider));
             services.AddHostedService<TMessagePump>();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="TMessage"></typeparam>
+        /// <typeparam name="TMessageHandler"></typeparam>
+        /// <param name="services"></param>
+        /// <param name="messageHandlerPredicate"></param>
+        /// <returns></returns>
+        public static IServiceCollection WithMessagePumpHandler<TMessage, TMessageHandler>(
+            this IServiceCollection services,
+            Func<AzureServiceBusMessageContext, bool> messageHandlerPredicate)
+            where TMessageHandler : class, IMessageHandler<TMessage, AzureServiceBusMessageContext>
+        {
+            Guard.NotNull(messageHandlerPredicate, nameof(messageHandlerPredicate));
+
+            return WithMessagePumpHandler<TMessage, AzureServiceBusMessageContext, TMessageHandler>(services, messageHandlerPredicate);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="TMessage"></typeparam>
+        /// <typeparam name="TMessageContext"></typeparam>
+        /// <typeparam name="TMessageHandler"></typeparam>
+        /// <param name="services"></param>
+        /// <param name="messageHandlerPredicate"></param>
+        /// <returns></returns>
+        public static IServiceCollection WithMessagePumpHandler<TMessage, TMessageContext, TMessageHandler>(
+            this IServiceCollection services,
+            Func<TMessageContext, bool> messageHandlerPredicate)
+            where TMessageContext : MessageContext
+            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
+        {
+            Guard.NotNull(messageHandlerPredicate, nameof(messageHandlerPredicate));
+
+            services.AddSingleton<TMessageHandler>();
+            services.AddSingleton<Func<TMessageContext, IMessageHandler<TMessage, TMessageContext>>>(serviceProvider => messageContext =>
+            {
+                if (messageHandlerPredicate(messageContext))
+                {
+                    return serviceProvider.GetRequiredService<TMessageHandler>();
+                }
+
+                return null;
+            });
+
+            return services;
         }
     }
 }

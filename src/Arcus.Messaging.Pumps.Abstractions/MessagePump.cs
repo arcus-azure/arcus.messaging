@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -113,8 +116,29 @@ namespace Arcus.Messaging.Pumps.Abstractions
         ///     identifiers
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
-        protected abstract Task ProcessMessageAsync(TMessage message, TMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo, CancellationToken cancellationToken);
+        protected async Task ProcessMessageAsync(
+            TMessage message,
+            TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellationToken)
+        {
+            var messageHandlerResolvers = 
+                ServiceProvider.GetServices<Func<TMessageContext, IMessageHandler<TMessage, TMessageContext>>>();
+
+            IMessageHandler<TMessage, TMessageContext> messageHandler = 
+                messageHandlerResolvers.Select(resolver => resolver(messageContext)).
+                                        FirstOrDefault(handler => handler != null);
+
+            if (messageHandler == null)
+            {
+                throw new InvalidOperationException(
+                    $"Message pump cannot correctly process the '{typeof(TMessage).Name}' in the '{typeof(TMessageContext)}' "
+                    + $"because no '{nameof(IMessageHandler<TMessage, TMessageContext>)}' was registered in the dependency injection container. "
+                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
+            }
+
+            await messageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+        }
 
         /// <summary>
         ///     Determines the encoding used for a given message

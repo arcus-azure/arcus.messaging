@@ -1,4 +1,6 @@
 using Arcus.EventGrid.Publishing;
+using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,7 +37,9 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Topic
                             .UsingAuthenticationKey(eventGridKey)
                             .Build();
                     });
-                    services.AddServiceBusTopicMessagePump<OrdersMessagePump>("Receive-All", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"]);
+                    services.AddServiceBusTopicMessagePump<OrdersMessagePump>("Receive-All", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                            .WithMessagePumpHandler<Order, OrdersMessageHandler>(messageContext => true);
+
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });
     }
