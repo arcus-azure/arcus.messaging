@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Pumps.ServiceBus.Correlation;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
@@ -241,7 +242,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <returns>List of Service Bus plugins that will be used by the message pump</returns>
         protected virtual IEnumerable<ServiceBusPlugin> DefineServiceBusPlugins()
         {
-            return Enumerable.Empty<ServiceBusPlugin>();
+            return new[]
+            {
+                new MessageCorrelationServiceBusPlugin(ServiceProvider)
+            };
         }
 
         /// <summary>
@@ -272,16 +276,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                var operationId = DetermineOperationId(message.CorrelationId);
-                var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), operationId);
-
+                var correlationInfo = message.GetUserProperty<MessageCorrelationInfo>(MessageCorrelationServiceBusPlugin.CorrelationInfoUserProperty);
                 var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
                     message.UserProperties);
-
-                Logger.LogInformation(
-                    "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
-                    messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId,
-                    correlationInfo.CycleId);
 
                 // Deserialize the message
                 TMessage typedMessageBody = DeserializeJsonMessageBody(message.Body, messageContext);
