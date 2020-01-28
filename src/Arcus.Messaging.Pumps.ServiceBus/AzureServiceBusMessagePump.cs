@@ -18,7 +18,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     ///     Message pump for processing messages on an Azure Service Bus entity
     /// </summary>
     /// <typeparam name="TMessage">Type of expected message payload</typeparam>
-    public abstract class AzureServiceBusMessagePump<TMessage> : MessagePump<TMessage, AzureServiceBusMessageContext>
+    public class AzureServiceBusMessagePump<TMessage> : MessagePump<TMessage, AzureServiceBusMessageContext>
     {
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
