@@ -166,6 +166,25 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionName">Name of the subscription to process</param>
         /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="secretName">Name of the secret to retrieve using your registered <see cref="ISecretProvider"/> implementation</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(this IServiceCollection services, string topicName, string subscriptionName, string secretName, Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+
+            AddServiceBusMessagePump<TMessagePump>(services, topicName, subscriptionName, getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName), configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        ///     Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <param name="topicName">Name of the topic to work with</param>
+        /// <param name="subscriptionName">Name of the subscription to process</param>
+        /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
         /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
         /// <returns>Collection of services to use in the application</returns>
