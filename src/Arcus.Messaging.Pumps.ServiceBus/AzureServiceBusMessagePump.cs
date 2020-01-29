@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
-using Arcus.Messaging.Pumps.ServiceBus.Correlation;
+using Arcus.Messaging.Pumps.ServiceBus.Extensions;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
@@ -242,10 +242,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <returns>List of Service Bus plugins that will be used by the message pump</returns>
         protected virtual IEnumerable<ServiceBusPlugin> DefineServiceBusPlugins()
         {
-            return new[]
-            {
-                new MessageCorrelationServiceBusPlugin(ServiceProvider)
-            };
+            return Enumerable.Empty<ServiceBusPlugin>();
         }
 
         /// <summary>
@@ -276,7 +273,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                var correlationInfo = message.GetUserProperty<MessageCorrelationInfo>(MessageCorrelationServiceBusPlugin.CorrelationInfoUserProperty);
+                MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
                 var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
                     message.UserProperties);
 
@@ -293,19 +290,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 await HandleReceiveExceptionAsync(ex);
             }
-        }
-
-        private string DetermineOperationId(string messageCorrelationId)
-        {
-            if (string.IsNullOrWhiteSpace(messageCorrelationId))
-            {
-                var generatedOperationId = Guid.NewGuid().ToString();
-                Logger.LogInformation("Generating operation id {OperationId} given no correlation id was found on the message", generatedOperationId);
-
-                return generatedOperationId;
-            }
-
-            return messageCorrelationId;
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
