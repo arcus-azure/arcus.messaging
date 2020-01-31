@@ -51,5 +51,64 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.Throws<InvalidCastException>(
                 () => serviceBusMessage.GetUserProperty<Uri>(key));
         }
+
+        [Fact]
+        public void GetMessageCorrelationInfo_WithCorrelationIdAndTransactionIdAsUserProperties_ReturnsCorrelationInfo()
+        {
+            // Arrange
+            string expectedOperationId = $"operation-{Guid.NewGuid()}";
+            string expectedTransactionId = $"transaction-{Guid.NewGuid()}";
+            var message = new Message
+            {
+                CorrelationId = expectedOperationId,
+                UserProperties = { [PropertyNames.TransactionId] = expectedTransactionId }
+            };
+            
+            // Act
+            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+
+            // Assert
+            Assert.NotNull(correlationInfo);
+            Assert.NotEmpty(correlationInfo.CycleId);
+            Assert.Equal(expectedOperationId, correlationInfo.OperationId);
+            Assert.Equal(expectedTransactionId, correlationInfo.TransactionId);
+        }
+
+        [Fact]
+        public void GetMessageCorrelationInfo_WithTransactionIdAsUserProperty_ReturnsCorrelationInfoWithGeneratedOperationId()
+        {
+            // Arrange
+            string expectedTransactionId = $"transaction-{Guid.NewGuid()}";
+            var message = new Message
+            {
+                UserProperties = { [PropertyNames.TransactionId] = expectedTransactionId }
+            };
+            
+            // Act
+            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+
+            // Assert
+            Assert.NotNull(correlationInfo);
+            Assert.NotEmpty(correlationInfo.CycleId);
+            Assert.NotEmpty(correlationInfo.OperationId);
+            Assert.Equal(expectedTransactionId, correlationInfo.TransactionId);
+        }
+
+        [Fact]
+        public void GetMessageCorrelationInfo_WithCorrelationId_ReturnsCorrelationInfoWithEmptyTransactionId()
+        {
+            // Arrange
+            string expectedOperationId = $"operation-{Guid.NewGuid()}";
+            var message = new Message { CorrelationId = expectedOperationId };
+            
+            // Act
+            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+
+            // Assert
+            Assert.NotNull(correlationInfo);
+            Assert.NotEmpty(correlationInfo.CycleId);
+            Assert.Equal(expectedOperationId, correlationInfo.OperationId);
+            Assert.Empty(correlationInfo.TransactionId);
+        }
     }
 }
