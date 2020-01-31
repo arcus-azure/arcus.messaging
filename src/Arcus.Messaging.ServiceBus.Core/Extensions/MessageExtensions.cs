@@ -34,7 +34,7 @@ namespace Microsoft.Azure.ServiceBus
         }
 
         /// <summary>
-        /// Append the <see cref="MessageCorrelationInfo"/> after the message is received.
+        /// Gets the correlation information for a given message.
         /// </summary>
         /// <param name="message">The received message.</param>
         public static MessageCorrelationInfo GetCorrelationInfo(this Message message)

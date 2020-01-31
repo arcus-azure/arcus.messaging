@@ -274,7 +274,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 if (String.IsNullOrEmpty(message.CorrelationId))
                 {
-                    Logger.LogInformation("Operation ID will be generated as no ID was found on the message");
+                    Logger.LogInformation("No operation ID was found on the message");
                 }
 
                 MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
