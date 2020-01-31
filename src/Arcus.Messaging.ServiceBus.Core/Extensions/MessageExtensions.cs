@@ -1,5 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Arcus.Messaging.Abstractions;
+using GuardNet;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Azure.ServiceBus
@@ -9,25 +13,57 @@ namespace Microsoft.Azure.ServiceBus
         /// <summary>
         ///     Gets the user property with a given <paramref name="key"/>
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="message"></param>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public static T GetUserProperty<T>(this Message message, string key)
+        /// <typeparam name="TProperty">The type of the value of the property.</typeparam>
+        /// <param name="message">The message to get the user property from.</param>
+        /// <param name="key">The key in the dictionary to look up the user property.</param>
+        public static TProperty GetUserProperty<TProperty>(this Message message, string key)
         {
             if (message.UserProperties.TryGetValue(key, out object value))
             {
-                if (value is T typed)
+                if (value is TProperty typed)
                 {
                     return typed;
                 }
 
                 throw new InvalidCastException(
-                    $"The found user property with the key: '{key}' in the Service Bus message was not of the expected type: '{typeof(T).Name}'");
+                    $"The found user property with the key: '{key}' in the Service Bus message was not of the expected type: '{typeof(TProperty).Name}'");
             }
 
             throw new KeyNotFoundException(
                 $"No user property with the key: '{key}' was found in the Service Bus message");
+        }
+
+        /// <summary>
+        /// Append the <see cref="MessageCorrelationInfo"/> after the message is received.
+        /// </summary>
+        /// <param name="message">The received message.</param>
+        public static MessageCorrelationInfo GetCorrelationInfo(this Message message)
+        {
+            Guard.NotNull(message, nameof(message));
+
+            string transactionId = DetermineTransactionId(message);
+            string operationId = DetermineOperationId(message.CorrelationId);
+
+            var messageCorrelationInfo = new MessageCorrelationInfo(transactionId, operationId);
+            return messageCorrelationInfo;
+        }
+
+        private static string DetermineOperationId(string messageCorrelationId)
+        {
+            if (String.IsNullOrWhiteSpace(messageCorrelationId))
+            {
+                var generatedOperationId = Guid.NewGuid().ToString();
+                return generatedOperationId;
+            }
+
+            return messageCorrelationId;
+        }
+
+        private static string DetermineTransactionId(Message message)
+        {
+            return message.UserProperties.TryGetValue(PropertyNames.TransactionId, out object transactionId)
+                ? transactionId.ToString()
+                : string.Empty;
         }
     }
 }

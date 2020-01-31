@@ -273,7 +273,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
+                if (String.IsNullOrEmpty(message.CorrelationId))
+                {
+                    Logger.LogInformation("Operation ID will be generated as no ID was found on the message");
+                }
+
                 MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+                Logger.LogInformation(
+                    "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
+                    message.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
+                
                 var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
                     message.UserProperties);
 
