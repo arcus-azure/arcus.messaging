@@ -8,6 +8,7 @@ using Arcus.Messaging.Pumps.Abstractions;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
+using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -23,6 +24,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
         private readonly MessageHandlerOptions _messageHandlerOptions;
+        private readonly string _subscriptionName;
 
         /// <summary>
         ///     Constructor
@@ -35,7 +37,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             : base(configuration, serviceProvider, logger)
         {
             Settings = serviceProvider.GetRequiredService<AzureServiceBusMessagePumpSettings>();
+            JobId = Settings.Options.JobId;
 
+            _subscriptionName = $"{Settings.SubscriptionPrefix}:{JobId}";
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
         }
 
@@ -48,6 +52,42 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         ///     Service Bus namespace that contains the entity
         /// </summary>
         protected string Namespace { get; private set; }
+
+        /// <summary>
+        /// Gets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
+        /// </summary>
+        public string JobId { get; }
+
+        /// <summary>
+        /// Triggered when the application host is ready to start the service.
+        /// </summary>
+        /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
+        public override async Task StartAsync(CancellationToken cancellationToken)
+        {
+            if (Settings.Options.IncludeTopicSubscription)
+            {
+                ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
+
+                Logger.LogTrace("[Job: {JobId}] Creating subscription '{SubscriptionName}' on topic '{TopicPath}'...", JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+                var subscriptionDescription = new SubscriptionDescription(serviceBusConnectionString.EntityPath, _subscriptionName)
+                {
+                    AutoDeleteOnIdle = TimeSpan.FromHours(1),
+                    MaxDeliveryCount = 3,
+                    UserMetadata = $"Subscription created by Arcus job: '{JobId}' to process inbound CloudEvents."
+                };
+            
+                var ruleDescription = new RuleDescription("Accept-All", new TrueFilter());
+
+                var serviceBusClient = new ManagementClient(serviceBusConnectionString);
+                await serviceBusClient.CreateSubscriptionAsync(subscriptionDescription, ruleDescription, cancellationToken)
+                                      .ConfigureAwait(continueOnCapturedContext: false);
+
+                Logger.LogTrace("[Job: {JobId}] Subscription '{SubscriptionName}' created on topic '{TopicPath}'", JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+                await serviceBusClient.CloseAsync().ConfigureAwait(continueOnCapturedContext: false);
+            }
+
+            await base.StartAsync(cancellationToken);
+        }
 
         /// <inheritdoc />
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -189,12 +229,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     throw new ArgumentException("No entity name was specified while the connection string is scoped to the namespace");
                 }
 
-                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, messagePumpSettings.EntityName, messagePumpSettings.SubscriptionName);
+                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, messagePumpSettings.EntityName, _subscriptionName);
             }
             else
             {
                 // Connection string includes the entity so we're using that instead of the message pump settings
-                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, serviceBusConnectionStringBuilder.EntityPath, messagePumpSettings.SubscriptionName);
+                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, serviceBusConnectionStringBuilder.EntityPath, _subscriptionName);
             }
 
             Namespace = messageReceiver.ServiceBusConnection?.Endpoint?.Host;
@@ -250,8 +290,29 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
+            if (Settings.Options.IncludeTopicSubscription)
+            {
+                ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
+
+                Logger.LogTrace("[Job: {JobId}] Deleting subscription '{SubscriptionName}' on topic '{Path}'...", JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+                var serviceBusClient = new ManagementClient(serviceBusConnectionString);
+                await serviceBusClient.DeleteSubscriptionAsync(serviceBusConnectionString.EntityPath, _subscriptionName, cancellationToken);
+                Logger.LogTrace("[Job: {JobId}] Subscription '{SubscriptionName}' deleted on topic '{Path}'", JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+                await serviceBusClient.CloseAsync().ConfigureAwait(continueOnCapturedContext: false);
+            }
+
             await base.StopAsync(cancellationToken);
             _isHostShuttingDown = true;
+        }
+
+        private async Task<ServiceBusConnectionStringBuilder> GetServiceBusConnectionStringAsync()
+        {
+            Logger.LogTrace("[Job: {JobId}] Getting Azure Service Bus Topic connection string on topic '{TopicPath}'...", JobId, Settings.EntityName);
+            string connectionString = await Settings.GetConnectionStringAsync();
+            var serviceBusConnectionBuilder = new ServiceBusConnectionStringBuilder(connectionString);
+            Logger.LogTrace("[JobId: {JobId}] Got Azure Service Bus Topic connection string on topic '{TopicPath}'", JobId, Settings.EntityName);
+
+            return serviceBusConnectionBuilder;
         }
 
         private async Task HandleMessageAsync(Message message, CancellationToken cancellationToken)
