@@ -66,27 +66,37 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             if (Settings.Options.IncludeTopicSubscription)
             {
-                ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
-
-                Logger.LogTrace("[Job: {JobId}] Creating subscription '{SubscriptionName}' on topic '{TopicPath}'...", JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
-                var subscriptionDescription = new SubscriptionDescription(serviceBusConnectionString.EntityPath, _subscriptionName)
-                {
-                    AutoDeleteOnIdle = TimeSpan.FromHours(1),
-                    MaxDeliveryCount = 3,
-                    UserMetadata = $"Subscription created by Arcus job: '{JobId}' to process inbound CloudEvents."
-                };
-            
-                var ruleDescription = new RuleDescription("Accept-All", new TrueFilter());
-
-                var serviceBusClient = new ManagementClient(serviceBusConnectionString);
-                await serviceBusClient.CreateSubscriptionAsync(subscriptionDescription, ruleDescription, cancellationToken)
-                                      .ConfigureAwait(continueOnCapturedContext: false);
-
-                Logger.LogTrace("[Job: {JobId}] Subscription '{SubscriptionName}' created on topic '{TopicPath}'", JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
-                await serviceBusClient.CloseAsync().ConfigureAwait(continueOnCapturedContext: false);
+                await CreateTopicSubscription(cancellationToken);
             }
 
             await base.StartAsync(cancellationToken);
+        }
+
+        private async Task CreateTopicSubscription(CancellationToken cancellationToken)
+        {
+            ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
+
+            Logger.LogTrace(
+                "[Job: {JobId}] Creating subscription '{SubscriptionName}' on topic '{TopicPath}'...",
+                JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+            
+            var subscriptionDescription = new SubscriptionDescription(serviceBusConnectionString.EntityPath, _subscriptionName)
+            {
+                AutoDeleteOnIdle = TimeSpan.FromHours(1),
+                MaxDeliveryCount = 3,
+                UserMetadata = $"Subscription created by Arcus job: '{JobId}' to process inbound CloudEvents."
+            };
+
+            var ruleDescription = new RuleDescription("Accept-All", new TrueFilter());
+            var serviceBusClient = new ManagementClient(serviceBusConnectionString);
+            await serviceBusClient.CreateSubscriptionAsync(subscriptionDescription, ruleDescription, cancellationToken)
+                                  .ConfigureAwait(continueOnCapturedContext: false);
+
+            Logger.LogTrace(
+                "[Job: {JobId}] Subscription '{SubscriptionName}' created on topic '{TopicPath}'",
+                JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+            
+            await serviceBusClient.CloseAsync().ConfigureAwait(continueOnCapturedContext: false);
         }
 
         /// <inheritdoc />
@@ -292,17 +302,29 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             if (Settings.Options.IncludeTopicSubscription)
             {
-                ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
-
-                Logger.LogTrace("[Job: {JobId}] Deleting subscription '{SubscriptionName}' on topic '{Path}'...", JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
-                var serviceBusClient = new ManagementClient(serviceBusConnectionString);
-                await serviceBusClient.DeleteSubscriptionAsync(serviceBusConnectionString.EntityPath, _subscriptionName, cancellationToken);
-                Logger.LogTrace("[Job: {JobId}] Subscription '{SubscriptionName}' deleted on topic '{Path}'", JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
-                await serviceBusClient.CloseAsync().ConfigureAwait(continueOnCapturedContext: false);
+                await DeleteTopicSubscription(cancellationToken);
             }
 
             await base.StopAsync(cancellationToken);
             _isHostShuttingDown = true;
+        }
+
+        private async Task DeleteTopicSubscription(CancellationToken cancellationToken)
+        {
+            ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
+
+            Logger.LogTrace(
+                "[Job: {JobId}] Deleting subscription '{SubscriptionName}' on topic '{Path}'...",
+                JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+            
+            var serviceBusClient = new ManagementClient(serviceBusConnectionString);
+            await serviceBusClient.DeleteSubscriptionAsync(serviceBusConnectionString.EntityPath, _subscriptionName, cancellationToken);
+            
+            Logger.LogTrace(
+                "[Job: {JobId}] Subscription '{SubscriptionName}' deleted on topic '{Path}'",
+                JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+            
+            await serviceBusClient.CloseAsync().ConfigureAwait(continueOnCapturedContext: false);
         }
 
         private async Task<ServiceBusConnectionStringBuilder> GetServiceBusConnectionStringAsync()
