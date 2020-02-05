@@ -24,7 +24,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
         private readonly MessageHandlerOptions _messageHandlerOptions;
-        private readonly string _subscriptionName;
 
         /// <summary>
         ///     Constructor
@@ -39,7 +38,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Settings = serviceProvider.GetRequiredService<AzureServiceBusMessagePumpSettings>();
             JobId = Settings.Options.JobId;
 
-            _subscriptionName = $"{Settings.SubscriptionPrefix}:{JobId}";
+            SubscriptionName = $"{Settings.SubscriptionPrefix}:{JobId}";
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
         }
 
@@ -57,6 +56,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// Gets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
         /// </summary>
         public string JobId { get; }
+
+        /// <summary>
+        /// Gets the name of the topic subscription; combined from the <see cref="AzureServiceBusMessagePumpSettings.SubscriptionPrefix"/> and the <see cref="JobId"/>.
+        /// </summary>
+        protected string SubscriptionName { get; }
 
         /// <summary>
         /// Triggered when the application host is ready to start the service.
@@ -78,9 +82,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             Logger.LogTrace(
                 "[Job: {JobId}] Creating subscription '{SubscriptionName}' on topic '{TopicPath}'...",
-                JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+                JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
             
-            var subscriptionDescription = new SubscriptionDescription(serviceBusConnectionString.EntityPath, _subscriptionName)
+            var subscriptionDescription = new SubscriptionDescription(serviceBusConnectionString.EntityPath, SubscriptionName)
             {
                 UserMetadata = $"Subscription created by Arcus job: '{JobId}' to process Service Bus messages."
             };
@@ -92,7 +96,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             Logger.LogTrace(
                 "[Job: {JobId}] Subscription '{SubscriptionName}' created on topic '{TopicPath}'",
-                JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+                JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
             
             await serviceBusClient.CloseAsync().ConfigureAwait(continueOnCapturedContext: false);
         }
@@ -237,12 +241,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     throw new ArgumentException("No entity name was specified while the connection string is scoped to the namespace");
                 }
 
-                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, messagePumpSettings.EntityName, _subscriptionName);
+                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, messagePumpSettings.EntityName, SubscriptionName);
             }
             else
             {
                 // Connection string includes the entity so we're using that instead of the message pump settings
-                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, serviceBusConnectionStringBuilder.EntityPath, _subscriptionName);
+                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, serviceBusConnectionStringBuilder.EntityPath, SubscriptionName);
             }
 
             Namespace = messageReceiver.ServiceBusConnection?.Endpoint?.Host;
@@ -313,14 +317,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             Logger.LogTrace(
                 "[Job: {JobId}] Deleting subscription '{SubscriptionName}' on topic '{Path}'...",
-                JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+                JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
             
             var serviceBusClient = new ManagementClient(serviceBusConnectionString);
-            await serviceBusClient.DeleteSubscriptionAsync(serviceBusConnectionString.EntityPath, _subscriptionName, cancellationToken);
+            await serviceBusClient.DeleteSubscriptionAsync(serviceBusConnectionString.EntityPath, SubscriptionName, cancellationToken);
             
             Logger.LogTrace(
                 "[Job: {JobId}] Subscription '{SubscriptionName}' deleted on topic '{Path}'",
-                JobId, _subscriptionName, serviceBusConnectionString.EntityPath);
+                JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
             
             await serviceBusClient.CloseAsync().ConfigureAwait(continueOnCapturedContext: false);
         }
