@@ -273,7 +273,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             try
             {
                 var operationId = DetermineOperationId(message.CorrelationId);
-                var correlationInfo = new MessageCorrelationInfo(message.GetTransactionId(), operationId);
+                var correlationInfo = new MessageCorrelationInfo(operationId, message.GetTransactionId());
 
                 var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
                     message.UserProperties);

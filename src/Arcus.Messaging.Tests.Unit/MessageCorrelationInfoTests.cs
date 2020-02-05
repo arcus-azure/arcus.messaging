@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Arcus.Messaging.Abstractions;
 using Xunit;
 
@@ -17,7 +15,7 @@ namespace Arcus.Messaging.Tests.Unit
             var operationId = Guid.NewGuid().ToString();
 
             // Act
-            var messageCorrelationInfo = new MessageCorrelationInfo(transactionId, operationId);
+            var messageCorrelationInfo = new MessageCorrelationInfo(operationId, transactionId);
 
             // Assert
             Assert.Equal(operationId, messageCorrelationInfo.OperationId);
@@ -32,7 +30,7 @@ namespace Arcus.Messaging.Tests.Unit
             var operationId = Guid.NewGuid().ToString();
 
             // Act
-            var messageCorrelationInfo= new MessageCorrelationInfo(transactionId: null, operationId);
+            var messageCorrelationInfo = new MessageCorrelationInfo(operationId, transactionId: null);
 
             // Assert
             Assert.Equal(operationId, messageCorrelationInfo.OperationId);
@@ -47,7 +45,7 @@ namespace Arcus.Messaging.Tests.Unit
             var transactionId = Guid.NewGuid().ToString();
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => new MessageCorrelationInfo(transactionId, operationId: null));
+            Assert.Throws<ArgumentException>(() => new MessageCorrelationInfo(operationId: null, transactionId));
         }
     }
 }
