@@ -50,7 +50,7 @@ namespace Microsoft.Azure.ServiceBus
 
         private static string DetermineOperationId(string messageCorrelationId)
         {
-            if (String.IsNullOrWhiteSpace(messageCorrelationId))
+            if (string.IsNullOrWhiteSpace(messageCorrelationId))
             {
                 var generatedOperationId = Guid.NewGuid().ToString();
                 return generatedOperationId;
