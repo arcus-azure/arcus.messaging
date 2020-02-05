@@ -84,7 +84,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 AutoDeleteOnIdle = TimeSpan.FromHours(1),
                 MaxDeliveryCount = 3,
-                UserMetadata = $"Subscription created by Arcus job: '{JobId}' to process inbound CloudEvents."
+                UserMetadata = $"Subscription created by Arcus job: '{JobId}' to process Service Bus messages."
             };
 
             var ruleDescription = new RuleDescription("Accept-All", new TrueFilter());
