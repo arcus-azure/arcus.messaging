@@ -272,16 +272,18 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                var operationId = DetermineOperationId(message.CorrelationId);
-                var correlationInfo = new MessageCorrelationInfo(operationId, message.GetTransactionId());
+                if (String.IsNullOrEmpty(message.CorrelationId))
+                {
+                    Logger.LogInformation("No operation ID was found on the message");
+                }
 
-                var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
-                    message.UserProperties);
-
+                MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
                 Logger.LogInformation(
                     "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
-                    messageContext.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId,
-                    correlationInfo.CycleId);
+                    message.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
+                
+                var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
+                    message.UserProperties);
 
                 // Deserialize the message
                 TMessage typedMessageBody = DeserializeJsonMessageBody(message.Body, messageContext);
@@ -296,19 +298,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 await HandleReceiveExceptionAsync(ex);
             }
-        }
-
-        private string DetermineOperationId(string messageCorrelationId)
-        {
-            if (string.IsNullOrWhiteSpace(messageCorrelationId))
-            {
-                var generatedOperationId = Guid.NewGuid().ToString();
-                Logger.LogInformation("Generating operation id {OperationId} given no correlation id was found on the message", generatedOperationId);
-
-                return generatedOperationId;
-            }
-
-            return messageCorrelationId;
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
