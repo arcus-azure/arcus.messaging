@@ -24,8 +24,8 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Act
             IServiceCollection result = 
-                services.AddServiceBusTopicMessagePump<EmptyMessagePump>(
-                    "subscription name", "secret name", configureMessagePump: options => options.AutoComplete = true);
+                services.AddServiceBusTopicMessagePump(
+                    "topic name", "subscription name", "secret name", options => options.AutoComplete = true);
             
             // Assert
             Assert.NotNull(result);
@@ -51,7 +51,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Act
             IServiceCollection result = 
-                services.AddServiceBusTopicMessagePump<EmptyMessagePump>(
+                services.AddServiceBusTopicMessagePump(
                     "topic name", "subscription name", "secret name", configureMessagePump: options => options.AutoComplete = true);
             
             // Assert
