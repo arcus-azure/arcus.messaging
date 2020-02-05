@@ -29,8 +29,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="configuration">Configuration of the application</param>
         /// <param name="serviceProvider">Collection of services that are configured</param>
         /// <param name="logger">Logger to write telemetry to</param>
-        protected AzureServiceBusMessagePump(IConfiguration configuration, IServiceProvider serviceProvider,
-            ILogger logger)
+        public AzureServiceBusMessagePump(IConfiguration configuration, IServiceProvider serviceProvider, ILogger logger)
             : base(configuration, serviceProvider, logger)
         {
             Settings = serviceProvider.GetRequiredService<AzureServiceBusMessagePumpSettings>();

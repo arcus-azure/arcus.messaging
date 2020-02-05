@@ -32,7 +32,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             await settings.GetConnectionStringAsync();
@@ -60,7 +60,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             await settings.GetConnectionStringAsync();
