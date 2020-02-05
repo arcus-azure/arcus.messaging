@@ -82,7 +82,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             
             var subscriptionDescription = new SubscriptionDescription(serviceBusConnectionString.EntityPath, _subscriptionName)
             {
-                MaxDeliveryCount = 3,
                 UserMetadata = $"Subscription created by Arcus job: '{JobId}' to process Service Bus messages."
             };
 
