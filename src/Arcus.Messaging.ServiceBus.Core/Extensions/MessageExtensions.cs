@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Azure.ServiceBus
@@ -69,6 +71,71 @@ namespace Microsoft.Azure.ServiceBus
             return message.UserProperties.TryGetValue(PropertyNames.TransactionId, out object transactionId)
                 ? transactionId.ToString()
                 : string.Empty;
+        }
+
+        /// <summary>
+        ///     Tries to read the Service Bus message body as a JSON structure, deserialized to the specified <typeparamref name="TMessage"/>.
+        /// </summary>
+        /// <typeparam name="TMessage">The type of the message to be deserialized.</typeparam>
+        /// <param name="message">The message to deserialize.</param>
+        /// <param name="output">The output to where the result should be written.</param>
+        /// <returns>
+        ///     Whether or not the deserialization succeeded [true], or not [false].
+        /// </returns>
+        public static bool TryReadBodyAsJson<TMessage>(this Message message, out TMessage output) where TMessage : class
+        {
+            return TryReadBodyAsJson(message, Encoding.UTF8, out output);
+        }
+
+        /// <summary>
+        ///     Tries to read the Service Bus message body as a JSON structure, deserialized to the specified <typeparamref name="TMessage"/>.
+        /// </summary>
+        /// <typeparam name="TMessage">The type of the message to be deserialized.</typeparam>
+        /// <param name="message">The message to deserialize.</param>
+        /// <param name="encoding">The encoding to read the series of bytes of the <see cref="Message.Body"/>.</param>
+        /// <param name="output">The output to where the result should be written.</param>
+        /// <returns>
+        ///     Whether or not the deserialization succeeded [true], or not [false].
+        /// </returns>
+        public static bool TryReadBodyAsJson<TMessage>(
+            this Message message, 
+            Encoding encoding,
+            out TMessage output) where TMessage : class
+        {
+            try
+            {
+                output = ReadBodyAsJson<TMessage>(message, encoding);
+                return true;
+            }
+            catch
+            {
+                output = null;
+                return false;
+            }
+        }
+
+        /// <summary>
+        ///     Read the Service Bus message body as a JSON structure, deserialized to the specified <typeparamref name="TMessage"/>.
+        /// </summary>
+        /// <typeparam name="TMessage">The type of the message to be deserialized.</typeparam>
+        /// <param name="message">The message to deserialize.</param>
+        public static TMessage ReadBodyAsJson<TMessage>(this Message message)
+        {
+            return ReadBodyAsJson<TMessage>(message, Encoding.UTF8);
+        }
+
+        /// <summary>
+        ///     Read the Service Bus message body as a JSON structure, deserialized to the specified <typeparamref name="TMessage"/>.
+        /// </summary>
+        /// <typeparam name="TMessage">The type of the message to be deserialized.</typeparam>
+        /// <param name="message">The message to deserialize.</param>
+        /// <param name="encoding">The encoding to read the series of bytes of the <see cref="Message.Body"/>.</param>
+        public static TMessage ReadBodyAsJson<TMessage>(this Message message, Encoding encoding)
+        {
+            string serializedMessageBody = encoding.GetString(message.Body);
+
+            var messageBody = JsonConvert.DeserializeObject<TMessage>(serializedMessageBody);
+            return messageBody;
         }
     }
 }

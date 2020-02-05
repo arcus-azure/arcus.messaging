@@ -17,8 +17,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// <summary>
     ///     Message pump for processing messages on an Azure Service Bus entity
     /// </summary>
-    /// <typeparam name="TMessage">Type of expected message payload</typeparam>
-    public class AzureServiceBusMessagePump<TMessage> : MessagePump<TMessage, AzureServiceBusMessageContext>
+    public class AzureServiceBusMessagePump : MessagePump<Message, AzureServiceBusMessageContext>
     {
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
@@ -285,12 +284,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
                     message.UserProperties);
 
-                // Deserialize the message
-                TMessage typedMessageBody = DeserializeJsonMessageBody(message.Body, messageContext);
-
-                // Process the message
-                // Note - We are not checking for exceptions here as the pump wil handle those and call our exception handling after which it abandons it
-                await ProcessMessageAsync(typedMessageBody, messageContext, correlationInfo, cancellationToken);
+                await ProcessMessageAsync<IAzureServiceBusMessageHandler>(message, messageContext, correlationInfo, cancellationToken);
 
                 Logger.LogInformation("Message {MessageId} processed", message.MessageId);
             }

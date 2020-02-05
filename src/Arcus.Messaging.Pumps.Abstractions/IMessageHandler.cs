@@ -16,16 +16,17 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="message">Message that was received</param>
         /// <param name="messageContext">Context providing more information concerning the processing</param>
         /// <param name="correlationInfo">
-        ///     Information concerning correlation of telemetry & processes by using a variety of unique
+        ///     Information concerning correlation of telemetry and processes by using a variety of unique
         ///     identifiers
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
-        /// <typeparam name="TMessage">Type of message we are interested in.</typeparam>
-        /// <typeparam name="TMessageContext">Type of message context for the provider.</typeparam>
-        Task ProcessMessageAsync(
-            TMessage message, 
-            TMessageContext messageContext, 
-            MessageCorrelationInfo correlationInfo, 
+        /// <returns>
+        ///     The status of the message after it was handled.
+        /// </returns>
+        Task<MessageProcessResult> ProcessMessageAsync(
+            TMessage message,
+            TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken);
     }
 }

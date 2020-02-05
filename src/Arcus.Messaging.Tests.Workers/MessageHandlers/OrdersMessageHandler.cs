@@ -7,15 +7,17 @@ using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.ServiceBus.Core.Extensions;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using GuardNet;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
-    public class OrdersMessageHandler : IAzureServiceBusMessageHandler<Order>
+    public class OrdersMessageHandler : IAzureServiceBusMessageHandler
     {
         private readonly IEventGridPublisher _eventGridPublisher;
         private readonly ILogger<OrdersMessageHandler> _logger;
@@ -39,13 +41,26 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         ///     identifiers
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
-        public async Task ProcessMessageAsync(Order message, AzureServiceBusMessageContext messageContext, MessageCorrelationInfo correlationInfo, CancellationToken cancellationToken)
+        public async Task<MessageProcessResult> ProcessMessageAsync(
+            Message message, 
+            AzureServiceBusMessageContext messageContext, 
+            MessageCorrelationInfo correlationInfo, 
+            CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", message.Id, message.Amount, message.ArticleNumber, message.Customer.FirstName, message.Customer.LastName);
+            Encoding encoding = messageContext.GetMessageEncodingProperty();
+            if (message.TryReadBodyAsJson(encoding, out Order order))
+            {
+                _logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", 
+                                       order.Id, order.Amount, order.ArticleNumber, order.Customer.FirstName, order.Customer.LastName);
 
-            await PublishEventToEventGridAsync(message, correlationInfo.OperationId, correlationInfo);
+                await PublishEventToEventGridAsync(order, correlationInfo.OperationId, correlationInfo);
 
-            _logger.LogInformation("Order {OrderId} processed", message.Id);
+                _logger.LogInformation("Order {OrderId} processed", order.Id);
+                return MessageProcessResult.Processed;
+            }
+
+            _logger.LogError("Cannot deserialize the Service Bus message to a 'Order'");
+            return MessageProcessResult.NotSupported;
         }
 
         private async Task PublishEventToEventGridAsync(Order orderMessage, string operationId, MessageCorrelationInfo correlationInfo)

@@ -37,8 +37,8 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Topic
                             .UsingAuthenticationKey(eventGridKey)
                             .Build();
                     });
-                    services.AddServiceBusTopicMessagePump<Order>("Receive-All", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                            .WithMessagePumpHandler<Order, OrdersMessageHandler>(messageContext => true);
+                    services.AddServiceBusTopicMessagePump("Receive-All", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                            .WithMessagePumpHandler<OrdersMessageHandler>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });

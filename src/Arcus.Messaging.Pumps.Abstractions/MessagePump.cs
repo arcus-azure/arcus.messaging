@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Arcus.Messaging.Pumps.Abstractions
 {
@@ -22,11 +23,6 @@ namespace Arcus.Messaging.Pumps.Abstractions
     public abstract class MessagePump<TMessage, TMessageContext> : BackgroundService
         where TMessageContext : MessageContext
     {
-        /// <summary>
-        ///     Default encoding used
-        /// </summary>
-        protected Encoding DefaultEncoding { get; } = Encoding.UTF8;
-
         /// <summary>
         ///     Unique id of this message pump instance
         /// </summary>
@@ -86,50 +82,24 @@ namespace Arcus.Messaging.Pumps.Abstractions
         }
 
         /// <summary>
-        ///     Deserializes a raw JSON message body
-        /// </summary>
-        /// <param name="rawMessageBody">Raw message body to deserialize</param>
-        /// <param name="messageContext">Context concerning the message</param>
-        /// <returns>Deserialized message</returns>
-        protected virtual TMessage DeserializeJsonMessageBody(byte[] rawMessageBody, MessageContext messageContext)
-        {
-            Encoding encoding = DetermineMessageEncoding(messageContext);
-            string serializedMessageBody = encoding.GetString(rawMessageBody);
-
-            TMessage messageBody = JsonConvert.DeserializeObject<TMessage>(serializedMessageBody);
-            if (messageBody == null)
-            {
-                Logger.LogError("Unable to deserialize to message contract {ContractName} for message {MessageBody}",
-                    typeof(TMessage), rawMessageBody);
-            }
-
-            return messageBody;
-        }
-
-        /// <summary>
-        ///     Process a new message that was received
+        ///     Handle a new message that was received
         /// </summary>
         /// <param name="message">Message that was received</param>
         /// <param name="messageContext">Context providing more information concerning the processing</param>
         /// <param name="correlationInfo">
-        ///     Information concerning correlation of telemetry & processes by using a variety of unique
+        ///     Information concerning correlation of telemetry and processes by using a variety of unique
         ///     identifiers
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
-        protected async Task ProcessMessageAsync(
+        protected async Task ProcessMessageAsync<TMessageHandler>(
             TMessage message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
+            where TMessageHandler : IMessageHandler<TMessage, TMessageContext>
         {
-            var messageHandlerResolvers = 
-                ServiceProvider.GetServices<Func<TMessageContext, IMessageHandler<TMessage, TMessageContext>>>();
-
-            IMessageHandler<TMessage, TMessageContext> messageHandler = 
-                messageHandlerResolvers.Select(resolver => resolver(messageContext)).
-                                        FirstOrDefault(handler => handler != null);
-
-            if (messageHandler == null)
+            IEnumerable<TMessageHandler> messageHandlers = ServiceProvider.GetServices<TMessageHandler>();
+            if (messageHandlers is null || !messageHandlers.Any())
             {
                 throw new InvalidOperationException(
                     $"Message pump cannot correctly process the '{typeof(TMessage).Name}' in the '{typeof(TMessageContext)}' "
@@ -137,32 +107,55 @@ namespace Arcus.Messaging.Pumps.Abstractions
                     + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
             }
 
-            await messageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-        }
-
-        /// <summary>
-        ///     Determines the encoding used for a given message
-        /// </summary>
-        /// <remarks>If no encoding was specified, UTF-8 will be used by default</remarks>
-        /// <param name="messageContext">Context concerning the message</param>
-        /// <returns>Encoding that was used for the message body</returns>
-        protected virtual Encoding DetermineMessageEncoding(MessageContext messageContext)
-        {
-            if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
+            foreach (TMessageHandler messageHandler in messageHandlers)
             {
-                try
+                if (messageHandler is null)
                 {
-                    return Encoding.GetEncoding(annotatedEncoding.ToString());
+                    continue;
                 }
-                catch (Exception ex)
+
+                bool isProcessed = await TryProcessMessageAsync(messageHandler, message, messageContext, correlationInfo, cancellationToken);
+                if (isProcessed)
                 {
-                    Logger.LogCritical(ex,
-                        $"Unable to determine encoding with name '{{Encoding}}'. Falling back to {{FallbackEncoding}}.",
-                        annotatedEncoding.ToString(), DefaultEncoding.WebName);
+                    break;
                 }
             }
+        }
 
-            return DefaultEncoding;
+        private async Task<bool> TryProcessMessageAsync(
+            IMessageHandler<TMessage, TMessageContext> messageHandler,
+            TMessage message,
+            TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellationToken)
+        {
+            Logger.LogTrace("Start try processing message:{messageType} with message handler:{messageHandler}", typeof(TMessage).Name, messageHandler.GetType().Name);
+            MessageProcessResult processResult = 
+                await messageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+
+            switch (processResult)
+            {
+                case MessageProcessResult.Processed: 
+                    Logger.LogInformation(
+                        "Message:{messageType} was processed correctly by message handler:{messageHandler}", 
+                        typeof(TMessage).Name, messageHandler.GetType().Name);
+                    return true;
+                case MessageProcessResult.NotSupported:
+                    Logger.LogWarning(
+                        "Message:{messageType} was not correctly processed by message handler:{messageHandler}, because the handler don't support it", 
+                        typeof(TMessage).Name, messageHandler.GetType().Name);
+                    return false;
+                case MessageProcessResult.Failure:
+                    Logger.LogError(
+                        "Message:{messageType} failed to be processed by message handler:{messageHandler}, because of a failure in the handler", 
+                        typeof(TMessage).Name, messageHandler.GetType().Name);
+                    return false;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(processResult), 
+                        processResult, 
+                        $"Message handler '{messageHandler.GetType().Name}' returned unknown message process result");
+            }
         }
 
         /// <summary>
