@@ -37,8 +37,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             Settings = serviceProvider.GetRequiredService<AzureServiceBusMessagePumpSettings>();
             JobId = Settings.Options.JobId;
-
-            SubscriptionName = $"{Settings.SubscriptionPrefix}:{JobId}";
+            SubscriptionName = $"{Settings.SubscriptionPrefix}-{JobId}";
+            
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
         }
 

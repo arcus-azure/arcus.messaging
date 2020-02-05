@@ -22,7 +22,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         ///     Constructor
         /// </summary>
         /// <param name="entityName">Name of the entity to process</param>
-        /// <param name="subscriptionPrefix">Name of the subscription to process</param>
+        /// <param name="subscriptionPrefix">Name prefix of the subscription to process</param>
         /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
         /// <param name="options">Options that influence the behavior of the message pump</param>
