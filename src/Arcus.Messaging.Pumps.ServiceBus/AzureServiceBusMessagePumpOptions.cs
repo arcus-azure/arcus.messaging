@@ -42,7 +42,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Gets or sets the value indicating whether or not a new Azure Service Bus Topic subscription has to be created when the <see cref="AzureServiceBusMessagePump{TMessage}"/> starts.
         /// The subscription will be deleted afterwards when the message pump stops.
-        /// REMARK: requires at least 'Manage' permissions on the Azure Service Bus Topic to create and delete these subscriptions.
         /// </summary>
         /// <remarks>
         ///     Requires at least 'Manage' permissions on the Azure Service Bus Topic to create and delete these subscriptions.
