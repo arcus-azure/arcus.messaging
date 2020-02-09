@@ -70,13 +70,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             if ((Settings.Options.TopicSubscription & TopicSubscription.CreateOnStart) == TopicSubscription.CreateOnStart)
             {
-                await CreateTopicSubscription(cancellationToken);
+                await CreateTopicSubscriptionAsync(cancellationToken);
             }
 
             await base.StartAsync(cancellationToken);
         }
 
-        private async Task CreateTopicSubscription(CancellationToken cancellationToken)
+        private async Task CreateTopicSubscriptionAsync(CancellationToken cancellationToken)
         {
             ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
 
@@ -304,14 +304,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             if ((Settings.Options.TopicSubscription & TopicSubscription.DeleteOnStop) == TopicSubscription.DeleteOnStop)
             {
-                await DeleteTopicSubscription(cancellationToken);
+                await DeleteTopicSubscriptionAsync(cancellationToken);
             }
 
             await base.StopAsync(cancellationToken);
             _isHostShuttingDown = true;
         }
 
-        private async Task DeleteTopicSubscription(CancellationToken cancellationToken)
+        private async Task DeleteTopicSubscriptionAsync(CancellationToken cancellationToken)
         {
             ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
 
