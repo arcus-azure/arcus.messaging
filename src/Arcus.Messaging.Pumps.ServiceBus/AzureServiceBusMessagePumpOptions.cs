@@ -46,7 +46,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <remarks>
         ///     Requires 'Manage' permissions on the Azure Service Bus Topic to create and delete these subscriptions.
         /// </remarks>
-        public bool IncludeTopicSubscription { get; set; }
+        public TopicSubscription TopicSubscription { get; set; }
 
         /// <summary>
         ///     Default settings
@@ -54,7 +54,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         internal static AzureServiceBusMessagePumpOptions Default => new AzureServiceBusMessagePumpOptions
         {
             AutoComplete = true,
-            JobId = Guid.NewGuid().ToString()
+            JobId = Guid.NewGuid().ToString(),
+            TopicSubscription = TopicSubscription.None
         };
     }
 }
