@@ -44,7 +44,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// The subscription will be deleted afterwards when the message pump stops.
         /// </summary>
         /// <remarks>
-        ///     Requires 'Manage' permissions on the Azure Service Bus Topic to create and delete these subscriptions.
+        ///     Provides capability to create and delete these subscriptions. This requires 'Manage' permissions on the Azure Service Bus Topic or namespace.
         /// </remarks>
         public TopicSubscription TopicSubscription { get; set; }
 
