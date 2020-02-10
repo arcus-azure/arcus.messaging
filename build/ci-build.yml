@@ -124,6 +124,7 @@ stages:
               projectName: '$(Project).Tests.Integration'
               category: 'Integration'
           - task: PowerShell@2
+            displayName: 'Get Docker container logs'
             inputs:
               targetType: 'inline'
               script: 'docker logs $(Images.ServiceBus.Queue)'
