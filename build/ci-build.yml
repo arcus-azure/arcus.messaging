@@ -123,6 +123,11 @@ stages:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               projectName: '$(Project).Tests.Integration'
               category: 'Integration'
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: 'docker logs $(Images.ServiceBus.Queue)'
+            condition: failed()
 
   - stage: ReleaseToMyget
     displayName: 'Release to MyGet'
