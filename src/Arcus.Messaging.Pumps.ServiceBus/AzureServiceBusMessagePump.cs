@@ -68,7 +68,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
         public override async Task StartAsync(CancellationToken cancellationToken)
         {
-            if ((Settings.Options.TopicSubscription & TopicSubscription.CreateOnStart) == TopicSubscription.CreateOnStart)
+            if (Settings.Options.TopicSubscription.HasFlag(TopicSubscription.CreateOnStart))
             {
                 await CreateTopicSubscriptionAsync(cancellationToken);
             }
@@ -302,7 +302,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            if ((Settings.Options.TopicSubscription & TopicSubscription.DeleteOnStop) == TopicSubscription.DeleteOnStop)
+            if (Settings.Options.TopicSubscription.HasFlag(TopicSubscription.DeleteOnStop))
             {
                 await DeleteTopicSubscriptionAsync(cancellationToken);
             }
