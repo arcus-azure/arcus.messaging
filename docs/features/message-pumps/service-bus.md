@@ -57,9 +57,9 @@ public void ConfigureServices(IServiceCollection services)
     // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
     services.AddServiceBusQueueMessagePump<OrdersMessageHandler>("ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
-    // Add Service Bus Topic message pump and use OrdersMessageHandler to process the messages on the 'My-Subscription' subscription
+    // Add Service Bus Topic message pump and use OrdersMessageHandler to process the messages on the 'My-Subscription-Prefix' prefix subscription
     // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
-    services.AddServiceBusTopicMessagePump<OrdersMessageHandler>("My-Subscription", "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
+    services.AddServiceBusTopicMessagePump<OrdersMessageHandler>("My-Subscription-Prefix", "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 }
 ```
 
@@ -67,11 +67,50 @@ In this example, we are using the Azure Service Bus message pump to process a qu
 
 We support **connection strings that are scoped on the Service Bus namespace and entity** allowing you to choose the required security model for your applications. If you are using namespace-scoped connection strings you'll have to pass your queue/topic name as well.
 
+### Customized Configuration
+
 Next to that, we provide a **variety of overloads** to allow you to:
 
 - Specify the name of the queue/topic
 - Configure how the message pump should work *(ie. max concurrent calls & auto delete)*
 - Read the connection string from the configuration *(although we highly recommend using a secret store instead)*
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    // Specify the name of the Service Bus Queue:
+    services.AddServiceBusQueuePump<OrdersMessageHandler>(
+        "My-Service-Bus-Queue-Name",
+        "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
+
+    // Specify the name of the Service Bus Topic, and provide a prefix for the Topic subscription:
+    services.AddServiceBusTopicPump<OrdersMessageHandler>(
+        "My-Service-Bus-Topic-Name",
+        "My-Service-Bus-Topic-Subscription-Prefix",
+        "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
+
+    services.AddServiceBusQueuePump<OrdersMessageHandler>(
+        "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
+        options => 
+        {
+            // Indicate whether or not messages should be automatically marked as completed 
+            // if no exceptions occured andprocessing has finished (default: true).
+            options.AutoComplete = true;
+
+            // The amount of concurrent calls to process messages 
+            // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
+            options.MaxConcurrentCalls = 5;
+
+            // The unique identifier for this background job to distinguish 
+            // this job instance in a multi-instance deployment (default: guid).
+            options.JobId = Guid.NewGuid().ToString();
+
+            // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
+            // when the message pump starts/stops (default: CreateOnStart).
+            options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
+        });
+}
+```
 
 ## Want to get started easy? Use our templates!
 
