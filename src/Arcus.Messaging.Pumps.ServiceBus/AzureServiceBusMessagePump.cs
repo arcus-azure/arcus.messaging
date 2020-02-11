@@ -79,11 +79,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private async Task CreateTopicSubscriptionAsync(CancellationToken cancellationToken)
         {
             ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
-
-            Logger.LogTrace(
-                "[Job: {JobId}] Creating subscription '{SubscriptionName}' on topic '{TopicPath}'...",
-                JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
-            
             var subscriptionDescription = new SubscriptionDescription(serviceBusConnectionString.EntityPath, SubscriptionName)
             {
                 UserMetadata = $"Subscription created by Arcus job: '{JobId}' to process Service Bus messages."
@@ -91,12 +86,27 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             var ruleDescription = new RuleDescription("Accept-All", new TrueFilter());
             var serviceBusClient = new ManagementClient(serviceBusConnectionString);
-            await serviceBusClient.CreateSubscriptionAsync(subscriptionDescription, ruleDescription, cancellationToken)
-                                  .ConfigureAwait(continueOnCapturedContext: false);
 
-            Logger.LogTrace(
-                "[Job: {JobId}] Subscription '{SubscriptionName}' created on topic '{TopicPath}'",
-                JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
+            bool subscriptionExists = 
+                await serviceBusClient.SubscriptionExistsAsync(
+                    serviceBusConnectionString.EntityPath, SubscriptionName, cancellationToken);
+            if (subscriptionExists)
+            {
+                Logger.LogTrace(
+                    "[Job: {JobId}] Topic subscription with name '{SubscriptionName}' already exists on Service Bus resource",
+                    JobId, SubscriptionName);
+            }
+            else
+            {
+                Logger.LogTrace(
+                    "[Job: {JobId}] Creating subscription '{SubscriptionName}' on topic '{TopicPath}'...",
+                    JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
+                await serviceBusClient.CreateSubscriptionAsync(subscriptionDescription, ruleDescription, cancellationToken)
+                                      .ConfigureAwait(continueOnCapturedContext: false);
+                Logger.LogTrace(
+                    "[Job: {JobId}] Subscription '{SubscriptionName}' created on topic '{TopicPath}'",
+                    JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
+            }
             
             await serviceBusClient.CloseAsync().ConfigureAwait(continueOnCapturedContext: false);
         }
@@ -314,17 +324,27 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private async Task DeleteTopicSubscriptionAsync(CancellationToken cancellationToken)
         {
             ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
-
-            Logger.LogTrace(
-                "[Job: {JobId}] Deleting subscription '{SubscriptionName}' on topic '{Path}'...",
-                JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
-            
             var serviceBusClient = new ManagementClient(serviceBusConnectionString);
-            await serviceBusClient.DeleteSubscriptionAsync(serviceBusConnectionString.EntityPath, SubscriptionName, cancellationToken);
             
-            Logger.LogTrace(
-                "[Job: {JobId}] Subscription '{SubscriptionName}' deleted on topic '{Path}'",
-                JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
+            bool subscriptionExists = 
+                await serviceBusClient.SubscriptionExistsAsync(
+                    serviceBusConnectionString.EntityPath, SubscriptionName, cancellationToken);
+            if (subscriptionExists)
+            {
+                Logger.LogTrace(
+                    "[Job: {JobId}] Deleting subscription '{SubscriptionName}' on topic '{Path}'...",
+                    JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
+                await serviceBusClient.DeleteSubscriptionAsync(serviceBusConnectionString.EntityPath, SubscriptionName, cancellationToken);
+                Logger.LogTrace(
+                    "[Job: {JobId}] Subscription '{SubscriptionName}' deleted on topic '{Path}'",
+                    JobId, SubscriptionName, serviceBusConnectionString.EntityPath);
+            }
+            else
+            {
+                Logger.LogTrace(
+                    "[Job: {JobId}] Cannot delete topic subscription with name '{SubscriptionName}' because no subscription exists on Service Bus resource",
+                    JobId, SubscriptionName);
+            }
             
             await serviceBusClient.CloseAsync().ConfigureAwait(continueOnCapturedContext: false);
         }
