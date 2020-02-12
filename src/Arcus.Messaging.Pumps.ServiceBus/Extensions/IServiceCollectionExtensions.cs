@@ -54,6 +54,24 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <remarks>When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace</remarks>
         /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="secretName">Name of the secret to retrieve using your registered <see cref="ISecretProvider"/> implementation</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusQueueMessagePump<TMessagePump>(this IServiceCollection services, string secretName, Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+
+            AddServiceBusMessagePump<TMessagePump>(services, string.Empty, string.Empty, getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName), configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        ///     Adds a message handler to consume messages from Azure Service Bus Queue
+        /// </summary>
+        /// <remarks>When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace</remarks>
+        /// <param name="services">Collection of services to use in the application</param>
         /// <param name="queueName">Name of the queue to process</param>
         /// <param name="secretName">Name of the secret to retrieve using your registered <see cref="ISecretProvider"/> implementation</param>
         /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>

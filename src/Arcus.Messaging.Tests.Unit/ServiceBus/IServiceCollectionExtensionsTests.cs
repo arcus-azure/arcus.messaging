@@ -53,7 +53,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             IServiceCollection result = 
                 services.AddServiceBusTopicMessagePump(
                     "topic name", "subscription name", "secret name", configureMessagePump: options => options.AutoComplete = true);
-            
+
             // Assert
             // Assert
             Assert.NotNull(result);
@@ -68,7 +68,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         }
 
         [Fact]
-        public async Task AddServiceBusQueueMessagePump_IndirectSecretProvider_WiresUpCorrectly()
+        public async Task AddServiceBusQueueMessagePump_IndirectSecretProviderWithQueueName_WiresUpCorrectly()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -78,10 +78,36 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
 
             // Act
-            IServiceCollection result = 
+            IServiceCollection result =
                 services.AddServiceBusQueueMessagePump<EmptyMessagePump>(
                     "queue name", "secret name", configureMessagePump: options => options.AutoComplete = true);
-            
+
+            // Assert
+            Assert.NotNull(result);
+            ServiceProvider provider = result.BuildServiceProvider();
+
+            var messagePump = provider.GetService<IHostedService>();
+            Assert.IsType<EmptyMessagePump>(messagePump);
+
+            var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
+            await settings.GetConnectionStringAsync();
+            spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
+        }
+
+        [Fact]
+        public async Task AddServiceBusQueueMessagePump_IndirectSecretProviderWithoutQueueName_WiresUpCorrectly()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var spySecretProvider = new Mock<ISecretProvider>();
+            services.AddSingleton(serviceProvider => spySecretProvider.Object);
+            services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
+            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+
+            // Act
+            IServiceCollection result =
+                services.AddServiceBusQueueMessagePump<EmptyMessagePump>("secret name", configureMessagePump: options => options.AutoComplete = true);
+
             // Assert
             Assert.NotNull(result);
             ServiceProvider provider = result.BuildServiceProvider();

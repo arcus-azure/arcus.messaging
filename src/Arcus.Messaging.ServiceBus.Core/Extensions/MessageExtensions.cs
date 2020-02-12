@@ -46,13 +46,13 @@ namespace Microsoft.Azure.ServiceBus
             string transactionId = GetTransactionId(message);
             string operationId = DetermineOperationId(message.CorrelationId);
 
-            var messageCorrelationInfo = new MessageCorrelationInfo(transactionId, operationId);
+            var messageCorrelationInfo = new MessageCorrelationInfo(operationId, transactionId);
             return messageCorrelationInfo;
         }
 
         private static string DetermineOperationId(string messageCorrelationId)
         {
-            if (String.IsNullOrWhiteSpace(messageCorrelationId))
+            if (string.IsNullOrWhiteSpace(messageCorrelationId))
             {
                 var generatedOperationId = Guid.NewGuid().ToString();
                 return generatedOperationId;
