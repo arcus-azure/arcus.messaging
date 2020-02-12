@@ -23,14 +23,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// </summary>
         /// <param name="entityName">Name of the entity to process</param>
         /// <param name="subscriptionPrefix">Name prefix of the subscription to process</param>
+        /// <param name="serviceBusEntity">Entity type of the Service Bus</param>
         /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
         /// <param name="options">Options that influence the behavior of the message pump</param>
         /// <param name="serviceProvider">Collection of services to use</param>
-        public AzureServiceBusMessagePumpSettings(string entityName, string subscriptionPrefix,
+        public AzureServiceBusMessagePumpSettings(
+            string entityName,
+            string subscriptionPrefix,
+            ServiceBusEntity serviceBusEntity,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            AzureServiceBusMessagePumpOptions options, IServiceProvider serviceProvider)
+            AzureServiceBusMessagePumpOptions options, 
+            IServiceProvider serviceProvider)
         {
             Guard.For<ArgumentException>(
                 () => getConnectionStringFromConfigurationFunc == null && getConnectionStringFromSecretFunc == null,
@@ -44,6 +49,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             EntityName = entityName;
             SubscriptionPrefix = subscriptionPrefix;
+            ServiceBusEntity = serviceBusEntity;
             Options = options;
         }
 
@@ -58,6 +64,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// </summary>
         /// <remarks>This is only applicable when using Azure Service Bus Topics</remarks>
         public string SubscriptionPrefix { get; }
+
+        /// <summary>
+        ///     Entity of the Service Bus.
+        /// </summary>
+        public ServiceBusEntity ServiceBusEntity { get; }
 
         /// <summary>
         ///     Options that influence the behavior of the message pump
