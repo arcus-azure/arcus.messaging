@@ -106,8 +106,8 @@ public void ConfigureServices(IServiceCollection services)
             options.JobId = Guid.NewGuid().ToString();
 
             // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
-            // when the message pump starts/stops (default: CreateOnStart).
-            options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
+            // when the message pump starts/stops (default: DeleteOnStop, which implicitly means also 'create on start').
+            options.TopicSubscription = TopicSubscription.DeleteOnStop;
         });
 }
 ```
