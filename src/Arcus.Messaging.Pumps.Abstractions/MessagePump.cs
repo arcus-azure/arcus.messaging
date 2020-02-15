@@ -1,28 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Arcus.Messaging.Pumps.Abstractions
 {
     /// <summary>
     ///     Foundation for building message pumps
     /// </summary>
-    /// <typeparam name="TMessage">Type of message we are interested in</typeparam>
-    /// <typeparam name="TMessageContext">Type of message context for the provider</typeparam>
-    public abstract class MessagePump<TMessage, TMessageContext> : BackgroundService
-        where TMessageContext : MessageContext
+    public abstract class MessagePump : BackgroundService
     {
+        /// <summary>
+        ///     Default encoding used
+        /// </summary>
+        protected Encoding DefaultEncoding { get; } = Encoding.UTF8;
+
         /// <summary>
         ///     Unique id of this message pump instance
         /// </summary>
@@ -82,8 +82,34 @@ namespace Arcus.Messaging.Pumps.Abstractions
         }
 
         /// <summary>
+        ///     Determines the encoding used for a given message
+        /// </summary>
+        /// <remarks>If no encoding was specified, UTF-8 will be used by default</remarks>
+        /// <param name="messageContext">Context concerning the message</param>
+        /// <returns>Encoding that was used for the message body</returns>
+        protected virtual Encoding DetermineMessageEncoding(MessageContext messageContext)
+        {
+            if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
+            {
+                try
+                {
+                    return Encoding.GetEncoding(annotatedEncoding.ToString());
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogCritical(ex,
+                                       $"Unable to determine encoding with name '{{Encoding}}'. Falling back to {{FallbackEncoding}}.",
+                                       annotatedEncoding.ToString(), DefaultEncoding.WebName);
+                }
+            }
+
+            return DefaultEncoding;
+        }
+
+        /// <summary>
         ///     Handle a new message that was received
         /// </summary>
+        /// <typeparam name="TMessageContext">Type of message context for the provider</typeparam>
         /// <param name="message">Message that was received</param>
         /// <param name="messageContext">Context providing more information concerning the processing</param>
         /// <param name="correlationInfo">
@@ -91,71 +117,33 @@ namespace Arcus.Messaging.Pumps.Abstractions
         ///     identifiers
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
-        protected async Task ProcessMessageAsync<TMessageHandler>(
-            TMessage message,
+        protected async Task ProcessMessageAsync<TMessageContext>(
+            string message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
-            where TMessageHandler : IMessageHandler<TMessage, TMessageContext>
+            where TMessageContext : MessageContext
         {
-            IEnumerable<TMessageHandler> messageHandlers = ServiceProvider.GetServices<TMessageHandler>();
-            if (messageHandlers is null || !messageHandlers.Any())
+            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(ServiceProvider);
+            foreach (MessageHandler handler in handlers)
             {
-                throw new InvalidOperationException(
-                    $"Message pump cannot correctly process the '{typeof(TMessage).Name}' in the '{typeof(TMessageContext)}' "
-                    + $"because no '{nameof(IMessageHandler<TMessage, TMessageContext>)}' was registered in the dependency injection container. "
-                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
-            }
-
-            foreach (TMessageHandler messageHandler in messageHandlers)
-            {
-                if (messageHandler is null)
+                if (handler.TryParseToMessageFormat<TMessageContext>(message, out var result))
                 {
-                    continue;
-                }
-
-                bool isProcessed = await TryProcessMessageAsync(messageHandler, message, messageContext, correlationInfo, cancellationToken);
-                if (isProcessed)
-                {
-                    break;
+                    if (result is null)
+                    {
+                        throw new InvalidCastException(
+                            "Successful parsing from abstracted message to concrete message handler type did unexpectedly result in a 'null' parsing result");
+                    }
+                    
+                    await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
+                    return;
                 }
             }
-        }
 
-        private async Task<bool> TryProcessMessageAsync(
-            IMessageHandler<TMessage, TMessageContext> messageHandler,
-            TMessage message,
-            TMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
-        {
-            Logger.LogTrace("Start try processing message:{messageType} with message handler:{messageHandler}", typeof(TMessage).Name, messageHandler.GetType().Name);
-            MessageProcessResult processResult = 
-                await messageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-
-            switch (processResult)
-            {
-                case MessageProcessResult.Processed: 
-                    Logger.LogInformation(
-                        "Message:{messageType} was processed correctly by message handler:{messageHandler}", 
-                        typeof(TMessage).Name, messageHandler.GetType().Name);
-                    return true;
-                case MessageProcessResult.NotSupported:
-                    Logger.LogWarning(
-                        "Message:{messageType} was not correctly processed by message handler:{messageHandler}, because the handler don't support it", 
-                        typeof(TMessage).Name, messageHandler.GetType().Name);
-                    return false;
-                case MessageProcessResult.Failure:
-                    Logger.LogError(
-                        "Message:{messageType} failed to be processed by message handler:{messageHandler}, because of a failure in the handler", 
-                        typeof(TMessage).Name, messageHandler.GetType().Name);
-                    return false;
-                default:
-                    throw new ArgumentOutOfRangeException(
-                        nameof(processResult), 
-                        processResult, 
-                        $"Message handler '{messageHandler.GetType().Name}' returned unknown message process result");
-            }
+            throw new InvalidOperationException(
+                $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
+                + "because no 'IMessageHandler<,>' was registered in the dependency injection container. "
+                + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
         }
 
         /// <summary>
