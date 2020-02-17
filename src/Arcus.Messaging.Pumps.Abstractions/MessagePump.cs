@@ -81,6 +81,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             return Task.CompletedTask;
         }
 
+        // TODO: move to extension?
         /// <summary>
         ///     Determines the encoding used for a given message
         /// </summary>
@@ -106,6 +107,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             return DefaultEncoding;
         }
 
+        // TODO: should we also provide a 'streamed' version to process the message? We would require some way to reset the stream though (i.e. VirtualStream).
         /// <summary>
         ///     Handle a new message that was received
         /// </summary>

@@ -37,43 +37,48 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
-            object engine = serviceProvider.GetProperty("Engine");
-            object callSiteFactory = engine.GetProperty("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
+            object engine = serviceProvider.GetPropertyValue("Engine");
+            object callSiteFactory = engine.GetPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
 
-            var descriptorLookup = (System.Collections.IEnumerable) callSiteFactory.GetField("_descriptorLookup");
+            var descriptorLookup = (System.Collections.IEnumerable) callSiteFactory.GetFieldValue("_descriptorLookup");
 
             var messageHandlers = new Collection<MessageHandler>();
             foreach (object lookup in descriptorLookup)
             {
-                var serviceType = (Type) lookup.GetProperty("Key");
+                var serviceType = (Type) lookup.GetPropertyValue("Key");
                 
                 // TODO: update to more strict message handler filter.
                 if (serviceType.Name.Contains("IMessageHandler"))
                 {
-                    var messageHandler = new MessageHandler(
-                        serviceType, 
-                        () => CreateMessageHandlerImplementation(lookup, callSiteFactory, engine, serviceType, serviceProvider));
+                    object cacheItem = lookup.GetPropertyValue("Value");
+                    var descriptors = (System.Collections.IEnumerable) cacheItem.GetFieldValue("_items");
+
+                    foreach (object descriptor in descriptors)
+                    {
+                        var messageHandler = new MessageHandler(
+                            serviceType, 
+                            () => CreateMessageHandlerImplementation(descriptor, callSiteFactory, engine, serviceType, serviceProvider));
                     
-                    messageHandlers.Add(messageHandler);
+                        messageHandlers.Add(messageHandler);
+                    }
                 }
             }
 
             return messageHandlers.AsEnumerable();
         }
 
-        private static object CreateMessageHandlerImplementation(object lookup, object callSiteFactory, object engine, Type serviceType, IServiceProvider serviceProvider)
+        private static object CreateMessageHandlerImplementation(object descriptor, object callSiteFactory, object engine, Type serviceType, IServiceProvider serviceProvider)
         {
-            object last = lookup.GetProperty("Value").GetProperty("Last");
-            object lifetime = last.GetProperty("Lifetime");
+            object lifetime = descriptor.GetPropertyValue("Lifetime");
             object resultCache = CreateResultCache(lifetime, serviceType);
-            object implementationType = last.GetProperty("ImplementationType");
+            object implementationType = descriptor.GetPropertyValue("ImplementationType");
             object callSiteChain = CreateCallSiteChain();
 
             callSiteChain.InvokeMethod("CheckCircularDependency", BindingFlags.Instance | BindingFlags.Public, serviceType);
             object callSite = callSiteFactory.InvokeMethod("CreateConstructorCallSite", resultCache, serviceType, implementationType, callSiteChain);
 
-            callSiteFactory.GetField("_callSiteCache")
-                           .SetProperty("Item", callSite, index: serviceType);
+            callSiteFactory.GetFieldValue("_callSiteCache")
+                           .SetIndexValue("Item", serviceType, callSite);
 
             return engine.InvokeMethod("RealizeService", callSite)
                          .InvokeMethod("Invoke", BindingFlags.Public | BindingFlags.Instance, serviceProvider);
