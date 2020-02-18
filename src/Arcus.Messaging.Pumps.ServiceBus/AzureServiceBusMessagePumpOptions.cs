@@ -55,7 +55,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             AutoComplete = true,
             JobId = Guid.NewGuid().ToString(),
-            TopicSubscription = TopicSubscription.DeleteOnStop
+            TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
         };
     }
 }
