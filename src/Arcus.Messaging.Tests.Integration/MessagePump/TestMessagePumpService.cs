@@ -24,7 +24,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     /// <summary>
     /// Represents a service to interact with the hosted-service.
     /// </summary>
-    public class MessagePumpService : IAsyncDisposable
+    public class TestMessagePumpService : IAsyncDisposable
     {
         private readonly ServiceBusEntity _entity;
         private readonly ITestOutputHelper _outputWriter;
@@ -32,7 +32,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         private ServiceBusEventConsumerHost _serviceBusEventConsumerHost;
 
-        private MessagePumpService(ServiceBusEntity entity, TestConfig configuration, ITestOutputHelper outputWriter)
+        private TestMessagePumpService(ServiceBusEntity entity, TestConfig configuration, ITestOutputHelper outputWriter)
         {
             Guard.NotNull(configuration, nameof(configuration));
             Guard.NotNull(outputWriter, nameof(outputWriter));
@@ -43,14 +43,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         /// <summary>
-        /// Starts a new instance of the <see cref="MessagePumpService"/> type to simulate messages.
+        /// Starts a new instance of the <see cref="TestMessagePumpService"/> type to simulate messages.
         /// </summary>
-        public static async Task<MessagePumpService> StartNewAsync(
+        public static async Task<TestMessagePumpService> StartNewAsync(
             ServiceBusEntity entity,
             TestConfig config,
             ITestOutputHelper outputWriter)
         {
-            var service = new MessagePumpService(entity, config, outputWriter);
+            var service = new TestMessagePumpService(entity, config, outputWriter);
             await service.StartAsync();
 
             return service;

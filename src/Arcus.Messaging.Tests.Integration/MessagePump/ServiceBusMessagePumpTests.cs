@@ -35,7 +35,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             using (await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueProgram>(config, _outputWriter, commandArguments))
             {
-                await using var service = await MessagePumpService.StartNewAsync(entity, config, _outputWriter);
+                await using var service = await TestMessagePumpService.StartNewAsync(entity, config, _outputWriter);
                 
                 // Act / Assert
                 await service.SimulateMessageProcessingAsync();
