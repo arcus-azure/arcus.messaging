@@ -107,7 +107,7 @@ public void ConfigureServices(IServiceCollection services)
 
             // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
             // when the message pump starts/stops (default: DeleteOnStop, which implicitly means also 'create on start').
-            options.TopicSubscription = TopicSubscription.DeleteOnStop;
+            options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
         });
 }
 ```
