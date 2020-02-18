@@ -90,7 +90,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             string contents = File.ReadAllText(programFile.FullName);
             contents = 
                 contents.Replace(typeOfProgram.Name, "Program")
-                        .Replace("Main2", "Main");
+                        .Replace("main", "Main");
 
             string destinationPath = Path.Combine(emptyServiceBusWorkerDirectory.FullName, "Program.cs");
 

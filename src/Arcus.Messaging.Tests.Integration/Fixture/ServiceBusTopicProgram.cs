@@ -9,7 +9,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
 {
     public class ServiceBusTopicProgram
     {
-        public static void Main2(string[] args)
+        public static void main(string[] args)
         {
             CreateHostBuilder(args)
                 .Build()
