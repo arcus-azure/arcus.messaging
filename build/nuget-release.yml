@@ -119,7 +119,7 @@ stages:
     dependsOn: Build
     condition: succeeded()
     jobs:
-      - job: SelfContqiningIntegrationTests
+      - job: SelfContainingIntegrationTests
         displayName: 'Run self-containing integration tests'
         pool:
           vmImage: 'ubuntu-16.04'
