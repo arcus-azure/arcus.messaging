@@ -21,6 +21,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Deletes the new topic subscription when the message pump stops.
         /// </summary>
-        DeleteOnStop = 3
+        DeleteOnStop = 2
     }
 }
