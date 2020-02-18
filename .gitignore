@@ -331,5 +331,7 @@ ASALocalRun/
 
 # Custom
 *.local.json
+*.private.json
+**/*.Workers.ServiceBus/Program.cs
 
 /docs/_site/
