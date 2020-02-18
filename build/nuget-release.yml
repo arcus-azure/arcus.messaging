@@ -119,11 +119,16 @@ stages:
     dependsOn: Build
     condition: succeeded()
     jobs:
-      - template: test/run-integration-tests.yml@templates
-        parameters:
-          dotnetSdkVersion: '$(DotNet.Sdk.Version)'
-          projectName: '$(Project).Tests.Integration'
-          category: 'Integration'
+      - job: SelfContqiningIntegrationTests
+        displayName: 'Run self-containing integration tests'
+        pool:
+          vmImage: 'ubuntu-16.04'
+        steps:
+          - template: test/run-integration-tests.yml@templates
+            parameters:
+              dotnetSdkVersion: '$(DotNet.Sdk.Version)'
+              projectName: '$(Project).Tests.Integration'
+              category: 'Integration'
 
   - stage: Release
     displayName: 'Release to NuGet.org'
