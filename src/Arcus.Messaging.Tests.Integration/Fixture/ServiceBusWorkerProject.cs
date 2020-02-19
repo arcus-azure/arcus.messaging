@@ -59,7 +59,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
             var project = new ServiceBusWorkerProject(emptyServiceBusWorkerDirectory, outputWriter);
 
-            const int healthPort = 5000;
+            const int healthPort = 40643;
             project.Start(commandArguments.Prepend(CommandArgument.CreateOpen("ARCUS_HEALTH_PORT", healthPort)));
             await project.WaitUntilWorkerIsAvailableAsync(healthPort);
 

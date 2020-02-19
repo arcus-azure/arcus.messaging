@@ -7,10 +7,10 @@ using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.ServiceBus.Core.Extensions;
 using Arcus.Messaging.Tests.Core.Events.v1;
+using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Logging;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
-using Bogus;
 using GuardNet;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.ServiceBus;
@@ -90,7 +90,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
             var messageSender = new MessageSender(serviceBusConnectionStringBuilder);
 
-            Order order = GenerateOrder();
+            Order order = OrderGenerator.Generate();
             Message orderMessage = order.WrapInServiceBusMessage(operationId, transactionId);
             await messageSender.SendAsync(orderMessage);
 
@@ -111,16 +111,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
             Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
             Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
-        }
-
-        private static Order GenerateOrder()
-        {
-            var orderGenerator = new Faker<Order>()
-                .RuleFor(u => u.Id, f => Guid.NewGuid().ToString())
-                .RuleFor(u => u.Amount, f => f.Random.Int())
-                .RuleFor(u => u.ArticleNumber, f => f.Commerce.Product());
-
-            return orderGenerator.Generate();
         }
 
         /// <summary>
