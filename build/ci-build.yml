@@ -134,6 +134,9 @@ stages:
     displayName: Self-Containing Integration Tests
     dependsOn: Build
     condition: succeeded()
+    variables:
+      - name: 'Arcus.Health.Port.Queue'
+        value: '42063'
     jobs:
       - job: SelfContainingIntegrationTests
         displayName: 'Run self-containing integration tests'
