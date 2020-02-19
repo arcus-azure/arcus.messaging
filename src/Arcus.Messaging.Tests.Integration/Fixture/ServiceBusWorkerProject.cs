@@ -5,10 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using GuardNet;
-using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Interfaces;
 using Polly;
 using Xunit.Abstractions;
@@ -147,8 +145,14 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             using (var client = new TcpClient())
             {
-                await client.ConnectAsync(IPAddress.Parse("127.0.0.1"), tcpPort);
-                client.Close();
+                try
+                {
+                    await client.ConnectAsync(IPAddress.Parse("127.0.0.1"), tcpPort);
+                }
+                finally
+                {
+                    client.Close();
+                }
             }
         }
 
@@ -170,12 +174,14 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 CreateNoWindow = true
             };
 
-            using Process process = Process.Start(startInfo);
-            process.WaitForExit();
-
-            if (!process.HasExited)
+            using (Process process = Process.Start(startInfo))
             {
-                process.Kill(entireProcessTree: true);
+                process.WaitForExit();
+
+                if (!process.HasExited)
+                {
+                    process.Kill(entireProcessTree: true);
+                }
             }
         }
 
@@ -216,12 +222,16 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
         private void StopProject()
         {
+            _logger.WriteLine("Stopping Service Bus worker project...");
             if (!_process.HasExited)
             {
+                _logger.WriteLine("Killing Service Bus worker project...");
                 _process.Kill(entireProcessTree: true);
+                _logger.WriteLine("Killed Service Bus worker project!");
             }
 
             _process.Dispose();
+            _logger.WriteLine("Service Bus worker project stopped!");
         }
     }
 }
