@@ -338,7 +338,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             AddServiceBusTopicMessagePump<TMessagePump>(
                 services,
-                topicName,
+                entityName: topicName,
                 subscriptionName,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
                 configureMessagePump: configureMessagePump);
@@ -368,7 +368,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             AddServiceBusTopicMessagePump<TMessagePump>(
                 services,
-                topicName,
+                entityName: topicName,
                 subscriptionName,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
                 configureMessagePump: configureMessagePump);
@@ -398,7 +398,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             AddServiceBusTopicMessagePump<TMessagePump>(
                 services,
-                topicName,
+                entityName: topicName,
                 subscriptionName,
                 getConnectionStringFromConfigurationFunc,
                 configureMessagePump: configureMessagePump);
@@ -543,7 +543,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
                 services,
-                topicName,
+                entityName: topicName,
                 subscriptionPrefix,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
                 configureMessagePump: configureMessagePump);
@@ -576,7 +576,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
                 services,
-                topicName,
+                entityName: topicName,
                 subscriptionPrefix,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
                 configureMessagePump: configureMessagePump);
@@ -609,7 +609,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
                 services,
-                topicName,
+                entityName: topicName,
                 subscriptionPrefix,
                 getConnectionStringFromConfigurationFunc,
                 configureMessagePump: configureMessagePump);
