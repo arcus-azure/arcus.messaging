@@ -31,11 +31,9 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services));
 
-            AddServiceBusMessagePump<TMessagePump>(
+            AddServiceBusQueueMessagePump<TMessagePump>(
                 services,
                 entityName: null,
-                subscriptionPrefix: null,
-                ServiceBusEntity.Queue,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
                 configureMessagePump: configureMessagePump);
 
@@ -61,11 +59,9 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services));
 
-            AddServiceBusMessagePump<TMessagePump>(
+            AddServiceBusQueueMessagePump<TMessagePump>(
                 services,
                 entityName: null,
-                subscriptionPrefix: null,
-                ServiceBusEntity.Queue,
                 getConnectionStringFromConfigurationFunc:
                 getConnectionStringFromConfigurationFunc,
                 configureMessagePump: configureMessagePump);
@@ -95,11 +91,9 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services));
 
-            AddServiceBusMessagePump<TMessagePump>(
+            AddServiceBusQueueMessagePump<TMessagePump>(
                 services,
-                entityName: String.Empty,
-                subscriptionPrefix: String.Empty,
-                ServiceBusEntity.Queue,
+                entityName: null,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
                 configureMessagePump: configureMessagePump);
 
@@ -130,16 +124,16 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services));
 
-            AddServiceBusMessagePump<TMessagePump>(
+            AddServiceBusQueueMessagePump<TMessagePump>(
                 services,
-                queueName,
-                subscriptionPrefix: String.Empty,
-                ServiceBusEntity.Queue,
+                entityName: queueName,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
                 configureMessagePump: configureMessagePump);
 
             return services;
         }
+
+       
 
         /// <summary>
         /// Adds a message handler to consume messages from Azure Service Bus Queue
@@ -158,11 +152,9 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services));
 
-            AddServiceBusMessagePump<TMessagePump>(
+            AddServiceBusQueueMessagePump<TMessagePump>(
                 services,
-                queueName,
-                subscriptionPrefix: String.Empty,
-                ServiceBusEntity.Queue,
+                entityName: queueName,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
                 configureMessagePump: configureMessagePump);
 
@@ -186,233 +178,18 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services));
 
-            AddServiceBusMessagePump<TMessagePump>(
+            AddServiceBusQueueMessagePump<TMessagePump>(
                 services,
-                queueName,
-                subscriptionPrefix: String.Empty,
-                ServiceBusEntity.Queue,
+                entityName: queueName,
                 getConnectionStringFromConfigurationFunc,
                 configureMessagePump: configureMessagePump);
 
             return services;
         }
 
-        /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
-        /// </summary>
-        /// <remarks>
-        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
-        /// namespace
-        /// </remarks>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
-        /// </param>
-        /// <param name="services">Collection of services to use in the application</param>
-        /// <param name="secretName">
-        /// Name of the secret to retrieve using your registered <see cref="ISecretProvider" />
-        /// implementation
-        /// </param>
-        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
-        /// <returns>Collection of services to use in the application</returns>
-        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
-            this IServiceCollection services,
-            string subscriptionPrefix,
-            string secretName,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
-            where TMessagePump : class, IHostedService
-        {
-            Guard.NotNull(services, nameof(services));
-
-            AddServiceBusMessagePump<TMessagePump>(
-                services,
-                entityName: null,
-                subscriptionPrefix: subscriptionPrefix,
-                serviceBusEntity: ServiceBusEntity.Topic,
-                getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
-                configureMessagePump: configureMessagePump);
-
-            return services;
-        }
-
-        /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
-        /// </summary>
-        /// <remarks>
-        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
-        /// namespace
-        /// </remarks>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
-        /// </param>
-        /// <param name="services">Collection of services to use in the application</param>
-        /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
-        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
-        /// <returns>Collection of services to use in the application</returns>
-        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
-            this IServiceCollection services,
-            string subscriptionPrefix,
-            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
-            where TMessagePump : class, IHostedService
-        {
-            Guard.NotNull(services, nameof(services));
-
-            AddServiceBusMessagePump<TMessagePump>(
-                services,
-                entityName: null,
-                subscriptionPrefix: subscriptionPrefix,
-                serviceBusEntity: ServiceBusEntity.Topic,
-                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
-                configureMessagePump: configureMessagePump);
-
-            return services;
-        }
-
-        /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
-        /// </summary>
-        /// <remarks>
-        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
-        /// namespace
-        /// </remarks>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
-        /// </param>
-        /// <param name="services">Collection of services to use in the application</param>
-        /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
-        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
-        /// <returns>Collection of services to use in the application</returns>
-        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
-            this IServiceCollection services,
-            string subscriptionPrefix,
-            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
-            where TMessagePump : class, IHostedService
-        {
-            Guard.NotNull(services, nameof(services));
-
-            AddServiceBusMessagePump<TMessagePump>(
-                services,
-                entityName: null,
-                subscriptionPrefix: subscriptionPrefix,
-                serviceBusEntity: ServiceBusEntity.Topic,
-                getConnectionStringFromConfigurationFunc:
-                getConnectionStringFromConfigurationFunc,
-                configureMessagePump: configureMessagePump);
-
-            return services;
-        }
-
-        /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
-        /// </summary>
-        /// <param name="topicName">Name of the topic to work with</param>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
-        /// </param>
-        /// <param name="services">Collection of services to use in the application</param>
-        /// <param name="secretName">
-        /// Name of the secret to retrieve using your registered <see cref="ISecretProvider" />
-        /// implementation
-        /// </param>
-        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
-        /// <returns>Collection of services to use in the application</returns>
-        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
-            this IServiceCollection services,
-            string topicName,
-            string subscriptionPrefix,
-            string secretName,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
-            where TMessagePump : class, IHostedService
-        {
-            Guard.NotNull(services, nameof(services));
-
-            AddServiceBusMessagePump<TMessagePump>(
-                services,
-                topicName,
-                subscriptionPrefix,
-                ServiceBusEntity.Topic,
-                getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
-                configureMessagePump: configureMessagePump);
-
-            return services;
-        }
-
-        /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
-        /// </summary>
-        /// <param name="topicName">Name of the topic to work with</param>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
-        /// </param>
-        /// <param name="services">Collection of services to use in the application</param>
-        /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
-        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
-        /// <returns>Collection of services to use in the application</returns>
-        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
-            this IServiceCollection services,
-            string topicName,
-            string subscriptionPrefix,
-            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
-            where TMessagePump : class, IHostedService
-        {
-            Guard.NotNull(services, nameof(services));
-
-            AddServiceBusMessagePump<TMessagePump>(
-                services,
-                topicName,
-                subscriptionPrefix,
-                ServiceBusEntity.Topic,
-                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
-                configureMessagePump: configureMessagePump);
-
-            return services;
-        }
-
-        /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
-        /// </summary>
-        /// <param name="topicName">Name of the topic to work with</param>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
-        /// </param>
-        /// <param name="services">Collection of services to use in the application</param>
-        /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
-        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
-        /// <returns>Collection of services to use in the application</returns>
-        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
-            this IServiceCollection services,
-            string topicName,
-            string subscriptionPrefix,
-            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
-            where TMessagePump : class, IHostedService
-        {
-            Guard.NotNull(services, nameof(services));
-
-            AddServiceBusMessagePump<TMessagePump>(
-                services,
-                topicName,
-                subscriptionPrefix,
-                ServiceBusEntity.Topic,
-                getConnectionStringFromConfigurationFunc,
-                configureMessagePump: configureMessagePump);
-
-            return services;
-        }
-
-        private static void AddServiceBusMessagePump<TMessagePump>(
+        private static void AddServiceBusQueueMessagePump<TMessagePump>(
             IServiceCollection services,
             string entityName,
-            string subscriptionPrefix,
-            ServiceBusEntity serviceBusEntity,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
             Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
@@ -423,11 +200,485 @@ namespace Microsoft.Extensions.DependencyInjection
             var messagePumpOptions = AzureServiceBusMessagePumpOptions.Default;
             configureMessagePump?.Invoke(messagePumpOptions);
 
+            AddServiceBusMessagePump<TMessagePump>(
+                services,
+                entityName,
+                subscriptionName: null,
+                ServiceBusEntity.Queue,
+                messagePumpOptions,
+                getConnectionStringFromConfigurationFunc,
+                getConnectionStringFromSecretFunc);
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <remarks>
+        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
+        /// namespace
+        /// </remarks>
+        /// <param name="subscriptionName">Name of the subscription to process </param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="secretName">
+        /// Name of the secret to retrieve using your registered <see cref="ISecretProvider" />
+        /// implementation
+        /// </param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
+            this IServiceCollection services,
+            string subscriptionName,
+            string secretName,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName));
+
+            AddServiceBusTopicMessagePump<TMessagePump>(
+                services,
+                entityName: null,
+                subscriptionName: subscriptionName,
+                getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <remarks>
+        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
+        /// namespace
+        /// </remarks>
+        /// <param name="subscriptionName">Name of the subscription to process </param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
+            this IServiceCollection services,
+            string subscriptionName,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName));
+
+            AddServiceBusTopicMessagePump<TMessagePump>(
+                services,
+                entityName: null,
+                subscriptionName: subscriptionName,
+                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <remarks>
+        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
+        /// namespace
+        /// </remarks>
+        /// <param name="subscriptionName">Name of the subscription to process </param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
+            this IServiceCollection services,
+            string subscriptionName,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName));
+
+            AddServiceBusTopicMessagePump<TMessagePump>(
+                services,
+                entityName: null,
+                subscriptionName: subscriptionName,
+                getConnectionStringFromConfigurationFunc:
+                getConnectionStringFromConfigurationFunc,
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <param name="topicName">Name of the topic to work with</param>
+        /// <param name="subscriptionName">
+        /// Name of the subscription to process, concat with the
+        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// </param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="secretName">
+        /// Name of the secret to retrieve using your registered <see cref="ISecretProvider" />
+        /// implementation
+        /// </param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
+            this IServiceCollection services,
+            string topicName,
+            string subscriptionName,
+            string secretName,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName));
+
+            AddServiceBusTopicMessagePump<TMessagePump>(
+                services,
+                topicName,
+                subscriptionName,
+                getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <param name="topicName">Name of the topic to work with</param>
+        /// <param name="subscriptionName">Name of the subscription to process</param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
+            this IServiceCollection services,
+            string topicName,
+            string subscriptionName,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName));
+
+            AddServiceBusTopicMessagePump<TMessagePump>(
+                services,
+                topicName,
+                subscriptionName,
+                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <param name="topicName">Name of the topic to work with</param>
+        /// <param name="subscriptionName">Name of the subscription to process</param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePump<TMessagePump>(
+            this IServiceCollection services,
+            string topicName,
+            string subscriptionName,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName));
+
+            AddServiceBusTopicMessagePump<TMessagePump>(
+                services,
+                topicName,
+                subscriptionName,
+                getConnectionStringFromConfigurationFunc,
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <remarks>
+        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
+        /// namespace
+        /// </remarks>
+        /// <param name="subscriptionPrefix">
+        /// Prefix of the subscription to process, concat with the
+        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// </param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="secretName">
+        /// Name of the secret to retrieve using your registered <see cref="ISecretProvider" />
+        /// implementation
+        /// </param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+            this IServiceCollection services,
+            string subscriptionPrefix,
+            string secretName,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
+
+            AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+                services,
+                entityName: null,
+                subscriptionPrefix,
+                getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <remarks>
+        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
+        /// namespace
+        /// </remarks>
+        /// <param name="subscriptionPrefix">
+        /// Prefix of the subscription to process, concat with the
+        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// </param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+            this IServiceCollection services,
+            string subscriptionPrefix,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
+
+            AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+                services,
+                entityName: null,
+                subscriptionPrefix,
+                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <remarks>
+        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
+        /// namespace
+        /// </remarks>
+        /// <param name="subscriptionPrefix">
+        /// Prefix of the subscription to process, concat with the
+        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// </param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+            this IServiceCollection services,
+            string subscriptionPrefix,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
+
+            AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+                services,
+                entityName: null,
+                subscriptionPrefix: subscriptionPrefix,
+                getConnectionStringFromConfigurationFunc:
+                getConnectionStringFromConfigurationFunc,
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <param name="topicName">Name of the topic to work with</param>
+        /// <param name="subscriptionPrefix">
+        /// Prefix of the subscription to process, concat with the
+        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// </param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="secretName">
+        /// Name of the secret to retrieve using your registered <see cref="ISecretProvider" />
+        /// implementation
+        /// </param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+            this IServiceCollection services,
+            string topicName,
+            string subscriptionPrefix,
+            string secretName,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
+
+            AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+                services,
+                topicName,
+                subscriptionPrefix,
+                getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <param name="topicName">Name of the topic to work with</param>
+        /// <param name="subscriptionPrefix">
+        /// Prefix of the subscription to process, concat with the
+        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// </param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+            this IServiceCollection services,
+            string topicName,
+            string subscriptionPrefix,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
+
+            AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+                services,
+                topicName,
+                subscriptionPrefix,
+                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <param name="topicName">Name of the topic to work with</param>
+        /// <param name="subscriptionPrefix">
+        /// Prefix of the subscription to process, concat with the
+        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// </param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+            this IServiceCollection services,
+            string topicName,
+            string subscriptionPrefix,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
+
+            AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+                services,
+                topicName,
+                subscriptionPrefix,
+                getConnectionStringFromConfigurationFunc,
+                configureMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        private static void AddServiceBusTopicMessagePumpWithPrefix<TMessagePump>(
+            IServiceCollection services,
+            string entityName,
+            string subscriptionPrefix,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            var messagePumpOptions = AzureServiceBusMessagePumpOptions.Default;
+            string subscriptionName = $"{subscriptionPrefix}-{messagePumpOptions.JobId}";
+
+            AddServiceBusTopicMessagePump<TMessagePump>(
+                services,
+                entityName: entityName,
+                subscriptionName,
+                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
+                getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
+                configureMessagePump: configureMessagePump);
+        }
+
+        private static void AddServiceBusTopicMessagePump<TMessagePump>(
+            IServiceCollection services,
+            string entityName,
+            string subscriptionName = null,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+
+            var messagePumpOptions = AzureServiceBusMessagePumpOptions.Default;
+            configureMessagePump?.Invoke(messagePumpOptions);
+
+            AddServiceBusMessagePump<TMessagePump>(
+                services,
+                entityName,
+                subscriptionName,
+                ServiceBusEntity.Topic,
+                messagePumpOptions,
+                getConnectionStringFromConfigurationFunc,
+                getConnectionStringFromSecretFunc);
+        }
+
+        private static void AddServiceBusMessagePump<TMessagePump>(
+            IServiceCollection services,
+            string entityName,
+            string subscriptionName,
+            ServiceBusEntity serviceBusEntity,
+            AzureServiceBusMessagePumpOptions messagePumpOptions,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null)
+            where TMessagePump : class, IHostedService
+        {
+            Guard.NotNull(services, nameof(services));
+
             services.AddSingleton(serviceProvider =>
             {
                 return new AzureServiceBusMessagePumpSettings(
                     entityName,
-                    subscriptionPrefix,
+                    subscriptionName,
                     serviceBusEntity,
                     getConnectionStringFromConfigurationFunc,
                     getConnectionStringFromSecretFunc,

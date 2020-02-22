@@ -22,7 +22,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         ///     Constructor
         /// </summary>
         /// <param name="entityName">Name of the entity to process</param>
-        /// <param name="subscriptionPrefix">Name prefix of the subscription to process</param>
+        /// <param name="subscriptionName">Name of the subscription to process</param>
         /// <param name="serviceBusEntity">Entity type of the Service Bus</param>
         /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
@@ -30,7 +30,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="serviceProvider">Collection of services to use</param>
         public AzureServiceBusMessagePumpSettings(
             string entityName,
-            string subscriptionPrefix,
+            string subscriptionName,
             ServiceBusEntity serviceBusEntity,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
@@ -48,7 +48,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             _getConnectionStringFromSecretFunc = getConnectionStringFromSecretFunc;
 
             EntityName = entityName;
-            SubscriptionPrefix = subscriptionPrefix;
+            SubscriptionName = subscriptionName;
             ServiceBusEntity = serviceBusEntity;
             Options = options;
         }
@@ -63,7 +63,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         ///     Name of the subscription to process
         /// </summary>
         /// <remarks>This is only applicable when using Azure Service Bus Topics</remarks>
-        public string SubscriptionPrefix { get; }
+        public string SubscriptionName { get; }
 
         /// <summary>
         ///     Entity of the Service Bus.
