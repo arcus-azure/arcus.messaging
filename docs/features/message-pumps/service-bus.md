@@ -57,9 +57,9 @@ public void ConfigureServices(IServiceCollection services)
     // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
     services.AddServiceBusQueueMessagePump<OrdersMessageHandler>("ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
-    // Add Service Bus Topic message pump and use OrdersMessageHandler to process the messages on the 'My-Subscription-Prefix' prefix subscription
+    // Add Service Bus Topic message pump and use OrdersMessageHandler to process the messages on the 'My-Subscription-Name' subscription
     // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
-    services.AddServiceBusTopicMessagePump<OrdersMessageHandler>("My-Subscription-Prefix", "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
+    services.AddServiceBusTopicMessagePump<OrdersMessageHandler>("My-Subscription-Name", "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 }
 ```
 
@@ -72,6 +72,7 @@ We support **connection strings that are scoped on the Service Bus namespace and
 Next to that, we provide a **variety of overloads** to allow you to:
 
 - Specify the name of the queue/topic
+- Only provide a prefix for the topic subscription, so each topic message pump is handling messages on separate subscriptions
 - Configure how the message pump should work *(ie. max concurrent calls & auto delete)*
 - Read the connection string from the configuration *(although we highly recommend using a secret store instead)*
 
@@ -79,17 +80,23 @@ Next to that, we provide a **variety of overloads** to allow you to:
 public void ConfigureServices(IServiceCollection services)
 {
     // Specify the name of the Service Bus Queue:
-    services.AddServiceBusQueuePump<OrdersMessageHandler>(
+    services.AddServiceBusQueueMessagePump<OrdersMessageHandler>(
         "My-Service-Bus-Queue-Name",
         "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
-    // Specify the name of the Service Bus Topic, and provide a prefix for the Topic subscription:
-    services.AddServiceBusTopicPump<OrdersMessageHandler>(
+    // Specify the name of the Service Bus Topic, and provide a name for the Topic subscription:
+    services.AddServiceBusMessageTopicPump<OrdersMessageHandler>(
         "My-Service-Bus-Topic-Name",
-        "My-Service-Bus-Topic-Subscription-Prefix",
+        "My-Service-Bus-Topic-Subscription-Name",
         "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
-    services.AddServiceBusQueuePump<OrdersMessageHandler>(
+    // Specify a topic subscription prefix instead of a name to separate topic message pumps.
+    services.AddServiceBusTopicPumpWithPrefix<OrdersMessageHandler>(
+        "My-Service-Bus-Topic-Name"
+        "My-Service-Bus-Subscription-Prefix",
+        "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
+
+    services.AddServiceBusQueueMessagePump<OrdersMessageHandler>(
         "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
         options => 
         {
