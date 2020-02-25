@@ -7,7 +7,7 @@ using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Arcus.Messaging.Pumps.ServiceBus
+namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
     /// <summary>
     ///     Settings for an Azure Service Bus message pump
@@ -28,7 +28,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
         /// <param name="options">Options that influence the behavior of the message pump</param>
         /// <param name="serviceProvider">Collection of services to use</param>
-        public AzureServiceBusMessagePumpSettings(
+        internal AzureServiceBusMessagePumpSettings(
             string entityName,
             string subscriptionPrefix,
             ServiceBusEntity serviceBusEntity,
@@ -73,7 +73,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Options that influence the behavior of the message pump
         /// </summary>
-        public AzureServiceBusMessagePumpOptions Options { get; }
+        internal AzureServiceBusMessagePumpOptions Options { get; }
 
         /// <summary>
         ///     Gets the configured connection string
