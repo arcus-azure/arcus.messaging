@@ -38,15 +38,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Settings = serviceProvider.GetRequiredService<AzureServiceBusMessagePumpSettings>();
             JobId = Settings.Options.JobId;
 
-            if (String.IsNullOrWhiteSpace(Settings.SubscriptionPrefix))
-            {
-                SubscriptionName = null;
-            }
-            else
-            {
-                SubscriptionName = $"{Settings.SubscriptionPrefix}-{JobId}";
-            }
-
+            SubscriptionName = Settings.SubscriptionName;
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
         }
 
@@ -66,7 +58,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         public string JobId { get; }
 
         /// <summary>
-        /// Gets the name of the topic subscription; combined from the <see cref="AzureServiceBusMessagePumpSettings.SubscriptionPrefix"/> and the <see cref="JobId"/>.
+        /// Gets the name of the topic subscription; combined from the <see cref="AzureServiceBusMessagePumpSettings.SubscriptionName"/> and the <see cref="JobId"/>.
         /// </summary>
         protected string SubscriptionName { get; }
 
