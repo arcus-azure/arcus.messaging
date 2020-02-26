@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Security.Core;
 using GuardNet;
@@ -278,14 +279,15 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        ///     Adds a <see cref="IAzureServiceBusMessageHandler"/> implementation to process the messages from Azure Service Bus resources.
+        ///     Adds a <see cref="IAzureServiceBusMessageHandler{TMessage}"/> implementation to process the messages from Azure Service Bus resources.
         /// </summary>
         /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
+        /// <typeparam name="TMessage"></typeparam>
         /// <param name="services">The collection of services to use in the application.</param>
-        public static IServiceCollection WithMessagePumpHandler<TMessageHandler>(this IServiceCollection services)
-            where TMessageHandler : class, IAzureServiceBusMessageHandler
+        public static IServiceCollection WithMessagePumpHandler<TMessageHandler, TMessage>(this IServiceCollection services)
+            where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
         {
-            services.AddSingleton<IAzureServiceBusMessageHandler, TMessageHandler>();
+            services.AddSingleton<IMessageHandler<TMessage, AzureServiceBusMessageContext>, TMessageHandler>();
 
             return services;
         }

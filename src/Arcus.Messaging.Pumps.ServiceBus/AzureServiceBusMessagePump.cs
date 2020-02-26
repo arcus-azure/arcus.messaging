@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -17,7 +18,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// <summary>
     ///     Message pump for processing messages on an Azure Service Bus entity
     /// </summary>
-    public class AzureServiceBusMessagePump : MessagePump<Message, AzureServiceBusMessageContext>
+    public class AzureServiceBusMessagePump : MessagePump
     {
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
@@ -283,7 +284,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
                     message.UserProperties);
 
-                await ProcessMessageAsync<IAzureServiceBusMessageHandler>(message, messageContext, correlationInfo, cancellationToken);
+                Encoding encoding = DetermineMessageEncoding(messageContext);
+                string messageBody = encoding.GetString(message.Body);
+
+                await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
 
                 Logger.LogInformation("Message {MessageId} processed", message.MessageId);
             }
