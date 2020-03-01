@@ -13,7 +13,7 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class IServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Queue
+        /// Adds a message pump to consume messages from Azure Service Bus Queue
         /// </summary>
         /// <remarks>
         /// When using this approach; the connection string should be scoped to the queue that is being processed, not the
@@ -40,7 +40,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Queue
+        /// Adds a message pump to consume messages from Azure Service Bus Queue
         /// </summary>
         /// <remarks>
         /// When using this approach; the connection string should be scoped to the queue that is being processed, not the
@@ -68,7 +68,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Queue
+        /// Adds a message pump to consume messages from Azure Service Bus Queue
         /// </summary>
         /// <remarks>
         /// When using this approach; the connection string should be scoped to the queue that is being processed, not the
@@ -98,7 +98,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Queue
+        /// Adds a message pump to consume messages from Azure Service Bus Queue
         /// </summary>
         /// <remarks>
         /// When using this approach; the connection string should be scoped to the queue that is being processed, not the
@@ -130,7 +130,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Queue
+        /// Adds a message pump to consume messages from Azure Service Bus Queue
         /// </summary>
         /// <param name="queueName">Name of the queue to process</param>
         /// <param name="services">Collection of services to use in the application</param>
@@ -155,7 +155,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Queue
+        /// Adds a message pump to consume messages from Azure Service Bus Queue
         /// </summary>
         /// <param name="queueName">Name of the queue to process</param>
         /// <param name="services">Collection of services to use in the application</param>
@@ -202,7 +202,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <remarks>
         /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
@@ -236,7 +236,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <remarks>
         /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
@@ -267,7 +267,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <remarks>
         /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
@@ -298,7 +298,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionName">Name of the subscription to process</param>
@@ -329,7 +329,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionName">Name of the subscription to process</param>
@@ -357,7 +357,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionName">Name of the subscription to process</param>
@@ -385,7 +385,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <remarks>
         /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
@@ -422,7 +422,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <remarks>
         /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
@@ -456,7 +456,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <remarks>
         /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
@@ -491,7 +491,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionPrefix">
@@ -526,7 +526,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionPrefix">
@@ -558,7 +558,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a message handler to consume messages from Azure Service Bus Topic
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionPrefix">
