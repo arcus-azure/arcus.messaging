@@ -78,8 +78,8 @@ stages:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               projectName: '$(Project).Tests.Unit'
 
-  - stage: IntegrationTests
-    displayName: Integration Tests
+  - stage: DockerIntegrationTests
+    displayName: Docker Integration Tests
     dependsOn: Build
     condition: succeeded()
     variables:
@@ -92,8 +92,8 @@ stages:
     - name: 'Arcus.Health.Port.Topic'
       value: '42064'
     jobs:
-      - job: IntegrationTests
-        displayName: 'Run integration tests'
+      - job: DockerIntegrationTests
+        displayName: 'Run Docker integration tests'
         pool:
           vmImage: 'ubuntu-16.04'
         steps:
@@ -122,7 +122,7 @@ stages:
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               projectName: '$(Project).Tests.Integration'
-              category: 'Integration'
+              category: 'Docker'
           - task: PowerShell@2
             displayName: 'Get Docker container logs'
             inputs:
@@ -130,9 +130,28 @@ stages:
               script: 'docker logs $(Images.ServiceBus.Queue)'
             condition: failed()
 
+  - stage: SelfContainingIntegrationTests
+    displayName: Self-Containing Integration Tests
+    dependsOn: Build
+    condition: succeeded()
+    variables:
+      - name: 'Arcus.Health.Port.Queue'
+        value: '42063'
+    jobs:
+      - job: SelfContainingIntegrationTests
+        displayName: 'Run self-containing integration tests'
+        pool:
+          vmImage: 'ubuntu-16.04'
+        steps:
+          - template: test/run-integration-tests.yml@templates
+            parameters:
+              dotnetSdkVersion: '$(DotNet.Sdk.Version)'
+              projectName: '$(Project).Tests.Integration'
+              category: 'Integration'
+
   - stage: ReleaseToMyget
     displayName: 'Release to MyGet'
-    dependsOn: [IntegrationTests, UnitTests]
+    dependsOn: [SelfContainingIntegrationTests, DockerIntegrationTests, UnitTests]
     condition: succeeded()
     jobs:
       - job: PushToMyGet

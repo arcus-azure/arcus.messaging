@@ -15,10 +15,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Arcus.EventGrid.Publishing" Version="3.0.0-preview-1" />
     <PackageReference Include="Arcus.EventGrid.Testing" Version="3.0.0-preview-1" />
     <PackageReference Include="Guard.Net" Version="1.2.0" />
     <PackageReference Include="Microsoft.Azure.ServiceBus" Version="4.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="3.0.0" />
@@ -31,6 +33,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.Health\Arcus.Messaging.Health.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.Tests.Workers\Arcus.Messaging.Tests.Workers.csproj" />
   </ItemGroup>
 
 </Project>

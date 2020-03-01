@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.Health
 {
-    [Trait("Category", "Integration")]
+    [Trait("Category", "Docker")]
     public class TcpHealthListenerTests : IntegrationTest
     {
         private readonly int _healthTcpPort;
