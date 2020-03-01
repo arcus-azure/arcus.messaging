@@ -80,7 +80,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Act
             IServiceCollection result =
-                services.AddServiceBusQueueMessagePump<EmptyMessagePump>(
+                services.AddServiceBusQueueMessagePump(
                     "queue name", "secret name", configureMessagePump: options => options.AutoComplete = true);
 
             // Assert
@@ -88,7 +88,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             await settings.GetConnectionStringAsync();
@@ -107,14 +107,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Act
             IServiceCollection result =
-                services.AddServiceBusQueueMessagePump<EmptyMessagePump>("secret name", configureMessagePump: options => options.AutoComplete = true);
+                services.AddServiceBusQueueMessagePump("secret name", configureMessagePump: options => options.AutoComplete = true);
 
             // Assert
             Assert.NotNull(result);
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             await settings.GetConnectionStringAsync();
@@ -133,14 +133,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Act
             IServiceCollection result =
-                services.AddServiceBusTopicMessagePumpWithPrefix<EmptyMessagePump>(subscriptionPrefix, config => "ignored connection string");
+                services.AddServiceBusTopicMessagePumpWithPrefix(subscriptionPrefix, config => "ignored connection string");
 
             // Assert
             Assert.NotNull(result);
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             Assert.StartsWith(subscriptionPrefix, settings.SubscriptionName);
@@ -161,14 +161,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Act
             IServiceCollection result =
-                services.AddServiceBusTopicMessagePumpWithPrefix<EmptyMessagePump>($"subscription-prefix-{Guid.NewGuid()}", "secret name");
+                services.AddServiceBusTopicMessagePumpWithPrefix($"subscription-prefix-{Guid.NewGuid()}", "secret name");
 
             // Assert
             Assert.NotNull(result);
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             await settings.GetConnectionStringAsync();
