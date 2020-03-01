@@ -666,7 +666,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
         /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
         /// <param name="services">The collection of services to use in the application.</param>
-        public static IServiceCollection WithMessagePumpHandler<TMessageHandler, TMessage>(this IServiceCollection services)
+        public static IServiceCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(this IServiceCollection services)
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {

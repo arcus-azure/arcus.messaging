@@ -1,4 +1,5 @@
 using Arcus.EventGrid.Publishing;
+using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,7 +37,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Topic
                             .Build();
                     });
                     services.AddServiceBusTopicMessagePump("Receive-All", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                            .WithMessagePumpHandler<OrdersMessageHandler>();
+                            .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });
