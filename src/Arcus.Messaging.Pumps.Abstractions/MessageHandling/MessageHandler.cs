@@ -47,7 +47,6 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             {
                 var serviceType = (Type) lookup.GetPropertyValue("Key");
                 
-                // TODO: update to more strict message handler filter.
                 if (serviceType.Name.Contains("IMessageHandler"))
                 {
                     object cacheItem = lookup.GetPropertyValue("Value");
