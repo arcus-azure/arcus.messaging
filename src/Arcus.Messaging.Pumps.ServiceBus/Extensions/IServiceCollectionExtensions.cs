@@ -9,7 +9,10 @@ using Microsoft.Extensions.Configuration;
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
 {
-    // ReSharper disable once InconsistentNaming²
+    /// <summary>
+    /// Extensions on the <see cref="IServiceCollection"/> to add a <see cref="AzureServiceBusMessagePump"/> and its <see cref="IAzureServiceBusMessageHandler{TMessage}"/>'s implementations.
+    /// </summary>
+    // ReSharper disable once InconsistentNaming
     public static class IServiceCollectionExtensions
     {
         /// <summary>
@@ -670,6 +673,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
+            Guard.NotNull(services, nameof(services));
+
             services.AddSingleton<IMessageHandler<TMessage, AzureServiceBusMessageContext>, TMessageHandler>();
 
             return services;
