@@ -81,32 +81,6 @@ namespace Arcus.Messaging.Pumps.Abstractions
             return Task.CompletedTask;
         }
 
-        // TODO: move to extension?
-        /// <summary>
-        ///     Determines the encoding used for a given message
-        /// </summary>
-        /// <remarks>If no encoding was specified, UTF-8 will be used by default</remarks>
-        /// <param name="messageContext">Context concerning the message</param>
-        /// <returns>Encoding that was used for the message body</returns>
-        protected virtual Encoding DetermineMessageEncoding(MessageContext messageContext)
-        {
-            if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
-            {
-                try
-                {
-                    return Encoding.GetEncoding(annotatedEncoding.ToString());
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogCritical(ex,
-                                       $"Unable to determine encoding with name '{{Encoding}}'. Falling back to {{FallbackEncoding}}.",
-                                       annotatedEncoding.ToString(), DefaultEncoding.WebName);
-                }
-            }
-
-            return DefaultEncoding;
-        }
-
         // TODO: should we also provide a 'streamed' version to process the message? We would require some way to reset the stream though (i.e. VirtualStream).
         /// <summary>
         ///     Handle a new message that was received

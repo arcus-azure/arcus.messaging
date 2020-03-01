@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Arcus.Messaging.Abstractions;
+using GuardNet;
 
 namespace Arcus.Messaging.ServiceBus.Core.Extensions
 {
@@ -14,6 +15,8 @@ namespace Arcus.Messaging.ServiceBus.Core.Extensions
         /// <param name="messageContext">The context of the message.</param>
         public static Encoding GetMessageEncodingProperty(this MessageContext messageContext)
         {
+            Guard.NotNull(messageContext, nameof(messageContext));
+
             if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
             {
                 try

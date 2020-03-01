@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.ServiceBus.Core.Extensions;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
@@ -401,7 +402,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
                     message.UserProperties);
 
-                Encoding encoding = DetermineMessageEncoding(messageContext);
+                Encoding encoding = messageContext.GetMessageEncodingProperty();
                 string messageBody = encoding.GetString(message.Body);
 
                 await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
