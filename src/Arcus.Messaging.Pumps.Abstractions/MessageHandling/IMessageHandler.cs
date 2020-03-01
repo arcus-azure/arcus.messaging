@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 
-namespace Arcus.Messaging.Pumps.Abstractions
+namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 {
     /// <summary>
     /// Represents a handler for a specific <typeparamref name="TMessage"/> in a <typeparamref name="TMessageContext"/>
@@ -20,10 +20,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         ///     identifiers
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>
-        ///     The status of the message after it was handled.
-        /// </returns>
-        Task<MessageProcessResult> ProcessMessageAsync(
+        Task ProcessMessageAsync(
             TMessage message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
