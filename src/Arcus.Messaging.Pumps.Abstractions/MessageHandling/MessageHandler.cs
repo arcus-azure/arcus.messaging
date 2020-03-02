@@ -38,19 +38,23 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
-            object engine = serviceProvider.GetPropertyValue("Engine");
-            object callSiteFactory = engine.GetPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
+            object engine = serviceProvider.GetRequiredPropertyValue("Engine");
+            object callSiteFactory = engine.GetRequiredPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
 
-            var descriptorLookup = callSiteFactory.GetFieldValue<IEnumerable>("_descriptorLookup");
+            var descriptorLookup = callSiteFactory.GetRequiredFieldValue<IEnumerable>("_descriptorLookup");
 
             var messageHandlers = new Collection<MessageHandler>();
             foreach (object lookup in descriptorLookup)
             {
-                var serviceType = lookup.GetPropertyValue<Type>("Key");
+                var serviceType = lookup.GetRequiredPropertyValue<Type>("Key");
                 if ( serviceType.Name.Contains("IMessageHandler"))
                 {
-                    object cacheItem = lookup.GetPropertyValue("Value");
+                    object cacheItem = lookup.GetRequiredPropertyValue("Value");
                     var descriptors = cacheItem.GetFieldValue<IEnumerable>("_items");
+                    if (descriptors is null)
+                    {
+                        continue;
+                    }
 
                     foreach (object descriptor in descriptors)
                     {
@@ -68,15 +72,15 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 
         private static object CreateMessageHandlerImplementation(object descriptor, object callSiteFactory, object engine, Type serviceType, IServiceProvider serviceProvider)
         {
-            object lifetime = descriptor.GetPropertyValue("Lifetime");
+            object lifetime = descriptor.GetRequiredPropertyValue("Lifetime");
             object resultCache = CreateResultCache(lifetime, serviceType);
-            object implementationType = descriptor.GetPropertyValue("ImplementationType");
+            object implementationType = descriptor.GetRequiredPropertyValue("ImplementationType");
             object callSiteChain = CreateCallSiteChain();
 
             callSiteChain.InvokeMethod("CheckCircularDependency", BindingFlags.Instance | BindingFlags.Public, serviceType);
             object callSite = callSiteFactory.InvokeMethod("CreateConstructorCallSite", resultCache, serviceType, implementationType, callSiteChain);
 
-            callSiteFactory.GetFieldValue("_callSiteCache")
+            callSiteFactory.GetRequiredFieldValue("_callSiteCache")
                            .SetIndexValue("Item", serviceType, callSite);
 
             return engine.InvokeMethod("RealizeService", callSite)
