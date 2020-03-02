@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -100,6 +101,14 @@ namespace Arcus.Messaging.Pumps.Abstractions
             where TMessageContext : MessageContext
         {
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(ServiceProvider);
+            if (!handlers.Any())
+            {
+                throw new InvalidOperationException(
+                    $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
+                    + "because no 'IMessageHandler<,>' was registered in the dependency injection container. "
+                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
+            }
+
             foreach (MessageHandler handler in handlers)
             {
                 if (handler.TryParseToMessageFormat<TMessageContext>(message, out var result))
@@ -117,7 +126,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             throw new InvalidOperationException(
                 $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
-                + "because no 'IMessageHandler<,>' was registered in the dependency injection container. "
+                + $"because none of the {handlers.Count()} registered 'IMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context. "
                 + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
         }
 

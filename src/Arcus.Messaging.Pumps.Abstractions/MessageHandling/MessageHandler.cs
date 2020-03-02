@@ -95,8 +95,14 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             callSiteFactory.GetRequiredFieldValue("_callSiteCache")
                            .SetIndexValue("Item", serviceType, callSite);
 
-            return engine.InvokeMethod("RealizeService", callSite)
-                         .InvokeMethod("Invoke", BindingFlags.Public | BindingFlags.Instance, serviceProvider);
+            object func = engine.InvokeMethod("RealizeService", callSite);
+            if (func is null)
+            {
+                throw new ValueMissingException(
+                    $"Invoking method 'RealizeService' on instance '{callSite.GetType().Name}' doesn't result in a required return value");
+            }
+            
+            return func.InvokeMethod("Invoke", BindingFlags.Public | BindingFlags.Instance, serviceProvider);
         }
 
         private static object CreateResultCache(object lifetime, Type serviceType)

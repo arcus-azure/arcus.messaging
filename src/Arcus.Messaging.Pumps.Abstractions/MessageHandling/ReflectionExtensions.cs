@@ -204,11 +204,6 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             }
 
             object returnValue = methodInfo.Invoke(instance, parameters);
-            if (returnValue is null)
-            {
-                throw new ValueMissingException($"There's no return value for the method '{methodName}' on instance '{instanceType.Name}'");
-            }
-
             return returnValue;
         }
     }
