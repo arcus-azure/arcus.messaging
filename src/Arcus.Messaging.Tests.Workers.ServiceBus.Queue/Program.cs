@@ -26,6 +26,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Queue
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
+                    services.AddLogging();
                     services.AddTransient(svc =>
                     {
                         var configuration = svc.GetRequiredService<IConfiguration>();
