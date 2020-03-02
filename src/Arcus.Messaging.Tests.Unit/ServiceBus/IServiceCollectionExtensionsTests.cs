@@ -5,7 +5,6 @@ using Arcus.Security.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -21,7 +20,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var spySecretProvider = new Mock<ISecretProvider>();
             services.AddSingleton(serviceProvider => spySecretProvider.Object);
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
             IServiceCollection result = 
@@ -48,7 +47,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var spySecretProvider = new Mock<ISecretProvider>();
             services.AddSingleton(serviceProvider => spySecretProvider.Object);
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
             IServiceCollection result = 
@@ -76,7 +75,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var spySecretProvider = new Mock<ISecretProvider>();
             services.AddSingleton(serviceProvider => spySecretProvider.Object);
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
             IServiceCollection result =
@@ -103,7 +102,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var spySecretProvider = new Mock<ISecretProvider>();
             services.AddSingleton(serviceProvider => spySecretProvider.Object);
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
             IServiceCollection result =
@@ -129,7 +128,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             var services =  new ServiceCollection();
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
             IServiceCollection result =
@@ -157,7 +156,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var services =  new ServiceCollection();
             services.AddSingleton(serviceProvider => spySecretProvider.Object);
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
             IServiceCollection result =

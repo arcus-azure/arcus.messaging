@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -40,17 +41,16 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             object engine = serviceProvider.GetPropertyValue("Engine");
             object callSiteFactory = engine.GetPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
 
-            var descriptorLookup = (System.Collections.IEnumerable) callSiteFactory.GetFieldValue("_descriptorLookup");
+            var descriptorLookup = callSiteFactory.GetFieldValue<IEnumerable>("_descriptorLookup");
 
             var messageHandlers = new Collection<MessageHandler>();
             foreach (object lookup in descriptorLookup)
             {
-                var serviceType = (Type) lookup.GetPropertyValue("Key");
-                
-                if ( serviceType?.Name.Contains("IMessageHandler") == true)
+                var serviceType = lookup.GetPropertyValue<Type>("Key");
+                if ( serviceType.Name.Contains("IMessageHandler"))
                 {
                     object cacheItem = lookup.GetPropertyValue("Value");
-                    var descriptors = (System.Collections.IEnumerable) cacheItem.GetFieldValue("_items");
+                    var descriptors = cacheItem.GetFieldValue<IEnumerable>("_items");
 
                     foreach (object descriptor in descriptors)
                     {
@@ -173,17 +173,6 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             Guard.NotNull(correlationInfo, nameof(correlationInfo));
 
             object messageHandlerImplementation = _createMessageHandlerImplementation();
-            Type messageType = _serviceType.GenericTypeArguments[0];
-            Type messageContextType = _serviceType.GenericTypeArguments[1];
-
-            MethodInfo processMessageAsyncMethod = 
-                messageHandlerImplementation.GetType().GetMethod(
-                    "ProcessMessageAsync",
-                    BindingFlags.Public | BindingFlags.Instance,
-                    binder: null,
-                    CallingConventions.Any,
-                    new[] { messageType, messageContextType, typeof(MessageCorrelationInfo), typeof(CancellationToken) },
-                    modifiers: null);
 
             const string methodName = "ProcessMessageAsync";
             var processMessageAsync = 

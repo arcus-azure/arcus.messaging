@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using GuardNet;
 
 namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling 
 {
@@ -11,20 +12,71 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <summary>
         /// Gets the value of the field of the current <paramref name="instance"/>.
         /// </summary>
+        /// <typeparam name="TValue">The type of the field value to expect.</typeparam>
+        /// <param name="instance">The instance to get the field from.</param>
+        /// <param name="fieldName">The name of the field on the <paramref name="instance"/>.</param>
+        /// <param name="bindingFlags">The way the field is declared on the <paramref name="instance"/>.</param>
+        internal static TValue GetFieldValue<TValue>(this object instance, string fieldName, BindingFlags bindingFlags = BindingFlags.NonPublic | BindingFlags.Instance) 
+            where TValue : class
+        {
+            Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the field '{fieldName}'");
+            
+            object fieldValue = GetFieldValue(instance, fieldName, bindingFlags);
+            if (fieldValue is TValue typedFieldValue)
+            {
+                return typedFieldValue;
+            }
+
+            throw new InvalidCastException(
+                $"Cannot cast '{fieldValue.GetType().Name}' to type '{typeof(TValue).Name}' while getting field '{fieldName}' on instance '{instance.GetType().Name}'");
+        }
+
+        /// <summary>
+        /// Gets the value of the field of the current <paramref name="instance"/>.
+        /// </summary>
         /// <param name="instance">The instance to get the field from.</param>
         /// <param name="fieldName">The name of the field on the <paramref name="instance"/>.</param>
         /// <param name="bindingFlags">The way the field is declared on the <paramref name="instance"/>.</param>
         internal static object GetFieldValue(this object instance, string fieldName, BindingFlags bindingFlags = BindingFlags.NonPublic | BindingFlags.Instance)
         {
+            Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the field '{fieldName}'");
             Type instanceType = instance.GetType();
+            
             FieldInfo fieldInfo = instanceType.GetField(fieldName, bindingFlags);
-
             if (fieldInfo is null)
             {
                 throw new TypeNotFoundException($"Cannot find field '{fieldName}' on instance '{instanceType.Name}'");
             }
 
-            return fieldInfo.GetValue(instance);
+            object fieldValue = fieldInfo.GetValue(instance);
+            if (fieldValue is null)
+            {
+                throw new ValueMissingException($"There's no value for the field '{fieldName}' on instance '{instanceType.Name}'");
+            }
+
+            return fieldValue;
+        }
+
+        /// <summary>
+        /// Gets the value of the property of the current <paramref name="instance"/>.
+        /// </summary>
+        /// <typeparam name="TValue">The type of the value of the property to expect.</typeparam>
+        /// <param name="instance">The instance to get the property from.</param>
+        /// <param name="propertyName">The name of the property on the <paramref name="instance"/>.</param>
+        /// <param name="bindingFlags">The way the property is declared  on the <paramref name="instance"/>.</param>
+        internal static TValue GetPropertyValue<TValue>(this object instance, string propertyName, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
+            where TValue : class
+        {
+            Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the property '{propertyName}'");
+
+            object propertyValue = GetPropertyValue(instance, propertyName, bindingFlags);
+            if (propertyValue is TValue typedPropertyValue)
+            {
+                return typedPropertyValue;
+            }
+
+            throw new InvalidCastException(
+                $"Cannot cast '{propertyName.GetType().Name}' to type '{typeof(TValue).Name}' while getting property '{propertyName}' on instance '{instance.GetType().Name}'");
         }
 
         /// <summary>
@@ -35,15 +87,22 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <param name="bindingFlags">The way the property is declared  on the <paramref name="instance"/>.</param>
         internal static object GetPropertyValue(this object instance, string propertyName, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
         {
+            Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the property '{propertyName}'");
             Type instanceType = instance.GetType();
-            PropertyInfo propertyInfo = instanceType.GetProperty(propertyName, bindingFlags);
             
+            PropertyInfo propertyInfo = instanceType.GetProperty(propertyName, bindingFlags);
             if (propertyInfo is null)
             {
                 throw new TypeNotFoundException($"Cannot find property '{propertyName}' on instance '{instanceType.Name}'");
             }
 
-            return propertyInfo.GetValue(instance);
+            object propertyValue = propertyInfo.GetValue(instance);
+            if (propertyValue is null)
+            {
+                throw new ValueMissingException($"There's no value for the property '{propertyName}' on instance '{instanceType.Name}'");
+            }
+
+            return propertyValue;
         }
 
         /// <summary>
@@ -56,6 +115,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <param name="bindingFlags">The way the property is declared on the <paramref name="instance"/>.</param>
         internal static void SetIndexValue(this object instance, string propertyName, object index, object value, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
         {
+            Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the indexed property '{propertyName}'");
+
             Type instanceType = instance.GetType();
             PropertyInfo propertyInfo = instanceType.GetProperty(propertyName, bindingFlags);
             
@@ -78,6 +139,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// </returns>
         internal static object InvokeMethod(this object instance, string methodName, params object[] parameters)
         {
+            Guard.NotNull(instance, nameof(instance), $"Requires a instance object to invoke the method '{methodName}'");
             return InvokeMethod(instance, methodName, BindingFlags.Instance | BindingFlags.NonPublic, parameters);
         }
 
@@ -93,15 +155,22 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// </returns>
         internal static object InvokeMethod(this object instance, string methodName, BindingFlags bindingFlags, params object[] parameters)
         {
+            Guard.NotNull(instance, nameof(instance), $"Requires a instance object to invoke the method '{methodName}'");
             Type instanceType = instance.GetType();
-            MethodInfo methodInfo = instanceType.GetMethod(methodName, bindingFlags);
 
+            MethodInfo methodInfo = instanceType.GetMethod(methodName, bindingFlags);
             if (methodInfo is null)
             {
                 throw new TypeNotFoundException($"Cannot find method '{methodName}' on instance '{instanceType.Name}'");
             }
 
-            return methodInfo.Invoke(instance, parameters);
+            object returnValue = methodInfo.Invoke(instance, parameters);
+            if (returnValue is null)
+            {
+                throw new ValueMissingException($"There's no return value for the method '{methodName}' on instance '{instanceType.Name}'");
+            }
+
+            return returnValue;
         }
     }
 }
