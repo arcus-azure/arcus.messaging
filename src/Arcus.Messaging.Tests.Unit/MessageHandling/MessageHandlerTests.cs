@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,17 +16,34 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void SubtractsMessageHandlers_SelectsAllRegistrations()
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.AddSingleton(Mock.Of<IMessageHandler<string, MessageContext>>());
-            services.AddSingleton(Mock.Of<IMessageHandler<int, MessageContext>>());
-            services.AddSingleton(Mock.Of<IMessageHandler<TimeSpan, MessageContext>>());
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
+            ServiceDescriptor[] serviceDescriptors = 
+            {
+                ServiceDescriptor.Singleton(Mock.Of<IMessageHandler<string, MessageContext>>()),
+                ServiceDescriptor.Singleton(Mock.Of<IMessageHandler<int, MessageContext>>()),
+                ServiceDescriptor.Singleton(Mock.Of<IMessageHandler<TimeSpan, MessageContext>>())
+            };
 
+            IServiceProvider serviceProvider = CreateStubServiceProvider(serviceDescriptors);
+            
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider);
 
             // Assert
             Assert.Equal(3, messageHandlers.Count());
+        }
+
+        private static IServiceProvider CreateStubServiceProvider(IEnumerable<ServiceDescriptor> serviceDescriptors)
+        {
+            var untypedServiceDescriptors = serviceDescriptors.Cast<object>();
+            var serviceProviderEngineType = Type.GetType("Microsoft.Extensions.DependencyInjection.ServiceLookup.DynamicServiceProviderEngine, Microsoft.Extensions.DependencyInjection");
+            Assert.True(serviceProviderEngineType != null, "serviceProviderType != null");
+
+            object serviceProviderEngine = Activator.CreateInstance(serviceProviderEngineType, untypedServiceDescriptors, null);
+
+            var serviceProviderEngineScopeType = Type.GetType("Microsoft.Extensions.DependencyInjection.ServiceLookup.ServiceProviderEngineScope, Microsoft.Extensions.DependencyInjection");
+            Assert.True(serviceProviderEngineScopeType != null, "serviceProviderEngineScopeType != null");
+            
+            return (IServiceProvider) Activator.CreateInstance(serviceProviderEngineScopeType, serviceProviderEngine);
         }
     }
 }

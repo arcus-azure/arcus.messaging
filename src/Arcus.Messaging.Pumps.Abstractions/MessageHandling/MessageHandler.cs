@@ -38,10 +38,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
-            object engine = 
-                serviceProvider.GetFieldValue("_engine")
-                    ?? serviceProvider.GetRequiredPropertyValue("Engine");
-            
+            object engine = serviceProvider.GetRequiredPropertyValue("Engine");
             object callSiteFactory = engine.GetRequiredPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
 
             var descriptorLookup = callSiteFactory.GetRequiredFieldValue<IEnumerable>("_descriptorLookup");
