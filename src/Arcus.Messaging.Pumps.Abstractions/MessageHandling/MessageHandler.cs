@@ -47,7 +47,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             {
                 var serviceType = (Type) lookup.GetPropertyValue("Key");
                 
-                if (serviceType.Name.Contains("IMessageHandler"))
+                if ( serviceType?.Name.Contains("IMessageHandler") == true)
                 {
                     object cacheItem = lookup.GetPropertyValue("Value");
                     var descriptors = (System.Collections.IEnumerable) cacheItem.GetFieldValue("_items");
