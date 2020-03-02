@@ -16,7 +16,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
     /// <summary>
     /// Represents an abstracted form of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation to handle with different type of generic message and message context types.
     /// </summary>
-    internal class MessageHandler
+    public class MessageHandler
     {
         private readonly Type _serviceType;
         private readonly Func<object> _createMessageHandlerImplementation;
@@ -34,11 +34,14 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// Subtract all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementations from the given <paramref name="serviceProvider"/>.
         /// </summary>
         /// <param name="serviceProvider">The provided registered services collection.</param>
-        internal static IEnumerable<MessageHandler> SubtractFrom(IServiceProvider serviceProvider)
+        public static IEnumerable<MessageHandler> SubtractFrom(IServiceProvider serviceProvider)
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
-            object engine = serviceProvider.GetRequiredPropertyValue("Engine");
+            object engine = 
+                serviceProvider.GetFieldValue("_engine")
+                    ?? serviceProvider.GetRequiredPropertyValue("Engine");
+            
             object callSiteFactory = engine.GetRequiredPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
 
             var descriptorLookup = callSiteFactory.GetRequiredFieldValue<IEnumerable>("_descriptorLookup");
@@ -49,13 +52,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                 var serviceType = lookup.GetRequiredPropertyValue<Type>("Key");
                 if ( serviceType.Name.Contains("IMessageHandler"))
                 {
-                    object cacheItem = lookup.GetRequiredPropertyValue("Value");
-                    var descriptors = cacheItem.GetFieldValue<IEnumerable>("_items");
-                    if (descriptors is null)
-                    {
-                        continue;
-                    }
-
+                    IEnumerable descriptors = GetServiceDescriptors(lookup);
                     foreach (object descriptor in descriptors)
                     {
                         var messageHandler = new MessageHandler(
@@ -68,6 +65,24 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             }
 
             return messageHandlers.AsEnumerable();
+        }
+
+        private static IEnumerable GetServiceDescriptors(object descriptorLookup)
+        {
+            object cacheItem = descriptorLookup.GetRequiredPropertyValue("Value");
+            var descriptors = cacheItem.GetFieldValue<IEnumerable>("_items");
+            if (descriptors is null)
+            {
+                object descriptor = cacheItem.GetFieldValue("_item");
+                if (descriptor is null)
+                {
+                    return Enumerable.Empty<object>();
+                }
+
+                return new[] { descriptor };
+            }
+
+            return descriptors;
         }
 
         private static object CreateMessageHandlerImplementation(object descriptor, object callSiteFactory, object engine, Type serviceType, IServiceProvider serviceProvider)
