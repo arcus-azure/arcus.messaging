@@ -9,6 +9,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     public class AzureServiceBusMessagePumpOptions
     {
         private int? _maxConcurrentCalls;
+        private string _jobId;
 
         /// <summary>
         ///     Maximum concurrent calls to process messages
@@ -37,6 +38,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets or sets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
         /// </summary>
-        public string JobId { get; set; }
+        public string JobId
+        {
+            get => _jobId;
+            set
+            {
+                Guard.NotNullOrEmpty(value, nameof(value), "Unique identifier for background job cannot be empty");
+                _jobId = value;
+            }
+        }
     }
 }
