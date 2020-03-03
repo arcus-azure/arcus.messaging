@@ -692,27 +692,28 @@ namespace Microsoft.Extensions.DependencyInjection
             Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump)
         {
             Guard.For<ArgumentException>(
-                () => configureQueueMessagePump is null && configureTopicMessagePump is null, 
-                "One of the configurable message pump option actions has to be set");
-            Guard.For<ArgumentException>(
                 () => !(configureQueueMessagePump is null) && !(configureTopicMessagePump is null),
                 "Only one of the configurable message pump actions can be set");
 
-            if (configureQueueMessagePump is null)
+            if (!(configureTopicMessagePump is null))
             {
                 var topicMessagePumpOptions = AzureServiceBusTopicMessagePumpOptions.Default;
-                configureTopicMessagePump?.Invoke(topicMessagePumpOptions);
+                configureTopicMessagePump.Invoke(topicMessagePumpOptions);
                 
                 var options = new AzureServiceBusMessagePumpConfiguration(topicMessagePumpOptions);
                 return options;
             }
-            else
+            else if (!(configureQueueMessagePump is null))
             {
                 var queueMessagePumpOptions = AzureServiceBusQueueMessagePumpOptions.Default;
                 configureQueueMessagePump?.Invoke(queueMessagePumpOptions);
 
                 var options = new AzureServiceBusMessagePumpConfiguration(queueMessagePumpOptions);
                 return options;
+            }
+            else
+            {
+                return AzureServiceBusMessagePumpConfiguration.Default;
             }
         }
     }
