@@ -119,6 +119,25 @@ public void ConfigureServices(IServiceCollection services)
 }
 ```
 
+## Correlation
+
+To retrieve the correlation information of Azure Service Bus messages, we provide an extension that wraps all correlation information.
+
+```csharp
+Message message = ...
+
+MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+
+// Unique identifier that indicates an attempt to process a given message.
+string cycleId = correlationInfo.CycleId;
+
+// Unique identifier that relates different requests together.
+string transactionId = correlationInfo.TransactionId;
+
+// Unique idenfier that distinguishes the request.
+string operationId = correlationInfo.OperationId;
+```
+
 ## Want to get started easy? Use our templates!
 
 We provide templates to get started easily:
