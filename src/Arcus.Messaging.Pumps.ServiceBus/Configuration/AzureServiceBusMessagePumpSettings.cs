@@ -34,7 +34,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             ServiceBusEntity serviceBusEntity,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            AzureServiceBusMessagePumpOptions options, 
+            AzureServiceBusMessagePumpConfiguration options, 
             IServiceProvider serviceProvider)
         {
             Guard.For<ArgumentException>(
@@ -73,7 +73,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         ///     Options that influence the behavior of the message pump
         /// </summary>
-        internal AzureServiceBusMessagePumpOptions Options { get; }
+        internal AzureServiceBusMessagePumpConfiguration Options { get; }
 
         /// <summary>
         ///     Gets the configured connection string

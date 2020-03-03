@@ -3,12 +3,12 @@
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
 {
     /// <summary>
-    /// 
+    ///     Options to configure a Azure Service Bus queue <see cref="AzureServiceBusMessagePump{TMessage}"/> implementation.
     /// </summary>
-    public class AzureServiceBusQueueMessagePumpOptions : AzureServiceBusMessagePumpOptionsBase
+    public class AzureServiceBusQueueMessagePumpOptions : AzureServiceBusMessagePumpOptions
     {
         /// <summary>
-        ///     Default settings
+        ///     Gets the default settings.
         /// </summary>
         internal static AzureServiceBusQueueMessagePumpOptions Default => new AzureServiceBusQueueMessagePumpOptions
         {

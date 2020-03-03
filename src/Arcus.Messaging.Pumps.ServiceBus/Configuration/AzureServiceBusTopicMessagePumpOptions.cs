@@ -3,9 +3,9 @@
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
     /// <summary>
-    /// 
+    ///     Options to configure a Azure Service Bus topic <see cref="AzureServiceBusMessagePump{TMessage}"/> implementation.
     /// </summary>
-    public class AzureServiceBusTopicMessagePumpOptions : AzureServiceBusMessagePumpOptionsBase
+    public class AzureServiceBusTopicMessagePumpOptions : AzureServiceBusMessagePumpOptions
     {
         /// <summary>
         /// Gets or sets the value indicating whether or not a new Azure Service Bus Topic subscription has to be created when the <see cref="AzureServiceBusMessagePump{TMessage}"/> starts.
@@ -17,7 +17,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         public TopicSubscription TopicSubscription { get; set; }
 
         /// <summary>
-        ///     Default settings
+        ///     Gets the default settings.
         /// </summary>
         internal static AzureServiceBusTopicMessagePumpOptions Default => new AzureServiceBusTopicMessagePumpOptions
         {

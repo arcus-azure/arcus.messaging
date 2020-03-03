@@ -10,19 +10,19 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
     {
         public static IEnumerable<object[]> CreateOptionsWithMaxConcurrentCalls => new[]
         {
-            new object[] { new Func<int, AzureServiceBusMessagePumpOptionsBase>(max => new AzureServiceBusQueueMessagePumpOptions { MaxConcurrentCalls = max }) },
-            new object[] { new Func<int, AzureServiceBusMessagePumpOptionsBase>(max => new AzureServiceBusTopicMessagePumpOptions { MaxConcurrentCalls = max }) }
+            new object[] { new Func<int, AzureServiceBusMessagePumpOptions>(max => new AzureServiceBusQueueMessagePumpOptions { MaxConcurrentCalls = max }) },
+            new object[] { new Func<int, AzureServiceBusMessagePumpOptions>(max => new AzureServiceBusTopicMessagePumpOptions { MaxConcurrentCalls = max }) }
         };
 
         [Theory]
         [MemberData(nameof(CreateOptionsWithMaxConcurrentCalls))]
-        public void TopicOptionsMaxConcurrentCalls_ValueIsAboveZero_Succeeds(Func<int, AzureServiceBusMessagePumpOptionsBase> createOptions)
+        public void TopicOptionsMaxConcurrentCalls_ValueIsAboveZero_Succeeds(Func<int, AzureServiceBusMessagePumpOptions> createOptions)
         {
             // Arrange
             var validConcurrentCalls = 1337;
 
             // Act
-            AzureServiceBusMessagePumpOptionsBase messagePumpOptions = createOptions(validConcurrentCalls);
+            AzureServiceBusMessagePumpOptions messagePumpOptions = createOptions(validConcurrentCalls);
 
             // Assert
             Assert.Equal(validConcurrentCalls, messagePumpOptions.MaxConcurrentCalls);
@@ -30,7 +30,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
         [Theory]
         [MemberData(nameof(CreateOptionsWithMaxConcurrentCalls))]
-        public void TopicOptionsMaxConcurrentCalls_ValueIsZero_ThrowsException(Func<int, AzureServiceBusMessagePumpOptionsBase> createOptions)
+        public void TopicOptionsMaxConcurrentCalls_ValueIsZero_ThrowsException(Func<int, AzureServiceBusMessagePumpOptions> createOptions)
         {
             // Arrange
             var invalidConcurrentCalls = 0;
@@ -41,7 +41,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
         [Theory]
         [MemberData(nameof(CreateOptionsWithMaxConcurrentCalls))]
-        public void TopicOptionsMaxConcurrentCalls_ValueIsNegative_ThrowsException(Func<int, AzureServiceBusMessagePumpOptionsBase> createOptions)
+        public void TopicOptionsMaxConcurrentCalls_ValueIsNegative_ThrowsException(Func<int, AzureServiceBusMessagePumpOptions> createOptions)
         {
             // Arrange
             var invalidConcurrentCalls = -1;

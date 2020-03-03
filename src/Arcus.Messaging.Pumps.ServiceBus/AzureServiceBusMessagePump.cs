@@ -145,7 +145,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Marks a message as completed
         /// </summary>
-        /// <remarks>This should only be called if <see cref="AzureServiceBusMessagePumpOptions.AutoComplete" /> is disabled</remarks>
+        /// <remarks>This should only be called if <see cref="AzureServiceBusMessagePumpConfiguration.AutoComplete" /> is disabled</remarks>
         /// <param name="lockToken">
         ///     Token used to lock an individual message for processing. See
         ///     <see cref="AzureServiceBusMessageContext.LockToken" />

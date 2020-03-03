@@ -1,61 +1,42 @@
-﻿using GuardNet;
+﻿using System;
+using GuardNet;
 
-namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
+namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
 {
     /// <summary>
-    ///     Options to configure how the Azure Service Bus message pump works
+    /// The general options that configures a <see cref="AzureServiceBusMessagePump{TMessage}"/> implementation.
     /// </summary>
-    internal class AzureServiceBusMessagePumpOptions
+    public class AzureServiceBusMessagePumpOptions
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpOptions"/> class.
-        /// </summary>
-        internal AzureServiceBusMessagePumpOptions(AzureServiceBusQueueMessagePumpOptions options)
-        {
-            Guard.NotNull(options, nameof(options));
-
-            MaxConcurrentCalls = options.MaxConcurrentCalls;
-            AutoComplete = options.AutoComplete;
-            JobId = options.JobId;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpOptions"/> class.
-        /// </summary>
-        internal AzureServiceBusMessagePumpOptions(AzureServiceBusTopicMessagePumpOptions options)
-        {
-            Guard.NotNull(options, nameof(options));
-
-            MaxConcurrentCalls = options.MaxConcurrentCalls;
-            TopicSubscription = options.TopicSubscription;
-            AutoComplete = options.AutoComplete;
-            JobId = options.JobId;
-        }
+        private int? _maxConcurrentCalls;
 
         /// <summary>
         ///     Maximum concurrent calls to process messages
         /// </summary>
-        internal int? MaxConcurrentCalls { get; }
+        public int? MaxConcurrentCalls
+        {
+            get => _maxConcurrentCalls;
+            set
+            {
+                if (value != null)
+                {
+                    Guard.For<ArgumentException>(() => value <= 0, "Max concurrent calls has to be 1 or above.");
+                }
 
-        /// <summary>
-        /// Gets or sets the value indicating whether or not a new Azure Service Bus Topic subscription has to be created when the <see cref="AzureServiceBusMessagePump{TMessage}"/> starts.
-        /// The subscription will be deleted afterwards when the message pump stops if the options <see cref="TopicSubscription.DeleteOnStop"/> is selected.
-        /// </summary>
-        /// <remarks>
-        ///     Provides capability to create and delete these subscriptions. This requires 'Manage' permissions on the Azure Service Bus Topic or namespace.
-        /// </remarks>
-        internal TopicSubscription TopicSubscription { get; }
+                _maxConcurrentCalls = value;
+            }
+        }
 
         /// <summary>
         ///     Indication whether or not messages should be automatically marked as completed if no exceptions occured and
         ///     processing has finished.
         /// </summary>
         /// <remarks>When turned off, clients have to explicitly mark the messages as completed</remarks>
-        internal bool AutoComplete { get; set; }
+        public bool AutoComplete { get; set; }
 
         /// <summary>
         /// Gets or sets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
         /// </summary>
-        internal string JobId { get; set; }
+        public string JobId { get; set; }
     }
 }
