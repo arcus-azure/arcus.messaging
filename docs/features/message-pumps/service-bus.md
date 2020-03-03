@@ -96,7 +96,7 @@ public void ConfigureServices(IServiceCollection services)
         "My-Service-Bus-Subscription-Prefix",
         "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
-    services.AddServiceBusQueueMessagePump<OrdersMessageHandler>(
+    services.AddServiceBusTopicMessagePump<OrdersMessageHandler>(
         "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
         options => 
         {
@@ -115,6 +115,23 @@ public void ConfigureServices(IServiceCollection services)
             // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
             // when the message pump starts/stops (default: CreateOnStart & DeleteOnStop).
             options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
+        });
+
+    services.AddServiceBusQueueMessagePump<OrdersMessageHandler>(
+        "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
+        options => 
+        {
+            // Indicate whether or not messages should be automatically marked as completed 
+            // if no exceptions occured andprocessing has finished (default: true).
+            options.AutoComplete = true;
+
+            // The amount of concurrent calls to process messages 
+            // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
+            options.MaxConcurrentCalls = 5;
+
+            // The unique identifier for this background job to distinguish 
+            // this job instance in a multi-instance deployment (default: guid).
+            options.JobId = Guid.NewGuid().ToString();
         });
 }
 ```
