@@ -1,5 +1,6 @@
 ﻿using System;
-using Arcus.Messaging.Pumps.ServiceBus;
+using System.Collections.Generic;
+using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Xunit;
 
 namespace Arcus.Messaging.Tests.Unit.ServiceBus
@@ -7,39 +8,46 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
     [Trait("Category", "Unit")]
     public class AzureServiceBusMessagePumpOptionsTest
     {
-        [Fact]
-        public void MaxConcurrentCalls_ValueIsAboveZero_Succeeds()
+        public static IEnumerable<object[]> CreateOptionsWithMaxConcurrentCalls => new[]
+        {
+            new object[] { new Func<int, AzureServiceBusMessagePumpOptions>(max => new AzureServiceBusQueueMessagePumpOptions { MaxConcurrentCalls = max }) },
+            new object[] { new Func<int, AzureServiceBusMessagePumpOptions>(max => new AzureServiceBusTopicMessagePumpOptions { MaxConcurrentCalls = max }) }
+        };
+
+        [Theory]
+        [MemberData(nameof(CreateOptionsWithMaxConcurrentCalls))]
+        public void TopicOptionsMaxConcurrentCalls_ValueIsAboveZero_Succeeds(Func<int, AzureServiceBusMessagePumpOptions> createOptions)
         {
             // Arrange
             var validConcurrentCalls = 1337;
 
             // Act
-            var messagePumpOptions = new AzureServiceBusMessagePumpOptions {MaxConcurrentCalls = validConcurrentCalls};
+            AzureServiceBusMessagePumpOptions messagePumpOptions = createOptions(validConcurrentCalls);
 
             // Assert
             Assert.Equal(validConcurrentCalls, messagePumpOptions.MaxConcurrentCalls);
         }
 
-        [Fact]
-        public void MaxConcurrentCalls_ValueIsZero_ThrowsException()
+        [Theory]
+        [MemberData(nameof(CreateOptionsWithMaxConcurrentCalls))]
+        public void TopicOptionsMaxConcurrentCalls_ValueIsZero_ThrowsException(Func<int, AzureServiceBusMessagePumpOptions> createOptions)
         {
             // Arrange
             var invalidConcurrentCalls = 0;
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => new AzureServiceBusMessagePumpOptions
-                {MaxConcurrentCalls = invalidConcurrentCalls});
+            Assert.Throws<ArgumentException>(() => createOptions(invalidConcurrentCalls));
         }
 
-        [Fact]
-        public void MaxConcurrentCalls_ValueIsNegative_ThrowsException()
+        [Theory]
+        [MemberData(nameof(CreateOptionsWithMaxConcurrentCalls))]
+        public void TopicOptionsMaxConcurrentCalls_ValueIsNegative_ThrowsException(Func<int, AzureServiceBusMessagePumpOptions> createOptions)
         {
             // Arrange
             var invalidConcurrentCalls = -1;
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => new AzureServiceBusMessagePumpOptions
-                {MaxConcurrentCalls = invalidConcurrentCalls});
+            Assert.Throws<ArgumentException>(() => createOptions(invalidConcurrentCalls));
         }
     }
 }
