@@ -402,7 +402,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
                     message.UserProperties);
 
-                Encoding encoding = messageContext.GetMessageEncodingProperty();
+                Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
                 string messageBody = encoding.GetString(message.Body);
 
                 await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
