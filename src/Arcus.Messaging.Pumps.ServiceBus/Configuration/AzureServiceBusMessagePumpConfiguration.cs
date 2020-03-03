@@ -8,14 +8,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// </summary>
     internal class AzureServiceBusMessagePumpConfiguration
     {
-        private AzureServiceBusMessagePumpConfiguration()
-        {
-            MaxConcurrentCalls = null;
-            TopicSubscription = TopicSubscription.None;
-            AutoComplete = true;
-            JobId = Guid.NewGuid().ToString();
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpConfiguration"/> class.
         /// </summary>
@@ -66,10 +58,5 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
         /// </summary>
         internal string JobId { get; set; }
-
-        /// <summary>
-        /// Gets the default configuration;
-        /// </summary>
-        internal static AzureServiceBusMessagePumpConfiguration Default => new AzureServiceBusMessagePumpConfiguration();
     }
 }

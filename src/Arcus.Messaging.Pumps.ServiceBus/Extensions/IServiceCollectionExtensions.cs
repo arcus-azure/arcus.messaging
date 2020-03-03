@@ -63,8 +63,7 @@ namespace Microsoft.Extensions.DependencyInjection
             AddServiceBusQueueMessagePump<TMessagePump>(
                 services,
                 entityName: null,
-                getConnectionStringFromConfigurationFunc:
-                getConnectionStringFromConfigurationFunc,
+                getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
                 configureQueueMessagePump: configureMessagePump);
 
             return services;
@@ -671,7 +670,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services));
 
             AzureServiceBusMessagePumpConfiguration options = 
-                DetermineAzureServiceBusMessagePumpOptions(configureQueueMessagePump, configureTopicMessagePump);
+                DetermineAzureServiceBusMessagePumpOptions(serviceBusEntity, configureQueueMessagePump, configureTopicMessagePump);
 
             services.AddSingleton(serviceProvider =>
             {
@@ -688,32 +687,26 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         private static AzureServiceBusMessagePumpConfiguration DetermineAzureServiceBusMessagePumpOptions(
+            ServiceBusEntity serviceBusEntity,
             Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump,
             Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump)
         {
-            Guard.For<ArgumentException>(
-                () => !(configureQueueMessagePump is null) && !(configureTopicMessagePump is null),
-                "Only one of the configurable message pump actions can be set");
-
-            if (!(configureTopicMessagePump is null))
+            switch (serviceBusEntity)
             {
-                var topicMessagePumpOptions = AzureServiceBusTopicMessagePumpOptions.Default;
-                configureTopicMessagePump.Invoke(topicMessagePumpOptions);
+                case ServiceBusEntity.Queue:
+                    var queueMessagePumpOptions = AzureServiceBusQueueMessagePumpOptions.Default;
+                    configureQueueMessagePump?.Invoke(queueMessagePumpOptions);
+
+                    return new AzureServiceBusMessagePumpConfiguration(queueMessagePumpOptions);
                 
-                var options = new AzureServiceBusMessagePumpConfiguration(topicMessagePumpOptions);
-                return options;
-            }
-            else if (!(configureQueueMessagePump is null))
-            {
-                var queueMessagePumpOptions = AzureServiceBusQueueMessagePumpOptions.Default;
-                configureQueueMessagePump?.Invoke(queueMessagePumpOptions);
-
-                var options = new AzureServiceBusMessagePumpConfiguration(queueMessagePumpOptions);
-                return options;
-            }
-            else
-            {
-                return AzureServiceBusMessagePumpConfiguration.Default;
+                case ServiceBusEntity.Topic:
+                    var topicMessagePumpOptions = AzureServiceBusTopicMessagePumpOptions.Default;
+                    configureTopicMessagePump?.Invoke(topicMessagePumpOptions);
+                
+                    return new AzureServiceBusMessagePumpConfiguration(topicMessagePumpOptions);
+                
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(serviceBusEntity), serviceBusEntity, "Unknown Azure Service Bus entity");
             }
         }
     }
