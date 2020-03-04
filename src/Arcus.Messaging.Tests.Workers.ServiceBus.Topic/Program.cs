@@ -38,7 +38,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Topic
                             .Build();
                     });
                     services.AddServiceBusTopicMessagePump("Receive-All", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                            .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
+                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });

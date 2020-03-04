@@ -39,7 +39,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                             .Build();
                     });
                     services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                            .WithMessageHandler<OrdersMessageHandler, Order>();
+                            .WithMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
                 });
