@@ -1,14 +1,15 @@
 ﻿using System;
 using GuardNet;
 
-namespace Arcus.Messaging.Pumps.ServiceBus
+namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
 {
     /// <summary>
-    ///     Options to configure how the Azure Service Bus message pump works
+    /// The general options that configures a <see cref="AzureServiceBusMessagePump{TMessage}"/> implementation.
     /// </summary>
     public class AzureServiceBusMessagePumpOptions
     {
         private int? _maxConcurrentCalls;
+        private string _jobId;
 
         /// <summary>
         ///     Maximum concurrent calls to process messages
@@ -37,25 +38,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Gets or sets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
         /// </summary>
-        public string JobId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the value indicating whether or not a new Azure Service Bus Topic subscription has to be created when the <see cref="AzureServiceBusMessagePump{TMessage}"/> starts.
-        /// The subscription will be deleted afterwards when the message pump stops if the options <see cref="TopicSubscription.DeleteOnStop"/> is selected.
-        /// </summary>
-        /// <remarks>
-        ///     Provides capability to create and delete these subscriptions. This requires 'Manage' permissions on the Azure Service Bus Topic or namespace.
-        /// </remarks>
-        public TopicSubscription TopicSubscription { get; set; }
-
-        /// <summary>
-        ///     Default settings
-        /// </summary>
-        internal static AzureServiceBusMessagePumpOptions Default => new AzureServiceBusMessagePumpOptions
+        public string JobId
         {
-            AutoComplete = true,
-            JobId = Guid.NewGuid().ToString(),
-            TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop
-        };
+            get => _jobId;
+            set
+            {
+                Guard.NotNullOrEmpty(value, nameof(value), "Unique identifier for background job cannot be empty");
+                _jobId = value;
+            }
+        }
     }
 }

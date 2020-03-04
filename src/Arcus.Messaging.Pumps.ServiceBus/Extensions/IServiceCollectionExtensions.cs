@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Security.Core;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
@@ -29,7 +30,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -37,7 +38,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName: null,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
-                configureMessagePump: configureMessagePump);
+                configureQueueMessagePump: configureMessagePump);
 
             return services;
         }
@@ -56,16 +57,15 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
             AddServiceBusQueueMessagePump(
                 services,
                 entityName: null,
-                getConnectionStringFromConfigurationFunc:
-                getConnectionStringFromConfigurationFunc,
-                configureMessagePump: configureMessagePump);
+                getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
+                configureQueueMessagePump: configureMessagePump);
 
             return services;
         }
@@ -87,7 +87,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             string secretName,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -95,7 +95,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName: null,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
-                configureMessagePump: configureMessagePump);
+                configureQueueMessagePump: configureMessagePump);
 
             return services;
         }
@@ -119,7 +119,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string queueName,
             string secretName,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -127,7 +127,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName: queueName,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
-                configureMessagePump: configureMessagePump);
+                configureQueueMessagePump: configureMessagePump);
 
             return services;
         }
@@ -144,7 +144,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string queueName,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -152,7 +152,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName: queueName,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
-                configureMessagePump: configureMessagePump);
+                configureQueueMessagePump: configureMessagePump);
 
             return services;
         }
@@ -169,7 +169,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string queueName,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -177,7 +177,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName: queueName,
                 getConnectionStringFromConfigurationFunc,
-                configureMessagePump: configureMessagePump);
+                configureQueueMessagePump: configureMessagePump);
 
             return services;
         }
@@ -187,21 +187,18 @@ namespace Microsoft.Extensions.DependencyInjection
             string entityName,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
-
-            var messagePumpOptions = AzureServiceBusMessagePumpOptions.Default;
-            configureMessagePump?.Invoke(messagePumpOptions);
 
             AddServiceBusMessagePump(
                 services,
                 entityName,
                 subscriptionName: null,
                 ServiceBusEntity.Queue,
-                messagePumpOptions,
-                getConnectionStringFromConfigurationFunc,
-                getConnectionStringFromSecretFunc);
+                configureQueueMessagePump: configureQueueMessagePump,
+                getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
+                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc);
         }
 
         /// <summary>
@@ -223,7 +220,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionName,
             string secretName,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -232,7 +229,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: null,
                 subscriptionName: subscriptionName,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
 
             return services;
@@ -254,7 +251,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionName,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -263,7 +260,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: null,
                 subscriptionName: subscriptionName,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
 
             return services;
@@ -285,7 +282,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionName,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -295,7 +292,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 subscriptionName: subscriptionName,
                 getConnectionStringFromConfigurationFunc:
                 getConnectionStringFromConfigurationFunc,
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
             return services;
         }
@@ -317,7 +314,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionName,
             string secretName,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -326,7 +323,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: topicName,
                 subscriptionName,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
             return services;
         }
@@ -345,7 +342,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionName,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -354,7 +351,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: topicName,
                 subscriptionName,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
             return services;
         }
@@ -373,7 +370,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionName,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -382,7 +379,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: topicName,
                 subscriptionName,
                 getConnectionStringFromConfigurationFunc,
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
             return services;
         }
@@ -396,7 +393,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </remarks>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="secretName">
@@ -409,7 +406,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionPrefix,
             string secretName,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
             Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
@@ -419,7 +416,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: null,
                 subscriptionPrefix,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
             return services;
         }
@@ -433,7 +430,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </remarks>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
@@ -443,7 +440,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionPrefix,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
             Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
@@ -453,7 +450,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: null,
                 subscriptionPrefix,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
             return services;
         }
@@ -467,7 +464,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </remarks>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
@@ -477,7 +474,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionPrefix,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
             Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
@@ -488,7 +485,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 subscriptionPrefix: subscriptionPrefix,
                 getConnectionStringFromConfigurationFunc:
                 getConnectionStringFromConfigurationFunc,
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
             return services;
         }
@@ -499,7 +496,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="secretName">
@@ -513,7 +510,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionPrefix,
             string secretName,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
             Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
@@ -523,7 +520,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: topicName,
                 subscriptionPrefix,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
             return services;
         }
@@ -534,7 +531,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
@@ -545,7 +542,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionPrefix,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
             Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
@@ -555,7 +552,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: topicName,
                 subscriptionPrefix,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
             return services;
         }
@@ -566,7 +563,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpOptions.JobId" />
+        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
@@ -577,7 +574,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionPrefix,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
             Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix));
@@ -587,7 +584,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: topicName,
                 subscriptionPrefix,
                 getConnectionStringFromConfigurationFunc,
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureMessagePump);
 
             return services;
         }
@@ -598,9 +595,9 @@ namespace Microsoft.Extensions.DependencyInjection
             string subscriptionPrefix,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
         {
-            var messagePumpOptions = AzureServiceBusMessagePumpOptions.Default;
+            var messagePumpOptions = AzureServiceBusTopicMessagePumpOptions.Default;
             string subscriptionName = $"{subscriptionPrefix}-{messagePumpOptions.JobId}";
 
             AddServiceBusTopicMessagePump(
@@ -609,7 +606,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 subscriptionName,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
-                configureMessagePump: configureMessagePump);
+                configureTopicMessagePump: configureTopicMessagePump);
         }
 
         private static void AddServiceBusTopicMessagePump(
@@ -618,21 +615,18 @@ namespace Microsoft.Extensions.DependencyInjection
             string subscriptionName = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
-
-            var messagePumpOptions = AzureServiceBusMessagePumpOptions.Default;
-            configureMessagePump?.Invoke(messagePumpOptions);
 
             AddServiceBusMessagePump(
                 services,
                 entityName,
                 subscriptionName,
                 ServiceBusEntity.Topic,
-                messagePumpOptions,
-                getConnectionStringFromConfigurationFunc,
-                getConnectionStringFromSecretFunc);
+                configureTopicMessagePump: configureTopicMessagePump,
+                getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
+                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc);
         }
 
         private static void AddServiceBusMessagePump(
@@ -640,11 +634,15 @@ namespace Microsoft.Extensions.DependencyInjection
             string entityName,
             string subscriptionName,
             ServiceBusEntity serviceBusEntity,
-            AzureServiceBusMessagePumpOptions messagePumpOptions,
+            Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null,
+            Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null)
         {
             Guard.NotNull(services, nameof(services));
+
+            AzureServiceBusMessagePumpConfiguration options = 
+                DetermineAzureServiceBusMessagePumpOptions(serviceBusEntity, configureQueueMessagePump, configureTopicMessagePump);
 
             services.AddSingleton(serviceProvider =>
             {
@@ -654,13 +652,36 @@ namespace Microsoft.Extensions.DependencyInjection
                     serviceBusEntity,
                     getConnectionStringFromConfigurationFunc,
                     getConnectionStringFromSecretFunc,
-                    messagePumpOptions,
+                    options,
                     serviceProvider);
             });
 
             services.AddHostedService<AzureServiceBusMessagePump>();
         }
 
+        private static AzureServiceBusMessagePumpConfiguration DetermineAzureServiceBusMessagePumpOptions(
+            ServiceBusEntity serviceBusEntity,
+            Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump,
+            Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump)
+        {
+            switch (serviceBusEntity)
+            {
+                case ServiceBusEntity.Queue:
+                    var queueMessagePumpOptions = AzureServiceBusQueueMessagePumpOptions.Default;
+                    configureQueueMessagePump?.Invoke(queueMessagePumpOptions);
+
+                    return new AzureServiceBusMessagePumpConfiguration(queueMessagePumpOptions);
+                
+                case ServiceBusEntity.Topic:
+                    var topicMessagePumpOptions = AzureServiceBusTopicMessagePumpOptions.Default;
+                    configureTopicMessagePump?.Invoke(topicMessagePumpOptions);
+                
+                    return new AzureServiceBusMessagePumpConfiguration(topicMessagePumpOptions);
+                
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(serviceBusEntity), serviceBusEntity, "Unknown Azure Service Bus entity");
+            }
+        }
 
         /// <summary>
         /// Adds a <see cref="IAzureServiceBusMessageHandler{TMessage}" /> implementation to process the messages from Azure Service Bus
