@@ -145,7 +145,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             Type messageType = _serviceType.GenericTypeArguments[0];
             Type messageContextType = _serviceType.GenericTypeArguments[1];
 
-            if (typeof(TMessageContext) != messageContextType)
+            if (typeof(TMessageContext) != messageContextType && messageContextType != typeof(MessageContext))
             {
                 result = null;
                 return false;

@@ -19,13 +19,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             _outputWriter = outputWriter;
         }
 
-        [Fact]
-        public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        [Theory]
+        [InlineData(ServiceBusEntity.Queue)]
+        [InlineData(ServiceBusEntity.Topic)]
+        public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(ServiceBusEntity entity)
         {
             // Arrange
             var config = TestConfig.Create();
-            const ServiceBusEntity entity = ServiceBusEntity.Queue;
-
             var commandArguments = new[]
             {
                 CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),

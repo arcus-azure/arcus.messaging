@@ -6,7 +6,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 {
     /// <summary>
     /// Represents a handler for a specific <typeparamref name="TMessage"/> in a <typeparamref name="TMessageContext"/>
-    /// during the processing of the <see cref="MessagePump{TMessage,TMessageContext}"/>.
+    /// during the processing of the <see cref="MessagePump"/>.
     /// </summary>
     public interface IMessageHandler<in TMessage, in TMessageContext> where TMessageContext : MessageContext
     {
@@ -25,5 +25,13 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken);
+    }
+
+    /// <summary>
+    /// Represents a handler for a specific <typeparamref name="TMessage"/> in a <see cref="MessageContext"/>
+    /// during the processing of the <see cref="MessagePump"/>.
+    /// </summary>
+    public interface IMessageHandler<in TMessage> : IMessageHandler<TMessage, MessageContext>
+    {
     }
 }

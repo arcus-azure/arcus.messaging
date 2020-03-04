@@ -13,6 +13,24 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class IServiceCollectionExtensions
     {
         /// <summary>
+        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an <see cref="MessagePump"/> implementation.
+        /// resources.
+        /// </summary>
+        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
+        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
+        /// <param name="services">The collection of services to use in the application.</param>
+        public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage>(this IServiceCollection services)
+            where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
+            where TMessage : class
+        {
+            Guard.NotNull(services, nameof(services));
+
+            services.AddSingleton<IMessageHandler<TMessage, MessageContext>, TMessageHandler>();
+
+            return services;
+        }
+
+        /// <summary>
         /// Adds a <see cref="IMessageHandler{TMessage, TMessageContext}" /> implementation to process the messages from an <see cref="MessagePump"/> implementation.
         /// resources.
         /// </summary>

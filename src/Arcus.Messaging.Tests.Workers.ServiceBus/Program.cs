@@ -38,9 +38,8 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                             .UsingAuthenticationKey(eventGridKey)
                             .Build();
                     });
-
                     services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                            .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
+                            .WithMessageHandler<OrdersMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
                 });
