@@ -66,7 +66,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var messageSender = CreateServiceBusSender(connectionStringKey);
 
             var order = OrderGenerator.Generate();
-            var orderMessage = order.WrapInServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
+            Message orderMessage = 
+                MessageBuilder
+                    .ForMessageBody(order, encoding: messageEncoding)
+                    .WithOperationId(operationId)
+                    .WithTransactionId(transactionId)
+                    .Build();
 
             // Act
             await messageSender.SendAsync(orderMessage);

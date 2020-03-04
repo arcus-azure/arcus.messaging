@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.ServiceBus.Core.Extensions;
 using Arcus.Messaging.Tests.Core;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
@@ -13,24 +12,24 @@ using Xunit;
 namespace Arcus.Messaging.Tests.Unit.ServiceBus
 {
     [Trait("Category", "Unit")]
-    public class ObjectExtensionsTests
+    public class MessageBuilderTests
     {
         private const string ExpectedDefaultEncoding = "utf-8";
         private const string ExpectedDefaultContentType = "application/json";
 
         [Fact]
-        public void WrapInServiceBusMessage_BasicWithoutOptions_ReturnsValidServiceBusMessage()
+        public void MessageBuilder_BasicWithoutOptions_ReturnsValidServiceBusMessage()
         {
             // Arrange
-            var messagePayload = OrderGenerator.Generate();
+            Order messagePayload = OrderGenerator.Generate();
 
             // Act
-            var serviceBusMessage = messagePayload.WrapInServiceBusMessage();
+            Message serviceBusMessage = MessageBuilder.ForMessageBody(messagePayload).Build();
 
             // Assert
             Assert.NotNull(serviceBusMessage);
             Assert.Null(serviceBusMessage.CorrelationId);
-            var userProperties = serviceBusMessage.UserProperties;
+            IDictionary<string, object> userProperties = serviceBusMessage.UserProperties;
             Assert.True(userProperties.ContainsKey(PropertyNames.ContentType));
             Assert.True(userProperties.ContainsKey(PropertyNames.Encoding));
             Assert.False(userProperties.ContainsKey(PropertyNames.TransactionId));
@@ -40,19 +39,19 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         }
 
         [Fact]
-        public void WrapInServiceBusMessage_BasicWithOperationId_ReturnsValidServiceBusMessageWithSpecifiedCorrelationId()
+        public void MessageBuilder_BasicWithOperationId_ReturnsValidServiceBusMessageWithSpecifiedCorrelationId()
         {
             // Arrange
-            var messagePayload = OrderGenerator.Generate();
+            Order messagePayload = OrderGenerator.Generate();
             var operationId = Guid.NewGuid().ToString();
 
             // Act
-            var serviceBusMessage = messagePayload.WrapInServiceBusMessage(operationId: operationId);
+            Message serviceBusMessage = MessageBuilder.ForMessageBody(messagePayload).WithOperationId(operationId).Build();
 
             // Assert
             Assert.NotNull(serviceBusMessage);
             Assert.Equal(operationId, serviceBusMessage.CorrelationId);
-            var userProperties = serviceBusMessage.UserProperties;
+            IDictionary<string, object> userProperties = serviceBusMessage.UserProperties;
             Assert.True(userProperties.ContainsKey(PropertyNames.ContentType));
             Assert.True(userProperties.ContainsKey(PropertyNames.Encoding));
             Assert.False(userProperties.ContainsKey(PropertyNames.TransactionId));
@@ -62,19 +61,19 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         }
 
         [Fact]
-        public void WrapInServiceBusMessage_BasicWithTransactionId_ReturnsValidServiceBusMessageWithSpecifiedTransactionId()
+        public void MessageBuilder_BasicWithTransactionId_ReturnsValidServiceBusMessageWithSpecifiedTransactionId()
         {
             // Arrange
-            var messagePayload = OrderGenerator.Generate();
+            Order messagePayload = OrderGenerator.Generate();
             var expectedTransactionId = Guid.NewGuid().ToString();
 
             // Act
-            var serviceBusMessage = messagePayload.WrapInServiceBusMessage(transactionId: expectedTransactionId);
+            Message serviceBusMessage = MessageBuilder.ForMessageBody(messagePayload).WithTransactionId(expectedTransactionId).Build();
 
             // Assert
             Assert.NotNull(serviceBusMessage);
             Assert.Null(serviceBusMessage.CorrelationId);
-            var userProperties = serviceBusMessage.UserProperties;
+            IDictionary<string, object> userProperties = serviceBusMessage.UserProperties;
             Assert.True(userProperties.ContainsKey(PropertyNames.ContentType));
             Assert.True(userProperties.ContainsKey(PropertyNames.Encoding));
             Assert.True(userProperties.ContainsKey(PropertyNames.TransactionId));
@@ -85,19 +84,19 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         }
 
         [Fact]
-        public void WrapInServiceBusMessage_BasicWithEncoding_ReturnsValidServiceBusMessageWithSpecifiedEncoding()
+        public void MessageBuilder_BasicWithEncoding_ReturnsValidServiceBusMessageWithSpecifiedEncoding()
         {
             // Arrange
-            var originalMessagePayload = OrderGenerator.Generate();
-            var expectedEncoding = Encoding.ASCII;
+            Order originalMessagePayload = OrderGenerator.Generate();
+            Encoding expectedEncoding = Encoding.ASCII;
 
             // Act
-            var serviceBusMessage = originalMessagePayload.WrapInServiceBusMessage(encoding: expectedEncoding);
+            Message serviceBusMessage = MessageBuilder.ForMessageBody(originalMessagePayload, expectedEncoding).Build();
 
             // Assert
             Assert.NotNull(serviceBusMessage);
             Assert.Null(serviceBusMessage.CorrelationId);
-            var userProperties = serviceBusMessage.UserProperties;
+            IDictionary<string, object> userProperties = serviceBusMessage.UserProperties;
             Assert.True(userProperties.ContainsKey(PropertyNames.ContentType));
             Assert.True(userProperties.ContainsKey(PropertyNames.Encoding));
             Assert.False(userProperties.ContainsKey(PropertyNames.TransactionId));
@@ -114,10 +113,10 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         private static void AssertMessagePayload(Message serviceBusMessage, IDictionary<string, object> messageProperties, Encoding expectedEncoding,
              Order originalMessagePayload)
         {
-            var rawEncoding = messageProperties[PropertyNames.Encoding];
+            object rawEncoding = messageProperties[PropertyNames.Encoding];
             Assert.Equal(expectedEncoding.WebName, rawEncoding);
             var encoding = Encoding.GetEncoding(rawEncoding.ToString());
-            var rawMessageBody = encoding.GetString(serviceBusMessage.Body);
+            string rawMessageBody = encoding.GetString(serviceBusMessage.Body);
             var messagePayload = JsonConvert.DeserializeObject<Order>(rawMessageBody);
             Assert.NotNull(messagePayload);
             Assert.Equal(originalMessagePayload.Id, messagePayload.Id);
