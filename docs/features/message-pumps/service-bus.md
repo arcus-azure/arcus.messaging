@@ -15,19 +15,18 @@ Azure Service Bus Message Pump will perform all the plumbing that is required fo
 
 As a user, the only thing you have to do is **focus on processing messages, not how to get them**.
 
-You can do this by creating a message handler which derives from `AzureServiceBusMessagePump<TMessage>`
+You can do this by creating a message handler which implements from `IAzureServiceBusMessageHandler<TMessage>` (or `IMessageHandler<TMessage, MessageContext>`).
 
 Here is an example of a message handler that expects messages of type `Order`:
 
 ```csharp
-public class OrdersMessageHandler : AzureServiceBusMessagePump<Order>
+public class OrdersMessageHandler : IAzureServiceBusMessageHandler<Order>
 {
-    public OrdersMessageHandler(IConfiguration configuration, IServiceProvider serviceProvider, ILogger<OrdersMessageHandler> logger)
-        : base(configuration, serviceProvider, logger)
-    {
-    }
-
-    protected override async Task ProcessMessageAsync(Order orderMessage, AzureServiceBusMessageContext messageContext, MessageCorrelationInfo correlationInfo, CancellationToken cancellationToken)
+    public async Task ProcessMessageAsync(
+    Order orderMessage, 
+    AzureServiceBusMessageContext messageContext, 
+    MessageCorrelationInfo correlationInfo, 
+    CancellationToken cancellationToken)
     {
         Logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber, orderMessage.Customer.FirstName, orderMessage.Customer.LastName);
 
@@ -38,13 +37,25 @@ public class OrdersMessageHandler : AzureServiceBusMessagePump<Order>
 }
 ```
 
-As of today, the message handler is tightly coupled to the broker but overtime they will be decoupled.
+or with using the more general `IMessageHandler<>`, that will use the more general `MessageContext` instead of the one specific for Azure Service Bus.
 
-Over time you'll be able to:
-- Bring your own deserialization
-- Re-use a message handler across different brokers
-- Use multiple message handlers and let the pump route the messages to the correct handler.
-This can be based on message type, message context or custom message flow determination
+```csharp
+public class OrdersMessageHandler : IMessageHandler<Order>
+{
+    public async Task ProcessMessageAsync(
+    Order orderMessage, 
+    MessageContext messageContext, 
+    MessageCorrelationInfo correlationInfo, 
+    CancellationToken cancellationToken)
+    {
+        Logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber, orderMessage.Customer.FirstName, orderMessage.Customer.LastName);
+
+        // Custom logic
+
+        Logger.LogInformation("Order {OrderId} processed", orderMessage.Id);
+    }
+}
+```
 
 ## Configuration
 
@@ -55,11 +66,15 @@ public void ConfigureServices(IServiceCollection services)
 {
     // Add Service Bus Queue message pump and use OrdersMessageHandler to process the messages
     // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
-    services.AddServiceBusQueueMessagePump<OrdersMessageHandler>("ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
+    services.AddServiceBusQueueMessagePump("ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
+            .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
     // Add Service Bus Topic message pump and use OrdersMessageHandler to process the messages on the 'My-Subscription-Name' subscription
     // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
-    services.AddServiceBusTopicMessagePump<OrdersMessageHandler>("My-Subscription-Name", "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
+    services.AddServiceBusTopicMessagePump("My-Subscription-Name", "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
+            .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
+
+    // Note, that only a single call to the `.WithServiceBusMessageHandler` has to be made when the handler should be used across message pumps.
 }
 ```
 
@@ -80,7 +95,7 @@ Next to that, we provide a **variety of overloads** to allow you to:
 public void ConfigureServices(IServiceCollection services)
 {
     // Specify the name of the Service Bus Queue:
-    services.AddServiceBusQueueMessagePump<OrdersMessageHandler>(
+    services.AddServiceBusQueueMessagePump(
         "My-Service-Bus-Queue-Name",
         "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
@@ -91,12 +106,12 @@ public void ConfigureServices(IServiceCollection services)
         "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
     // Specify a topic subscription prefix instead of a name to separate topic message pumps.
-    services.AddServiceBusTopicPumpWithPrefix<OrdersMessageHandler>(
+    services.AddServiceBusTopicPumpWithPrefix(
         "My-Service-Bus-Topic-Name"
         "My-Service-Bus-Subscription-Prefix",
         "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
-    services.AddServiceBusTopicMessagePump<OrdersMessageHandler>(
+    services.AddServiceBusTopicMessagePump(
         "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
         options => 
         {
@@ -117,7 +132,7 @@ public void ConfigureServices(IServiceCollection services)
             options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
         });
 
-    services.AddServiceBusQueueMessagePump<OrdersMessageHandler>(
+    services.AddServiceBusQueueMessagePump(
         "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
         options => 
         {
@@ -133,6 +148,11 @@ public void ConfigureServices(IServiceCollection services)
             // this job instance in a multi-instance deployment (default: guid).
             options.JobId = Guid.NewGuid().ToString();
         });
+
+    // Multiple message handlers can be added to the servies, based on the message type (ex. 'Order', 'Customer'...), 
+    // the correct message handler will be selected.
+    services.WithServiceBusMessageHandler<OrdersMessageHandler, Order>()
+            .WithMessageHandler<CustomerMessageHandler, Customer>();
 }
 ```
 
