@@ -6,7 +6,6 @@ using Arcus.Security.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -22,19 +21,19 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var spySecretProvider = new Mock<ISecretProvider>();
             services.AddSingleton(serviceProvider => spySecretProvider.Object);
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
-            IServiceCollection result =
-                services.AddServiceBusTopicMessagePump<EmptyMessagePump>(
-                    "subscription name", "secret name", configureMessagePump: options => options.AutoComplete = true);
-
+            IServiceCollection result = 
+                services.AddServiceBusTopicMessagePump(
+                    "topic name", "subscription name", "secret name", options => options.AutoComplete = true);
+            
             // Assert
             Assert.NotNull(result);
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             await settings.GetConnectionStringAsync();
@@ -49,11 +48,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var spySecretProvider = new Mock<ISecretProvider>();
             services.AddSingleton(serviceProvider => spySecretProvider.Object);
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
-            IServiceCollection result =
-                services.AddServiceBusTopicMessagePump<EmptyMessagePump>(
+            IServiceCollection result = 
+                services.AddServiceBusTopicMessagePump(
                     "topic name", "subscription name", "secret name", configureMessagePump: options => options.AutoComplete = true);
 
             // Assert
@@ -62,7 +61,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             await settings.GetConnectionStringAsync();
@@ -77,11 +76,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var spySecretProvider = new Mock<ISecretProvider>();
             services.AddSingleton(serviceProvider => spySecretProvider.Object);
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
             IServiceCollection result =
-                services.AddServiceBusQueueMessagePump<EmptyMessagePump>(
+                services.AddServiceBusQueueMessagePump(
                     "queue name", "secret name", configureMessagePump: options => options.AutoComplete = true);
 
             // Assert
@@ -89,7 +88,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             await settings.GetConnectionStringAsync();
@@ -104,18 +103,18 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var spySecretProvider = new Mock<ISecretProvider>();
             services.AddSingleton(serviceProvider => spySecretProvider.Object);
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
             IServiceCollection result =
-                services.AddServiceBusQueueMessagePump<EmptyMessagePump>("secret name", configureMessagePump: options => options.AutoComplete = true);
+                services.AddServiceBusQueueMessagePump("secret name", configureMessagePump: options => options.AutoComplete = true);
 
             // Assert
             Assert.NotNull(result);
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             await settings.GetConnectionStringAsync();
@@ -130,18 +129,18 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             var services =  new ServiceCollection();
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
             IServiceCollection result =
-                services.AddServiceBusTopicMessagePumpWithPrefix<EmptyMessagePump>(subscriptionPrefix, config => "ignored connection string");
+                services.AddServiceBusTopicMessagePumpWithPrefix(subscriptionPrefix, config => "ignored connection string");
 
             // Assert
             Assert.NotNull(result);
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             Assert.StartsWith(subscriptionPrefix, settings.SubscriptionName);
@@ -158,18 +157,18 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var services =  new ServiceCollection();
             services.AddSingleton(serviceProvider => spySecretProvider.Object);
             services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddSingleton(serviceProvider => Mock.Of<ILogger>());
+            services.AddLogging();
 
             // Act
             IServiceCollection result =
-                services.AddServiceBusTopicMessagePumpWithPrefix<EmptyMessagePump>($"subscription-prefix-{Guid.NewGuid()}", "secret name");
+                services.AddServiceBusTopicMessagePumpWithPrefix($"subscription-prefix-{Guid.NewGuid()}", "secret name");
 
             // Assert
             Assert.NotNull(result);
             ServiceProvider provider = result.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<EmptyMessagePump>(messagePump);
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
             await settings.GetConnectionStringAsync();

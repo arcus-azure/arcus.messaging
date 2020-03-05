@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Messaging.ServiceBus.Core.Extensions;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
@@ -19,8 +21,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// <summary>
     ///     Message pump for processing messages on an Azure Service Bus entity
     /// </summary>
-    /// <typeparam name="TMessage">Type of expected message payload</typeparam>
-    public abstract class AzureServiceBusMessagePump<TMessage> : MessagePump<TMessage, AzureServiceBusMessageContext>
+    public class AzureServiceBusMessagePump : MessagePump
     {
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
@@ -32,8 +33,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="configuration">Configuration of the application</param>
         /// <param name="serviceProvider">Collection of services that are configured</param>
         /// <param name="logger">Logger to write telemetry to</param>
-        protected AzureServiceBusMessagePump(IConfiguration configuration, IServiceProvider serviceProvider,
-            ILogger logger)
+        public AzureServiceBusMessagePump(IConfiguration configuration, IServiceProvider serviceProvider, ILogger<AzureServiceBusMessagePump> logger)
             : base(configuration, serviceProvider, logger)
         {
             Settings = serviceProvider.GetRequiredService<AzureServiceBusMessagePumpSettings>();
@@ -403,12 +403,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
                     message.UserProperties);
 
-                // Deserialize the message
-                TMessage typedMessageBody = DeserializeJsonMessageBody(message.Body, messageContext);
+                Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
+                string messageBody = encoding.GetString(message.Body);
 
-                // Process the message
-                // Note - We are not checking for exceptions here as the pump wil handle those and call our exception handling after which it abandons it
-                await ProcessMessageAsync(typedMessageBody, messageContext, correlationInfo, cancellationToken);
+                await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
 
                 Logger.LogInformation("Message {MessageId} processed", message.MessageId);
             }

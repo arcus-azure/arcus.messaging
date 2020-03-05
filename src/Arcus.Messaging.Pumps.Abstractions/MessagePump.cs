@@ -1,23 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Pumps.Abstractions
 {
     /// <summary>
     ///     Foundation for building message pumps
     /// </summary>
-    /// <typeparam name="TMessage">Type of message we are interested in</typeparam>
-    /// <typeparam name="TMessageContext">Type of message context for the provider</typeparam>
-    public abstract class MessagePump<TMessage, TMessageContext> : BackgroundService
-        where TMessageContext : MessageContext
+    public abstract class MessagePump : BackgroundService
     {
         /// <summary>
         ///     Default encoding used
@@ -83,62 +83,51 @@ namespace Arcus.Messaging.Pumps.Abstractions
         }
 
         /// <summary>
-        ///     Deserializes a raw JSON message body
+        ///     Handle a new message that was received
         /// </summary>
-        /// <param name="rawMessageBody">Raw message body to deserialize</param>
-        /// <param name="messageContext">Context concerning the message</param>
-        /// <returns>Deserialized message</returns>
-        protected virtual TMessage DeserializeJsonMessageBody(byte[] rawMessageBody, MessageContext messageContext)
-        {
-            Encoding encoding = DetermineMessageEncoding(messageContext);
-            string serializedMessageBody = encoding.GetString(rawMessageBody);
-
-            TMessage messageBody = JsonConvert.DeserializeObject<TMessage>(serializedMessageBody);
-            if (messageBody == null)
-            {
-                Logger.LogError("Unable to deserialize to message contract {ContractName} for message {MessageBody}",
-                    typeof(TMessage), rawMessageBody);
-            }
-
-            return messageBody;
-        }
-
-        /// <summary>
-        ///     Process a new message that was received
-        /// </summary>
+        /// <typeparam name="TMessageContext">Type of message context for the provider</typeparam>
         /// <param name="message">Message that was received</param>
         /// <param name="messageContext">Context providing more information concerning the processing</param>
         /// <param name="correlationInfo">
-        ///     Information concerning correlation of telemetry & processes by using a variety of unique
+        ///     Information concerning correlation of telemetry and processes by using a variety of unique
         ///     identifiers
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
-        protected abstract Task ProcessMessageAsync(TMessage message, TMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo, CancellationToken cancellationToken);
-
-        /// <summary>
-        ///     Determines the encoding used for a given message
-        /// </summary>
-        /// <remarks>If no encoding was specified, UTF-8 will be used by default</remarks>
-        /// <param name="messageContext">Context concerning the message</param>
-        /// <returns>Encoding that was used for the message body</returns>
-        protected virtual Encoding DetermineMessageEncoding(MessageContext messageContext)
+        protected async Task ProcessMessageAsync<TMessageContext>(
+            string message,
+            TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellationToken)
+            where TMessageContext : MessageContext
         {
-            if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
+            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(ServiceProvider);
+            if (!handlers.Any())
             {
-                try
+                throw new InvalidOperationException(
+                    $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
+                    + "because no 'IMessageHandler<,>' was registered in the dependency injection container. "
+                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
+            }
+
+            foreach (MessageHandler handler in handlers)
+            {
+                if (handler.TryParseToMessageFormat<TMessageContext>(message, out var result))
                 {
-                    return Encoding.GetEncoding(annotatedEncoding.ToString());
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogCritical(ex,
-                        $"Unable to determine encoding with name '{{Encoding}}'. Falling back to {{FallbackEncoding}}.",
-                        annotatedEncoding.ToString(), DefaultEncoding.WebName);
+                    if (result is null)
+                    {
+                        throw new InvalidCastException(
+                            "Successful parsing from abstracted message to concrete message handler type did unexpectedly result in a 'null' parsing result");
+                    }
+                    
+                    await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
+                    return;
                 }
             }
 
-            return DefaultEncoding;
+            throw new InvalidOperationException(
+                $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
+                + $"because none of the {handlers.Count()} registered 'IMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context. "
+                + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
         }
 
         /// <summary>

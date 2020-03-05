@@ -1,4 +1,5 @@
 using Arcus.EventGrid.Publishing;
+using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +26,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Queue
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
+                    services.AddLogging();
                     services.AddTransient(svc =>
                     {
                         var configuration = svc.GetRequiredService<IConfiguration>();
@@ -36,7 +38,9 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Queue
                             .UsingAuthenticationKey(eventGridKey)
                             .Build();
                     });
-                    services.AddServiceBusQueueMessagePump<OrdersMessagePump>(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"]);
+                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
                 });
     }
