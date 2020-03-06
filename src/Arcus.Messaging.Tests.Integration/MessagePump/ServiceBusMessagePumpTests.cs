@@ -58,7 +58,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_TOPIC", config.GetServiceBusConnectionString(ServiceBusEntity.Topic)),
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueProgram>(config, _outputWriter, commandArguments))
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueAndTopicProgram>(config, _outputWriter, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(entity, config, _outputWriter))
                 {
