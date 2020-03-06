@@ -95,7 +95,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 Message orderMessage = order.WrapInServiceBusMessage(operationId, transactionId);
                 await messageSender.SendAsync(orderMessage);
 
-                string receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);
+                string receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId, TimeSpan.FromSeconds(30));
                 Assert.NotEmpty(receivedEvent);
 
                 EventBatch<Event> eventBatch = EventParser.Parse(receivedEvent);
