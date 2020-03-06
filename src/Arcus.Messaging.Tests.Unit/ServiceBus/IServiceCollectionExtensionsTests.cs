@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Security.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,8 +35,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var messagePump = provider.GetService<IHostedService>();
             Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
-            var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
-            await settings.GetConnectionStringAsync();
+            await Assert.ThrowsAnyAsync<Exception>(() => messagePump.StartAsync(CancellationToken.None));
             spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
         }
 
@@ -63,8 +62,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var messagePump = provider.GetService<IHostedService>();
             Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
-            var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
-            await settings.GetConnectionStringAsync();
+            await Assert.ThrowsAnyAsync<Exception>(() => messagePump.StartAsync(CancellationToken.None));
             spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
         }
 
@@ -90,9 +88,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var messagePump = provider.GetService<IHostedService>();
             Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
-            var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
-            await settings.GetConnectionStringAsync();
-            spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
+            try
+            {
+                await messagePump.StartAsync(CancellationToken.None);
+            }
+            finally
+            {
+                spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
+            }
         }
 
         [Fact]
@@ -116,63 +119,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var messagePump = provider.GetService<IHostedService>();
             Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
-            var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
-            await settings.GetConnectionStringAsync();
-            spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
-        }
-
-        [Fact]
-        public async Task AddServiceBusTopicMessagePumpWithPrefix_WithSubscriptionPrefix_SubscriptionNameIsAssembledWithJobId()
-        {
-            // Arrange
-            string subscriptionPrefix = $"subscription-{Guid.NewGuid()}";
-
-            var services =  new ServiceCollection();
-            services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddLogging();
-
-            // Act
-            IServiceCollection result =
-                services.AddServiceBusTopicMessagePumpWithPrefix(subscriptionPrefix, config => "ignored connection string");
-
-            // Assert
-            Assert.NotNull(result);
-            ServiceProvider provider = result.BuildServiceProvider();
-
-            var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
-
-            var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
-            Assert.StartsWith(subscriptionPrefix, settings.SubscriptionName);
-            Assert.True(
-                subscriptionPrefix.Length < settings.SubscriptionName.Length, 
-                "subscription prefix's length should be less than subscription name");
-        }
-
-        [Fact]
-        public async Task AddServiceBusTopicMessagePumpWithPrefix_IndirectSecretProvider_WiresUpCorrectly()
-        {
-            // Arrange
-            var spySecretProvider = new Mock<ISecretProvider>();
-            var services =  new ServiceCollection();
-            services.AddSingleton(serviceProvider => spySecretProvider.Object);
-            services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
-            services.AddLogging();
-
-            // Act
-            IServiceCollection result =
-                services.AddServiceBusTopicMessagePumpWithPrefix($"subscription-prefix-{Guid.NewGuid()}", "secret name");
-
-            // Assert
-            Assert.NotNull(result);
-            ServiceProvider provider = result.BuildServiceProvider();
-
-            var messagePump = provider.GetService<IHostedService>();
-            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
-
-            var settings = provider.GetService<AzureServiceBusMessagePumpSettings>();
-            await settings.GetConnectionStringAsync();
-            spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
+            try
+            {
+                await messagePump.StartAsync(CancellationToken.None);
+            }
+            finally
+            {
+                spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
+            }
         }
     }
 }
