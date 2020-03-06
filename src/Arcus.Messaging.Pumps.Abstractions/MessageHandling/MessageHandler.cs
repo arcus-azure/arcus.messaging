@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -47,7 +48,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             foreach (object lookup in descriptorLookup)
             {
                 var serviceType = lookup.GetRequiredPropertyValue<Type>("Key");
-                if ( serviceType.Name.Contains("IMessageHandler"))
+                if (serviceType.Name == "IMessageHandler`2" 
+                    && serviceType.Namespace == typeof(IMessageHandler<>).Namespace)
                 {
                     IEnumerable descriptors = GetServiceDescriptors(lookup);
                     foreach (object descriptor in descriptors)
