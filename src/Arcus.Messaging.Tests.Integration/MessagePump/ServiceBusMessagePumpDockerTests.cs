@@ -74,9 +74,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Assert
             var receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);
             Assert.NotEmpty(receivedEvent);
-            var deserializedEventGridMessage = EventGridParser.Parse<OrderCreatedEvent>(receivedEvent);
+            var deserializedEventGridMessage = EventParser.Parse(receivedEvent);
             Assert.NotNull(deserializedEventGridMessage);
             var orderCreatedEvent = Assert.Single(deserializedEventGridMessage.Events);
+            Assert.NotNull(orderCreatedEvent);
             var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
             Assert.NotNull(orderCreatedEventData);
             Assert.NotNull(orderCreatedEventData.CorrelationInfo);

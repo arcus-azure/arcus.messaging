@@ -1,3 +1,6 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
@@ -9,9 +12,9 @@ using Microsoft.Extensions.Hosting;
 // ReSharper disable once CheckNamespace
 namespace Arcus.Messaging.Tests.Workers.ServiceBus
 {
-    public class Program
+    public class ServiceBusQueueAndTopicProgram
     {
-        public static void Main(string[] args)
+        public static void main(string[] args)
         {
             CreateHostBuilder(args)
                 .Build()
@@ -34,11 +37,13 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                         var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
 
                         return EventGridPublisherBuilder
-                            .ForTopic(eventGridTopic)
-                            .UsingAuthenticationKey(eventGridKey)
-                            .Build();
+                               .ForTopic(eventGridTopic)
+                               .UsingAuthenticationKey(eventGridKey)
+                               .Build();
                     });
-                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+
+                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_TOPIC"])
+                            .AddServiceBusTopicMessagePump("Receive-All", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_QUEUE"])
                             .WithMessageHandler<OrdersMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));

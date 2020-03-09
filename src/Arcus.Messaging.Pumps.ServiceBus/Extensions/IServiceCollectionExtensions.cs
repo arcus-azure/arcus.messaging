@@ -6,6 +6,7 @@ using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Security.Core;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -644,9 +645,9 @@ namespace Microsoft.Extensions.DependencyInjection
             AzureServiceBusMessagePumpConfiguration options = 
                 DetermineAzureServiceBusMessagePumpOptions(serviceBusEntity, configureQueueMessagePump, configureTopicMessagePump);
 
-            services.AddSingleton(serviceProvider =>
+            services.AddHostedService(serviceProvider =>
             {
-                return new AzureServiceBusMessagePumpSettings(
+                var settings = new AzureServiceBusMessagePumpSettings(
                     entityName,
                     subscriptionName,
                     serviceBusEntity,
@@ -654,9 +655,11 @@ namespace Microsoft.Extensions.DependencyInjection
                     getConnectionStringFromSecretFunc,
                     options,
                     serviceProvider);
-            });
 
-            services.AddHostedService<AzureServiceBusMessagePump>();
+                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+                var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
+                return new AzureServiceBusMessagePump(settings, configuration, serviceProvider, logger);
+            });
         }
 
         private static AzureServiceBusMessagePumpConfiguration DetermineAzureServiceBusMessagePumpOptions(

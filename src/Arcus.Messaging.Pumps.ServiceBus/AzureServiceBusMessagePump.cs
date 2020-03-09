@@ -30,13 +30,20 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Constructor
         /// </summary>
+        /// <param name="settings">Settings to configure the message pump</param>
         /// <param name="configuration">Configuration of the application</param>
         /// <param name="serviceProvider">Collection of services that are configured</param>
         /// <param name="logger">Logger to write telemetry to</param>
-        public AzureServiceBusMessagePump(IConfiguration configuration, IServiceProvider serviceProvider, ILogger<AzureServiceBusMessagePump> logger)
+        public AzureServiceBusMessagePump(
+            AzureServiceBusMessagePumpSettings settings, 
+            IConfiguration configuration, 
+            IServiceProvider serviceProvider, 
+            ILogger<AzureServiceBusMessagePump> logger)
             : base(configuration, serviceProvider, logger)
         {
-            Settings = serviceProvider.GetRequiredService<AzureServiceBusMessagePumpSettings>();
+            Guard.NotNull(settings, nameof(settings), "Requires a set of settings to correctly configure the message pump");
+            
+            Settings = settings;
             JobId = Settings.Options.JobId;
 
             SubscriptionName = Settings.SubscriptionName;
@@ -44,7 +51,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         }
 
         /// <summary>
-        ///     Path of the entity to process
+        ///     Gets the settings configuring the message pump.
         /// </summary>
         protected AzureServiceBusMessagePumpSettings Settings { get; }
 

@@ -25,7 +25,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var config = TestConfig.Create();
             const ServiceBusEntity entity = ServiceBusEntity.Queue;
-
             var commandArguments = new[]
             {
                 CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
@@ -34,6 +33,31 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             };
 
             using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueProgram>(config, _outputWriter, commandArguments))
+            {
+                await using (var service = await TestMessagePumpService.StartNewAsync(entity, config, _outputWriter))
+                {
+                    // Act / Assert
+                    await service.SimulateMessageProcessingAsync();
+                }
+            }
+        }
+
+        [Fact]
+        public async Task ServiceBusMessagePumpWithQueueAndTopic_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            const ServiceBusEntity entity = ServiceBusEntity.Queue;
+
+            var commandArguments = new[]
+            {
+                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
+                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
+                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_QUEUE", config.GetServiceBusConnectionString(ServiceBusEntity.Queue)),
+                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_TOPIC", config.GetServiceBusConnectionString(ServiceBusEntity.Topic)),
+            };
+
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueAndTopicProgram>(config, _outputWriter, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(entity, config, _outputWriter))
                 {
