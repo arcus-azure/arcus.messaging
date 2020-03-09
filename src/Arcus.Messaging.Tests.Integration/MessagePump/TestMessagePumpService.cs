@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.EventGrid;
+using Arcus.EventGrid.Contracts;
 using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.ServiceBus.Core.Extensions;
@@ -97,9 +98,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 string receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);
                 Assert.NotEmpty(receivedEvent);
 
-                EventGridEventBatch<OrderCreatedEvent> eventBatch = EventGridParser.Parse<OrderCreatedEvent>(receivedEvent);
+                EventBatch<Event> eventBatch = EventParser.Parse(receivedEvent);
                 Assert.NotNull(eventBatch);
-                OrderCreatedEvent orderCreatedEvent = Assert.Single(eventBatch.Events);
+                Event orderCreatedEvent = Assert.Single(eventBatch.Events);
                 Assert.NotNull(orderCreatedEvent);
 
                 var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
