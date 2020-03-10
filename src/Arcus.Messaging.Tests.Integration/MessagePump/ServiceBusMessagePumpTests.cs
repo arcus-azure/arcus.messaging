@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Workers.ServiceBus;
 using Xunit;
@@ -20,9 +21,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Theory]
-        [InlineData(ServiceBusEntity.Queue)]
-        [InlineData(ServiceBusEntity.Topic)]
-        public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(ServiceBusEntity entity)
+        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueProgram))]
+        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicProgram))]
+        public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(ServiceBusEntity entity, Type programType)
         {
             // Arrange
             var config = TestConfig.Create();
@@ -33,7 +34,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", config.GetServiceBusConnectionString(entity)),
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueProgram>(config, _outputWriter, commandArguments))
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync(programType, config, _outputWriter, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(entity, config, _outputWriter))
                 {
