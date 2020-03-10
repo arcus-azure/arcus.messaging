@@ -30,8 +30,7 @@ variables:
   - group: 'Arcus - GitHub Package Registry'
   - group: 'Arcus Messaging - .NET'
   - group: 'Build Configuration'
-  - name: 'Project'
-    value: 'Arcus.Messaging'
+  - template: ./variables/build.yml
 
 stages:
   - stage: Build
