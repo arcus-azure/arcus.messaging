@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
     /// <summary>
-    /// 
+    /// Representation of a project containing a Azure Service Bus message pump.
     /// </summary>
     public class ServiceBusWorkerProject : IDisposable
     {
@@ -32,28 +32,45 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         }
 
         /// <summary>
-        /// 
+        /// Starts a new project with a Azure Service Bus message pump from a given <typeparamref name="TProgram"/>.
         /// </summary>
-        /// <typeparam name="TProgram"></typeparam>
-        /// <param name="config"></param>
-        /// <param name="outputWriter"></param>
-        /// <param name="commandArguments"></param>
-        /// <returns></returns>
+        /// <typeparam name="TProgram">The type of the 'Program.cs' that the project should have.</typeparam>
+        /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
+        /// <param name="outputWriter">The logger to write diagnostic messages during the creation of the project.</param>
+        /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
         public static async Task<ServiceBusWorkerProject> StartNewWithAsync<TProgram>(
             TestConfig config, 
             ITestOutputHelper outputWriter,
             params CommandArgument[] commandArguments)
         {
-            Type typeOfProgram = typeof(TProgram);
-            Guard.NotNull(typeOfProgram, nameof(typeOfProgram));
+            Type programType = typeof(TProgram);
+            ServiceBusWorkerProject project = await StartNewWithAsync(programType, config, outputWriter, commandArguments);
+
+            return project;
+        }
+
+        /// <summary>
+        /// Starts a new project with a Azure Service Bus message pump from a given <paramref name="programType"/>.
+        /// </summary>
+        /// <param name="programType">The type of the 'Program.cs' that the project should have.</param>
+        /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
+        /// <param name="outputWriter">The logger to write diagnostic messages during the creation of the project.</param>
+        /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
+        public static async Task<ServiceBusWorkerProject> StartNewWithAsync(
+            Type programType,
+            TestConfig config,
+            ITestOutputHelper outputWriter,
+            params CommandArgument[] commandArguments)
+        {
+            Guard.NotNull(programType, nameof(programType));
             Guard.For<ArgumentException>(
-                () => !typeOfProgram.Name.EndsWith("Program"), 
+                () => !programType.Name.EndsWith("Program"), 
                 "Requires a type that is considered a startup type with a type name ending with '...Program'");
 
             DirectoryInfo integrationTestDirectory = config.GetIntegrationTestProjectDirectory();
             DirectoryInfo emptyServiceBusWorkerDirectory = config.GetEmptyServiceBusWorkerProjectDirectory();
 
-            ReplaceProgramFile(typeOfProgram, integrationTestDirectory, emptyServiceBusWorkerDirectory);
+            ReplaceProgramFile(programType, integrationTestDirectory, emptyServiceBusWorkerDirectory);
 
             var project = new ServiceBusWorkerProject(emptyServiceBusWorkerDirectory, outputWriter);
 
