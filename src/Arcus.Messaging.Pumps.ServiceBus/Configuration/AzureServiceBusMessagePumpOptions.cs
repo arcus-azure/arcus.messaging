@@ -4,7 +4,7 @@ using GuardNet;
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
 {
     /// <summary>
-    /// The general options that configures a <see cref="AzureServiceBusMessagePump{TMessage}"/> implementation.
+    /// The general options that configures a <see cref="AzureServiceBusMessagePump"/> implementation.
     /// </summary>
     public class AzureServiceBusMessagePumpOptions
     {

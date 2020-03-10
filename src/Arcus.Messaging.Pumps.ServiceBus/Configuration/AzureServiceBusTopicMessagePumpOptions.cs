@@ -3,12 +3,12 @@
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
     /// <summary>
-    ///     Options to configure a Azure Service Bus topic <see cref="AzureServiceBusMessagePump{TMessage}"/> implementation.
+    ///     Options to configure a Azure Service Bus topic <see cref="AzureServiceBusMessagePump"/> implementation.
     /// </summary>
     public class AzureServiceBusTopicMessagePumpOptions : AzureServiceBusMessagePumpOptions
     {
         /// <summary>
-        /// Gets or sets the value indicating whether or not a new Azure Service Bus Topic subscription has to be created when the <see cref="AzureServiceBusMessagePump{TMessage}"/> starts.
+        /// Gets or sets the value indicating whether or not a new Azure Service Bus Topic subscription has to be created when the <see cref="AzureServiceBusMessagePump"/> starts.
         /// The subscription will be deleted afterwards when the message pump stops if the options <see cref="TopicSubscription.DeleteOnStop"/> is selected.
         /// </summary>
         /// <remarks>
