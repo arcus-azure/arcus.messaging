@@ -192,7 +192,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (_messageReceiver == null)
             {
-                throw new InvalidOperationException($"[Job: {JobId}] Message receiver is not initialized yet");
+                throw new InvalidOperationException("Message receiver is not initialized yet");
             }
 
             await _messageReceiver.CompleteAsync(lockToken);
@@ -213,7 +213,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (_messageReceiver == null)
             {
-                throw new InvalidOperationException($"[Job: {JobId}] Message receiver is not initialized yet");
+                throw new InvalidOperationException("Message receiver is not initialized yet");
             }
 
             await _messageReceiver.AbandonAsync(lockToken, messageProperties);
@@ -234,7 +234,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (_messageReceiver == null)
             {
-                throw new InvalidOperationException($"[Job: {JobId}] Message receiver is not initialized yet");
+                throw new InvalidOperationException("Message receiver is not initialized yet");
             }
 
             await _messageReceiver.DeadLetterAsync(lockToken, messageProperties);
@@ -255,7 +255,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (_messageReceiver == null)
             {
-                throw new InvalidOperationException($"[Job: {JobId}] Message receiver is not initialized yet");
+                throw new InvalidOperationException("Message receiver is not initialized yet");
             }
 
             await _messageReceiver.DeadLetterAsync(lockToken, reason, errorDescription);
@@ -291,7 +291,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 // Connection string doesn't include the entity so we're using the message pump settings
                 if (string.IsNullOrWhiteSpace(messagePumpSettings.EntityName))
                 {
-                    throw new ArgumentException($"[Job: {JobId}] No entity name was specified while the connection string is scoped to the namespace");
+                    throw new ArgumentException("No entity name was specified while the connection string is scoped to the namespace");
                 }
 
                 messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, messagePumpSettings.EntityName, SubscriptionName);
