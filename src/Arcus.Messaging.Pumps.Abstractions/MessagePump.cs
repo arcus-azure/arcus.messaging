@@ -11,6 +11,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Arcus.Messaging.Pumps.Abstractions
 {
@@ -111,7 +113,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             foreach (MessageHandler handler in handlers)
             {
-                if (handler.TryParseToMessageFormat<TMessageContext>(message, out var result))
+                if (handler.MatchesMessageContext<TMessageContext>() 
+                    && TryDeserializeToMessageFormat(message, handler.MessageType, out var result))
                 {
                     if (result is null)
                     {
@@ -128,6 +131,41 @@ namespace Arcus.Messaging.Pumps.Abstractions
                 $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
                 + $"because none of the {handlers.Count()} registered 'IMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context. "
                 + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
+        }
+
+        /// <summary>
+        /// Tries to parse the given raw <paramref name="message"/> to the contract of the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.
+        /// </summary>
+        /// <param name="message">The raw incoming message that will be tried to parse against the <see cref="IMessageHandler{TMessage,TMessageContext}"/>'s message contract.</param>
+        /// <param name="messageType">The type of the message that the message handler can process.</param>
+        /// <param name="result">The resulted parsed message when the <paramref name="message"/> conforms with the message handlers' contract.</param>
+        /// <returns>
+        ///     [true] if the <paramref name="message"/> conforms the <see cref="IMessageHandler{TMessage,TMessageContext}"/>'s contract; otherwise [false].
+        /// </returns>
+        public virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object? result)
+        {
+            Guard.NotNullOrWhitespace(message, nameof(message), "Can't parse a blank raw message against a message handler's contract");
+
+            var success = true;
+            var jsonSerializer = new JsonSerializer
+            {
+                MissingMemberHandling = MissingMemberHandling.Error
+            };
+            jsonSerializer.Error += (sender, args) =>
+            {
+                success = false;
+                args.ErrorContext.Handled = true;
+            };
+
+            var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
+            if (success)
+            {
+                result = value;
+                return true;
+            }
+
+            result = null;
+            return false;
         }
 
         /// <summary>

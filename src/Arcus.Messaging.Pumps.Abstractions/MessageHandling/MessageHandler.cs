@@ -4,13 +4,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using GuardNet;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 {
@@ -26,10 +23,20 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         {
             Guard.NotNull(serviceType, nameof(serviceType));
             Guard.NotNull(createMessageHandlerImplementation, nameof(createMessageHandlerImplementation));
+            Guard.For<ArgumentException>(
+                () => serviceType.GenericTypeArguments.Length != 2, 
+                $"Message handler type '{serviceType.Name}' has not the expected 2 generic type arguments");
 
             _serviceType = serviceType;
             _createMessageHandlerImplementation = createMessageHandlerImplementation;
+
+            MessageType = _serviceType.GenericTypeArguments[0];
         }
+
+        /// <summary>
+        /// Gets the type of the message that this abstracted message handler can process.
+        /// </summary>
+        internal Type MessageType { get; }
 
         /// <summary>
         /// Subtract all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementations from the given <paramref name="serviceProvider"/>.
@@ -132,47 +139,13 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         }
 
         /// <summary>
-        /// Tries to parse the given raw <paramref name="message"/> to the contract of the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.
+        /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
         /// </summary>
-        /// <typeparam name="TMessageContext">The type of the message context the <see cref="IMessageHandler{TMessage,TMessageContext}"/> uses.</typeparam>
-        /// <param name="message">The raw incoming message that will be tried to parse against the <see cref="IMessageHandler{TMessage,TMessageContext}"/>'s message contract.</param>
-        /// <param name="result">The resulted parsed message when the <paramref name="message"/> conforms with the message handlers' contract.</param>
-        /// <returns>
-        ///     [true] if the <paramref name="message"/> conforms the <see cref="IMessageHandler{TMessage,TMessageContext}"/>'s contract; otherwise [false].
-        /// </returns>
-        internal bool TryParseToMessageFormat<TMessageContext>(string message, out object? result)
+        /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
+        internal bool MatchesMessageContext<TMessageContext>() where TMessageContext : MessageContext
         {
-            Guard.NotNullOrWhitespace(message, nameof(message), "Can't parse a blank raw message against a message handler's contract");
-
-            Type messageType = _serviceType.GenericTypeArguments[0];
             Type messageContextType = _serviceType.GenericTypeArguments[1];
-
-            if (typeof(TMessageContext) != messageContextType && messageContextType != typeof(MessageContext))
-            {
-                result = null;
-                return false;
-            }
-
-            var success = true;
-            var jsonSerializer = new JsonSerializer
-            {
-                MissingMemberHandling = MissingMemberHandling.Error
-            };
-            jsonSerializer.Error += (sender, args) =>
-            {
-                success = false;
-                args.ErrorContext.Handled = true;
-            };
-
-            var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
-            if (success)
-            {
-                result = value;
-                return true;
-            }
-
-            result = null;
-            return false;
+            return typeof(TMessageContext) == messageContextType || messageContextType == typeof(MessageContext);
         }
 
         /// <summary>
