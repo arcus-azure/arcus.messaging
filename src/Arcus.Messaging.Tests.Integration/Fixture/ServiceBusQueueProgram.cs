@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Arcus.Messaging.Tests.Workers.ServiceBus
@@ -25,6 +26,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                     configuration.AddCommandLine(args);
                     configuration.AddEnvironmentVariables();
                 })
+                .ConfigureLogging(loggingBuilder => loggingBuilder.AddConsole(options => options.IncludeScopes = true))
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddTransient(svc =>
