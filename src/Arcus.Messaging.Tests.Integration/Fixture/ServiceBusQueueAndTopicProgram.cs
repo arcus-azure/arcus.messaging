@@ -44,8 +44,8 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                                .Build();
                     });
 
-                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_TOPIC"])
-                            .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-And-Queue", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_QUEUE"])
+                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_QUEUE"])
+                            .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-And-Queue", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_TOPIC"])
                             .WithMessageHandler<OrdersMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
