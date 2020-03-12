@@ -28,7 +28,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
         /// <param name="options">Options that influence the behavior of the message pump</param>
         /// <param name="serviceProvider">Collection of services to use</param>
-        internal AzureServiceBusMessagePumpSettings(
+        public AzureServiceBusMessagePumpSettings(
             string entityName,
             string subscriptionName,
             ServiceBusEntity serviceBusEntity,

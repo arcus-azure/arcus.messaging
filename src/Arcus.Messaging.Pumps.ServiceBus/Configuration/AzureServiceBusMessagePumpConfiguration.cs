@@ -6,12 +6,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// <summary>
     ///     Options to configure how the Azure Service Bus message pump works
     /// </summary>
-    internal class AzureServiceBusMessagePumpConfiguration
+    public class AzureServiceBusMessagePumpConfiguration
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpConfiguration"/> class.
         /// </summary>
-        internal AzureServiceBusMessagePumpConfiguration(AzureServiceBusQueueMessagePumpOptions options)
+        public AzureServiceBusMessagePumpConfiguration(AzureServiceBusQueueMessagePumpOptions options)
         {
             Guard.NotNull(options, nameof(options));
 
@@ -23,7 +23,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpConfiguration"/> class.
         /// </summary>
-        internal AzureServiceBusMessagePumpConfiguration(AzureServiceBusTopicMessagePumpOptions options)
+        public AzureServiceBusMessagePumpConfiguration(AzureServiceBusTopicMessagePumpOptions options)
         {
             Guard.NotNull(options, nameof(options));
 
