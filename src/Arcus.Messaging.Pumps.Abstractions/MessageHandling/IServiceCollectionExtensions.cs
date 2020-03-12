@@ -1,4 +1,5 @@
-﻿using Arcus.Messaging.Abstractions;
+﻿using System;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using GuardNet;
@@ -31,6 +32,28 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
+        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an <see cref="MessagePump"/> implementation.
+        /// resources.
+        /// </summary>
+        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
+        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
+        /// <param name="services">The collection of services to use in the application.</param>
+        /// <param name="implementationFactory">The function that creates the service.</param>
+        public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage>(
+            this IServiceCollection services,
+            Func<IServiceProvider, TMessageHandler> implementationFactory)
+            where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
+            where TMessage : class
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNull(implementationFactory, nameof(implementationFactory));
+
+            services.AddSingleton<IMessageHandler<TMessage, MessageContext>, TMessageHandler>(implementationFactory);
+
+            return services;
+        }
+
+        /// <summary>
         /// Adds a <see cref="IMessageHandler{TMessage, TMessageContext}" /> implementation to process the messages from an <see cref="MessagePump"/> implementation.
         /// resources.
         /// </summary>
@@ -46,6 +69,30 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services));
 
             services.AddSingleton<IMessageHandler<TMessage, TMessageContext>, TMessageHandler>();
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a <see cref="IMessageHandler{TMessage, TMessageContext}" /> implementation to process the messages from an <see cref="MessagePump"/> implementation.
+        /// resources.
+        /// </summary>
+        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
+        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
+        /// <typeparam name="TMessageContext">The type of the context in which the message handler will process the message.</typeparam>
+        /// <param name="services">The collection of services to use in the application.</param>
+        /// <param name="implementationFactory">The function that creates the message handler.</param>
+        public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+            this IServiceCollection services,
+            Func<IServiceProvider, TMessageHandler> implementationFactory)
+            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext> 
+            where TMessage : class
+            where TMessageContext : MessageContext
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNull(implementationFactory, nameof(implementationFactory));
+
+            services.AddSingleton<IMessageHandler<TMessage, TMessageContext>, TMessageHandler>(implementationFactory);
 
             return services;
         }

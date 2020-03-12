@@ -703,5 +703,27 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services;
         }
+
+        /// <summary>
+        /// Adds a <see cref="IAzureServiceBusMessageHandler{TMessage}" /> implementation to process the messages from Azure Service Bus
+        /// resources.
+        /// </summary>
+        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
+        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
+        /// <param name="services">The collection of services to use in the application.</param>
+        /// <param name="implementationFactory">The function that creates the message handler.</param>
+        public static IServiceCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
+            this IServiceCollection services,
+            Func<IServiceProvider, TMessageHandler> implementationFactory)
+            where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
+            where TMessage : class
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNull(implementationFactory, nameof(implementationFactory));
+
+            services.AddSingleton<IMessageHandler<TMessage, AzureServiceBusMessageContext>, TMessageHandler>(implementationFactory);
+
+            return services;
+        }
     }
 }
