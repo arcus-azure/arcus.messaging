@@ -5,7 +5,7 @@ layout: default
 
 # Azure Service Bus Features
 
-The `Arcus.Messaging.ServiceBus.Core` library contains several additional features related to message creation and message/context discoverability.
+We provide several additional features related to message creation and message/context discoverability.
 
 ## Installation
 
