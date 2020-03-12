@@ -7,13 +7,11 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
-using Arcus.Messaging.ServiceBus.Core.Extensions;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.ServiceBus

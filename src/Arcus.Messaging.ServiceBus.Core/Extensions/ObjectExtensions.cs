@@ -1,12 +1,12 @@
 ﻿using System.Text;
 using Arcus.Messaging.Abstractions;
 using GuardNet;
-using Microsoft.Azure.ServiceBus;
 using Newtonsoft.Json;
 
-namespace Arcus.Messaging.ServiceBus.Core.Extensions
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Azure.ServiceBus
 {
-    public static class MessageExtensions
+    public static class ObjectExtensions
     {
         private const string JsonContentType = "application/json";
 
@@ -18,7 +18,7 @@ namespace Arcus.Messaging.ServiceBus.Core.Extensions
         /// <param name="transactionId">Unique identifier that spans one or more operations and are considered a transaction/session</param>
         /// <param name="encoding">Encoding to use during serialization. Defaults to UTF8</param>
         /// <returns>Azure Service Bus Message</returns>
-        public static Message WrapInServiceBusMessage(this object messageBody, string operationId = null, string transactionId = null, Encoding encoding = null)
+        public static Message AsServiceBusMessage(this object messageBody, string operationId = null, string transactionId = null, Encoding encoding = null)
         {
             Guard.NotNull(messageBody, nameof(messageBody));
 
