@@ -1,5 +1,5 @@
 ---
-title: "Azure Service Bus Features"
+title: "Azure Service Bus Extensions"
 layout: default
 ---
 
