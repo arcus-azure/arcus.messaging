@@ -92,7 +92,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             try
             {
                 Order order = OrderGenerator.Generate();
-                Message orderMessage = order.WrapInServiceBusMessage(operationId, transactionId);
+                Message orderMessage = order.AsServiceBusMessage(operationId, transactionId);
                 await messageSender.SendAsync(orderMessage);
 
                 string receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);

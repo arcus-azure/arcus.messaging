@@ -25,7 +25,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var messagePayload = OrderGenerator.Generate();
 
             // Act
-            var serviceBusMessage = messagePayload.WrapInServiceBusMessage();
+            var serviceBusMessage = messagePayload.AsServiceBusMessage();
 
             // Assert
             Assert.NotNull(serviceBusMessage);
@@ -47,7 +47,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var operationId = Guid.NewGuid().ToString();
 
             // Act
-            var serviceBusMessage = messagePayload.WrapInServiceBusMessage(operationId: operationId);
+            var serviceBusMessage = messagePayload.AsServiceBusMessage(operationId: operationId);
 
             // Assert
             Assert.NotNull(serviceBusMessage);
@@ -69,7 +69,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var expectedTransactionId = Guid.NewGuid().ToString();
 
             // Act
-            var serviceBusMessage = messagePayload.WrapInServiceBusMessage(transactionId: expectedTransactionId);
+            var serviceBusMessage = messagePayload.AsServiceBusMessage(transactionId: expectedTransactionId);
 
             // Assert
             Assert.NotNull(serviceBusMessage);
@@ -92,7 +92,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var expectedEncoding = Encoding.ASCII;
 
             // Act
-            var serviceBusMessage = originalMessagePayload.WrapInServiceBusMessage(encoding: expectedEncoding);
+            var serviceBusMessage = originalMessagePayload.AsServiceBusMessage(encoding: expectedEncoding);
 
             // Assert
             Assert.NotNull(serviceBusMessage);

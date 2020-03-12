@@ -4,7 +4,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
-using Arcus.Messaging.ServiceBus.Core.Extensions;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
 using Microsoft.Azure.EventGrid.Models;
@@ -66,7 +65,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var messageSender = CreateServiceBusSender(connectionStringKey);
 
             var order = OrderGenerator.Generate();
-            var orderMessage = order.WrapInServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
+            var orderMessage = order.AsServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
 
             // Act
             await messageSender.SendAsync(orderMessage);
