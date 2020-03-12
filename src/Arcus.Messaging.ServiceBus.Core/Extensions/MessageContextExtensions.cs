@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Text;
-using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Arcus.Messaging.ServiceBus.Core.Extensions
+// ReSharper disable once CheckNamespace
+namespace Arcus.Messaging.Abstractions
 {
     /// <summary>
     /// Extensions on the <see cref="MessageContext"/> to make accessing values more dev-friendly.
