@@ -95,7 +95,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         {
             object lifetime = descriptor.GetRequiredPropertyValue("Lifetime");
             object resultCache = CreateResultCache(lifetime, serviceType);
-            object implementationType = descriptor.GetRequiredPropertyValue("ImplementationType");
+            object implementationType = descriptor.InvokeMethod("GetImplementationType");
             object callSiteChain = CreateCallSiteChain();
 
             callSiteChain.InvokeMethod("CheckCircularDependency", BindingFlags.Instance | BindingFlags.Public, serviceType);
