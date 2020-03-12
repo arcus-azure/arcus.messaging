@@ -7,6 +7,14 @@ layout: default
 
 The `Arcus.Messaging.ServiceBus.Core` library contains several additional features related to message creation and message/context discoverability.
 
+## Installation
+
+This features requires to install our NuGet package:
+
+```shell
+PM > Install-Package Arcus.Messaging.ServiceBus.Core
+```
+
 ## Simplify Creating Service Bus Messages
 
 Starting from the message body, we provide an extension to quickly wrap the content in a valid Azure Service Bus `Message` type that can be send.
