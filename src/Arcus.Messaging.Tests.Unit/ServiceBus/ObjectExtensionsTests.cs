@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.ServiceBus.Core.Extensions;
 using Arcus.Messaging.Tests.Core;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
