@@ -181,3 +181,5 @@ We provide templates to get started easily:
 
 - Azure Service Bus Queue Worker Template ([docs](https://templates.arcus-azure.net/features/servicebus-queue-worker-template))
 - Azure Service Bus Topic Worker Template ([docs](https://templates.arcus-azure.net/features/servicebus-topic-worker-template))
+
+[&larr; back](/)
