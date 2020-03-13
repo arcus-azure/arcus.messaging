@@ -65,3 +65,5 @@ This information can be acces in a more simplified way:
 MessageContext messageContext = ...
 Encoding encoding = messageContext.GetMessageEncodingProperty();
 ```
+
+[&larr; back](/)
