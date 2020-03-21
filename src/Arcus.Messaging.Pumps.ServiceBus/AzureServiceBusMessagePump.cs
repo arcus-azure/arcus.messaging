@@ -7,11 +7,13 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Observability.Correlation;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.ServiceBus
@@ -22,11 +24,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     public class AzureServiceBusMessagePump : MessagePump
     {
         private readonly MessageHandlerOptions _messageHandlerOptions;
+        private readonly ICorrelationInfoAccessor<MessageCorrelationInfo> _correlationInfoAccessor;
         private readonly IDisposable _loggingScope;
         
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
-
 
         /// <summary>
         ///     Constructor
@@ -49,6 +51,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             SubscriptionName = Settings.SubscriptionName;
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
+            _correlationInfoAccessor = ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();
             _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
         }
 
@@ -438,6 +441,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 }
 
                 MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+                if (_correlationInfoAccessor != null)
+                {
+                    _correlationInfoAccessor.CorrelationInfo = correlationInfo;
+                }
+
                 Logger.LogInformation(
                     "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
                      message.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
