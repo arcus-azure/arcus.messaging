@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.Correlation;
 using Arcus.Messaging.Pumps.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Observability.Correlation;

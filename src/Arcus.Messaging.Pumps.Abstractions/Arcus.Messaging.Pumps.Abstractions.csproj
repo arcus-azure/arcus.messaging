@@ -31,8 +31,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Enrichers" Version="20200323.12.0-preview" />
     <PackageReference Include="Guard.NET" Version="1.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Serilog" Version="2.9.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,5 +44,5 @@
   <PropertyGroup>
     <RestoreSources>$(RestoreSources);https://api.nuget.org/v3/index.json;https://www.myget.org/F/arcus/api/v3/index.json</RestoreSources>
   </PropertyGroup>
-
+  
 </Project>
