@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.Correlation;
+using Arcus.Messaging.Pumps.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Observability.Correlation;
 using GuardNet;
@@ -15,6 +17,7 @@ using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Serilog.Context;
 
 namespace Arcus.Messaging.Pumps.ServiceBus
 {
@@ -24,7 +27,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     public class AzureServiceBusMessagePump : MessagePump
     {
         private readonly MessageHandlerOptions _messageHandlerOptions;
-        private readonly ICorrelationInfoAccessor<MessageCorrelationInfo> _correlationInfoAccessor;
         private readonly IDisposable _loggingScope;
         
         private bool _isHostShuttingDown;
@@ -48,10 +50,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             
             Settings = settings;
             JobId = Settings.Options.JobId;
-
             SubscriptionName = Settings.SubscriptionName;
+
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
-            _correlationInfoAccessor = ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();
             _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
         }
 
@@ -440,25 +441,29 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     Logger.LogInformation("No operation ID was found on the message");
                 }
 
+
                 MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
-                if (_correlationInfoAccessor != null)
+                using (IServiceScope serviceScope = ServiceProvider.CreateScope())
                 {
-                    _correlationInfoAccessor.CorrelationInfo = correlationInfo;
+                    var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();
+                    correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
+
+                    using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
+                    {
+                        Logger.LogInformation(
+                            "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
+                            message.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
+
+                        var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
+
+                        Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
+                        string messageBody = encoding.GetString(message.Body);
+
+                        await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+
+                        Logger.LogInformation("Message {MessageId} processed", message.MessageId);
+                    }
                 }
-
-                Logger.LogInformation(
-                    "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
-                     message.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
-                
-                var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
-                    message.UserProperties);
-
-                Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
-                string messageBody = encoding.GetString(message.Body);
-
-                await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-
-                Logger.LogInformation("Message {MessageId} processed",  message.MessageId);
             }
             catch (Exception ex)
             {
