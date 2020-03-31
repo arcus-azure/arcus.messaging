@@ -449,9 +449,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
                     using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
                     {
-                        Logger.LogInformation(
-                            "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
-                            message.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
+                        Logger.LogInformation("Received message '{MessageId}'", message.MessageId);
 
                         var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
 
