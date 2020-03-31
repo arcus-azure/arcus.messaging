@@ -6,13 +6,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Observability.Correlation;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Serilog.Context;
 
 namespace Arcus.Messaging.Pumps.ServiceBus
 {
@@ -26,7 +30,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
-
 
         /// <summary>
         ///     Constructor
@@ -46,8 +49,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             
             Settings = settings;
             JobId = Settings.Options.JobId;
-
             SubscriptionName = Settings.SubscriptionName;
+
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
             _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
         }
@@ -437,20 +440,27 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     Logger.LogInformation("No operation ID was found on the message");
                 }
 
+
                 MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
-                Logger.LogInformation(
-                    "Received message '{MessageId}' (Transaction: {TransactionId}, Operation: {OperationId}, Cycle: {CycleId})",
-                     message.MessageId, correlationInfo.TransactionId, correlationInfo.OperationId, correlationInfo.CycleId);
-                
-                var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties,
-                    message.UserProperties);
+                using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+                {
+                    var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();
+                    correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
 
-                Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
-                string messageBody = encoding.GetString(message.Body);
+                    using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
+                    {
+                        Logger.LogInformation("Received message '{MessageId}'", message.MessageId);
 
-                await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+                        var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
 
-                Logger.LogInformation("Message {MessageId} processed",  message.MessageId);
+                        Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
+                        string messageBody = encoding.GetString(message.Body);
+
+                        await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+
+                        Logger.LogInformation("Message {MessageId} processed", message.MessageId);
+                    }
+                }
             }
             catch (Exception ex)
             {

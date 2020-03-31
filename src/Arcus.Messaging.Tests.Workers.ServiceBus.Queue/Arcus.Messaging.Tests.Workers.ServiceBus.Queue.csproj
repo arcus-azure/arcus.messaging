@@ -22,4 +22,5 @@
     <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Workers\Arcus.Messaging.Tests.Workers.csproj" />
   </ItemGroup>
+
 </Project>

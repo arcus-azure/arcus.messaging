@@ -26,4 +26,5 @@
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.Abstractions\Arcus.Messaging.Abstractions.csproj" />
   </ItemGroup>
+
 </Project>
