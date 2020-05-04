@@ -1,4 +1,4 @@
-using Arcus.EventGrid.Publishing;
+﻿using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Security.Core;
@@ -14,9 +14,9 @@ using Microsoft.Extensions.Logging;
 // ReSharper disable once CheckNamespace
 namespace Arcus.Messaging.Tests.Workers.ServiceBus
 {
-    public class Program
+    public class ServiceBusQueueKeyVaultProgram
     {
-        public static void Main(string[] args)
+        public static void main(string[] args)
         {
             CreateHostBuilder(args)
                 .Build()

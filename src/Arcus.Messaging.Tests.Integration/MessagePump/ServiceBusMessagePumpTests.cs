@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Integration.Fixture;
+using Arcus.Messaging.Tests.Integration.ServiceBus;
 using Arcus.Messaging.Tests.Workers.ServiceBus;
+using Arcus.Security.Providers.AzureKeyVault.Authentication;
+using Microsoft.Azure.KeyVault;
+using Microsoft.Azure.KeyVault.Models;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -67,6 +71,52 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     await service.SimulateMessageProcessingAsync();
                 }
             }
+        }
+
+        [Fact]
+        public async Task ServiceBusMessagePump_RotateServiceBusConnectionKeys_MessagePumpRestartsThenMessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            const ServiceBusEntity entity = ServiceBusEntity.Queue;
+            var client = new ServiceBusClient(config);
+
+            string freshConnectionString = await client.RotateConnectionStringKeysAsync();
+            await UpdateKeyVaultSecretAsync(freshConnectionString);
+
+            var commandArguments = new[]
+            {
+                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
+                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
+            };
+
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueKeyVaultProgram>(config, _outputWriter))
+            {
+                await using (var service = await TestMessagePumpService.StartNewAsync(entity, config, _outputWriter))
+                {
+                    // Act
+                    string rotatedConnectionString = await client.RotateConnectionStringKeysAsync();
+                    await UpdateKeyVaultSecretAsync(rotatedConnectionString );
+
+                    // Assert
+                    await service.SimulateMessageProcessingAsync();
+                }
+            }
+        }
+
+        private async Task UpdateKeyVaultSecretAsync(string value)
+        {
+            //var authentication = new ServicePrincipalAuthentication(
+            //    "d1c9a6b8-e26e-4bd7-85a7-98140ce73cb1e",
+            //    "B7y/GrQV6T.74UZpNBxGose=fIBEqa=W");
+
+            var authentication = new ManagedServiceIdentityAuthentication();
+
+            IKeyVaultClient client = await authentication.AuthenticateAsync();
+            await client.SetSecretAsync(
+                vaultBaseUrl: "https://arcustesting.vault.azure.net/", 
+                secretName: "arcus-messaging-keyrotate-servicebus-connectionstring",
+                value: value);
         }
     }
 }
