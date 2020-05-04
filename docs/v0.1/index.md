@@ -16,7 +16,6 @@ The features are available on NuGet:
 PM > Install-Package Arcus.Messaging.* -Version 0.1.0
 ```
 
-
 # Features
 
 - Support for using message pumps for the following brokers:
