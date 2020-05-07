@@ -5,8 +5,6 @@ layout: default
 
 # Customize Message Pumps
 
-![](https://img.shields.io/badge/Available%20starting-v0.1-green?link=https://github.com/arcus-azure/arcus.messaging/releases/tag/v0.1.0)
-
 While the message processing is handled by the `IMessageHandler<>` implementations, the message pump controls in what format the message is received.
 We allow several customizations while implementing your own message pump.
 

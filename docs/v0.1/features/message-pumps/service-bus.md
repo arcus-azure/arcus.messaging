@@ -5,8 +5,6 @@ layout: default
 
 # Azure Service Bus Message Pump
 
-![](https://img.shields.io/badge/Available%20starting-v0.1-green?link=https://github.com/arcus-azure/arcus.messaging/releases/tag/v0.1.0)
-
 Azure Service Bus Message Pump will perform all the plumbing that is required for processing queues & topics:
 
 - Manage message pump lifecycle

@@ -5,9 +5,6 @@ layout: default
 
 # TCP Health probe
 
-![](https://img.shields.io/badge/Available%20starting-v0.1-green?link=https://github.com/arcus-azure/arcus.messaging/releases/tag/v0.1.0)
-
-
 We provide a TCP health probe endpoint that allows a runtime to periodically check the liveness/readiness of the host based on the [.NET Core health checks](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks).
 
 ## Installation

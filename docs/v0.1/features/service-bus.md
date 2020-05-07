@@ -5,8 +5,6 @@ layout: default
 
 # Azure Service Bus Features
 
-![](https://img.shields.io/badge/Available%20starting-v0.1-green?link=https://github.com/arcus-azure/arcus.messaging/releases/tag/v0.1.0)
-
 We provide several additional features related to message creation and message/context discoverability.
 
 ## Installation
