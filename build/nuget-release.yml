@@ -85,6 +85,11 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
+          - task: UseDotNet@2
+            displayName: 'Import .NET Core SDK ($(DotNet.Sdk.Version))'
+            inputs:
+              packageType: 'sdk'
+              version: '$(DotNet.Sdk.Version)'
           - template: templates/build-and-run-worker-container.yml
             parameters:
               projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Queue'
