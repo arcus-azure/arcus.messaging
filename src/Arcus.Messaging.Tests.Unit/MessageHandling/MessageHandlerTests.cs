@@ -151,7 +151,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
 
             var context = TestMessageContext.Generate();
             Assert.Equal(matchesContext, messageHandler.CanProcessMessage(context));
-            Assert.True(spyHandler.IsProcessed);
         }
 
         [Fact]
