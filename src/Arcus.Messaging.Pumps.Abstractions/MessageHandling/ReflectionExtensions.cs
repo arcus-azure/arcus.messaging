@@ -19,7 +19,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         internal static TValue GetRequiredFieldValue<TValue>(this object instance, string fieldName, BindingFlags bindingFlags = BindingFlags.NonPublic | BindingFlags.Instance) 
             where TValue : class
         {
-            Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the field '{fieldName}'");
+            Guard.NotNull(instance, nameof(instance), $"Requires an instance object to get the field '{fieldName}'");
             
             object fieldValue = GetRequiredFieldValue(instance, fieldName, bindingFlags);
             if (fieldValue is TValue typedFieldValue)

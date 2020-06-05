@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using GuardNet;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 {
@@ -16,19 +17,19 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
     /// </summary>
     public class MessageHandler
     {
+        private readonly object _service;
         private readonly Type _serviceType;
-        private readonly Func<object> _createMessageHandlerImplementation;
 
-        private MessageHandler(Type serviceType, Func<object> createMessageHandlerImplementation)
+        private MessageHandler(Type serviceType, object service)
         {
             Guard.NotNull(serviceType, nameof(serviceType));
-            Guard.NotNull(createMessageHandlerImplementation, nameof(createMessageHandlerImplementation));
+            Guard.NotNull(service, nameof(service));
             Guard.For<ArgumentException>(
                 () => serviceType.GenericTypeArguments.Length != 2, 
                 $"Message handler type '{serviceType.Name}' has not the expected 2 generic type arguments");
 
             _serviceType = serviceType;
-            _createMessageHandlerImplementation = createMessageHandlerImplementation;
+            _service = service;
 
             MessageType = _serviceType.GenericTypeArguments[0];
         }
@@ -46,25 +47,24 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
-            object engine = serviceProvider.GetRequiredPropertyValue("Engine");
+            object engine = 
+                serviceProvider.GetType().GetProperty("Engine")?.GetValue(serviceProvider) 
+                ?? serviceProvider.GetRequiredFieldValue("_engine");
+            
             object callSiteFactory = engine.GetRequiredPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            var descriptorLookup = callSiteFactory.GetRequiredFieldValue<IEnumerable>("_descriptorLookup");
+            var descriptors = callSiteFactory.GetRequiredFieldValue<IEnumerable>("_descriptors");
 
             var messageHandlers = new Collection<MessageHandler>();
-            foreach (object lookup in descriptorLookup)
+            foreach (object descriptor in descriptors)
             {
-                var serviceType = lookup.GetRequiredPropertyValue<Type>("Key");
-                if (serviceType.Name == "IMessageHandler`2" 
+                var serviceType = (Type) descriptor.GetRequiredPropertyValue("ServiceType");
+                if (serviceType.Name == typeof(IMessageHandler<,>).Name 
                     && serviceType.Namespace == typeof(IMessageHandler<>).Namespace)
                 {
-                    IEnumerable descriptors = GetServiceDescriptors(lookup);
-                    foreach (object descriptor in descriptors)
+                    IEnumerable<object> services = serviceProvider.GetServices(serviceType);
+                    foreach (object service in services)
                     {
-                        var messageHandler = new MessageHandler(
-                            serviceType, 
-                            () => CreateMessageHandlerImplementation(descriptor, callSiteFactory, engine, serviceType, serviceProvider));
-                    
+                        var messageHandler = new MessageHandler(serviceType, service);
                         messageHandlers.Add(messageHandler);
                     }
                 }
@@ -73,79 +73,27 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             return messageHandlers.AsEnumerable();
         }
 
-        private static IEnumerable GetServiceDescriptors(object descriptorLookup)
-        {
-            object cacheItem = descriptorLookup.GetRequiredPropertyValue("Value");
-            var descriptors = cacheItem.GetFieldValue<IEnumerable>("_items");
-            if (descriptors is null)
-            {
-                object descriptor = cacheItem.GetFieldValue("_item");
-                if (descriptor is null)
-                {
-                    return Enumerable.Empty<object>();
-                }
-
-                return new[] { descriptor };
-            }
-
-            return descriptors;
-        }
-
-        private static object CreateMessageHandlerImplementation(object descriptor, object callSiteFactory, object engine, Type serviceType, IServiceProvider serviceProvider)
-        {
-            object lifetime = descriptor.GetRequiredPropertyValue("Lifetime");
-            object resultCache = CreateResultCache(lifetime, serviceType);
-            object implementationType = descriptor.InvokeMethod("GetImplementationType");
-            object callSiteChain = CreateCallSiteChain();
-
-            callSiteChain.InvokeMethod("CheckCircularDependency", BindingFlags.Instance | BindingFlags.Public, serviceType);
-            object callSite = callSiteFactory.InvokeMethod("CreateConstructorCallSite", resultCache, serviceType, implementationType, callSiteChain);
-
-            callSiteFactory.GetRequiredFieldValue("_callSiteCache")
-                           .SetIndexValue("Item", serviceType, callSite);
-
-            object func = engine.InvokeMethod("RealizeService", callSite);
-            if (func is null)
-            {
-                throw new ValueMissingException(
-                    $"Invoking method 'RealizeService' on instance '{callSite.GetType().Name}' doesn't result in a required return value");
-            }
-            
-            return func.InvokeMethod("Invoke", BindingFlags.Public | BindingFlags.Instance, serviceProvider);
-        }
-
-        private static object CreateResultCache(object lifetime, Type serviceType)
-        {
-            var resultCacheType = Type.GetType("Microsoft.Extensions.DependencyInjection.ServiceLookup.ResultCache, Microsoft.Extensions.DependencyInjection");
-            if (resultCacheType is null)
-            {
-                throw new TypeNotFoundException(
-                    "Cannot find a 'ResultCache' type in the 'Microsoft.Extensions.DependencyInjection' assembly");
-            }
-            
-            return Activator.CreateInstance(resultCacheType, lifetime, serviceType, 0);
-        }
-
-        private static object CreateCallSiteChain()
-        {
-            var callSiteChainType = Type.GetType("Microsoft.Extensions.DependencyInjection.ServiceLookup.CallSiteChain, Microsoft.Extensions.DependencyInjection");
-            if (callSiteChainType is null)
-            {
-                throw new TypeNotFoundException(
-                    "Cannot find a 'CallSiteChain' type in the 'Microsoft.Extensions.DependencyInjection' assembly");
-            }
-
-            return Activator.CreateInstance(callSiteChainType);
-        }
 
         /// <summary>
         /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
         /// </summary>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
-        internal bool MatchesMessageContext<TMessageContext>() where TMessageContext : MessageContext
+        public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext) where TMessageContext : MessageContext
         {
             Type messageContextType = _serviceType.GenericTypeArguments[1];
-            return typeof(TMessageContext) == messageContextType || messageContextType == typeof(MessageContext);
+            bool matchesType = typeof(TMessageContext) == messageContextType || messageContextType == typeof(MessageContext);
+            if (!matchesType)
+            {
+                return false;
+            }
+
+            if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
+            {
+                return (bool) _service.InvokeMethod(
+                    "CanProcessMessage", BindingFlags.Instance | BindingFlags.NonPublic, messageContext);
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -169,17 +117,15 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext));
             Guard.NotNull(correlationInfo, nameof(correlationInfo));
 
-            object messageHandlerImplementation = _createMessageHandlerImplementation();
-
             const string methodName = "ProcessMessageAsync";
             var processMessageAsync = 
-                (Task) messageHandlerImplementation.InvokeMethod(
+                (Task) _service.InvokeMethod(
                     methodName, BindingFlags.Instance | BindingFlags.Public, message, messageContext, correlationInfo, cancellationToken);
 
             if (processMessageAsync is null)
             {
                 throw new InvalidOperationException(
-                    $"The '{typeof(IMessageHandler<,>).Name}' implementation '{messageHandlerImplementation.GetType().Name}' returned 'null' while calling the '{methodName}' method");
+                    $"The '{typeof(IMessageHandler<,>).Name}' implementation '{_service.GetType().Name}' returned 'null' while calling the '{methodName}' method");
             }
 
             await processMessageAsync;

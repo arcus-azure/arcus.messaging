@@ -21,6 +21,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
     /// </summary>
     public abstract class MessagePump : BackgroundService
     {
+        private readonly Lazy<IEnumerable<MessageHandler>> _messageHandlers;
+
         /// <summary>
         ///     Default encoding used
         /// </summary>
@@ -72,6 +74,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Logger = logger;
             Configuration = configuration;
             ServiceProvider = serviceProvider;
+
+            _messageHandlers = new Lazy<IEnumerable<MessageHandler>>(() => MessageHandler.SubtractFrom(ServiceProvider));
         }
 
         /// <summary>
@@ -102,7 +106,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(ServiceProvider);
+            IEnumerable<MessageHandler> handlers = _messageHandlers.Value;
             if (!handlers.Any())
             {
                 throw new InvalidOperationException(
@@ -113,7 +117,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             foreach (MessageHandler handler in handlers)
             {
-                if (handler.MatchesMessageContext<TMessageContext>() 
+                if (handler.CanProcessMessage(messageContext)
                     && TryDeserializeToMessageFormat(message, handler.MessageType, out var result))
                 {
                     if (result is null)
