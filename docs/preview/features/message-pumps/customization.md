@@ -42,7 +42,9 @@ public class OrderMessagePump : MessagePump
 
 ## Control message context filtering
 
-When registering a new `IMessageHandler<>`, one can choose to add an additional filter on the message context used in that handler.
+When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.
+
+This can be useful when you are sending different message types on the same queue. Another use-case is being able to handle different versions of the same message type which have different contracts because you are migrating your application.
 
 Following example shows how a message handler should only process a certain message when a property's in the context is present.
 
