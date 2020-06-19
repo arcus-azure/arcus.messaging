@@ -67,7 +67,7 @@ public void ConfigureServices(IServiceCollection services)
 }
 ```
 
-> Note that the order in which the message handlers are registered is importent in the message processing.
+> Note that the order in which the message handlers are registered is important in the message processing.
 > In the example, when a message handler above this one is registered that could also handle the message (same message type) than that handler may be chosen instead of the one with the specific filter.
 
 [&larr; back](/)
