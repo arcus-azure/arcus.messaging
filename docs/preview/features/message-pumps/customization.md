@@ -40,7 +40,7 @@ public class OrderMessagePump : MessagePump
 }
 ```
 
-## Control message context filtering
+## Filter messages based on message context
 
 When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.
 
