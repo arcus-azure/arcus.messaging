@@ -73,7 +73,6 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             return messageHandlers.AsEnumerable();
         }
 
-
         /// <summary>
         /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
         /// </summary>
