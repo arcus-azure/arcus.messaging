@@ -21,6 +21,8 @@ variables:
   - group: 'Arcus Messaging - .NET'
   - group: 'Build Configuration'
   - template: ./variables/build.yml
+  - name: 'Package.Version'
+    value: ${{ parameters['Package.Version'] }}
 
 stages:
   - stage: Build
