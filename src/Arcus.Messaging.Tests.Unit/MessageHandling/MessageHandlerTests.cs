@@ -104,7 +104,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             MessageHandler messageHandler = Assert.Single(messageHandlers);
             Assert.NotNull(messageHandler);
 
-            var context = TestMessageContext.Generate();
+            var context = new MessageContext("message-id", new Dictionary<string, object>());
             Assert.Equal(matchesContext, messageHandler.CanProcessMessage(context));
         }
 
@@ -149,7 +149,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             MessageHandler messageHandler = Assert.Single(messageHandlers);
             Assert.NotNull(messageHandler);
 
-            var context = TestMessageContext.Generate();
+            var context = new MessageContext("message-id", new Dictionary<string, object>());
             Assert.Equal(matchesContext, messageHandler.CanProcessMessage(context));
         }
 

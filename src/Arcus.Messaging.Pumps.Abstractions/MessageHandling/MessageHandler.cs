@@ -79,20 +79,22 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
         public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext) where TMessageContext : MessageContext
         {
-            Type messageContextType = _serviceType.GenericTypeArguments[1];
-            bool matchesType = typeof(TMessageContext) == messageContextType || messageContextType == typeof(MessageContext);
-            if (!matchesType)
+            if (typeof(TMessageContext) == _serviceType.GenericTypeArguments[1])
             {
-                return false;
+                if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
+                {
+                    return (bool) _service.InvokeMethod(
+                        "CanProcessMessage",
+                        BindingFlags.Instance | BindingFlags.NonPublic,
+                        messageContext);
+                }
+
+                // Message context type matches registration message context type; registered without predicate.
+                return true;
             }
 
-            if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
-            {
-                return (bool) _service.InvokeMethod(
-                    "CanProcessMessage", BindingFlags.Instance | BindingFlags.NonPublic, messageContext);
-            }
-
-            return true;
+            // Message context type doesn't match registration message context type.
+            return false;
         }
 
         /// <summary>
