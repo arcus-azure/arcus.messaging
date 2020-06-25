@@ -728,5 +728,49 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services;
         }
+
+        /// <summary>
+        /// Adds a <see cref="IAzureServiceBusMessageHandler{TMessage}" /> implementation to process the messages from an <see cref="AzureServiceBusMessagePump"/> implementation.
+        /// resources.
+        /// </summary>
+        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
+        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
+        /// <param name="services">The collection of services to use in the application.</param>
+        /// <param name="messageContextFilter">The function that determines if the message handler should handle the message based on the context.</param>
+        public static IServiceCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
+            this IServiceCollection services,
+            Func<AzureServiceBusMessageContext, bool> messageContextFilter)
+            where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
+            where TMessage : class
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNull(messageContextFilter, nameof(messageContextFilter));
+
+            return services.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(
+                messageContextFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+        }
+
+        /// <summary>
+        /// Adds a <see cref="IAzureServiceBusMessageHandler{TMessage}" /> implementation to process the messages from an <see cref="AzureServiceBusMessagePump"/> implementation.
+        /// resources.
+        /// </summary>
+        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
+        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
+        /// <param name="services">The collection of services to use in the application.</param>
+        /// <param name="messageContextFilter">The function that determines if the message handler should handle the message based on the context.</param>
+        /// <param name="implementationFactory">The function that creates the message handler.</param>
+        public static IServiceCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
+            this IServiceCollection services,
+            Func<AzureServiceBusMessageContext, bool> messageContextFilter,
+            Func<IServiceProvider, TMessageHandler> implementationFactory)
+            where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
+            where TMessage : class
+        {
+            Guard.NotNull(services, nameof(services));
+            Guard.NotNull(messageContextFilter, nameof(messageContextFilter));
+            Guard.NotNull(implementationFactory, nameof(implementationFactory));
+
+            return services.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(messageContextFilter, implementationFactory);
+        }
     }
 }
