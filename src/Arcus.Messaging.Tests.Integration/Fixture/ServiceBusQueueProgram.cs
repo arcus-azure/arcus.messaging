@@ -36,12 +36,12 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                         var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
 
                         return EventGridPublisherBuilder
-                            .ForTopic(eventGridTopic)
-                            .UsingAuthenticationKey(eventGridKey)
-                            .Build();
+                               .ForTopic(eventGridTopic)
+                               .UsingAuthenticationKey(eventGridKey)
+                               .Build();
                     });
                     services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                            .WithMessageHandler<OrdersMessageHandler, Order>();
+                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
                 });
