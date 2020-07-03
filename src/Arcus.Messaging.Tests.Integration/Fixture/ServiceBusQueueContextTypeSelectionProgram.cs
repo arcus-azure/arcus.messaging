@@ -1,3 +1,6 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
@@ -7,10 +10,9 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-// ReSharper disable once CheckNamespace
-namespace Arcus.Messaging.Tests.Workers.ServiceBus
+namespace Arcus.Messaging.Tests.Integration.Fixture
 {
-    public class ServiceBusQueueProgram
+    public class ServiceBusQueueContextTypeSelectionProgram
     {
         public static void main(string[] args)
         {
@@ -41,6 +43,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                                .Build();
                     });
                     services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
                             .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));

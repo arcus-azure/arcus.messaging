@@ -91,6 +91,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 Order order = OrderGenerator.Generate();
                 Message orderMessage = order.AsServiceBusMessage(operationId, transactionId);
+                orderMessage.UserProperties["Topic"] = "Orders";
+
                 await messageSender.SendAsync(orderMessage);
 
                 string receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);

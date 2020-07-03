@@ -22,7 +22,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         [Theory]
         [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueProgram))]
+        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueContextTypeSelectionProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicProgram))]
+        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicContextPredicateSelectionProgram))]
         public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(ServiceBusEntity entity, Type programType)
         {
             // Arrange
