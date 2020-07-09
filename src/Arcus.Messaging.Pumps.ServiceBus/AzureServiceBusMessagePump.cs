@@ -264,7 +264,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private MessageHandlerOptions DetermineMessageHandlerOptions(AzureServiceBusMessagePumpSettings messagePumpSettings)
         {
-            var messageHandlerOptions = new MessageHandlerOptions(exceptionReceivedEventArgs => HandleReceiveExceptionAsync(exceptionReceivedEventArgs.Exception));
+            var messageHandlerOptions = new MessageHandlerOptions(async exceptionReceivedEventArgs =>
+            {
+                await HandleReceiveExceptionAsync(exceptionReceivedEventArgs.Exception);
+                await ReAuthenticateMessageReceiverAsync(exceptionReceivedEventArgs.Exception);
+            });
+
             if (messagePumpSettings.Options != null)
             {
                 // Assign the configured defaults
@@ -279,6 +284,29 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
 
             return messageHandlerOptions;
+        }
+
+        private async Task ReAuthenticateMessageReceiverAsync(Exception exception)
+        {
+            if (exception is UnauthorizedException)
+            {
+                Logger.LogWarning("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
+
+                Logger.LogTrace("Restarting Azure Service Bus...");
+                
+                await CloseMessageReceiverAsync();
+                using (var stopCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+                {
+                    await StopAsync(stopCancellationTokenSource.Token);
+                }
+
+                using (var startCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+                {
+                    await StartAsync(startCancellationTokenSource.Token);
+                }
+
+                Logger.LogInformation("Azure Service Bus restarted!");
+            }
         }
 
         private async Task<MessageReceiver> CreateMessageReceiverAsync(AzureServiceBusMessagePumpSettings messagePumpSettings)

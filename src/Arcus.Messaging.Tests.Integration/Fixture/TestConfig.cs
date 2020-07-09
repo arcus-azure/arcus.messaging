@@ -120,6 +120,27 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             return new DirectoryInfo(sourcesDirectory);
         }
 
+        public KeyRotationConfig GetKeyRotationConfig()
+        {
+            var azureEnv = new ServiceBusQueue(
+                subscriptionId: _config.GetValue<string>("Arcus:Infra:KeyRotation:ServiceBus:SubscriptionId"),
+                tenantId: _config.GetValue<string>("Arcus:Infra:KeyRotation:ServiceBus:TenantId"),
+                resourceGroup: _config.GetValue<string>("Arcus:Infra:KeyRotation:ServiceBus:ResourceGroupName"),
+                @namespace: _config.GetValue<string>("Arcus:Infra:KeyRotation:ServiceBus:Namespace"),
+                queueName: _config.GetValue<string>("Arcus:Infra:KeyRotation:ServiceBus:QueueName"),
+                authorizationRuleName: _config.GetValue<string>("Arcus:Infra:KeyRotation:ServiceBus:AuthorizationRuleName"));
+
+            var servicePrincipal = new ServicePrincipal(
+                clientId: _config.GetValue<string>("Arcus:Infra:KeyRotation:ServicePrincipal:ClientId"),
+                clientSecret: _config.GetValue<string>("Arcus:Infra:KeyRotation:ServicePrincipal:ClientSecret"));
+
+            var secret = new KeyVaultSecret(
+                vaultUri: _config.GetValue<string>("Arcus:Infra:KeyRotation:KeyVault:VaultUri"),
+                secretName: _config.GetValue<string>("Arcus:Infra:KeyRotation:KeyVault:ConnectionStringSecretName"));
+
+            return new KeyRotationConfig(secret, servicePrincipal, azureEnv);
+        }
+
         /// <summary>
         /// Gets a configuration sub-section with the specified key.
         /// </summary>

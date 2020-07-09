@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Integration.Fixture;
+using Arcus.Messaging.Tests.Integration.ServiceBus;
 using Arcus.Messaging.Tests.Workers.ServiceBus;
+using Arcus.Security.Providers.AzureKeyVault.Authentication;
+using Microsoft.Azure.KeyVault;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -66,6 +69,51 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await using (var service = await TestMessagePumpService.StartNewAsync(entity, config, _outputWriter))
                 {
                     // Act / Assert
+                    await service.SimulateMessageProcessingAsync();
+                }
+            }
+        }
+
+        [Fact]
+        public async Task ServiceBusMessagePump_RotateServiceBusConnectionKeys_MessagePumpRestartsThenMessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            KeyRotationConfig keyRotationConfig = config.GetKeyRotationConfig();
+
+            const ServiceBusEntity entity = ServiceBusEntity.Queue;
+            var client = new ServiceBusClient(keyRotationConfig);
+            string freshConnectionString = await client.RotateConnectionStringKeysAsync();
+
+            ServicePrincipalAuthentication authentication = keyRotationConfig.ServicePrincipal.CreateAuthentication();
+            IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
+            await keyVaultClient.SetSecretAsync(
+                vaultBaseUrl: keyRotationConfig.KeyVaultSecret.VaultUri,
+                secretName: keyRotationConfig.KeyVaultSecret.SecretName,
+                value: freshConnectionString);
+
+            var commandArguments = new[]
+            {
+                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
+                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
+                CommandArgument.CreateSecret("ARCUS_KEYVAULT_VAULTURI", keyRotationConfig.KeyVaultSecret.VaultUri), 
+                CommandArgument.CreateSecret("ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME", keyRotationConfig.KeyVaultSecret.SecretName),
+                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTID", keyRotationConfig.ServicePrincipal.ClientId), 
+                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTSECRET", keyRotationConfig.ServicePrincipal.ClientSecret), 
+            };
+
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueKeyVaultProgram>(config, _outputWriter, commandArguments))
+            {
+                await using (var service = await TestMessagePumpService.StartNewAsync(entity, config, _outputWriter))
+                {
+                    // Act
+                    string rotatedConnectionString = await client.RotateConnectionStringKeysAsync();
+                    await keyVaultClient.SetSecretAsync(
+                        vaultBaseUrl: keyRotationConfig.KeyVaultSecret.VaultUri,
+                        secretName: keyRotationConfig.KeyVaultSecret.SecretName,
+                        value: rotatedConnectionString);
+
+                    // Assert
                     await service.SimulateMessageProcessingAsync();
                 }
             }
