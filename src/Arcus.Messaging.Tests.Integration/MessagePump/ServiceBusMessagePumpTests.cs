@@ -80,9 +80,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var config = TestConfig.Create();
             KeyRotationConfig keyRotationConfig = config.GetKeyRotationConfig();
+            _outputWriter.WriteLine("Using Service Principal [ClientID: '{0}']", keyRotationConfig.ServicePrincipal.ClientId);
 
             const ServiceBusEntity entity = ServiceBusEntity.Queue;
-            var client = new ServiceBusClient(keyRotationConfig);
+            var client = new ServiceBusClient(keyRotationConfig, _outputWriter);
             string freshConnectionString = await client.RotateConnectionStringKeysAsync();
 
             ServicePrincipalAuthentication authentication = keyRotationConfig.ServicePrincipal.CreateAuthentication();

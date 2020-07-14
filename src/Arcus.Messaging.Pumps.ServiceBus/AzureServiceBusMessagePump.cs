@@ -266,8 +266,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             var messageHandlerOptions = new MessageHandlerOptions(async exceptionReceivedEventArgs =>
             {
-                await HandleReceiveExceptionAsync(exceptionReceivedEventArgs.Exception);
-                await ReAuthenticateMessageReceiverAsync(exceptionReceivedEventArgs.Exception);
+                try
+                {
+                    await HandleReceiveExceptionAsync(exceptionReceivedEventArgs.Exception);
+                }
+                finally
+                {
+                    await ReAuthenticateMessageReceiverAsync(exceptionReceivedEventArgs.Exception);
+                }
             });
 
             if (messagePumpSettings.Options != null)
@@ -291,7 +297,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             if (exception is UnauthorizedException)
             {
                 Logger.LogWarning("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
-
                 Logger.LogTrace("Restarting Azure Service Bus...");
                 
                 await CloseMessageReceiverAsync();
@@ -299,6 +304,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 {
                     await StopAsync(stopCancellationTokenSource.Token);
                 }
+
+                Logger.LogInformation("Azure Service Bus stopped!");
 
                 using (var startCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
                 {
