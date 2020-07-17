@@ -92,7 +92,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 vaultBaseUrl: keyRotationConfig.KeyVaultSecret.VaultUri,
                 secretName: keyRotationConfig.KeyVaultSecret.SecretName,
                 value: freshConnectionString);
-            Console.WriteLine($"Temp: {keyRotationConfig.ServicePrincipal.ClientSecret}");
             var commandArguments = new[]
             {
                 CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
