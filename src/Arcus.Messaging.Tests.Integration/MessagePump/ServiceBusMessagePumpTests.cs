@@ -80,7 +80,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var config = TestConfig.Create();
             KeyRotationConfig keyRotationConfig = config.GetKeyRotationConfig();
-            _outputWriter.WriteLine("Using Service Principal [ClientID: '{0}', Secret: '{1}]", keyRotationConfig.ServicePrincipal.ClientId, keyRotationConfig.ServicePrincipal.ClientSecret);
+            _outputWriter.WriteLine("Using Service Principal [ClientID: '{0}']", keyRotationConfig.ServicePrincipal.ClientId);
 
             const ServiceBusEntity entity = ServiceBusEntity.Queue;
             var client = new ServiceBusClient(keyRotationConfig, _outputWriter);
