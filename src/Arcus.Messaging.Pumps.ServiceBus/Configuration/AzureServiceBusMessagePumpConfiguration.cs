@@ -64,6 +64,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets or sets the timeout when the message pump tries to restart and re-authenticate during key rotation.
         /// </summary>
-        internal TimeSpan KeyRotationTimeout { get; set;}
+        internal TimeSpan KeyRotationTimeout { get; set; }
     }
 }
