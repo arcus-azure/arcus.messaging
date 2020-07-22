@@ -39,12 +39,14 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
         }
 
         /// <summary>
-        /// 
+        /// Rotates the connection string key of the Azure Service Bus Queue, returning the new connection string as result.
         /// </summary>
-        /// <returns></returns>
-        public async Task<string> RotateConnectionStringKeysAsync()
+        /// <param name="keyType">The type of key to rotate.</param>
+        /// <returns>
+        ///     The new connection string according to the <paramref name="keyType"/>.
+        /// </returns>
+        public async Task<string> RotateConnectionStringKeysAsync(KeyType keyType)
         {
-            const KeyType keyType = KeyType.SecondaryKey;
             string queueName = _configuration.ServiceBusQueue.QueueName;
 
             try
@@ -52,16 +54,16 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
                 string tenantId = _configuration.ServiceBusQueue.TenantId;
                 var context = new AuthenticationContext($"https://login.microsoftonline.com/{tenantId}");
 
-                ClientCredential credentials = _configuration.ServicePrincipal.CreateCredentials();
+                ClientCredential clientCredentials = _configuration.ServicePrincipal.CreateCredentials();
                 AuthenticationResult result =
                     await context.AcquireTokenAsync(
                         "https://management.azure.com/",
-                        credentials);
+                        clientCredentials);
 
-                var creds = new TokenCredentials(result.AccessToken);
+                var tokenCredentials = new TokenCredentials(result.AccessToken);
                 string subscriptionId = _configuration.ServiceBusQueue.SubscriptionId;
 
-                using (var client = new ServiceBusManagementClient(creds) { SubscriptionId = subscriptionId })
+                using (var client = new ServiceBusManagementClient(tokenCredentials) { SubscriptionId = subscriptionId })
                 {
                     _logger.WriteLine(
                         "Start rotating {0} connection string of Azure Service Bus Queue '{1}'...",
@@ -82,7 +84,7 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
             }
             catch (Exception exception)
             {
-                _logger.WriteLine("Failed to rotate the {0} connection string of the Azure Service Bus Queue '{1}': {2}, {3}", keyType, queueName, exception.Message);
+                _logger.WriteLine("Failed to rotate the {0} connection string of the Azure Service Bus Queue '{1}': {2}", keyType, queueName, exception.Message);
                 throw;
             }
         }

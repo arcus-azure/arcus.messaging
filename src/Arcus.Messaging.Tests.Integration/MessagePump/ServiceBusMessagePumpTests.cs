@@ -5,6 +5,7 @@ using Arcus.Messaging.Tests.Integration.ServiceBus;
 using Arcus.Messaging.Tests.Workers.ServiceBus;
 using Arcus.Security.Providers.AzureKeyVault.Authentication;
 using Microsoft.Azure.KeyVault;
+using Microsoft.Azure.Management.ServiceBus.Models;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -84,7 +85,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             const ServiceBusEntity entity = ServiceBusEntity.Queue;
             var client = new ServiceBusClient(keyRotationConfig, _outputWriter);
-            string freshConnectionString = await client.RotateConnectionStringKeysAsync();
+
+            const KeyType keyType = KeyType.SecondaryKey; 
+            string freshConnectionString = await client.RotateConnectionStringKeysAsync(keyType);
 
             ServicePrincipalAuthentication authentication = keyRotationConfig.ServicePrincipal.CreateAuthentication();
             IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
@@ -107,7 +110,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await using (var service = await TestMessagePumpService.StartNewAsync(entity, config, _outputWriter))
                 {
                     // Act
-                    string rotatedConnectionString = await client.RotateConnectionStringKeysAsync();
+                    string rotatedConnectionString = await client.RotateConnectionStringKeysAsync(keyType
+               );
                     await keyVaultClient.SetSecretAsync(
                         vaultBaseUrl: keyRotationConfig.KeyVaultSecret.VaultUri,
                         secretName: keyRotationConfig.KeyVaultSecret.SecretName,
