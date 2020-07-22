@@ -120,11 +120,14 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             return new DirectoryInfo(sourcesDirectory);
         }
 
+        /// <summary>
+        /// Gets all the configuration to run a complete key rotation integration test.
+        /// </summary>
         public KeyRotationConfig GetKeyRotationConfig()
         {
             var azureEnv = new ServiceBusQueue(
-                subscriptionId: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:SubscriptionId"),
                 tenantId: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:TenantId"),
+                azureSubscriptionId: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:SubscriptionId"),
                 resourceGroup: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:ResourceGroupName"),
                 @namespace: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:Namespace"),
                 queueName: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:QueueName"),
