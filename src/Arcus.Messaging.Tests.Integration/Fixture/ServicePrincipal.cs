@@ -26,7 +26,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
         public ServicePrincipalAuthentication CreateAuthentication()
         {
-            return new ServicePrincipalAuthentication(ClientId, ClientId);
+            return new ServicePrincipalAuthentication(ClientId, ClientSecret);
         }
 
         public ClientCredential CreateCredentials()
