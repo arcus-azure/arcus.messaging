@@ -10,6 +10,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     {
         private int? _maxConcurrentCalls;
         private string _jobId;
+        private TimeSpan _keyRotationTimeout = TimeSpan.FromSeconds(5);
 
         /// <summary>
         ///     Maximum concurrent calls to process messages
@@ -45,6 +46,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             {
                 Guard.NotNullOrEmpty(value, nameof(value), "Unique identifier for background job cannot be empty");
                 _jobId = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the timeout when the message pump tries to restart and re-authenticate during key rotation.
+        /// </summary>
+        public TimeSpan KeyRotationTimeout
+        {
+            get => _keyRotationTimeout;
+            set
+            {
+                Guard.NotLessThan(value, TimeSpan.Zero, nameof(value), "Key rotation timeout cannot be less than a zero time range");
+                _keyRotationTimeout = value;
             }
         }
     }

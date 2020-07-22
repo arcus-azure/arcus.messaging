@@ -300,14 +300,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("Restarting Azure Service Bus...");
                 
                 await CloseMessageReceiverAsync();
-                using (var stopCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+                using (var stopCancellationTokenSource = new CancellationTokenSource(Settings.Options.KeyRotationTimeout))
                 {
                     await StopAsync(stopCancellationTokenSource.Token);
                 }
 
                 Logger.LogInformation("Azure Service Bus stopped!");
 
-                using (var startCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5)))
+                using (var startCancellationTokenSource = new CancellationTokenSource(Settings.Options.KeyRotationTimeout))
                 {
                     await StartAsync(startCancellationTokenSource.Token);
                 }
