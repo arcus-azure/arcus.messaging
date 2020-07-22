@@ -1,25 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using GuardNet;
 using Microsoft.Azure.Management.ServiceBus;
 using Microsoft.Azure.Management.ServiceBus.Models;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.Rest;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.ServiceBus
 {
     /// <summary>
-    /// 
+    /// Represents the test client to interact with a Azure Service Bus resource.
     /// </summary>
     public class ServiceBusClient
     {
