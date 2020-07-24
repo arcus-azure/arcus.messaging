@@ -18,6 +18,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             MaxConcurrentCalls = options.MaxConcurrentCalls;
             AutoComplete = options.AutoComplete;
             JobId = options.JobId;
+            KeyRotationTimeout = options.KeyRotationTimeout;
         }
 
         /// <summary>
@@ -31,6 +32,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             TopicSubscription = options.TopicSubscription;
             AutoComplete = options.AutoComplete;
             JobId = options.JobId;
+            KeyRotationTimeout = options.KeyRotationTimeout;
         }
 
         /// <summary>
@@ -58,5 +60,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
         /// </summary>
         internal string JobId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout when the message pump tries to restart and re-authenticate during key rotation.
+        /// </summary>
+        internal TimeSpan KeyRotationTimeout { get; set; }
     }
 }

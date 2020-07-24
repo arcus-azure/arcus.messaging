@@ -121,6 +121,30 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         }
 
         /// <summary>
+        /// Gets all the configuration to run a complete key rotation integration test.
+        /// </summary>
+        public KeyRotationConfig GetKeyRotationConfig()
+        {
+            var azureEnv = new ServiceBusQueue(
+                tenantId: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:TenantId"),
+                azureSubscriptionId: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:SubscriptionId"),
+                resourceGroup: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:ResourceGroupName"),
+                @namespace: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:Namespace"),
+                queueName: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:QueueName"),
+                authorizationRuleName: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:AuthorizationRuleName"));
+
+            var servicePrincipal = new ServicePrincipal(
+                clientId: _config.GetValue<string>("Arcus:KeyRotation:ServicePrincipal:ClientId"),
+                clientSecret: _config.GetValue<string>("Arcus:KeyRotation:ServicePrincipal:ClientSecret"));
+
+            var secret = new KeyVaultSecret(
+                vaultUri: _config.GetValue<string>("Arcus:KeyRotation:KeyVault:VaultUri"),
+                secretName: _config.GetValue<string>("Arcus:KeyRotation:KeyVault:ConnectionStringSecretName"));
+
+            return new KeyRotationConfig(secret, servicePrincipal, azureEnv);
+        }
+
+        /// <summary>
         /// Gets a configuration sub-section with the specified key.
         /// </summary>
         /// <param name="key">The key of the configuration section.</param>
