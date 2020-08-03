@@ -71,7 +71,14 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
                     _logger.WriteLine(
                         "Rotated {0} connection string of Azure Service Bus Queue '{1}'",
                         keyType, queueName);
-                    return keys.SecondaryConnectionString;
+
+                    switch (keyType)
+                    {
+                        case KeyType.PrimaryKey: return keys.PrimaryConnectionString;
+                        case KeyType.SecondaryKey: return keys.SecondaryConnectionString;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(keyType), keyType, "Unknown key type");
+                    }
                 }
             }
             catch (Exception exception)
