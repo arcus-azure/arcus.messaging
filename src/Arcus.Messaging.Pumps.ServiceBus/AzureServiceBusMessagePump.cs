@@ -298,21 +298,26 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 Logger.LogWarning("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
                 Logger.LogTrace("Restarting Azure Service Bus...");
-                
-                await CloseMessageReceiverAsync();
-                using (var stopCancellationTokenSource = new CancellationTokenSource(Settings.Options.KeyRotationTimeout))
-                {
-                    await StopAsync(stopCancellationTokenSource.Token);
-                }
 
-                Logger.LogInformation("Azure Service Bus stopped!");
+                await CloseMessageReceiverAsync()
+                    .ContinueWith(async t =>
+                    {
+                        using (var stopCancellationTokenSource = new CancellationTokenSource(Settings.Options.KeyRotationTimeout))
+                        {
+                            await StopAsync(stopCancellationTokenSource.Token);
+                        }
 
-                using (var startCancellationTokenSource = new CancellationTokenSource(Settings.Options.KeyRotationTimeout))
-                {
-                    await StartAsync(startCancellationTokenSource.Token);
-                }
+                        Logger.LogInformation("Azure Service Bus stopped!");
+                    })
+                    .ContinueWith(async t =>
+                    {
+                        using (var startCancellationTokenSource = new CancellationTokenSource(Settings.Options.KeyRotationTimeout))
+                        {
+                            await StartAsync(startCancellationTokenSource.Token);
+                        }
 
-                Logger.LogInformation("Azure Service Bus restarted!");
+                        Logger.LogInformation("Azure Service Bus restarted!");
+                    });
             }
         }
 
