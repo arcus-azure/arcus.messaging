@@ -21,6 +21,9 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusClient"/> class.
         /// </summary>
+        /// <param name="configuration">The configuration instance to provide the necessary information during authentication with the correct Azure Service Bus instance.</param>
+        /// <param name="logger">The instance to log diagnostic messages during the interaction with the Azure Service Bus instance.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/> or the <paramref name="logger"/> is <c>null</c>.</exception>
         public ServiceBusClient(KeyRotationConfig configuration, ITestOutputHelper logger)
         {
             Guard.NotNull(configuration, nameof(configuration));

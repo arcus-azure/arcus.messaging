@@ -23,9 +23,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     /// </summary>
     public class TestMessagePumpService : IAsyncDisposable
     {
-        private readonly ServiceBusEntity _entity;
-        private readonly ITestOutputHelper _outputWriter;
         private readonly TestConfig _configuration;
+        private readonly ITestOutputHelper _outputWriter;
 
         private ServiceBusEventConsumerHost _serviceBusEventConsumerHost;
 
@@ -41,10 +40,16 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         /// <summary>
         /// Starts a new instance of the <see cref="TestMessagePumpService"/> type to simulate messages.
         /// </summary>
+        /// <param name="config">The configuration instance to retrieve the Azure Service Bus test infrastructure authentication information.</param>
+        /// <param name="outputWriter">The instance to log diagnostic messages during the interaction with teh Azure Service Bus test infrastructure.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="config"/> or the <paramref name="outputWriter"/> is <c>null</c>.</exception>
         public static async Task<TestMessagePumpService> StartNewAsync(
             TestConfig config,
             ITestOutputHelper outputWriter)
         {
+            Guard.NotNull(config, nameof(config));
+            Guard.NotNull(outputWriter, nameof(outputWriter));
+
             var service = new TestMessagePumpService(config, outputWriter);
             await service.StartAsync();
 
@@ -71,8 +76,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         /// Simulate the message processing of the message pump using the Azure Service Bus.
         /// </summary>
         /// <param name="connectionString">The connection string used to send a Azure Service Bus message to the respectively running message pump.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionString"/> is blank.</exception>
         public async Task SimulateMessageProcessingAsync(string connectionString)
         {
+            Guard.NotNullOrWhitespace(connectionString, nameof(connectionString));
+
             if (_serviceBusEventConsumerHost is null)
             {
                 throw new InvalidOperationException(
