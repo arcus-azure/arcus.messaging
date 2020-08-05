@@ -105,13 +105,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 string newSecondaryConnectionString = await client.RotateConnectionStringKeysAsync(KeyType.SecondaryKey);
                 await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, newSecondaryConnectionString);
 
-                await using (var service = await TestMessagePumpService.StartNewAsync(ServiceBusEntity.Queue, config, _outputWriter))
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _outputWriter))
                 {
                     // Act
                     string newPrimaryConnectionString = await client.RotateConnectionStringKeysAsync(KeyType.PrimaryKey);
 
                     // Assert
-                    await service.SimulateMessageProcessingAsync();
+                    await service.SimulateMessageProcessingAsync(newPrimaryConnectionString);
                 }
             }
         }
