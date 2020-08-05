@@ -38,30 +38,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             _outputWriter = outputWriter;
         }
 
-        private TestMessagePumpService(ServiceBusEntity entity, TestConfig configuration, ITestOutputHelper outputWriter)
-        {
-            Guard.NotNull(configuration, nameof(configuration));
-            Guard.NotNull(outputWriter, nameof(outputWriter));
-
-            _entity = entity;
-            _outputWriter = outputWriter;
-            _configuration = configuration;
-        }
-
-        /// <summary>
-        /// Starts a new instance of the <see cref="TestMessagePumpService"/> type to simulate messages.
-        /// </summary>
-        public static async Task<TestMessagePumpService> StartNewAsync(
-            ServiceBusEntity entity,
-            TestConfig config,
-            ITestOutputHelper outputWriter)
-        {
-            var service = new TestMessagePumpService(entity, config, outputWriter);
-            await service.StartAsync();
-
-            return service;
-        }
-
         /// <summary>
         /// Starts a new instance of the <see cref="TestMessagePumpService"/> type to simulate messages.
         /// </summary>
@@ -92,17 +68,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         /// <summary>
-        /// Simulate the message processing of the message pump using the Service Bus.
+        /// Simulate the message processing of the message pump using the Azure Service Bus.
         /// </summary>
-        public async Task SimulateMessageProcessingAsync()
-        {
-            string connectionString = _configuration.GetServiceBusConnectionString(_entity);
-            await SimulateMessageProcessingAsync(connectionString);
-        }
-
-        /// <summary>
-        /// Simulate the message processing of the message pump using the Service Bus.
-        /// </summary>
+        /// <param name="connectionString">The connection string used to send a Azure Service Bus message to the respectively running message pump.</param>
         public async Task SimulateMessageProcessingAsync(string connectionString)
         {
             if (_serviceBusEventConsumerHost is null)
