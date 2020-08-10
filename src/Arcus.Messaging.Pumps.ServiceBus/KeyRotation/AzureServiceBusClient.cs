@@ -75,7 +75,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
             catch (Exception exception)
             {
                 _logger.LogError(
-                    exception, "Failed to rotate the {KeyType} connection string of the Azure Service Bus {EntityType} '{EntityName}'", keyType, Location.EntityName);
+                    exception, "Failed to rotate the {KeyType} connection string of the Azure Service Bus {EntityType} '{EntityName}'", keyType, Location.Entity, Location.EntityName);
                 
                 throw;
             }

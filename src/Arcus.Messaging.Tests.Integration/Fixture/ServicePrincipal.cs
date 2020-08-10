@@ -14,13 +14,16 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         /// <param name="clientId">The ID of the client application.</param>
         /// <param name="clientSecret">The secret of the client application.</param>
-        public ServicePrincipal(string clientId, string clientSecret)
+        /// <param name="clientSecretKey">The key to the secret of the client application.</param>
+        public ServicePrincipal(string clientId, string clientSecret, string clientSecretKey)
         {
             Guard.NotNullOrWhitespace(clientId, nameof(clientId));
             Guard.NotNullOrWhitespace(clientSecret, nameof(clientSecret));
+            Guard.NotNullOrWhitespace(clientSecretKey, nameof(clientSecretKey));
 
             ClientId = clientId;
             ClientSecret = clientSecret;
+            ClientSecretKey = clientSecretKey;
         }
 
         /// <summary>
@@ -32,6 +35,11 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// Gets the secret of the client application.
         /// </summary>
         public string ClientSecret { get; }
+
+        /// <summary>
+        /// Gets the key to the client secret of the client application.
+        /// </summary>
+        public string ClientSecretKey { get; }
 
         /// <summary>
         /// Creates an instance to authenticate to Azure Key Vault.

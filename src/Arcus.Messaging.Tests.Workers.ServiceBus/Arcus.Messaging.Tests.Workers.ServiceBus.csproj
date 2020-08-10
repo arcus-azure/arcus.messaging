@@ -14,7 +14,7 @@
   <ItemGroup>
     <PackageReference Include="Arcus.EventGrid.Publishing" Version="3.0.0" />
     <PackageReference Include="Arcus.EventGrid.Testing" Version="3.0.0" />
-    <PackageReference Include="Arcus.Security.Providers.AzureKeyVault" Version="1.2.0" />
+    <PackageReference Include="Arcus.Security.Providers.AzureKeyVault" Version="1.3.0" />
     <PackageReference Include="Guard.NET" Version="1.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.0.0" />

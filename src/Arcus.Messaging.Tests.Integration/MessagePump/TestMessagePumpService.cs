@@ -4,6 +4,7 @@ using Arcus.EventGrid;
 using Arcus.EventGrid.Contracts;
 using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
@@ -13,6 +14,7 @@ using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -24,18 +26,18 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     public class TestMessagePumpService : IAsyncDisposable
     {
         private readonly ServiceBusEntity _entity;
-        private readonly ITestOutputHelper _outputWriter;
+        private readonly ILogger _logger;
         private readonly TestConfig _configuration;
 
         private ServiceBusEventConsumerHost _serviceBusEventConsumerHost;
 
-        private TestMessagePumpService(ServiceBusEntity entity, TestConfig configuration, ITestOutputHelper outputWriter)
+        private TestMessagePumpService(ServiceBusEntity entity, TestConfig configuration, ILogger logger)
         {
             Guard.NotNull(configuration, nameof(configuration));
-            Guard.NotNull(outputWriter, nameof(outputWriter));
+            Guard.NotNull(logger, nameof(logger));
 
             _entity = entity;
-            _outputWriter = outputWriter;
+            _logger = logger;
             _configuration = configuration;
         }
 
@@ -45,9 +47,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public static async Task<TestMessagePumpService> StartNewAsync(
             ServiceBusEntity entity,
             TestConfig config,
-            ITestOutputHelper outputWriter)
+            ILogger logger)
         {
-            var service = new TestMessagePumpService(entity, config, outputWriter);
+            var service = new TestMessagePumpService(entity, config, logger);
             await service.StartAsync();
 
             return service;
@@ -61,7 +63,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 var connectionString = _configuration.GetValue<string>("Arcus:Infra:ServiceBus:ConnectionString");
                 var serviceBusEventConsumerHostOptions = new ServiceBusEventConsumerHostOptions(topicName, connectionString);
 
-                _serviceBusEventConsumerHost = await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, new XunitTestLogger(_outputWriter));
+                _serviceBusEventConsumerHost = await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, _logger);
             }
             else
             {
