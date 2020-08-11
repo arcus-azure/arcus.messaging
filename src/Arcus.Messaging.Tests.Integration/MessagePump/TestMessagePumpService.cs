@@ -27,26 +27,24 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     {
         private readonly ILogger _logger;
         private readonly TestConfig _configuration;
-        private readonly ITestOutputHelper _outputWriter;
 
         private ServiceBusEventConsumerHost _serviceBusEventConsumerHost;
 
-        private TestMessagePumpService(TestConfig configuration, ILogger outputWriter)
+        private TestMessagePumpService(TestConfig configuration, ILogger logger)
         {
             Guard.NotNull(configuration, nameof(configuration));
             Guard.NotNull(logger, nameof(logger));
 
-            _outputWriter = outputWriter;
             _configuration = configuration;
-            _outputWriter = outputWriter;
+            _logger = logger;
         }
 
         /// <summary>
         /// Starts a new instance of the <see cref="TestMessagePumpService"/> type to simulate messages.
         /// </summary>
         /// <param name="config">The configuration instance to retrieve the Azure Service Bus test infrastructure authentication information.</param>
-        /// <param name="outputWriter">The instance to log diagnostic messages during the interaction with teh Azure Service Bus test infrastructure.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="config"/> or the <paramref name="outputWriter"/> is <c>null</c>.</exception>
+        /// <param name="logger">The instance to log diagnostic messages during the interaction with teh Azure Service Bus test infrastructure.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="config"/> or the <paramref name="logger"/> is <c>null</c>.</exception>
         public static async Task<TestMessagePumpService> StartNewAsync(
             TestConfig config,
             ILogger logger)
