@@ -21,6 +21,9 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusClient"/> class.
         /// </summary>
+        /// <param name="configuration">The configuration instance to provide the necessary information during authentication with the correct Azure Service Bus instance.</param>
+        /// <param name="logger">The instance to log diagnostic messages during the interaction with the Azure Service Bus instance.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/> or the <paramref name="logger"/> is <c>null</c>.</exception>
         public ServiceBusClient(KeyRotationConfig configuration, ITestOutputHelper logger)
         {
             Guard.NotNull(configuration, nameof(configuration));
@@ -71,7 +74,14 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
                     _logger.WriteLine(
                         "Rotated {0} connection string of Azure Service Bus Queue '{1}'",
                         keyType, queueName);
-                    return keys.SecondaryConnectionString;
+
+                    switch (keyType)
+                    {
+                        case KeyType.PrimaryKey: return keys.PrimaryConnectionString;
+                        case KeyType.SecondaryKey: return keys.SecondaryConnectionString;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(keyType), keyType, "Unknown key type");
+                    }
                 }
             }
             catch (Exception exception)
