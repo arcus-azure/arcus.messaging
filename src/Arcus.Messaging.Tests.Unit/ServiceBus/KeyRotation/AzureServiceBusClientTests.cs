@@ -78,7 +78,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
             Assert.Equal(secondaryConnectionString == connectionString, KeyType.SecondaryKey == keyType);
             Assert.Equal(stubTopics.Invocations.Count == 1 && stubQueues.Invocations.Count == 0, ServiceBusEntity.Topic == entity);
             Assert.Equal(stubTopics.Invocations.Count == 0 && stubQueues.Invocations.Count == 1, ServiceBusEntity.Queue == entity);
-
         }
 
         private static Mock<IAzureServiceBusManagementAuthentication> CreateStubAuthentication(ITopicsOperations topicsOperations, IQueuesOperations queuesOperations)
