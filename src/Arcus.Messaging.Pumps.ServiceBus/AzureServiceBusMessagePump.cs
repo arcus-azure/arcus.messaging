@@ -140,15 +140,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             try
             {
-                _messageReceiver = await CreateMessageReceiverAsync(Settings);
-
-                Logger.LogInformation(
-                    "Starting message pump {MessagePumpId} on entity path '{EntityPath}' in namespace '{Namespace}'",
-                    Id, EntityPath, Namespace);
-
-                _messageReceiver.RegisterMessageHandler(HandleMessageAsync, _messageHandlerOptions);
-                Logger.LogInformation("Message pump {MessagePumpId} started",  Id);
-
+                await OpenNewMessageReceiverAsync();
                 await UntilCancelledAsync(stoppingToken);
             }
             catch (Exception exception)
@@ -158,15 +150,31 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             finally
             {
-                if (_messageReceiver != null)
-                {
-                    await CloseMessageReceiverAsync();
-                }
+                await CloseMessageReceiverAsync();
             }
+        }
+
+        private async Task OpenNewMessageReceiverAsync()
+        {
+            _messageReceiver = await CreateMessageReceiverAsync(Settings);
+
+            Logger.LogInformation(
+                "Starting message pump {MessagePumpId} on entity path '{EntityPath}' in namespace '{Namespace}'",
+                Id,
+                EntityPath,
+                Namespace);
+
+            _messageReceiver.RegisterMessageHandler(HandleMessageAsync, _messageHandlerOptions);
+            Logger.LogInformation("Message pump {MessagePumpId} started", Id);
         }
 
         private async Task CloseMessageReceiverAsync()
         {
+            if (_messageReceiver is null)
+            {
+                return;
+            }
+
             try
             {
                 Logger.LogInformation("Closing message pump {MessagePumpId}",  Id);
@@ -297,21 +305,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             if (exception is UnauthorizedException)
             {
                 Logger.LogWarning("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
-                Logger.LogTrace("Restarting Azure Service Bus...");
                 
+                Logger.LogTrace("Restarting Azure Service Bus...");
                 await CloseMessageReceiverAsync();
-                using (var stopCancellationTokenSource = new CancellationTokenSource(Settings.Options.KeyRotationTimeout))
-                {
-                    await StopAsync(stopCancellationTokenSource.Token);
-                }
-
-                Logger.LogInformation("Azure Service Bus stopped!");
-
-                using (var startCancellationTokenSource = new CancellationTokenSource(Settings.Options.KeyRotationTimeout))
-                {
-                    await StartAsync(startCancellationTokenSource.Token);
-                }
-
+                await OpenNewMessageReceiverAsync();
                 Logger.LogInformation("Azure Service Bus restarted!");
             }
         }

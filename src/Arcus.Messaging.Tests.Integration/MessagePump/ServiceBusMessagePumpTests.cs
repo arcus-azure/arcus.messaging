@@ -36,19 +36,20 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(entity);
             var commandArguments = new[]
             {
                 CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
                 CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", config.GetServiceBusConnectionString(entity)),
+                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
             };
 
             using (var project = await ServiceBusWorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
             {
-                await using (var service = await TestMessagePumpService.StartNewAsync(entity, config, _logger))
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
                     // Act / Assert
-                    await service.SimulateMessageProcessingAsync();
+                    await service.SimulateMessageProcessingAsync(connectionString);
                 }
             }
         }
@@ -58,22 +59,22 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            const ServiceBusEntity entity = ServiceBusEntity.Queue;
-
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            
             var commandArguments = new[]
             {
                 CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
                 CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_QUEUE", config.GetServiceBusConnectionString(ServiceBusEntity.Queue)),
+                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_QUEUE", connectionString),
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_TOPIC", config.GetServiceBusConnectionString(ServiceBusEntity.Topic)),
             };
 
             using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueAndTopicProgram>(config, _logger, commandArguments))
             {
-                await using (var service = await TestMessagePumpService.StartNewAsync(entity, config, _logger))
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
                     // Act / Assert
-                    await service.SimulateMessageProcessingAsync();
+                    await service.SimulateMessageProcessingAsync(connectionString);
                 }
             }
         }
@@ -86,18 +87,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             KeyRotationConfig keyRotationConfig = config.GetKeyRotationConfig();
             _logger.LogInformation("Using Service Principal [ClientID: '{ClientId}']", keyRotationConfig.ServicePrincipal.ClientId);
 
-            const ServiceBusEntity entity = ServiceBusEntity.Queue;
             var client = new ServiceBusClient(keyRotationConfig, _logger);
-
-            const KeyType keyType = KeyType.SecondaryKey; 
-            string freshConnectionString = await client.RotateConnectionStringKeysAsync(entity, keyType);
+            string freshConnectionString = await client.RotateConnectionStringKeysAsync(KeyType.PrimaryKey);
 
             ServicePrincipalAuthentication authentication = keyRotationConfig.ServicePrincipal.CreateAuthentication();
             IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
-            await keyVaultClient.SetSecretAsync(
-                vaultBaseUrl: keyRotationConfig.KeyVaultSecret.VaultUri,
-                secretName: keyRotationConfig.KeyVaultSecret.SecretName,
-                value: freshConnectionString);
+            await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, freshConnectionString);
+
             var commandArguments = new[]
             {
                 CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
@@ -110,19 +106,26 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueKeyVaultProgram>(config, _logger, commandArguments))
             {
-                await using (var service = await TestMessagePumpService.StartNewAsync(entity, config, _logger))
+                string newSecondaryConnectionString = await client.RotateConnectionStringKeysAsync(KeyType.SecondaryKey);
+                await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, newSecondaryConnectionString);
+
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
                     // Act
-                    string rotatedConnectionString = await client.RotateConnectionStringKeysAsync(entity, keyType);
-                    await keyVaultClient.SetSecretAsync(
-                        vaultBaseUrl: keyRotationConfig.KeyVaultSecret.VaultUri,
-                        secretName: keyRotationConfig.KeyVaultSecret.SecretName,
-                        value: rotatedConnectionString);
+                    string newPrimaryConnectionString = await client.RotateConnectionStringKeysAsync(KeyType.PrimaryKey);
 
                     // Assert
-                    await service.SimulateMessageProcessingAsync();
+                    await service.SimulateMessageProcessingAsync(newPrimaryConnectionString);
                 }
             }
+        }
+
+        private static async Task SetConnectionStringInKeyVaultAsync(IKeyVaultClient keyVaultClient, KeyRotationConfig keyRotationConfig, string rotatedConnectionString)
+        {
+            await keyVaultClient.SetSecretAsync(
+                vaultBaseUrl: keyRotationConfig.KeyVaultSecret.VaultUri,
+                secretName: keyRotationConfig.KeyVaultSecret.SecretName,
+                value: rotatedConnectionString);
         }
     }
 }
