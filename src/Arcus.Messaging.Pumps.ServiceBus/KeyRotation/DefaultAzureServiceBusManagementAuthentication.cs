@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Authentication;
 using System.Threading.Tasks;
 using Arcus.Security.Core;
 using GuardNet;
@@ -19,8 +20,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
         /// <summary>
         /// Initializes a new instance of the <see cref="DefaultAzureServiceBusManagementAuthentication"/> class.
         /// </summary>
-        /// <param name="clientId">The ID of the user or application that has the permissions to authenticate with the Azure Service Bus.</param>
-        /// <param name="clientSecretKey">The secret key that points to the secret of the user or application that has the permissions to authenticate with the Azure Service Bus.</param>
+        /// <param name="clientId">The ID of the user or application that has the permissions to authenticate with and rotate connection strings on the Azure Service Bus.</param>
+        /// <param name="clientSecretKey">
+        ///     The secret key that points to the secret of the user or application that has the permissions to authenticate with and rotate connection strings on the Azure Service Bus.
+        /// </param>
         /// <param name="subscriptionId">The ID of the account subscription that manages the Azure Service Bus.</param>
         /// <param name="tenantId">The ID of the tenant where the Azure Service Bus is located.</param>
         /// <param name="secretProvider">The provider to retrieve the user or application secret with the specified <paramref name="clientSecretKey"/>.</param>
@@ -35,11 +38,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
             string tenantId,
             ISecretProvider secretProvider)
         {
-            Guard.NotNullOrWhitespace(clientId, nameof(clientId));
-            Guard.NotNullOrWhitespace(clientSecretKey, nameof(clientSecretKey));
-            Guard.NotNullOrWhitespace(subscriptionId, nameof(subscriptionId));
-            Guard.NotNullOrWhitespace(tenantId, nameof(tenantId));
-            Guard.NotNull(secretProvider, nameof(secretProvider));
+            Guard.NotNullOrWhitespace(clientId, nameof(clientId), "Requires an client ID with the necessary permissions to rotate Azure Service Bus connection string keys");
+            Guard.NotNullOrWhitespace(clientSecretKey, nameof(clientSecretKey), "Requires an secret name that points to the client secret with the necessary permissions to rotate Azure Service Bus connection string keys");
+            Guard.NotNullOrWhitespace(subscriptionId, nameof(subscriptionId), "Requires an account subscription ID that is in change of managing the Azure Service Bus resource");
+            Guard.NotNullOrWhitespace(tenantId, nameof(tenantId), "Requires an tenant ID where the Azure Service Bus resource is located");
+            Guard.NotNull(secretProvider, nameof(secretProvider), $"Requires an '{nameof(ISecretProvider)}' implementation to retrieve the client secret by requesting the '{nameof(clientSecretKey)}'");
 
             _secretProvider = secretProvider;
             _clientId = clientId;
@@ -54,9 +57,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
         /// <returns>
         ///     An <see cref="IServiceBusManagementClient"/> instance that manages the previously specified Azure Service Bus resource.
         /// </returns>
+        /// <exception cref="AuthenticationException">Thrown when the previously configured <see cref="ISecretProvider"/> isn't returning the client secret.</exception>
         public async Task<IServiceBusManagementClient> AuthenticateAsync()
         {
-            string clientSecret = await _secretProvider.GetRawSecretAsync(_clientSecretKey);
+            Task<string> rawSecretAsync = _secretProvider.GetRawSecretAsync(_clientSecretKey);
+            if (rawSecretAsync is null)
+            {
+                throw new AuthenticationException(
+                    $"Could not authenticate with the Azure Service Bus because the '{nameof(ISecretProvider)}' that should have returned the client secret, returned 'null'");
+            }
+
+            string clientSecret = await rawSecretAsync;
 
             var context = new AuthenticationContext($"https://login.microsoftonline.com/{_tenantId}");
             var clientCredentials = new ClientCredential(_clientId, clientSecret);

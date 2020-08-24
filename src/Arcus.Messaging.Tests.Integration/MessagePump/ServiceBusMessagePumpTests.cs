@@ -87,9 +87,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             KeyRotationConfig keyRotationConfig = config.GetKeyRotationConfig();
             _logger.LogInformation("Using Service Principal [ClientID: '{ClientId}']", keyRotationConfig.ServicePrincipal.ClientId);
 
-            const ServiceBusEntity entity = ServiceBusEntity.Queue;
-            var client = new ServiceBusClient(keyRotationConfig, _logger);
-            string freshConnectionString = await client.RotateConnectionStringKeysAsync(entity, KeyType.PrimaryKey);
+            var client = new ServiceBusConfiguration(keyRotationConfig, _logger);
+            string freshConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.PrimaryKey);
 
             ServicePrincipalAuthentication authentication = keyRotationConfig.ServicePrincipal.CreateAuthentication();
             IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
@@ -107,13 +106,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueKeyVaultProgram>(config, _logger, commandArguments))
             {
-                string newSecondaryConnectionString = await client.RotateConnectionStringKeysAsync(entity, KeyType.SecondaryKey);
+                string newSecondaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.SecondaryKey);
                 await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, newSecondaryConnectionString);
 
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
                     // Act
-                    string newPrimaryConnectionString = await client.RotateConnectionStringKeysAsync(entity, KeyType.PrimaryKey);
+                    string newPrimaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.PrimaryKey);
 
                     // Assert
                     await service.SimulateMessageProcessingAsync(newPrimaryConnectionString);

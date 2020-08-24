@@ -15,18 +15,18 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
     /// <summary>
     /// Represents the test client to interact with a Azure Service Bus resource.
     /// </summary>
-    public class ServiceBusClient
+    public class ServiceBusConfiguration
     {
         private readonly KeyRotationConfig _configuration;
         private readonly ILogger _logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ServiceBusClient"/> class.
+        /// Initializes a new instance of the <see cref="ServiceBusConfiguration"/> class.
         /// </summary>
         /// <param name="configuration">The configuration instance to provide the necessary information during authentication with the correct Azure Service Bus instance.</param>
         /// <param name="logger">The instance to log diagnostic messages during the interaction with the Azure Service Bus instance.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/> or the <paramref name="logger"/> is <c>null</c>.</exception>
-        public ServiceBusClient(KeyRotationConfig configuration, ILogger logger)
+        public ServiceBusConfiguration(KeyRotationConfig configuration, ILogger logger)
         {
             Guard.NotNull(configuration, nameof(configuration));
             Guard.NotNull(logger, nameof(logger));
@@ -36,42 +36,38 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
         }
 
         /// <summary>
-        /// 
+        /// Gets the connection string keys for the Azure Service Bus Topic tested in the integration test suite.
         /// </summary>
-        /// <param name="entity"></param>
-        /// <returns></returns>
-        public async Task<AccessKeys> GetConnectionStringKeysAsync(ServiceBusEntity entity)
+        public async Task<AccessKeys> GetConnectionStringKeysForTopicAsync()
         {
             using IServiceBusManagementClient client = await CreateServiceManagementClientAsync();
 
-            return entity switch
-            {
-                ServiceBusEntity.Queue => await client.Queues.ListKeysAsync(
-                    _configuration.ServiceBusNamespace.ResourceGroup,
-                    _configuration.ServiceBusNamespace.Namespace,
-                    _configuration.ServiceBusNamespace.TopicName,
-                    _configuration.ServiceBusNamespace.AuthorizationRuleName),
-                ServiceBusEntity.Topic => await client.Topics.ListKeysAsync(
-                    _configuration.ServiceBusNamespace.ResourceGroup,
-                    _configuration.ServiceBusNamespace.Namespace,
-                    _configuration.ServiceBusNamespace.TopicName,
-                    _configuration.ServiceBusNamespace.AuthorizationRuleName),
-                _ => throw new ArgumentOutOfRangeException(nameof(entity), entity, "Unknown key type")
-            };
+            AccessKeys accessKeys = await client.Topics.ListKeysAsync(
+                _configuration.ServiceBusNamespace.ResourceGroup,
+                _configuration.ServiceBusNamespace.Namespace,
+                _configuration.ServiceBusNamespace.TopicName,
+                _configuration.ServiceBusNamespace.AuthorizationRuleName);
+
+            return accessKeys;
         }
 
         /// <summary>
         /// Rotates the connection string key of the Azure Service Bus Queue, returning the new connection string as result.
         /// </summary>
-        /// <param name="entity">The type of the entity of the Azure Service Bus.</param>
         /// <param name="keyType">The type of key to rotate.</param>
         /// <returns>
         ///     The new connection string according to the <paramref name="keyType"/>.
         /// </returns>
-        public async Task<string> RotateConnectionStringKeysAsync(ServiceBusEntity entity, KeyType keyType)
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="keyType"/> is not within the bounds of the enumration.</exception>
+        public async Task<string> RotateConnectionStringKeysForQueueAsync(KeyType keyType)
         {
+            Guard.For<ArgumentOutOfRangeException>(
+                () => !Enum.IsDefined(typeof(KeyType), keyType),
+                $"Requires a KeyType that is either '{nameof(KeyType.PrimaryKey)}' or '{nameof(KeyType.SecondaryKey)}'");
+
             var parameters = new RegenerateAccessKeyParameters(keyType);
             string queueName = _configuration.ServiceBusNamespace.QueueName;
+            const ServiceBusEntityType entity = ServiceBusEntityType.Queue;
 
             try
             {
@@ -81,24 +77,12 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
                     "Start rotating {KeyType} connection string of Azure Service Bus {EntityType} '{EntityName}'...",
                     keyType, entity, queueName);
 
-                AccessKeys keys = entity switch
-                {
-                    ServiceBusEntity.Topic =>
-                    await client.Topics.RegenerateKeysAsync(
-                        _configuration.ServiceBusNamespace.ResourceGroup,
-                        _configuration.ServiceBusNamespace.Namespace,
-                        queueName,
-                        _configuration.ServiceBusNamespace.AuthorizationRuleName,
-                        parameters),
-                    ServiceBusEntity.Queue =>
-                    await client.Queues.RegenerateKeysAsync(
-                        _configuration.ServiceBusNamespace.ResourceGroup,
-                        _configuration.ServiceBusNamespace.Namespace,
-                        queueName,
-                        _configuration.ServiceBusNamespace.AuthorizationRuleName,
-                        parameters),
-                    _ => throw new ArgumentOutOfRangeException(nameof(keyType), keyType, "Unknown key type")
-                };
+                AccessKeys accessKeys = await client.Queues.RegenerateKeysAsync(
+                    _configuration.ServiceBusNamespace.ResourceGroup,
+                    _configuration.ServiceBusNamespace.Namespace,
+                    queueName,
+                    _configuration.ServiceBusNamespace.AuthorizationRuleName,
+                    parameters);
 
                 _logger.LogInformation(
                         "Rotated {KeyType} connection string of Azure Service Bus {EntityType} '{EntityName}'",
@@ -106,8 +90,8 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
 
                 switch (keyType)
                 {
-                    case KeyType.PrimaryKey:   return keys.PrimaryConnectionString;
-                    case KeyType.SecondaryKey: return keys.SecondaryConnectionString;
+                    case KeyType.PrimaryKey:   return accessKeys.PrimaryConnectionString;
+                    case KeyType.SecondaryKey: return accessKeys.SecondaryConnectionString;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(keyType), keyType, "Unknown key type");
                 }

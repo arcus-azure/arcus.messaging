@@ -47,22 +47,22 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             AzureServiceBusClient azureServiceBusClient = CreateAzureServiceBusClient(keyRotationConfig, secretProvider, entity);
             var rotation = new AzureServiceBusKeyRotation(azureServiceBusClient, keyVaultAuthentication, keyVaultConfiguration, _logger);
 
-            var client = new ServiceBusClient(keyRotationConfig, _logger);
-            AccessKeys keysBefore1stRotation = await client.GetConnectionStringKeysAsync(entity);
+            var client = new ServiceBusConfiguration(keyRotationConfig, _logger);
+            AccessKeys keysBefore1stRotation = await client.GetConnectionStringKeysForTopicAsync();
 
             // Act
             await rotation.RotateServiceBusSecretAsync(keyRotationConfig.KeyVaultSecret.SecretName);
 
             // Assert
             string secondaryConnectionString = await secretProvider.GetRawSecretAsync(keyRotationConfig.KeyVaultSecret.SecretName);
-            AccessKeys keysAfter1stRotation = await client.GetConnectionStringKeysAsync(entity);
+            AccessKeys keysAfter1stRotation = await client.GetConnectionStringKeysForTopicAsync();
             Assert.True(secondaryConnectionString == keysAfter1stRotation.SecondaryConnectionString, "Secondary connection string should be set in Azure Key Vault after first rotation");
             Assert.NotEqual(keysBefore1stRotation.PrimaryConnectionString, keysAfter1stRotation.PrimaryConnectionString);
             Assert.NotEqual(keysBefore1stRotation.SecondaryConnectionString, keysAfter1stRotation.SecondaryConnectionString);
 
             await rotation.RotateServiceBusSecretAsync(keyRotationConfig.KeyVaultSecret.SecretName);
             string primaryConnectionString = await secretProvider.GetRawSecretAsync(keyRotationConfig.KeyVaultSecret.SecretName);
-            AccessKeys keysAfter2ndRotation = await client.GetConnectionStringKeysAsync(entity);
+            AccessKeys keysAfter2ndRotation = await client.GetConnectionStringKeysForTopicAsync();
             Assert.True(primaryConnectionString == keysAfter2ndRotation.PrimaryConnectionString, "Primary connection string should be set in Azure Key Vault after second rotation");
             Assert.NotEqual(keysAfter1stRotation.PrimaryConnectionString, keysAfter2ndRotation.PrimaryConnectionString);
             Assert.NotEqual(keysAfter2ndRotation.SecondaryConnectionString, keysAfter1stRotation.SecondaryConnectionString);

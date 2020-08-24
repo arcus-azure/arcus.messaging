@@ -38,10 +38,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
             IKeyVaultConfiguration configuration,
             ILogger logger)
         {
-            Guard.NotNull(serviceBusClient, nameof(serviceBusClient));
-            Guard.NotNull(authentication, nameof(authentication));
-            Guard.NotNull(configuration, nameof(configuration));
-            Guard.NotNull(logger, nameof(logger));
+            Guard.NotNull(serviceBusClient, nameof(serviceBusClient), "Requires an Azure Service Bus client to interact with the Service Bus when rotating the connection string keys");
+            Guard.NotNull(authentication, nameof(authentication), "Requires an authentication instance to authenticate with the Azure Key Vault resource to set the new connection string keys");
+            Guard.NotNull(configuration, nameof(configuration), "Requires an KeyVault configuration instance to locate the Key Vault resource on Azure");
+            Guard.NotNull(logger, nameof(logger), "Requires an logger instance to write diagnostic trace messages when interacting with the Azure Service Bus and Azure Key Vault instances");
 
             _serviceBusClient = serviceBusClient;
             _authentication = authentication;
@@ -53,10 +53,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
         /// Rotates the Azure Service Bus connection string key, stored inside Azure Key Vault with the specified <paramref name="secretName"/>.
         /// </summary>
         /// <param name="secretName">The name of the secret where the Azure Service Bus connection string is stored.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="secretName"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="secretName"/> is blank.</exception>
         public async Task RotateServiceBusSecretAsync(string secretName)
         {
-            Guard.NotNullOrWhitespace(secretName, nameof(secretName));
+            Guard.NotNullOrWhitespace(secretName, nameof(secretName), 
+                "Requires a non-blank secret name that points to a secret in the Azure Key Vault resource to set the new rotated Azure Service Bus connection strings keys to");
+            
             Interlocked.Increment(ref _index);
 
             using IKeyVaultClient keyVaultClient = await _authentication.AuthenticateAsync();

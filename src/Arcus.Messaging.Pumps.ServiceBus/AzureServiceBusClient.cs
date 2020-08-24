@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Arcus.Messaging.Pumps.ServiceBus.KeyRotation;
 using GuardNet;
 using Microsoft.Azure.Management.ServiceBus;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Rest;
 
-namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
+namespace Arcus.Messaging.Pumps.ServiceBus
 {
     /// <summary>
     /// Represents a client to interact with a Azure Service Bus.
@@ -30,9 +30,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
             AzureServiceBusLocation location,
             ILogger logger)
         {
-            Guard.NotNull(authentication, nameof(authentication));
-            Guard.NotNull(location, nameof(location));
-            Guard.NotNull(logger, nameof(logger));
+            Guard.NotNull(authentication, nameof(authentication), "Requires an authentication implementation to connect to the Azure Service Bus resource");
+            Guard.NotNull(location, nameof(location), "Requires an instance to locate teh Service Bus resource on Azure");
+            Guard.NotNull(logger, nameof(logger), "Requires an logger instance to write diagnostic trace messages when interacting with the Azure Service Bus resource");
 
             _authentication = authentication;
             _logger = logger;
@@ -49,8 +49,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
         /// Rotate either the primary or secondary connection string key of the Azure Service Bus resource.
         /// </summary>
         /// <param name="keyType">The type of the key to rotate.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="keyType"/> is outside the bounds of the enumeration.</exception>
         public async Task<string> RotateConnectionStringKeyAsync(KeyType keyType)
         {
+            Guard.For<ArgumentOutOfRangeException>(
+                () => !Enum.IsDefined(typeof(KeyType), keyType), 
+                $"Requires the KeyType value to be either '{nameof(KeyType.PrimaryKey)}' or '{nameof(KeyType.SecondaryKey)}'");
+
             try
             {
                 using IServiceBusManagementClient client = await _authentication.AuthenticateAsync();
