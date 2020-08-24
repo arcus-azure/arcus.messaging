@@ -4,6 +4,7 @@ using Arcus.EventGrid;
 using Arcus.EventGrid.Contracts;
 using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
@@ -13,6 +14,7 @@ using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -23,34 +25,34 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     /// </summary>
     public class TestMessagePumpService : IAsyncDisposable
     {
+        private readonly ILogger _logger;
         private readonly TestConfig _configuration;
-        private readonly ITestOutputHelper _outputWriter;
 
         private ServiceBusEventConsumerHost _serviceBusEventConsumerHost;
 
-        private TestMessagePumpService(TestConfig configuration, ITestOutputHelper outputWriter)
+        private TestMessagePumpService(TestConfig configuration, ILogger logger)
         {
             Guard.NotNull(configuration, nameof(configuration));
-            Guard.NotNull(outputWriter, nameof(outputWriter));
+            Guard.NotNull(logger, nameof(logger));
 
             _configuration = configuration;
-            _outputWriter = outputWriter;
+            _logger = logger;
         }
 
         /// <summary>
         /// Starts a new instance of the <see cref="TestMessagePumpService"/> type to simulate messages.
         /// </summary>
         /// <param name="config">The configuration instance to retrieve the Azure Service Bus test infrastructure authentication information.</param>
-        /// <param name="outputWriter">The instance to log diagnostic messages during the interaction with teh Azure Service Bus test infrastructure.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="config"/> or the <paramref name="outputWriter"/> is <c>null</c>.</exception>
+        /// <param name="logger">The instance to log diagnostic messages during the interaction with teh Azure Service Bus test infrastructure.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="config"/> or the <paramref name="logger"/> is <c>null</c>.</exception>
         public static async Task<TestMessagePumpService> StartNewAsync(
             TestConfig config,
-            ITestOutputHelper outputWriter)
+            ILogger logger)
         {
             Guard.NotNull(config, nameof(config));
-            Guard.NotNull(outputWriter, nameof(outputWriter));
+            Guard.NotNull(logger, nameof(logger));
 
-            var service = new TestMessagePumpService(config, outputWriter);
+            var service = new TestMessagePumpService(config, logger);
             await service.StartAsync();
 
             return service;
@@ -64,7 +66,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 var connectionString = _configuration.GetValue<string>("Arcus:Infra:ServiceBus:ConnectionString");
                 var serviceBusEventConsumerHostOptions = new ServiceBusEventConsumerHostOptions(topicName, connectionString);
 
-                _serviceBusEventConsumerHost = await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, new XunitTestLogger(_outputWriter));
+                _serviceBusEventConsumerHost = await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, _logger);
             }
             else
             {

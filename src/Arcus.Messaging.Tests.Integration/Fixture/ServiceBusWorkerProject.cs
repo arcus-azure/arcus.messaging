@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using GuardNet;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Interfaces;
 using Polly;
 using Xunit.Abstractions;
@@ -20,15 +21,15 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     {
         private readonly Process _process;
         private readonly DirectoryInfo _projectDirectory;
-        private readonly ITestOutputHelper _logger;
+        private readonly ILogger _logger;
         
         private bool _disposed;
 
-        private ServiceBusWorkerProject(DirectoryInfo projectDirectory, ITestOutputHelper outputWriter)
+        private ServiceBusWorkerProject(DirectoryInfo projectDirectory, ILogger logger)
         {
             _process = new Process();
             _projectDirectory = projectDirectory;
-            _logger = outputWriter;
+            _logger = logger;
         }
 
         /// <summary>
@@ -36,15 +37,15 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         /// <typeparam name="TProgram">The type of the 'Program.cs' that the project should have.</typeparam>
         /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
-        /// <param name="outputWriter">The logger to write diagnostic messages during the creation of the project.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the creation of the project.</param>
         /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
         public static async Task<ServiceBusWorkerProject> StartNewWithAsync<TProgram>(
             TestConfig config, 
-            ITestOutputHelper outputWriter,
+            ILogger logger,
             params CommandArgument[] commandArguments)
         {
             Type programType = typeof(TProgram);
-            ServiceBusWorkerProject project = await StartNewWithAsync(programType, config, outputWriter, commandArguments);
+            ServiceBusWorkerProject project = await StartNewWithAsync(programType, config, logger, commandArguments);
 
             return project;
         }
@@ -54,12 +55,12 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         /// <param name="programType">The type of the 'Program.cs' that the project should have.</param>
         /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
-        /// <param name="outputWriter">The logger to write diagnostic messages during the creation of the project.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the creation of the project.</param>
         /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
         public static async Task<ServiceBusWorkerProject> StartNewWithAsync(
             Type programType,
             TestConfig config,
-            ITestOutputHelper outputWriter,
+            ILogger logger,
             params CommandArgument[] commandArguments)
         {
             Guard.NotNull(programType, nameof(programType));
@@ -72,7 +73,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
             ReplaceProgramFile(programType, integrationTestDirectory, emptyServiceBusWorkerDirectory);
 
-            var project = new ServiceBusWorkerProject(emptyServiceBusWorkerDirectory, outputWriter);
+            var project = new ServiceBusWorkerProject(emptyServiceBusWorkerDirectory, logger);
 
             const int healthPort = 40643;
             project.Start(commandArguments.Prepend(CommandArgument.CreateOpen("ARCUS_HEALTH_PORT", healthPort)));
@@ -121,7 +122,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             string runCommand = $"exec {targetAssembly} {exposedSecretsCommands}";
 
             string hiddenSecretsCommands = String.Join(" ", commandArguments.Select(arg => arg.ToString()));
-            _logger.WriteLine("> dotnet {0}", $"exec {targetAssembly} {hiddenSecretsCommands}");
+            _logger.LogInformation("> dotnet exec {Assembly} {Commands}", targetAssembly, hiddenSecretsCommands);
 
             var processInfo = new ProcessStartInfo("dotnet", runCommand)
             {
@@ -147,11 +148,11 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
             if (result.Outcome == OutcomeType.Successful)
             {
-                _logger.WriteLine("Test Service Bus worker project fully started at: localhost:{0}", healthPort);
+                _logger.LogInformation("Test Service Bus worker project fully started at: localhost:{Port}", healthPort);
             }
             else
             {
-                _logger.WriteLine("Test Service Bus project could not be started");
+                _logger.LogError("Test Service Bus project could not be started");
                 throw new CommunicationException(
                     "The test project created from the Service Bus project template doesn't seem to be running, "
                     + "please check any build or runtime errors that could occur when the test project was created");
@@ -178,7 +179,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             try
             {
-                _logger.WriteLine("> dotnet {0}", command);
+                _logger.LogInformation("> dotnet {Command}", command);
             }
             catch
             {
@@ -239,16 +240,16 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
         private void StopProject()
         {
-            _logger.WriteLine("Stopping Service Bus worker project...");
+            _logger.LogTrace("Stopping Service Bus worker project...");
             if (!_process.HasExited)
             {
-                _logger.WriteLine("Killing Service Bus worker project...");
+                _logger.LogTrace("Killing Service Bus worker project...");
                 _process.Kill(entireProcessTree: true);
-                _logger.WriteLine("Killed Service Bus worker project!");
+                _logger.LogInformation("Killed Service Bus worker project!");
             }
 
             _process.Dispose();
-            _logger.WriteLine("Service Bus worker project stopped!");
+            _logger.LogInformation("Service Bus worker project stopped!");
         }
     }
 }
