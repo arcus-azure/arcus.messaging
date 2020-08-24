@@ -18,22 +18,22 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         [Fact]
         public void CreateClient_WithoutAuthentication_Throws()
         {
-            var location = new AzureServiceBusLocation("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
+            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
             Assert.ThrowsAny<ArgumentException>(
-                () => new AzureServiceBusClient(authentication: null, location: location, logger: NullLogger.Instance));
+                () => new AzureServiceBusClient(authentication: null, @namespace: location, logger: NullLogger.Instance));
         }
 
         [Fact]
         public void CreateClient_WithoutLocation_Throws()
         {
             Assert.ThrowsAny<ArgumentException>(
-                () => new AzureServiceBusClient(Mock.Of<IAzureServiceBusManagementAuthentication>(), location: null, logger: NullLogger.Instance));
+                () => new AzureServiceBusClient(Mock.Of<IAzureServiceBusManagementAuthentication>(), @namespace: null, logger: NullLogger.Instance));
         }
 
         [Fact]
         public void CreateClient_WithoutLogger_Throws()
         {
-            var location = new AzureServiceBusLocation("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
+            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
             Assert.ThrowsAny<ArgumentException>(
                 () => new AzureServiceBusClient(Mock.Of<IAzureServiceBusManagementAuthentication>(), location, logger: null));
         }
@@ -67,7 +67,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
 
             var client = new AzureServiceBusClient(
                 stubAuthentication.Object, 
-                new AzureServiceBusLocation(resourceGroup, @namespace, entity, entityName, authorizationRuleName),
+                new AzureServiceBusNamespace(resourceGroup, @namespace, entity, entityName, authorizationRuleName),
                 NullLogger.Instance);
 
             // Act

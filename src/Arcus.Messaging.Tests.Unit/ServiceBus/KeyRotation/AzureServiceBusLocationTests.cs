@@ -27,7 +27,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         public void CreatesLocation_WithBlankResourceGroup_Throws(string resourceGroup)
         {
             Assert.Throws<ArgumentException>(
-                () => new AzureServiceBusLocation(resourceGroup, "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name"));
+                () => new AzureServiceBusNamespace(resourceGroup, "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name"));
         }
 
         [Theory]
@@ -35,7 +35,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         public void CreatesLocation_WithBlankNamespace_Throws(string @namespace)
         {
             Assert.Throws<ArgumentException>(
-                () => new AzureServiceBusLocation("resource group", @namespace, ServiceBusEntity.Topic, "entity name", "authorization rule name"));
+                () => new AzureServiceBusNamespace("resource group", @namespace, ServiceBusEntity.Topic, "entity name", "authorization rule name"));
         }
 
         [Theory]
@@ -43,7 +43,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         public void CreatesLocation_WithBlankOutOfBoundsEntity_Throws(ServiceBusEntity entity)
         {
             Assert.Throws<ArgumentException>(
-                () => new AzureServiceBusLocation("resource group", "namespace", entity, "entity name", "authorization rule name"));
+                () => new AzureServiceBusNamespace("resource group", "namespace", entity, "entity name", "authorization rule name"));
         }
 
         [Theory]
@@ -51,7 +51,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         public void CreatesLocation_WithBlankEntityName_Throws(string entityName)
         {
             Assert.Throws<ArgumentException>(
-                () => new AzureServiceBusLocation("resource group", "namespace", ServiceBusEntity.Queue, entityName, "authorization rule name"));
+                () => new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Queue, entityName, "authorization rule name"));
         }
 
         [Theory]
@@ -59,7 +59,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         public void CreatesLocation_WithBlankAuthorizationRuleName_Throw(string authorizationRuleName)
         {
             Assert.Throws<ArgumentException>(
-                () => new AzureServiceBusLocation("resource group", "namespace", ServiceBusEntity.Queue, "entity name", authorizationRuleName));
+                () => new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Queue, "entity name", authorizationRuleName));
         }
     }
 }

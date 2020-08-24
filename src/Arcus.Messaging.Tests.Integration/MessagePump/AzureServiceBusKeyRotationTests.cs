@@ -80,7 +80,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 keyRotationConfig.ServiceBusNamespace.TenantId,
                 secretProvider);
 
-            var serviceBusLocation = new AzureServiceBusLocation(
+            var serviceBusLocation = new AzureServiceBusNamespace(
                 keyRotationConfig.ServiceBusNamespace.ResourceGroup,
                 keyRotationConfig.ServiceBusNamespace.Namespace,
                 entity,

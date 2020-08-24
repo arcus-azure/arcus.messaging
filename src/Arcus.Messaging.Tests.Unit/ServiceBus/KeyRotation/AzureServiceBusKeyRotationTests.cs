@@ -37,7 +37,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         [Fact]
         public void CreateRotation_WithoutAuthentication_Throws()
         {
-            var location = new AzureServiceBusLocation("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
+            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
             var client = new AzureServiceBusClient(Mock.Of<IAzureServiceBusManagementAuthentication>(), location, NullLogger.Instance);
             Assert.ThrowsAny<ArgumentException>(
                 () => new AzureServiceBusKeyRotation(
@@ -50,7 +50,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         [Fact]
         public void CreateRotation_WithoutConfiguration_Throws()
         {
-            var location = new AzureServiceBusLocation("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
+            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
             var client = new AzureServiceBusClient(Mock.Of<IAzureServiceBusManagementAuthentication>(), location, NullLogger.Instance);
             Assert.ThrowsAny<ArgumentException>(
                 () => new AzureServiceBusKeyRotation(
@@ -63,7 +63,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         [Fact]
         public void CreateRotation_WithoutLogger_Throws()
         {
-            var location = new AzureServiceBusLocation("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
+            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
             var client = new AzureServiceBusClient(Mock.Of<IAzureServiceBusManagementAuthentication>(), location, NullLogger.Instance);
             Assert.ThrowsAny<ArgumentException>(
                 () => new AzureServiceBusKeyRotation(
@@ -81,7 +81,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
             // Arrange
             string vaultUrl = BogusGenerator.Internet.UrlWithPath(protocol: "https");
             string secretName = BogusGenerator.Random.Word();
-            AzureServiceBusLocation location = GenerateAzureServiceBusLocation(entity);
+            AzureServiceBusNamespace @namespace = GenerateAzureServiceBusLocation(entity);
             var response = new AzureOperationResponse<AccessKeys>
             {
                 Body = new AccessKeys(
@@ -89,13 +89,13 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
                     secondaryConnectionString: BogusGenerator.Random.Words())
             };
 
-            Mock<ITopicsOperations> stubTopics = CreateStubTopicsOperations(location, response);
-            Mock<IQueuesOperations> stubQueues = CreateStubQueueOperations(location, response);
+            Mock<ITopicsOperations> stubTopics = CreateStubTopicsOperations(@namespace, response);
+            Mock<IQueuesOperations> stubQueues = CreateStubQueueOperations(@namespace, response);
             Mock<IAzureServiceBusManagementAuthentication> stubServiceBusAuthentication = CreateStubAuthentication(stubTopics.Object, stubQueues.Object);
             Mock<IKeyVaultAuthentication> stubKeyVaultAuthentication = CreateStubKeyVaultAuthentication(vaultUrl, secretName, response.Body);
             
             var rotation = new AzureServiceBusKeyRotation(
-                new AzureServiceBusClient(stubServiceBusAuthentication.Object, location, NullLogger.Instance), 
+                new AzureServiceBusClient(stubServiceBusAuthentication.Object, @namespace, NullLogger.Instance), 
                 stubKeyVaultAuthentication.Object, new KeyVaultConfiguration(vaultUrl), NullLogger.Instance);
 
             // Act
@@ -114,9 +114,9 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
                invocation => AssertInvocationKeyRotation(invocation, KeyType.SecondaryKey));
         }
 
-        private static AzureServiceBusLocation GenerateAzureServiceBusLocation(ServiceBusEntity entity)
+        private static AzureServiceBusNamespace GenerateAzureServiceBusLocation(ServiceBusEntity entity)
         {
-            var location = new AzureServiceBusLocation(
+            var location = new AzureServiceBusNamespace(
                 resourceGroup: BogusGenerator.Random.Word(),
                 @namespace: BogusGenerator.Random.Word(),
                 entity: entity,
@@ -140,24 +140,24 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         }
 
         private static Mock<IQueuesOperations> CreateStubQueueOperations(
-            AzureServiceBusLocation location, 
+            AzureServiceBusNamespace @namespace, 
             AzureOperationResponse<AccessKeys> response)
         {
             var stubQueue = new Mock<IQueuesOperations>();
             stubQueue.Setup(q => q.RegenerateKeysWithHttpMessagesAsync(
-                location.ResourceGroup, location.Namespace, location.EntityName, location.AuthorizationRuleName, It.IsAny<RegenerateAccessKeyParameters>(), null, default))
+                @namespace.ResourceGroup, @namespace.Namespace, @namespace.EntityName, @namespace.AuthorizationRuleName, It.IsAny<RegenerateAccessKeyParameters>(), null, default))
                      .ReturnsAsync(response);
 
             return stubQueue;
         }
 
         private static Mock<ITopicsOperations> CreateStubTopicsOperations(
-            AzureServiceBusLocation location,
+            AzureServiceBusNamespace @namespace,
             AzureOperationResponse<AccessKeys> response)
         {
             var stubTopics = new Mock<ITopicsOperations>();
             stubTopics.Setup(t => t.RegenerateKeysWithHttpMessagesAsync(
-                location.ResourceGroup, location.Namespace, location.EntityName, location.AuthorizationRuleName, It.IsAny<RegenerateAccessKeyParameters>(), null, default))
+                @namespace.ResourceGroup, @namespace.Namespace, @namespace.EntityName, @namespace.AuthorizationRuleName, It.IsAny<RegenerateAccessKeyParameters>(), null, default))
                       .ReturnsAsync(response);
 
             return stubTopics;

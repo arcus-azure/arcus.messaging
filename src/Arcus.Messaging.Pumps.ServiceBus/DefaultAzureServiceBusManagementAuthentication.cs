@@ -7,7 +7,7 @@ using Microsoft.Azure.Management.ServiceBus;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.Rest;
 
-namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
+namespace Arcus.Messaging.Pumps.ServiceBus
 {
     /// <summary>
     /// Represents the authentication with the Azure Service Bus.

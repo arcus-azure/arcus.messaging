@@ -82,8 +82,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
         private async Task SetConnectionStringSecretAsync(IKeyVaultClient keyVaultClient, string secretName, string connectionString, KeyType keyType)
         {
             string vaultUri = _configuration.VaultUri.OriginalString;
-            ServiceBusEntity entity = _serviceBusClient.Location.Entity;
-            string entityName = _serviceBusClient.Location.EntityName;
+            ServiceBusEntity entity = _serviceBusClient.Namespace.Entity;
+            string entityName = _serviceBusClient.Namespace.EntityName;
 
             try
             {

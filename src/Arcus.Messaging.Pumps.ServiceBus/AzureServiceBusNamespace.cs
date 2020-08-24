@@ -1,15 +1,15 @@
 ﻿using System;
 using GuardNet;
 
-namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
+namespace Arcus.Messaging.Pumps.ServiceBus
 {
     /// <summary>
-    /// Represents an environment of a Azure Service Bus resource; where the Azure Service Bus is located.
+    /// Represents the namespace of a Azure Service Bus resource; where the Azure Service Bus is located.
     /// </summary>
-    public class AzureServiceBusLocation
+    public class AzureServiceBusNamespace
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusLocation"/> class.
+        /// Initializes a new instance of the <see cref="AzureServiceBusNamespace"/> class.
         /// </summary>
         /// <param name="resourceGroup">The resource group where the Azure Service Bus resource is located.</param>
         /// <param name="namespace">The namespace where the Azure Service Bus is categorized.</param>
@@ -20,7 +20,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
         ///     Thrown when the <paramref name="resourceGroup"/>, <paramref name="namespace"/>, <paramref name="entityName"/>, or <paramref name="authorizationRuleName"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="entity"/> is not defined within the bounds of the enumeration.</exception>
-        public AzureServiceBusLocation(
+        public AzureServiceBusNamespace(
             string resourceGroup,
             string @namespace,
             ServiceBusEntity entity, 
