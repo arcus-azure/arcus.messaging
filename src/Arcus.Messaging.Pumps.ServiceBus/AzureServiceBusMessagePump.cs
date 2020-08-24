@@ -30,6 +30,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
+        private int _unauthorizedExceptionCount = 0;
 
         /// <summary>
         ///     Constructor
@@ -58,7 +59,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Gets the settings configuring the message pump.
         /// </summary>
-        protected AzureServiceBusMessagePumpSettings Settings { get; }
+        public AzureServiceBusMessagePumpSettings Settings { get; }
 
         /// <summary>
         ///     Service Bus namespace that contains the entity
@@ -280,7 +281,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 }
                 finally
                 {
-                    await ReAuthenticateMessageReceiverAsync(exceptionReceivedEventArgs.Exception);
+                    if (exceptionReceivedEventArgs.Exception is UnauthorizedException
+                        && Interlocked.Increment(ref _unauthorizedExceptionCount) >= Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart)
+                    {
+                        Logger.LogWarning("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
+                        await RestartAsync();
+                    }
                 }
             });
 
@@ -300,17 +306,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             return messageHandlerOptions;
         }
 
-        private async Task ReAuthenticateMessageReceiverAsync(Exception exception)
+        /// <summary>
+        /// Restart core functionality of the message pump.
+        /// </summary>
+        public async Task RestartAsync()
         {
-            if (exception is UnauthorizedException)
-            {
-                Logger.LogWarning("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
-                
-                Logger.LogTrace("Restarting Azure Service Bus...");
-                await CloseMessageReceiverAsync();
-                await OpenNewMessageReceiverAsync();
-                Logger.LogInformation("Azure Service Bus restarted!");
-            }
+            Interlocked.Exchange(ref _unauthorizedExceptionCount, 0);
+
+            Logger.LogTrace("Restarting Azure Service Bus...");
+            await CloseMessageReceiverAsync();
+            await OpenNewMessageReceiverAsync();
+            Logger.LogInformation("Azure Service Bus restarted!");
         }
 
         private async Task<MessageReceiver> CreateMessageReceiverAsync(AzureServiceBusMessagePumpSettings messagePumpSettings)
@@ -483,7 +489,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     {
                         Logger.LogInformation("Received message '{MessageId}'", message.MessageId);
 
-                        var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
+                        var messageContext = new AzureServiceBusMessageContext(message.MessageId, JobId, message.SystemProperties, message.UserProperties);
 
                         Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
                         string messageBody = encoding.GetString(message.Body);
