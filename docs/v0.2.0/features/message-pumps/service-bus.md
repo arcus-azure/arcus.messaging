@@ -130,10 +130,6 @@ public void ConfigureServices(IServiceCollection services)
             // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
             // when the message pump starts/stops (default: CreateOnStart & DeleteOnStop).
             options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
-
-            // The timeout when the message pump tries to restart and re-authenticate during key rotation of the connection string.
-            // (default: 5 seconds)
-            options.KeyRotationTimeout = TimeSpan.FromSeconds(10);
         });
 
     services.AddServiceBusQueueMessagePump(
@@ -151,10 +147,6 @@ public void ConfigureServices(IServiceCollection services)
             // The unique identifier for this background job to distinguish 
             // this job instance in a multi-instance deployment (default: guid).
             options.JobId = Guid.NewGuid().ToString();
-
-            // The timeout when the message pump tries to restart and re-authenticate during key rotation of the connection string.
-            // (default: 5 seconds)
-            options.KeyRotationTimeout = TimeSpan.FromSeconds(10);
         });
 
     // Multiple message handlers can be added to the servies, based on the message type (ex. 'Order', 'Customer'...), 
