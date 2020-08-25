@@ -157,8 +157,8 @@ stages:
             parameters:
               repositoryName: 'arcus-azure/arcus.messaging'
               releaseNotes: |
-                Install new version via [NuGet](https://www.nuget.org/packages/Arcus.Messaging.Health/$(Build.BuildNumber))
+                Install new version via [NuGet](https://www.nuget.org/packages/Arcus.Messaging.Pumps.ServiceBus/$(Build.BuildNumber))
                 ```shell
-                PM > Install-Package Arcus.Messaging.Health --Version $(Build.BuildNumber)
+                PM > Install-Package Arcus.Messaging.Pumps.ServiceBus --Version $(Build.BuildNumber)
                 ```
           - template: nuget/publish-official-package.yml@templates
