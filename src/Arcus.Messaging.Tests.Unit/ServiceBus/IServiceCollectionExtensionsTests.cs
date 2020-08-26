@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions.Extensions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Security.Core;
 using Microsoft.Extensions.Configuration;
@@ -143,7 +144,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
-            var messageHandler = provider.GetRequiredService<IFallbackMessageHandler>();
+            var messageHandler = provider.GetRequiredService<IAzureServiceBusFallbackMessageHandler>();
 
             Assert.IsType<PassThruServiceBusFallbackMessageHandler>(messageHandler);
         }
@@ -160,7 +161,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
-            var actual = provider.GetRequiredService<IFallbackMessageHandler>();
+            var actual = provider.GetRequiredService<IAzureServiceBusFallbackMessageHandler>();
 
             Assert.Same(expected, actual);
         }
