@@ -11,8 +11,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         private MessageHandlerResult(bool isProcessed, Exception exception)
         {
             Guard.For<ArgumentException>(
-                () => !isProcessed && exception is null, 
-                "Requires an exception when the message handler result is a failure");
+                () => isProcessed && exception != null, 
+                "Requires an no exception when the message handler result is a success");
 
             IsProcessed = isProcessed;
             Exception = exception;
