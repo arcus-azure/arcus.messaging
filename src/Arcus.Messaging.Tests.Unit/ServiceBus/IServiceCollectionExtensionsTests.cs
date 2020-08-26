@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Arcus.Messaging.Pumps.Abstractions.Extensions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Security.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -127,6 +130,64 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             {
                 spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
             }
+        }
+
+        [Fact]
+        public void WithServiceBusFallbackMessageHandler_WithValidType_RegistersInterface()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act
+            services.WithServiceBusFallbackMessageHandler<PassThruServiceBusFallbackMessageHandler>();
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var messageHandler = provider.GetRequiredService<IFallbackMessageHandler>();
+
+            Assert.IsType<PassThruServiceBusFallbackMessageHandler>(messageHandler);
+        }
+
+        [Fact]
+        public void WithServiceBusFallbackMessageHandler_WithValidImplementationFunction_RegistersInterface()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var expected = new PassThruServiceBusFallbackMessageHandler();
+
+            // Act
+            services.WithServiceBusFallbackMessageHandler(serviceProvider => expected);
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var actual = provider.GetRequiredService<IFallbackMessageHandler>();
+
+            Assert.Same(expected, actual);
+        }
+
+        [Fact]
+        public void WithServiceBusFallbackMessageHandlerType_WithoutServices_Throws()
+        {
+            Assert.ThrowsAny<ArgumentException>(
+                () => ((IServiceCollection)null).WithServiceBusFallbackMessageHandler<PassThruServiceBusFallbackMessageHandler>());
+        }
+
+        [Fact]
+        public void WithServiceBusFallbackMessageHandlerImplementationFunction_WithoutServices_Throws()
+        {
+            Assert.ThrowsAny<ArgumentException>(
+                () => ((IServiceCollection)null).WithServiceBusFallbackMessageHandler(serviceProvider => new PassThruServiceBusFallbackMessageHandler()));
+        }
+
+        [Fact]
+        public void WithServiceBusFallbackMessageHandlerImplementationFunction_WithoutImplementationFunction_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusFallbackMessageHandler(createImplementation: (Func<IServiceProvider, PassThruServiceBusFallbackMessageHandler>)null));
         }
     }
 }

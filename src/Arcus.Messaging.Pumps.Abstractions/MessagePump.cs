@@ -104,6 +104,47 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
+        protected async Task<MessageHandlerResult> ProcessMessageAndCaptureAsync<TMessageContext>(
+            string message,
+            TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellationToken)
+            where TMessageContext : MessageContext
+        {
+            Guard.NotNull(message, nameof(message), "Requires message content to deserialize and process the message");
+            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
+            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
+
+            try
+            {
+                bool isProcessed = await TryProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+                if (isProcessed)
+                {
+                    return MessageHandlerResult.Success();
+                }
+
+                return MessageHandlerResult.Pending();
+            }
+            catch (Exception exception)
+            {
+                return MessageHandlerResult.Failure(exception);
+            }
+        }
+
+        /// <summary>
+        ///     Handle a new message that was received
+        /// </summary>
+        /// <typeparam name="TMessageContext">Type of message context for the provider</typeparam>
+        /// <param name="message">Message that was received</param>
+        /// <param name="messageContext">Context providing more information concerning the processing</param>
+        /// <param name="correlationInfo">
+        ///     Information concerning correlation of telemetry and processes by using a variety of unique
+        ///     identifiers
+        /// </param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
         protected async Task ProcessMessageAsync<TMessageContext>(
             string message,
@@ -116,6 +157,22 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
+            bool isProcessed = await TryProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+            if (isProcessed)
+            {
+                return;
+            }
+
+            await FallbackProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+        }
+
+        private async Task<bool> TryProcessMessageAsync<TMessageContext>(
+            string message,
+            TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellationToken)
+            where TMessageContext : MessageContext
+        {
             IEnumerable<MessageHandler> handlers = _messageHandlers.Value;
             if (!handlers.Any() && _fallbackMessageHandler is null)
             {
@@ -130,32 +187,11 @@ namespace Arcus.Messaging.Pumps.Abstractions
                 bool isProcessed = await ProcessMessageAsync(handler, message, messageContext, correlationInfo, cancellationToken);
                 if (isProcessed)
                 {
-                    return;
+                    return true;
                 }
             }
 
-            if (_fallbackMessageHandler is null)
-            {
-                throw new InvalidOperationException(
-                    $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
-                    + $"because none of the {handlers.Count()} registered 'IMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context. "
-                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
-            }
-
-            Logger.LogInformation(
-                "Fallback on registered {FallbackMessageHandlerType} because none of the message handlers were able to process the message", 
-                nameof(IFallbackMessageHandler));
-
-            Task processMessageAsync = _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-            if (processMessageAsync is null)
-            {
-                throw new InvalidOperationException(
-                    $"The '{nameof(IFallbackMessageHandler)}' was not correctly implemented to process the message");
-            }
-
-            await processMessageAsync;
-
-            Logger.LogInformation("Fallback message handler has processed the message");
+            return false;
         }
 
         private async Task<bool> ProcessMessageAsync<TMessageContext>(
@@ -198,6 +234,37 @@ namespace Arcus.Messaging.Pumps.Abstractions
             }
 
             return false;
+        }
+
+        private async Task FallbackProcessMessageAsync<TMessageContext>(
+            string message, 
+            TMessageContext messageContext, 
+            MessageCorrelationInfo correlationInfo, 
+            CancellationToken cancellationToken)
+            where TMessageContext : MessageContext
+        {
+            if (_fallbackMessageHandler is null)
+            {
+                throw new InvalidOperationException(
+                    $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
+                    + "because none of the registered 'IMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context. "
+                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
+            }
+
+            Logger.LogInformation(
+                "Fallback on registered {FallbackMessageHandlerType} because none of the message handlers were able to process the message",
+                nameof(IFallbackMessageHandler));
+
+            Task processMessageAsync = _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+            if (processMessageAsync is null)
+            {
+                throw new InvalidOperationException(
+                    $"The '{nameof(IFallbackMessageHandler)}' was not correctly implemented to process the message");
+            }
+
+            await processMessageAsync;
+
+            Logger.LogInformation("Fallback message handler has processed the message");
         }
 
         /// <summary>
