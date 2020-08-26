@@ -35,12 +35,12 @@ namespace Arcus.Messaging.Pumps.Abstractions.Extensions
         public static IServiceCollection WithFallbackMessageHandler<TMessageHandler>(
             this IServiceCollection services,
             Func<IServiceProvider, TMessageHandler> createImplementation)
-            where TMessageHandler : IFallbackMessageHandler
+            where TMessageHandler : class, IFallbackMessageHandler
         {
             Guard.NotNull(services, nameof(services), "Requires a services collection to add the fallback message handler to");
             Guard.NotNull(createImplementation, nameof(createImplementation), "Requires a function to create the fallback message handler");
 
-            return services.AddSingleton(createImplementation);
+            return services.AddSingleton<IFallbackMessageHandler, TMessageHandler>(createImplementation);
         }
     }
 }
