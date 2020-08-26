@@ -22,6 +22,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
     public abstract class MessagePump : BackgroundService
     {
         private readonly Lazy<IEnumerable<MessageHandler>> _messageHandlers;
+        private readonly IFallbackMessageHandler _fallbackMessageHandler;
 
         /// <summary>
         ///     Default encoding used
@@ -76,6 +77,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             ServiceProvider = serviceProvider;
 
             _messageHandlers = new Lazy<IEnumerable<MessageHandler>>(() => MessageHandler.SubtractFrom(ServiceProvider));
+            _fallbackMessageHandler = serviceProvider.GetService<IFallbackMessageHandler>();
         }
 
         /// <summary>
@@ -99,6 +101,10 @@ namespace Arcus.Messaging.Pumps.Abstractions
         ///     identifiers
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
         protected async Task ProcessMessageAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -106,8 +112,12 @@ namespace Arcus.Messaging.Pumps.Abstractions
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
+            Guard.NotNull(message, nameof(message), "Requires message content to deserialize and process the message");
+            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
+            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
+
             IEnumerable<MessageHandler> handlers = _messageHandlers.Value;
-            if (!handlers.Any())
+            if (!handlers.Any() && _fallbackMessageHandler is null)
             {
                 throw new InvalidOperationException(
                     $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
@@ -131,10 +141,22 @@ namespace Arcus.Messaging.Pumps.Abstractions
                 }
             }
 
-            throw new InvalidOperationException(
-                $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
-                + $"because none of the {handlers.Count()} registered 'IMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context. "
-                + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
+            if (_fallbackMessageHandler is null)
+            {
+                throw new InvalidOperationException(
+                    $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
+                    + $"because none of the {handlers.Count()} registered 'IMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context. "
+                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
+            }
+
+            Task processMessageAsync = _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+            if (processMessageAsync is null)
+            {
+                throw new InvalidOperationException(
+                    $"The '{nameof(IFallbackMessageHandler)}' was not correctly implemented to process the message");
+            }
+
+            await processMessageAsync;
         }
 
         /// <summary>

@@ -108,28 +108,43 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         ///     identifiers.
         /// </param>
         /// <param name="cancellationToken">The cancellation token.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="TypeNotFoundException">Thrown when no processing method was found on the message handler.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the message handler cannot process the message correctly.</exception>
+        /// <exception cref="AmbiguousMatchException">Thrown when more than a single processing method was found on the message handler.</exception>
         public async Task ProcessMessageAsync<TMessageContext>(
             object message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken) where TMessageContext : class
         {
-            Guard.NotNull(message, nameof(message));
-            Guard.NotNull(messageContext, nameof(messageContext));
-            Guard.NotNull(correlationInfo, nameof(correlationInfo));
+            Guard.NotNull(message, nameof(message), "Requires message content to deserialize and process the message");
+            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
+            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
             const string methodName = "ProcessMessageAsync";
-            var processMessageAsync = 
-                (Task) _service.InvokeMethod(
-                    methodName, BindingFlags.Instance | BindingFlags.Public, message, messageContext, correlationInfo, cancellationToken);
-
-            if (processMessageAsync is null)
+            try
             {
-                throw new InvalidOperationException(
-                    $"The '{typeof(IMessageHandler<,>).Name}' implementation '{_service.GetType().Name}' returned 'null' while calling the '{methodName}' method");
-            }
+                var processMessageAsync =
+                        (Task)_service.InvokeMethod(
+                            methodName, BindingFlags.Instance | BindingFlags.Public, message, messageContext, correlationInfo, cancellationToken);
 
-            await processMessageAsync;
+                if (processMessageAsync is null)
+                {
+                    throw new InvalidOperationException(
+                        $"The '{typeof(IMessageHandler<,>).Name}' implementation '{_service.GetType().Name}' returned 'null' while calling the '{methodName}' method");
+                }
+
+                await processMessageAsync;
+            }
+            catch (AmbiguousMatchException exception)
+            {
+                throw new AmbiguousMatchException(
+                    $"Ambiguous match found of '{methodName}' methods in the '{_service.GetType().Name}'. "
+                    + $"Make sure that only 1 matching '{methodName}' method was found on the message handler implementation", exception);
+            }
         }
     }
 }
