@@ -76,7 +76,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Configuration = configuration;
             ServiceProvider = serviceProvider;
 
-            _messageHandlers = new Lazy<IEnumerable<MessageHandler>>(() => MessageHandler.SubtractFrom(ServiceProvider));
+            _messageHandlers = new Lazy<IEnumerable<MessageHandler>>(() => MessageHandler.SubtractFrom(ServiceProvider, logger));
             _fallbackMessageHandler = serviceProvider.GetService<IFallbackMessageHandler>();
         }
 
@@ -127,16 +127,9 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             foreach (MessageHandler handler in handlers)
             {
-                if (handler.CanProcessMessage(messageContext)
-                    && TryDeserializeToMessageFormat(message, handler.MessageType, out var result))
+                bool isProcessed = await ProcessMessageAsync(handler, message, messageContext, correlationInfo, cancellationToken);
+                if (isProcessed)
                 {
-                    if (result is null)
-                    {
-                        throw new InvalidCastException(
-                            "Successful parsing from abstracted message to concrete message handler type did unexpectedly result in a 'null' parsing result");
-                    }
-                    
-                    await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
                     return;
                 }
             }
@@ -149,6 +142,10 @@ namespace Arcus.Messaging.Pumps.Abstractions
                     + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
             }
 
+            Logger.LogInformation(
+                "Fallback on registered {FallbackMessageHandlerType} because none of the message handlers were able to process the message", 
+                nameof(IFallbackMessageHandler));
+
             Task processMessageAsync = _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
             if (processMessageAsync is null)
             {
@@ -157,6 +154,50 @@ namespace Arcus.Messaging.Pumps.Abstractions
             }
 
             await processMessageAsync;
+
+            Logger.LogInformation("Fallback message handler has processed the message");
+        }
+
+        private async Task<bool> ProcessMessageAsync<TMessageContext>(
+            MessageHandler handler, 
+            string message, 
+            TMessageContext messageContext, 
+            MessageCorrelationInfo correlationInfo, 
+            CancellationToken cancellationToken)
+            where TMessageContext : MessageContext
+        {
+            Logger.LogTrace("Determine if message handler '{Type}' can process the message...");
+
+            bool canProcessMessage = handler.CanProcessMessage(messageContext);
+            bool tryDeserializeToMessageFormat = TryDeserializeToMessageFormat(message, handler.MessageType, out var result);
+
+            if (canProcessMessage && tryDeserializeToMessageFormat)
+            {
+                if (result is null)
+                {
+                    throw new InvalidCastException(
+                        "Successful parsing from abstracted message to concrete message handler type did unexpectedly result in a 'null' parsing result");
+                }
+
+                await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
+                return true;
+            }
+
+            if (!canProcessMessage)
+            {
+                Logger.LogInformation(
+                    "Message handler '{MessageHandlerType}' is not able to process the message because the message context '{MessageContextType}' didn't match the correct message handler's message context",
+                    handler.ServiceType.Name, handler.MessageContextType.Name);
+            }
+
+            if (!tryDeserializeToMessageFormat)
+            {
+                Logger.LogInformation(
+                    "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message that the message handler can handle",
+                    handler.ServiceType.Name);
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -172,6 +213,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
         {
             Guard.NotNullOrWhitespace(message, nameof(message), "Can't parse a blank raw message against a message handler's contract");
 
+            Logger.LogTrace("Try to JSON deserialize incoming message to message type '{MessageType}'...", messageType.Name);
+
             var success = true;
             var jsonSerializer = new JsonSerializer
             {
@@ -186,9 +229,13 @@ namespace Arcus.Messaging.Pumps.Abstractions
             var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
             if (success)
             {
+                Logger.LogInformation("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
+
                 result = value;
                 return true;
             }
+
+            Logger.LogInformation("Incoming message failed to be JSON deserialized to message type '{MessageType}'", messageType.Name);
 
             result = null;
             return false;

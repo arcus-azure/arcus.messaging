@@ -7,13 +7,17 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
+using Arcus.Testing.Logging;
 using Bogus;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Unit.MessageHandling
 {
@@ -21,6 +25,15 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
     public class MessageHandlerTests
     {
         private readonly Faker _bogusGenerator = new Faker();
+        private readonly ILogger _logger;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MessageHandlerTests"/> class.
+        /// </summary>
+        public MessageHandlerTests(ITestOutputHelper outputWriter)
+        {
+            _logger = new XunitTestLogger(outputWriter);
+        }
 
         [Fact]
         public async Task CustomMessageHandlerConstructor_WithDefaultContext_SubtractsRegistration()
@@ -31,7 +44,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             IServiceProvider serviceProvider = services.BuildServiceProvider();
 
             // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider);
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
 
             // Assert
             MessageHandler messageHandler = Assert.Single(messageHandlers);
@@ -53,7 +66,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             IServiceProvider serviceProvider = services.BuildServiceProvider();
 
             // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider);
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
 
             // Assert
             MessageHandler messageHandler = Assert.Single(messageHandlers);
@@ -75,7 +88,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             IServiceProvider serviceProvider = services.BuildServiceProvider();
 
             // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider);
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
 
             // Assert
             MessageHandler messageHandler = Assert.Single(messageHandlers);
@@ -98,7 +111,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             ServiceProvider serviceProvider = services.BuildServiceProvider();
 
             // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider);
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
 
             // Assert
             MessageHandler messageHandler = Assert.Single(messageHandlers);
@@ -119,7 +132,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             ServiceProvider serviceProvider = services.BuildServiceProvider();
 
             // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider);
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
 
             // Assert
             MessageHandler messageHandler = Assert.Single(messageHandlers);
@@ -143,7 +156,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             ServiceProvider serviceProvider = services.BuildServiceProvider();
 
             // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider);
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
 
             // Assert
             MessageHandler messageHandler = Assert.Single(messageHandlers);
@@ -164,7 +177,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             IServiceProvider serviceProvider = services.BuildServiceProvider();
 
             // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider);
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
 
             // Assert
             MessageHandler messageHandler = Assert.Single(messageHandlers);
@@ -191,7 +204,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             ServiceProvider serviceProvider = services.BuildServiceProvider();
 
             // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider);
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
 
             // Assert
             MessageHandler messageHandler = Assert.Single(messageHandlers);
@@ -220,7 +233,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             IServiceProvider serviceProvider = services.BuildServiceProvider();
             
             // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider);
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
 
             // Assert
             Assert.Equal(descriptors.Count, messageHandlers.Count());
