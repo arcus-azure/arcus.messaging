@@ -126,10 +126,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var config = TestConfig.Create();
             KeyRotationConfig keyRotationConfig = config.GetKeyRotationConfig();
-            _outputWriter.WriteLine("Using Service Principal [ClientID: '{0}']", keyRotationConfig.ServicePrincipal.ClientId);
+            _logger.LogInformation("Using Service Principal [ClientID: '{0}']", keyRotationConfig.ServicePrincipal.ClientId);
 
-            var client = new ServiceBusClient(keyRotationConfig, _outputWriter);
-            string freshConnectionString = await client.RotateConnectionStringKeysAsync(KeyType.PrimaryKey);
+            var client = new ServiceBusConfiguration(keyRotationConfig, _logger);
+            string freshConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.PrimaryKey);
 
             ServicePrincipalAuthentication authentication = keyRotationConfig.ServicePrincipal.CreateAuthentication();
             IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
@@ -146,15 +146,15 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING", keyRotationConfig.KeyVault.SecretNewVersionCreated.ConnectionString)
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueSecretNewVersionReAuthenticateProgram>(config, _outputWriter, commandArguments))
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueSecretNewVersionReAuthenticateProgram>(config, _logger, commandArguments))
             {
-                string newSecondaryConnectionString = await client.RotateConnectionStringKeysAsync(KeyType.SecondaryKey);
+                string newSecondaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.SecondaryKey);
                 await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, newSecondaryConnectionString);
 
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _outputWriter))
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
                     // Act
-                    string newPrimaryConnectionString = await client.RotateConnectionStringKeysAsync(KeyType.PrimaryKey);
+                    string newPrimaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.PrimaryKey);
 
                     // Assert
                     await service.SimulateMessageProcessingAsync(newPrimaryConnectionString);

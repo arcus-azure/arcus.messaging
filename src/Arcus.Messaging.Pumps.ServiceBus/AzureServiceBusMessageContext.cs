@@ -26,7 +26,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <remarks>This increases when a message is abandoned and re-delivered for processing</remarks>
         public int DeliveryCount { get; }
 
-
         /// <summary>
         ///     Gets the unique ID on which message pump tis message was processed.
         /// </summary>

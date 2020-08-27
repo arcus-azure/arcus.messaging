@@ -1,4 +1,5 @@
-﻿using GuardNet;
+﻿using System;
+using GuardNet;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
@@ -13,6 +14,9 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <param name="keyVault">The config to represent a Azure Key Vault secret.</param>
         /// <param name="servicePrincipal">The config to authenticate to Azure resources.</param>
         /// <param name="serviceBusNamespace">The config to represent a Azure Service Bus namespace.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="keyVault"/>, <paramref name="servicePrincipal"/>, or <paramref name="serviceBusNamespace"/> is <c>null</c>.
+        /// </exception>
         public KeyRotationConfig(KeyVault keyVault, ServicePrincipal servicePrincipal, ServiceBusNamespace serviceBusNamespace)
         {
             Guard.NotNull(keyVault, nameof(keyVault));
