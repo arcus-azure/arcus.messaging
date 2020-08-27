@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.ServiceBus;
 using Arcus.Messaging.Tests.Workers.ServiceBus;
 using Arcus.Security.Providers.AzureKeyVault.Authentication;
+using Arcus.Testing.Logging;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -14,14 +17,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     [Trait("Category", "Integration")]
     public class ServiceBusMessagePumpTests
     {
-        private readonly ITestOutputHelper _outputWriter;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessagePumpTests"/> class.
         /// </summary>
         public ServiceBusMessagePumpTests(ITestOutputHelper outputWriter)
         {
-            _outputWriter = outputWriter;
+            _logger = new XunitTestLogger(outputWriter);
         }
 
         [Theory]
@@ -41,9 +44,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync(programType, config, _outputWriter, commandArguments))
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
             {
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _outputWriter))
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
                     // Act / Assert
                     await service.SimulateMessageProcessingAsync(connectionString);
@@ -66,9 +69,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_TOPIC", config.GetServiceBusConnectionString(ServiceBusEntity.Topic)),
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueAndTopicProgram>(config, _outputWriter, commandArguments))
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueAndTopicProgram>(config, _logger, commandArguments))
             {
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _outputWriter))
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
                     // Act / Assert
                     await service.SimulateMessageProcessingAsync(connectionString);
@@ -82,10 +85,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var config = TestConfig.Create();
             KeyRotationConfig keyRotationConfig = config.GetKeyRotationConfig();
-            _outputWriter.WriteLine("Using Service Principal [ClientID: '{0}']", keyRotationConfig.ServicePrincipal.ClientId);
+            _logger.LogInformation("Using Service Principal [ClientID: '{ClientId}']", keyRotationConfig.ServicePrincipal.ClientId);
 
-            var client = new ServiceBusClient(keyRotationConfig, _outputWriter);
-            string freshConnectionString = await client.RotateConnectionStringKeysAsync(KeyType.PrimaryKey);
+            var client = new ServiceBusConfiguration(keyRotationConfig, _logger);
+            string freshConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.PrimaryKey);
 
             ServicePrincipalAuthentication authentication = keyRotationConfig.ServicePrincipal.CreateAuthentication();
             IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
@@ -101,15 +104,15 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTSECRET", keyRotationConfig.ServicePrincipal.ClientSecret), 
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueKeyVaultProgram>(config, _outputWriter, commandArguments))
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueKeyVaultProgram>(config, _logger, commandArguments))
             {
-                string newSecondaryConnectionString = await client.RotateConnectionStringKeysAsync(KeyType.SecondaryKey);
+                string newSecondaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.SecondaryKey);
                 await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, newSecondaryConnectionString);
 
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _outputWriter))
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
                     // Act
-                    string newPrimaryConnectionString = await client.RotateConnectionStringKeysAsync(KeyType.PrimaryKey);
+                    string newPrimaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.PrimaryKey);
 
                     // Assert
                     await service.SimulateMessageProcessingAsync(newPrimaryConnectionString);

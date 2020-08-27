@@ -12,16 +12,16 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         /// <param name="keyVault">The config to represent a Azure Key Vault secret.</param>
         /// <param name="servicePrincipal">The config to authenticate to Azure resources.</param>
-        /// <param name="serviceBusQueue">The config to represent a Azure Service Bus Queue.</param>
-        public KeyRotationConfig(KeyVault keyVault, ServicePrincipal servicePrincipal, ServiceBusQueue serviceBusQueue)
+        /// <param name="serviceBusNamespace">The config to represent a Azure Service Bus namespace.</param>
+        public KeyRotationConfig(KeyVault keyVault, ServicePrincipal servicePrincipal, ServiceBusNamespace serviceBusNamespace)
         {
             Guard.NotNull(keyVault, nameof(keyVault));
             Guard.NotNull(servicePrincipal, nameof(servicePrincipal));
-            Guard.NotNull(serviceBusQueue, nameof(serviceBusQueue));
+            Guard.NotNull(serviceBusNamespace, nameof(serviceBusNamespace));
 
             KeyVault = keyVault;
             ServicePrincipal = servicePrincipal;
-            ServiceBusQueue = serviceBusQueue;
+            ServiceBusNamespace = serviceBusNamespace;
         }
 
         /// <summary>
@@ -37,6 +37,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <summary>
         /// Gets the config to represent a Azure Service Bus Queue.
         /// </summary>
-        public ServiceBusQueue ServiceBusQueue { get; }
+        public ServiceBusNamespace ServiceBusNamespace { get; }
     }
 }

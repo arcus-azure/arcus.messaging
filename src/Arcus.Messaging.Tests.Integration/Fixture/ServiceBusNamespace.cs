@@ -5,23 +5,25 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// <summary>
     /// Represents the configuration values related to an Azure Service Bus instance.
     /// </summary>
-    public class ServiceBusQueue
+    public class ServiceBusNamespace
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ServiceBusQueue" /> class.
+        /// Initializes a new instance of the <see cref="ServiceBusNamespace" /> class.
         /// </summary>
         /// <param name="tenantId">The ID of the tenant on which the Azure instance is run.</param>
         /// <param name="azureSubscriptionId">The ID of the Azure subscription.</param>
         /// <param name="resourceGroup">The name of the resource group where the Azure Service Bus is located.</param>
         /// <param name="namespace">The namespace in which the Azure Service Bus is categorized.</param>
         /// <param name="queueName">The name of the Queue in the Azure Service Bus instance.</param>
+        /// <param name="topicName">The name of the Topic in the Azure Service Bus instance.</param>
         /// <param name="authorizationRuleName">The name of the authorization rule that describes the available permissions.</param>
-        public ServiceBusQueue(
+        public ServiceBusNamespace(
             string tenantId,
             string azureSubscriptionId,
             string resourceGroup,
             string @namespace,
             string queueName,
+            string topicName,
             string authorizationRuleName)
         {
             Guard.NotNullOrWhitespace(azureSubscriptionId, nameof(azureSubscriptionId));
@@ -29,6 +31,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             Guard.NotNullOrWhitespace(resourceGroup, nameof(resourceGroup));
             Guard.NotNullOrWhitespace(@namespace, nameof(@namespace));
             Guard.NotNullOrWhitespace(queueName, nameof(queueName));
+            Guard.NotNullOrWhitespace(topicName, nameof(topicName));
             Guard.NotNullOrWhitespace(authorizationRuleName, nameof(authorizationRuleName));
 
             SubscriptionId = azureSubscriptionId;
@@ -36,6 +39,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             ResourceGroup = resourceGroup;
             Namespace = @namespace;
             QueueName = queueName;
+            TopicName = topicName;
             AuthorizationRuleName = authorizationRuleName;
         }
 
@@ -60,9 +64,14 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         public string Namespace { get; }
 
         /// <summary>
-        /// Gets the name of the Queue in the Azure Service Bus instance.
+        /// Gets the name of the Queue in the Azure Service Bus namespace.
         /// </summary>
         public string QueueName { get; }
+
+        /// <summary>
+        /// Gets the name of the Topic in the Azure Service Bus namespace.
+        /// </summary>
+        public string TopicName { get; }
 
         /// <summary>
         /// Gets the name of the authorization rule that describes the available permissions.

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Integration.MessagePump;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
@@ -125,17 +126,19 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         public KeyRotationConfig GetKeyRotationConfig()
         {
-            var azureEnv = new ServiceBusQueue(
+            var azureEnv = new ServiceBusNamespace(
                 tenantId: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:TenantId"),
                 azureSubscriptionId: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:SubscriptionId"),
                 resourceGroup: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:ResourceGroupName"),
                 @namespace: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:Namespace"),
                 queueName: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:QueueName"),
+                topicName: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:TopicName"),
                 authorizationRuleName: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:AuthorizationRuleName"));
 
             var servicePrincipal = new ServicePrincipal(
                 clientId: _config.GetValue<string>("Arcus:KeyRotation:ServicePrincipal:ClientId"),
-                clientSecret: _config.GetValue<string>("Arcus:KeyRotation:ServicePrincipal:ClientSecret"));
+                clientSecret: _config.GetValue<string>("Arcus:KeyRotation:ServicePrincipal:ClientSecret"),
+                clientSecretKey: _config.GetValue<string>("Arcus:KeyRotation:ServicePrincipal:ClientSecretKey"));
 
             var secret = new KeyVault(
                 vaultUri: _config.GetValue<string>("Arcus:KeyRotation:KeyVault:VaultUri"),
