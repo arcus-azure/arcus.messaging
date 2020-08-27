@@ -29,6 +29,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
         /// <param name="maximumUnauthorizedExceptionsBeforeRestart">
         ///     The fallback when the Azure Key Vault notification doesn't get delivered correctly, how many times should the message pump run into an <see cref="UnauthorizedException"/> before restarting.
         /// </param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionNamePrefix"/> or <paramref name="serviceBusTopicConnectionStringSecretKey"/> is blank.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maximumUnauthorizedExceptionsBeforeRestart"/> is less then zero.</exception>
         public static IServiceCollection WithReAuthenticationOnNewSecretVersion(
             this IServiceCollection services,
             string jobId,
@@ -36,7 +39,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
             string serviceBusTopicConnectionStringSecretKey,
             int maximumUnauthorizedExceptionsBeforeRestart = 5)
         {
-            Guard.NotNull(services, nameof(services));
+            Guard.NotNull(services, nameof(services), "Requires a collection of services to add the re-authentication background job");
             Guard.NotNullOrWhitespace(subscriptionNamePrefix, nameof(subscriptionNamePrefix), "Requires a non-blank subscription name of the Azure Service Bus Topic subscription, to receive Azure Key Vault events");
             Guard.NotNullOrWhitespace(serviceBusTopicConnectionStringSecretKey, nameof(serviceBusTopicConnectionStringSecretKey), "Requires a non-blank secret key that points to a Azure Service Bus Topic");
             Guard.NotLessThan(maximumUnauthorizedExceptionsBeforeRestart, 0, nameof(maximumUnauthorizedExceptionsBeforeRestart), "Requires the fallback of maximum unauthorized exception count to be greater than zero");
@@ -56,7 +59,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
                 var messageHandlerLogger = serviceProvider.GetRequiredService<ILogger<ReAuthenticateMessageHandler>>();
                 services.WithServiceBusMessageHandler<ReAuthenticateMessageHandler, CloudEvent>(
                     context => context.JobId == jobId, provider => new ReAuthenticateMessageHandler(messagePump, messageHandlerLogger));
-
 
                 var settings = new AzureServiceBusMessagePumpSettings(
                     entityName: null,
