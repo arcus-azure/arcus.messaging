@@ -4,6 +4,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
 using Arcus.Security.Core;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
@@ -771,6 +772,39 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(implementationFactory, nameof(implementationFactory));
 
             return services.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(messageContextFilter, implementationFactory);
+        }
+
+        /// <summary>
+        /// Adds an <see cref="IAzureServiceBusFallbackMessageHandler"/> implementation which the message pump can use to fall back to when no message handler is found to process the message.
+        /// </summary>
+        /// <typeparam name="TMessageHandler">The type of the fallback message handler.</typeparam>
+        /// <param name="services">The services to add the fallback message handler to.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        public static IServiceCollection WithServiceBusFallbackMessageHandler<TMessageHandler>(
+            this IServiceCollection services)
+            where TMessageHandler : class, IAzureServiceBusFallbackMessageHandler
+        {
+            Guard.NotNull(services, nameof(services), "Requires a services collection to add the Azure Service Bus fallback message handler to");
+
+            return services.AddSingleton<IAzureServiceBusFallbackMessageHandler, TMessageHandler>();
+        }
+
+        /// <summary>
+        /// Adds an <see cref="IAzureServiceBusFallbackMessageHandler"/> implementation which the message pump can use to fall back to when no message handler is found to process the message.
+        /// </summary>
+        /// <typeparam name="TMessageHandler">The type of the fallback message handler.</typeparam>
+        /// <param name="services">The services to add the fallback message handler to.</param>
+        /// <param name="createImplementation">The function to create the fallback message handler.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or the <paramref name="createImplementation"/> is <c>null</c>.</exception>
+        public static IServiceCollection WithServiceBusFallbackMessageHandler<TMessageHandler>(
+            this IServiceCollection services,
+            Func<IServiceProvider, TMessageHandler> createImplementation)
+            where TMessageHandler : class, IAzureServiceBusFallbackMessageHandler
+        {
+            Guard.NotNull(services, nameof(services), "Requires a services collection to add the fallback message handler to");
+            Guard.NotNull(createImplementation, nameof(createImplementation), "Requires a function to create the fallback message handler");
+
+            return services.AddSingleton<IAzureServiceBusFallbackMessageHandler, TMessageHandler>(createImplementation);
         }
     }
 }

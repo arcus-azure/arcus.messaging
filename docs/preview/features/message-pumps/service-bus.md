@@ -156,6 +156,44 @@ public void ConfigureServices(IServiceCollection services)
 }
 ```
 
+## Fallback message handling
+
+When receiving a message on the message pump and none of the registered `IAzureServiceBusMessageHandler`'s can correctly process the message, the message pump normally throws and logs an exception.
+It could also happen in a scenario that's to be expected that some received messages will not be processed correctly (or you don't want them to).
+
+In such a scenario, you can choose to register a `IAzureServiceBusFallbackMessageHandler` in the dependency container. 
+This extra message handler will then process the remaining messages that can't be processed by the normal message handlers.
+
+Following example shows how such a message handler can be implemented:
+
+```csharp
+public class WarnsUserFallbackMessageHandler : IAzureServiceBusFallbackMessageHandller
+{
+    private readonly ILogger _logger;
+
+    public WarnsUserFallbackMessageHandler(ILogger<WarnsUserFallbackMessageHandler> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task ProcessMessageAsync(Message message, AzureServiceBusMessageContext context, ...)
+    {
+        _logger.LogWarning("These type of messages are expected not to be processed");
+    }
+}
+```
+
+> Note that you have access to the Azure Service Bus message and the specific message context. These can be used to eventually call `.Abandon()` on the message.
+
+And to register such an implementation:
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.WithServiceBusFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+}
+```
+
 ## Correlation
 
 To retrieve the correlation information of Azure Service Bus messages, we provide an extension that wraps all correlation information.

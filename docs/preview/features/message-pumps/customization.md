@@ -72,4 +72,41 @@ public void ConfigureServices(IServiceCollection services)
 > Note that the order in which the message handlers are registered is important in the message processing.
 > In the example, when a message handler above this one is registered that could also handle the message (same message type) than that handler may be chosen instead of the one with the specific filter.
 
+## Fallback message handling
+
+When receiving a message on the message pump and none of the registered `IMessageHandler`'s can correctly process the message, the message pump normally throws and logs an exception.
+
+It could also happen in a scenario that's to be expected that some received messages will not be processed correctly (or you don't want them to).
+
+In such a scenario, you can choose to register a `IFallbackMessageHandler` in the dependency container. 
+This extra message handler will then process the remaining messages that can't be processed by the normal message handlers.
+
+Following example shows how such a message handler can be implemented:
+
+```csharp
+public class WarnsUserFallbackMessageHandler : IFallbackMessageHandller
+{
+    private readonly ILogger _logger;
+
+    public WarnsUserFallbackMessageHandler(ILogger<WarnsUserFallbackMessageHandler> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task ProcessMessageAsync(string message, MessageContext context, ...)
+    {
+        _logger.LogWarning("These type of messages are expected not to be processed");
+    }
+}
+```
+
+And to register such an implementation:
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.WithFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+}
+```
+
 [&larr; back](/)

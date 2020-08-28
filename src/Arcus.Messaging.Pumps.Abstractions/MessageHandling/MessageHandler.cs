@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 {
@@ -18,21 +19,29 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
     public class MessageHandler
     {
         private readonly object _service;
-        private readonly Type _serviceType;
+        private readonly ILogger _logger;
 
-        private MessageHandler(Type serviceType, object service)
+        private MessageHandler(Type serviceType, object service, ILogger logger)
         {
-            Guard.NotNull(serviceType, nameof(serviceType));
-            Guard.NotNull(service, nameof(service));
+            Guard.NotNull(serviceType, nameof(serviceType), "Requires a message handler type");
+            Guard.NotNull(service, nameof(service), "Requires a message handler instance");
+            Guard.NotNull(logger, nameof(logger), "Requires a logger instance");
             Guard.For<ArgumentException>(
                 () => serviceType.GenericTypeArguments.Length != 2, 
                 $"Message handler type '{serviceType.Name}' has not the expected 2 generic type arguments");
-
-            _serviceType = serviceType;
+            
             _service = service;
+            _logger = logger;
 
-            MessageType = _serviceType.GenericTypeArguments[0];
+            ServiceType = serviceType;
+            MessageType = ServiceType.GenericTypeArguments[0];
+            MessageContextType = ServiceType.GenericTypeArguments[1];
         }
+
+        /// <summary>
+        /// Gets the type of the message handler that this abstracted message handler represents.
+        /// </summary>
+        internal Type ServiceType { get; }
 
         /// <summary>
         /// Gets the type of the message that this abstracted message handler can process.
@@ -40,12 +49,19 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         internal Type MessageType { get; }
 
         /// <summary>
+        /// Gets the type of the message context that this abstracted message handler can process.
+        /// </summary>
+        internal Type MessageContextType { get; }
+
+        /// <summary>
         /// Subtract all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementations from the given <paramref name="serviceProvider"/>.
         /// </summary>
         /// <param name="serviceProvider">The provided registered services collection.</param>
-        public static IEnumerable<MessageHandler> SubtractFrom(IServiceProvider serviceProvider)
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the lifetime of the message handlers.</param>
+        public static IEnumerable<MessageHandler> SubtractFrom(IServiceProvider serviceProvider, ILogger logger)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider));
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a collection of services to subtract the message handlers from");
+            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write trace messages during the lifetime of the message handlers");
 
             object engine = 
                 serviceProvider.GetType().GetProperty("Engine")?.GetValue(serviceProvider) 
@@ -64,7 +80,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                     IEnumerable<object> services = serviceProvider.GetServices(serviceType);
                     foreach (object service in services)
                     {
-                        var messageHandler = new MessageHandler(serviceType, service);
+                        var messageHandler = new MessageHandler(serviceType, service, logger);
                         messageHandlers.Add(messageHandler);
                     }
                 }
@@ -79,19 +95,40 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
         public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext) where TMessageContext : MessageContext
         {
-            if (typeof(TMessageContext) == _serviceType.GenericTypeArguments[1])
+            Type expectedMessageContextType = ServiceType.GenericTypeArguments[1];
+            Type actualMessageContextType = typeof(TMessageContext);
+
+            if (actualMessageContextType == expectedMessageContextType)
             {
+                _logger.LogInformation(
+                    "Message context type '{ActualMessageContextType}' matches registered message handler's {MessageHandlerType} context type {ExpectedMessageContextType}",
+                    actualMessageContextType.Name, ServiceType.Name, expectedMessageContextType.Name);
+
                 if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
                 {
-                    return (bool) _service.InvokeMethod(
+                    _logger.LogTrace(
+                        "Determining whether the message context predicate registered with the message handler {MessageHandlerType} holds...",
+                         ServiceType.Name);
+
+                    var canProcessMessage = (bool) _service.InvokeMethod(
                         "CanProcessMessage",
                         BindingFlags.Instance | BindingFlags.NonPublic,
                         messageContext);
+
+                    _logger.LogInformation(
+                        "Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message",
+                        ServiceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
+
+                    return canProcessMessage;
                 }
 
                 // Message context type matches registration message context type; registered without predicate.
                 return true;
             }
+
+            _logger.LogInformation(
+                "Message context type '{ActualMessageContextType}' doesn't matches registered message handler's {MessageHandlerType} context type {ExpectedMessageContextType}",
+                actualMessageContextType.Name, ServiceType.Name, expectedMessageContextType.Name);
 
             // Message context type doesn't match registration message context type.
             return false;
@@ -108,28 +145,53 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         ///     identifiers.
         /// </param>
         /// <param name="cancellationToken">The cancellation token.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="TypeNotFoundException">Thrown when no processing method was found on the message handler.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the message handler cannot process the message correctly.</exception>
+        /// <exception cref="AmbiguousMatchException">Thrown when more than a single processing method was found on the message handler.</exception>
         public async Task ProcessMessageAsync<TMessageContext>(
             object message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken) where TMessageContext : class
         {
-            Guard.NotNull(message, nameof(message));
-            Guard.NotNull(messageContext, nameof(messageContext));
-            Guard.NotNull(correlationInfo, nameof(correlationInfo));
+            Guard.NotNull(message, nameof(message), "Requires message content to deserialize and process the message");
+            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
+            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
+
+            _logger.LogTrace(
+                "Start processing '{MessageType}' message in message handler '{MessageHandlerType}'...", 
+                message.GetType().Name, ServiceType.Name);
 
             const string methodName = "ProcessMessageAsync";
-            var processMessageAsync = 
-                (Task) _service.InvokeMethod(
-                    methodName, BindingFlags.Instance | BindingFlags.Public, message, messageContext, correlationInfo, cancellationToken);
-
-            if (processMessageAsync is null)
+            try
             {
-                throw new InvalidOperationException(
-                    $"The '{typeof(IMessageHandler<,>).Name}' implementation '{_service.GetType().Name}' returned 'null' while calling the '{methodName}' method");
-            }
+                var processMessageAsync =
+                        (Task)_service.InvokeMethod(
+                            methodName, BindingFlags.Instance | BindingFlags.Public, message, messageContext, correlationInfo, cancellationToken);
 
-            await processMessageAsync;
+                if (processMessageAsync is null)
+                {
+                    throw new InvalidOperationException(
+                        $"The '{typeof(IMessageHandler<,>).Name}' implementation '{_service.GetType().Name}' returned 'null' while calling the '{methodName}' method");
+                }
+
+                await processMessageAsync;
+
+                _logger.LogInformation(
+                    "Message handler '{MessageHandlerType}' successfully processed '{MessageType}' message", ServiceType.Name, MessageType.Name);
+            }
+            catch (AmbiguousMatchException exception)
+            {
+                _logger.LogError(
+                    "Ambiguous match found of '{MethodName}' methods in the '{MessageHandlerType}'. Make sure that only 1 matching '{MethodName}' was found on the '{MessageHandlerType}' message handler",
+                    methodName, ServiceType.Name, methodName, ServiceType.Name);
+
+                throw new AmbiguousMatchException(
+                    $"Ambiguous match found of '{methodName}' methods in the '{_service.GetType().Name}'. ", exception);
+            }
         }
     }
 }
