@@ -75,6 +75,7 @@ public void ConfigureServices(IServiceCollection services)
 ## Fallback message handling
 
 When receiving a message on the message pump and none of the registered `IMessageHandler`'s can correctly process the message, the message pump normally throws and logs an exception.
+
 It could also happen in a scenario that's to be expected that some received messages will not be processed correctly (or you don't want them to).
 
 In such a scenario, you can choose to register a `IFallbackMessageHandler` in the dependency container. 
