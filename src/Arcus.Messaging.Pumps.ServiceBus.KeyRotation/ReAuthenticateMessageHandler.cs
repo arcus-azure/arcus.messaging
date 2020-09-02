@@ -1,7 +1,9 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Arcus.BackgroundJobs.KeyVault.Events;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using CloudNative.CloudEvents;
 using GuardNet;
 using Microsoft.Extensions.Logging;
@@ -9,6 +11,10 @@ using Microsoft.Rest.Azure;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
 {
+    /// <summary>
+    /// Represents an <see cref="IMessageHandler{TMessage, TMessageContext}"/> that processes <see cref="CloudEvent"/>s representing <see cref="SecretNewVersionCreated"/> events
+    /// that will eventually result in restarting an <see cref="AzureServiceBusMessagePump"/> instance.
+    /// </summary>
     public class ReAuthenticateMessageHandler : IAzureServiceBusMessageHandler<CloudEvent>
     {
         private readonly AzureServiceBusMessagePump _messagePump;
@@ -17,10 +23,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
         /// <summary>
         /// Initializes a new instance of the <see cref="ReAuthenticateMessageHandler"/> class.
         /// </summary>
+        /// <param name="messagePump">The message pump instance to restart when the message handler process an <see cref="SecretNewVersionCreated"/> event.</param>
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the processing of the event.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messagePump"/> or <paramref name="logger"/> is <c>null</c>.</exception>
         public ReAuthenticateMessageHandler(AzureServiceBusMessagePump messagePump, ILogger<ReAuthenticateMessageHandler> logger)
         {
-            Guard.NotNull(messagePump, nameof(messagePump));
-            Guard.NotNull(logger, nameof(logger));
+            Guard.NotNull(messagePump, nameof(messagePump), $"Requires an message pump instance to restart when the message handler process an {nameof(SecretNewVersionCreated)} event");
+            Guard.NotNull(logger, nameof(logger), "Requires an logger instance to write diagnostic trace messages during the processing of the event");
 
             _messagePump = messagePump;
             _logger = logger;
@@ -36,6 +45,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
         ///     identifiers
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
+        /// <exception cref="CloudException">Thrown when the <paramref name="message"/> doesn't represent an <see cref="SecretNewVersionCreated"/> event.</exception>
         public async Task ProcessMessageAsync(
             CloudEvent message,
             AzureServiceBusMessageContext messageContext,

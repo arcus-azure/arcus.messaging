@@ -149,6 +149,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
                 CommandArgument.CreateSecret("ARCUS_KEYVAULT_VAULTURI", keyRotationConfig.KeyVault.VaultUri), 
                 CommandArgument.CreateSecret("ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME", keyRotationConfig.KeyVault.SecretName),
+                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING", keyRotationConfig.KeyVault.SecretNewVersionCreated.ConnectionString), 
                 CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTID", keyRotationConfig.ServicePrincipal.ClientId), 
                 CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTSECRET", keyRotationConfig.ServicePrincipal.ClientSecret), 
             };

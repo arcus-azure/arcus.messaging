@@ -9,7 +9,7 @@ using GuardNet;
 
 namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 {
-    internal class MessageHandlerRegistration<TMessage, TMessageContext> : IMessageHandler<TMessage, TMessageContext> 
+    public class MessageHandlerRegistration<TMessage, TMessageContext> : IMessageHandler<TMessage, TMessageContext> 
         where TMessageContext : MessageContext
     {
         private readonly Func<TMessageContext, bool> _messageContextFilter;
@@ -18,7 +18,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageHandlerRegistration"/> class.
         /// </summary>
-        internal MessageHandlerRegistration(
+        public MessageHandlerRegistration(
             Func<TMessageContext, bool> messageContextFilter,
             IMessageHandler<TMessage, TMessageContext> messageHandlerImplementation)
         {

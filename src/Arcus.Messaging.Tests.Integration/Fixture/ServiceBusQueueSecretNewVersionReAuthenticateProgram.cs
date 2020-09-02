@@ -35,22 +35,21 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                     configuration.AddEnvironmentVariables();
                 })
                 .ConfigureLogging(loggingBuilder => loggingBuilder.AddConsole(options => options.IncludeScopes = true))
+                .ConfigureSecretStore((config, stores) =>
+                {
+                    stores.AddAzureKeyVaultWithServicePrincipal(
+                            config["ARCUS_KEYVAULT_VAULTURI"], 
+                            config["ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTID"], 
+                            config["ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTSECRET"])
+                          .AddConfiguration(config);
+                })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddSingleton<ISecretProvider>(serviceProvider =>
-                    {
-                        return new KeyVaultSecretProvider(
-                            new ServicePrincipalAuthentication(
-                                hostContext.Configuration["ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTID"],
-                                hostContext.Configuration["ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTSECRET"]),
-                            new KeyVaultConfiguration(
-                                hostContext.Configuration["ARCUS_KEYVAULT_VAULTURI"]));
-                    });
                     services.AddTransient(svc =>
                     {
                         var configuration = svc.GetRequiredService<IConfiguration>();
-                        var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
-                        var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
+                        var eventGridTopic = configuration["EVENTGRID_TOPIC_URI"];
+                        var eventGridKey = configuration["EVENTGRID_AUTH_KEY"];
 
                         return EventGridPublisherBuilder
                                .ForTopic(eventGridTopic)
@@ -64,7 +63,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                             .WithReAuthenticationOnNewSecretVersion(
                                 jobId: jobId, 
                                 subscriptionNamePrefix: "TestSub", 
-                                serviceBusTopicConnectionStringSecretKey: hostContext.Configuration["ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING"], 
+                                serviceBusTopicConnectionStringSecretKey: "ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING", 
                                 // Unrealistic big maximum exception count so that we're certain that the message pump gets restarted based on the notification and not the unauthorized exception.
                                 maximumUnauthorizedExceptionsBeforeRestart: 100);
 
