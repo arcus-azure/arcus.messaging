@@ -106,20 +106,28 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 
                 if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
                 {
-                    _logger.LogTrace(
-                        "Determining whether the message context predicate registered with the message handler {MessageHandlerType} holds...",
-                         ServiceType.Name);
+                    try
+                    {
+                        _logger.LogTrace(
+                            "Determining whether the message context predicate registered with the message handler {MessageHandlerType} holds...",
+                            ServiceType.Name);
 
-                    var canProcessMessage = (bool) _service.InvokeMethod(
-                        "CanProcessMessage",
-                        BindingFlags.Instance | BindingFlags.NonPublic,
-                        messageContext);
+                        var canProcessMessage = (bool)_service.InvokeMethod(
+                            "CanProcessMessage",
+                            BindingFlags.Instance | BindingFlags.NonPublic,
+                            messageContext);
 
-                    _logger.LogInformation(
-                        "Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message",
-                        ServiceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
+                        _logger.LogInformation(
+                            "Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message",
+                            ServiceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
 
-                    return canProcessMessage;
+                        return canProcessMessage;
+                    }
+                    catch (Exception exception)
+                    {
+                        _logger.LogError(exception, "Message context predicate registered with message handler {MessageHandlerType} faulted, so can't process this message");
+                        return false;
+                    }
                 }
 
                 // Message context type matches registration message context type; registered without predicate.

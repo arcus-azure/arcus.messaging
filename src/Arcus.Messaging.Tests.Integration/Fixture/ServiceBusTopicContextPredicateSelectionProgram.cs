@@ -44,8 +44,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                     });
                     services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
                             .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>(context => false)
-                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties["Topic"].ToString() == "Customers")
-                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>(context => context.Properties["Topic"].ToString() == "Orders");
+                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Customers")
+                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Orders");
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });
