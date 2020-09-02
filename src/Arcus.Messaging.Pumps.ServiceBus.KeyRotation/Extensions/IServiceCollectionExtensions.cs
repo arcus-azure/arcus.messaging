@@ -48,39 +48,21 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
             Guard.NotNullOrWhitespace(serviceBusTopicConnectionStringSecretKey, nameof(serviceBusTopicConnectionStringSecretKey), "Requires a non-blank secret key that points to a Azure Service Bus Topic");
             Guard.NotLessThan(maximumUnauthorizedExceptionsBeforeRestart, 0, nameof(maximumUnauthorizedExceptionsBeforeRestart), "Requires the fallback of maximum unauthorized exception count to be greater than zero");
 
-            services.AddSingleton<IMessageHandler<CloudEvent, AzureServiceBusMessageContext>, MessageHandlerRegistration<CloudEvent, AzureServiceBusMessageContext>>(serviceProvider =>
+            services.AddCloudEventBackgroundJob(subscriptionNamePrefix, serviceBusTopicConnectionStringSecretKey);
+            services.WithServiceBusMessageHandler<ReAuthenticateMessageHandler, CloudEvent>(serviceProvider =>
             {
                 AzureServiceBusMessagePump messagePump =
                     serviceProvider.GetServices<IHostedService>()
                                    .OfType<AzureServiceBusMessagePump>()
                                    .FirstOrDefault(pump => pump.JobId == jobId);
 
-                Guard.NotNull(messagePump, nameof(messagePump),
-                              $"Cannot register re-authentication without a '{nameof(AzureServiceBusMessagePump)}' with 'JobId' = '{jobId}'");
+                Guard.NotNull(messagePump, nameof(messagePump), 
+                    $"Cannot register re-authentication without a '{nameof(AzureServiceBusMessagePump)}' with 'JobId' = '{jobId}'");
 
                 messagePump.Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart = maximumUnauthorizedExceptionsBeforeRestart;
 
                 var messageHandlerLogger = serviceProvider.GetRequiredService<ILogger<ReAuthenticateMessageHandler>>();
-
-                return new MessageHandlerRegistration<CloudEvent, AzureServiceBusMessageContext>(
-                    context => context.JobId == jobId,
-                    new ReAuthenticateMessageHandler(messagePump, messageHandlerLogger));
-            });
-
-            services.AddHostedService(serviceProvider =>
-            {
-                var settings = new AzureServiceBusMessagePumpSettings(
-                    entityName: null,
-                    subscriptionName: $"{subscriptionNamePrefix}.{Guid.NewGuid()}",
-                    ServiceBusEntity.Topic,
-                    getConnectionStringFromConfigurationFunc: null,
-                    getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(serviceBusTopicConnectionStringSecretKey),
-                    options: new AzureServiceBusMessagePumpConfiguration(AzureServiceBusTopicMessagePumpOptions.Default),
-                    serviceProvider: serviceProvider);
-
-                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-                var messagePumpLogger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
-                return new CloudEventBackgroundJob(settings, configuration, serviceProvider, messagePumpLogger);
+                return new ReAuthenticateMessageHandler(messagePump, messageHandlerLogger);
             });
 
             return services;
