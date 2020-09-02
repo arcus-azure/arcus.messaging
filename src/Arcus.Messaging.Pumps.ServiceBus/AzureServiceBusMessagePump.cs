@@ -6,8 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
 using Arcus.Observability.Correlation;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
@@ -25,6 +27,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// </summary>
     public class AzureServiceBusMessagePump : MessagePump
     {
+        private readonly IAzureServiceBusFallbackMessageHandler _fallbackMessageHandler;
         private readonly MessageHandlerOptions _messageHandlerOptions;
         private readonly IDisposable _loggingScope;
         
@@ -52,6 +55,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             JobId = Settings.Options.JobId;
             SubscriptionName = Settings.SubscriptionName;
 
+            _fallbackMessageHandler = ServiceProvider.GetService<IAzureServiceBusFallbackMessageHandler>();
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
             _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
         }
@@ -457,7 +461,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private async Task HandleMessageAsync(Message message, CancellationToken cancellationToken)
         {
-            if (message == null)
+            if (message is null)
             {
                 Logger.LogWarning("Received message was null, skipping");
                 return;
@@ -471,14 +475,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
+            if (String.IsNullOrEmpty(message.CorrelationId))
+            {
+                Logger.LogInformation("No operation ID was found on the message");
+            }
+
             try
             {
-                if (String.IsNullOrEmpty(message.CorrelationId))
-                {
-                    Logger.LogInformation("No operation ID was found on the message");
-                }
-
-
                 MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
                 using (IServiceScope serviceScope = ServiceProvider.CreateScope())
                 {
@@ -488,14 +491,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
                     {
                         Logger.LogInformation("Received message '{MessageId}'", message.MessageId);
-
-                        var messageContext = new AzureServiceBusMessageContext(message.MessageId, JobId, message.SystemProperties, message.UserProperties);
-
-                        Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
-                        string messageBody = encoding.GetString(message.Body);
-
-                        await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-
+                        await ProcessMessageAsync(message, cancellationToken, correlationInfo);
                         Logger.LogInformation("Message {MessageId} processed", message.MessageId);
                     }
                 }
@@ -504,6 +500,34 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 Logger.LogCritical(ex, "Unable to process message with ID '{MessageId}'",  message.MessageId);
                 await HandleReceiveExceptionAsync(ex);
+            }
+        }
+
+        private async Task ProcessMessageAsync(
+            Message message,
+            CancellationToken cancellationToken,
+            MessageCorrelationInfo correlationInfo)
+        {
+            var messageContext = new AzureServiceBusMessageContext(message.MessageId, JobId, message.SystemProperties, message.UserProperties);
+            Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
+            string messageBody = encoding.GetString(message.Body);
+
+            if (_fallbackMessageHandler is null)
+            {
+                await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+            }
+            else
+            {
+                MessageHandlerResult result = await ProcessMessageAndCaptureAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+                if (result.Exception != null)
+                {
+                    throw result.Exception;
+                }
+
+                if (!result.IsProcessed)
+                {
+                    await _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+                }
             }
         }
 
