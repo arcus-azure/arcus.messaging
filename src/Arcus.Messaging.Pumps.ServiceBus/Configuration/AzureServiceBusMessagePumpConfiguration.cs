@@ -73,6 +73,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the fallback when the Azure Key Vault notification doesn't get delivered correctly,
         /// how many times should the message pump run into an <see cref="UnauthorizedException"/> before restarting.
         /// </summary>
-        internal int MaximumUnauthorizedExceptionsBeforeRestart { get; set; }
+        public int MaximumUnauthorizedExceptionsBeforeRestart { get; set; }
     }
 }
