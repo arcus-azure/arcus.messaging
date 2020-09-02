@@ -1,5 +1,6 @@
 ﻿using System;
 using GuardNet;
+using Microsoft.Azure.ServiceBus;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
@@ -19,6 +20,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             AutoComplete = options.AutoComplete;
             JobId = options.JobId;
             KeyRotationTimeout = options.KeyRotationTimeout;
+            MaximumUnauthorizedExceptionsBeforeRestart = options.MaximumUnauthorizedExceptionsBeforeRestart;
         }
 
         /// <summary>
@@ -33,6 +35,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             AutoComplete = options.AutoComplete;
             JobId = options.JobId;
             KeyRotationTimeout = options.KeyRotationTimeout;
+            MaximumUnauthorizedExceptionsBeforeRestart = options.MaximumUnauthorizedExceptionsBeforeRestart;
         }
 
         /// <summary>
@@ -66,6 +69,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         internal TimeSpan KeyRotationTimeout { get; set; }
 
-        public int MaximumUnauthorizedExceptionsBeforeRestart { get; set; } = 1;
+        /// <summary>
+        /// Gets or sets the fallback when the Azure Key Vault notification doesn't get delivered correctly,
+        /// how many times should the message pump run into an <see cref="UnauthorizedException"/> before restarting.
+        /// </summary>
+        internal int MaximumUnauthorizedExceptionsBeforeRestart { get; set; }
     }
 }

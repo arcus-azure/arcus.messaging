@@ -58,14 +58,18 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                     });
 
                     string jobId = Guid.NewGuid().ToString();
-                    services.AddServiceBusQueueMessagePump(hostContext.Configuration["ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME"], options => options.JobId = jobId)
+                    services.AddServiceBusQueueMessagePump(hostContext.Configuration["ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME"], options =>
+                            {
+                                options.JobId = jobId;
+                                
+                                // Unrealistic big maximum exception count so that we're certain that the message pump gets restarted based on the notification and not the unauthorized exception.
+                                options.MaximumUnauthorizedExceptionsBeforeRestart = 1000;
+                            })
                             .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>()
                             .WithReAuthenticationOnNewSecretVersion(
                                 jobId: jobId, 
                                 subscriptionNamePrefix: "TestSub", 
-                                serviceBusTopicConnectionStringSecretKey: "ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING", 
-                                // Unrealistic big maximum exception count so that we're certain that the message pump gets restarted based on the notification and not the unauthorized exception.
-                                maximumUnauthorizedExceptionsBeforeRestart: 100);
+                                serviceBusTopicConnectionStringSecretKey: "ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING");
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
                 });

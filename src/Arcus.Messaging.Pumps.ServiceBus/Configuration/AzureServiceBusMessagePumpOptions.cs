@@ -1,5 +1,6 @@
 ﻿using System;
 using GuardNet;
+using Microsoft.Azure.ServiceBus;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
 {
@@ -11,10 +12,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         private int? _maxConcurrentCalls;
         private string _jobId;
         private TimeSpan _keyRotationTimeout = TimeSpan.FromSeconds(5);
+        private int _maximumUnauthorizedExceptionsBeforeRestart = 5;
 
         /// <summary>
         ///     Maximum concurrent calls to process messages
         /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
         public int? MaxConcurrentCalls
         {
             get => _maxConcurrentCalls;
@@ -39,6 +42,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets or sets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
         /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
         public string JobId
         {
             get => _jobId;
@@ -52,6 +56,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets or sets the timeout when the message pump tries to restart and re-authenticate during key rotation.
         /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than <see cref="TimeSpan.Zero"/>.</exception>
         public TimeSpan KeyRotationTimeout
         {
             get => _keyRotationTimeout;
@@ -59,6 +64,21 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             {
                 Guard.NotLessThan(value, TimeSpan.Zero, nameof(value), "Key rotation timeout cannot be less than a zero time range");
                 _keyRotationTimeout = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the fallback when the Azure Key Vault notification doesn't get delivered correctly,
+        /// how many times should the message pump run into an <see cref="UnauthorizedException"/> before restarting.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than zero.</exception>
+        public int MaximumUnauthorizedExceptionsBeforeRestart
+        {
+            get => _maximumUnauthorizedExceptionsBeforeRestart;
+            set
+            {
+                Guard.NotLessThan(value, 0, nameof(value), $"Maximum {nameof(UnauthorizedAccessException)} count should be greater than zero");
+                _maximumUnauthorizedExceptionsBeforeRestart = value;
             }
         }
     }

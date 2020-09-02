@@ -40,13 +40,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
             this IServiceCollection services,
             string jobId,
             string subscriptionNamePrefix,
-            string serviceBusTopicConnectionStringSecretKey,
-            int maximumUnauthorizedExceptionsBeforeRestart = 5)
+            string serviceBusTopicConnectionStringSecretKey)
         {
             Guard.NotNull(services, nameof(services), "Requires a collection of services to add the re-authentication background job");
             Guard.NotNullOrWhitespace(subscriptionNamePrefix, nameof(subscriptionNamePrefix), "Requires a non-blank subscription name of the Azure Service Bus Topic subscription, to receive Azure Key Vault events");
             Guard.NotNullOrWhitespace(serviceBusTopicConnectionStringSecretKey, nameof(serviceBusTopicConnectionStringSecretKey), "Requires a non-blank secret key that points to a Azure Service Bus Topic");
-            Guard.NotLessThan(maximumUnauthorizedExceptionsBeforeRestart, 0, nameof(maximumUnauthorizedExceptionsBeforeRestart), "Requires the fallback of maximum unauthorized exception count to be greater than zero");
 
             services.AddCloudEventBackgroundJob(subscriptionNamePrefix, serviceBusTopicConnectionStringSecretKey);
             services.WithServiceBusMessageHandler<ReAuthenticateMessageHandler, CloudEvent>(serviceProvider =>
@@ -58,8 +56,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
 
                 Guard.NotNull(messagePump, nameof(messagePump), 
                     $"Cannot register re-authentication without a '{nameof(AzureServiceBusMessagePump)}' with 'JobId' = '{jobId}'");
-
-                messagePump.Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart = maximumUnauthorizedExceptionsBeforeRestart;
 
                 var messageHandlerLogger = serviceProvider.GetRequiredService<ILogger<ReAuthenticateMessageHandler>>();
                 return new ReAuthenticateMessageHandler(messagePump, messageHandlerLogger);
