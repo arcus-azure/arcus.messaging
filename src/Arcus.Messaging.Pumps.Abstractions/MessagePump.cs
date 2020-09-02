@@ -205,18 +205,21 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Logger.LogTrace("Determine if message handler '{Type}' can process the message...");
 
             bool canProcessMessage = handler.CanProcessMessage(messageContext);
-            bool tryDeserializeToMessageFormat = TryDeserializeToMessageFormat(message, handler.MessageType, out var result);
+            bool tryDeserializeToMessageFormat = SafeguardTryDeserializeToMessageFormat(message, handler.MessageType, out var result);
 
             if (canProcessMessage && tryDeserializeToMessageFormat)
             {
                 if (result is null)
                 {
-                    throw new InvalidCastException(
-                        "Successful parsing from abstracted message to concrete message handler type did unexpectedly result in a 'null' parsing result");
+                    Logger.LogError(
+                        "Parsing from abstracted message to concrete message type '{MessageType}' did unexpectedly result in a 'null' parsing result, so the '{MessageHandlerType}' cannot process this message", 
+                        handler.MessageType.Name, handler.ServiceType.Name);
+
+                    return false;
+                    
                 }
 
-                await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
-                return true;
+                return await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
             }
 
             if (!canProcessMessage)
@@ -234,6 +237,21 @@ namespace Arcus.Messaging.Pumps.Abstractions
             }
 
             return false;
+        }
+
+        private bool SafeguardTryDeserializeToMessageFormat(string message, Type messageType, out object? result)
+        {
+            try
+            {
+                return TryDeserializeToMessageFormat(message, messageType, out result);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogError(exception, "Failed to parse abstracted message to concrete message type '{MessageType}'", messageType.Name);
+
+                result = null;
+                return false;
+            }
         }
 
         private async Task FallbackProcessMessageAsync<TMessageContext>(

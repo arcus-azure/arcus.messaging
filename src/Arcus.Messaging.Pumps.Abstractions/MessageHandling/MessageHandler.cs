@@ -58,6 +58,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// </summary>
         /// <param name="serviceProvider">The provided registered services collection.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the lifetime of the message handlers.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> or <paramref name="logger"/> is <c>null</c>.</exception>
         public static IEnumerable<MessageHandler> SubtractFrom(IServiceProvider serviceProvider, ILogger logger)
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a collection of services to subtract the message handlers from");
@@ -92,9 +93,16 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <summary>
         /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
         /// </summary>
+        /// <param name="messageContext">The messaging context information that holds information about the currently processing message.</param>
+        /// <returns>
+        ///     [true] if the registered <typeparamref name="TMessageContext"/> predicate holds; [false] otherwise.
+        /// </returns>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageContext"/> is <c>null</c>.</exception>
         public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext) where TMessageContext : MessageContext
         {
+            Guard.NotNull(messageContext, nameof(messageContext), "Requires an message context instance to determine if the message handler can process the message");
+
             Type expectedMessageContextType = ServiceType.GenericTypeArguments[1];
             Type actualMessageContextType = typeof(TMessageContext);
 
@@ -153,17 +161,20 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         ///     identifiers.
         /// </param>
         /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>
+        ///     [true] if the message handler was able to successfully process the message; [false] otherwise.
+        /// </returns>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="TypeNotFoundException">Thrown when no processing method was found on the message handler.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler cannot process the message correctly.</exception>
         /// <exception cref="AmbiguousMatchException">Thrown when more than a single processing method was found on the message handler.</exception>
-        public async Task ProcessMessageAsync<TMessageContext>(
+        public async Task<bool> ProcessMessageAsync<TMessageContext>(
             object message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken) where TMessageContext : class
+            CancellationToken cancellationToken) where TMessageContext : MessageContext
         {
             Guard.NotNull(message, nameof(message), "Requires message content to deserialize and process the message");
             Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
@@ -190,15 +201,22 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 
                 _logger.LogInformation(
                     "Message handler '{MessageHandlerType}' successfully processed '{MessageType}' message", ServiceType.Name, MessageType.Name);
+
+                return true;
             }
             catch (AmbiguousMatchException exception)
             {
                 _logger.LogError(
+                    exception,
                     "Ambiguous match found of '{MethodName}' methods in the '{MessageHandlerType}'. Make sure that only 1 matching '{MethodName}' was found on the '{MessageHandlerType}' message handler",
                     methodName, ServiceType.Name, methodName, ServiceType.Name);
 
-                throw new AmbiguousMatchException(
-                    $"Ambiguous match found of '{methodName}' methods in the '{_service.GetType().Name}'. ", exception);
+                return false;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Message handler '{MessageHandlerType}' failed to process '{MessageType}' message", ServiceType.Name, MessageType.Name);
+                return false;
             }
         }
     }
