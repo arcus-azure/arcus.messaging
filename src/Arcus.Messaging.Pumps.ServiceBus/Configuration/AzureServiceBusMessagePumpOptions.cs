@@ -10,7 +10,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     public class AzureServiceBusMessagePumpOptions
     {
         private int? _maxConcurrentCalls;
-        private string _jobId;
+        private string _jobId = Guid.NewGuid().ToString();
         private TimeSpan _keyRotationTimeout = TimeSpan.FromSeconds(5);
         private int _maximumUnauthorizedExceptionsBeforeRestart = 5;
 
@@ -37,7 +37,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         ///     processing has finished.
         /// </summary>
         /// <remarks>When turned off, clients have to explicitly mark the messages as completed</remarks>
-        public bool AutoComplete { get; set; }
+        public bool AutoComplete { get; set; } = true;
 
         /// <summary>
         /// Gets or sets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
@@ -77,7 +77,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _maximumUnauthorizedExceptionsBeforeRestart;
             set
             {
-                Guard.NotLessThan(value, 0, nameof(value), $"Maximum {nameof(UnauthorizedAccessException)} count should be greater than zero");
+                Guard.NotLessThan(value, 0, nameof(value), "Requires an unauthorized exceptions count that's greater than zero");
                 _maximumUnauthorizedExceptionsBeforeRestart = value;
             }
         }

@@ -1,12 +1,8 @@
 ﻿using System;
 using System.Linq;
-using Arcus.BackgroundJobs.CloudEvents;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
-using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using CloudNative.CloudEvents;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -55,6 +51,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
                     serviceProvider.GetServices<IHostedService>()
                                    .OfType<AzureServiceBusMessagePump>()
                                    .FirstOrDefault(pump => pump.JobId == jobId);
+
                 Guard.NotNull(messagePump, nameof(messagePump), 
                     $"Cannot register re-authentication without a '{nameof(AzureServiceBusMessagePump)}' with 'JobId' = '{jobId}'");
 

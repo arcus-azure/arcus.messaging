@@ -285,11 +285,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 }
                 finally
                 {
-                    if (exceptionReceivedEventArgs.Exception is UnauthorizedException
-                        && Interlocked.Increment(ref _unauthorizedExceptionCount) >= Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart)
+                    if (exceptionReceivedEventArgs.Exception is UnauthorizedException)
                     {
-                        Logger.LogWarning("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
-                        await RestartAsync();
+                        if (Interlocked.Increment(ref _unauthorizedExceptionCount) >= Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart)
+                        {
+                            Logger.LogWarning("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
+                            await RestartAsync();
+                        }
+                        else
+                        {
+                            Logger.LogWarning(
+                                "Unable to connect anymore to Azure Service Bus ({CurrentCount}/{MaxCount})", 
+                                _unauthorizedExceptionCount, Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart);
+                        }
                     }
                 }
             });

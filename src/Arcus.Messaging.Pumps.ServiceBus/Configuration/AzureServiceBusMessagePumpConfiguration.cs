@@ -9,12 +9,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// </summary>
     public class AzureServiceBusMessagePumpConfiguration
     {
+        private int _maximumUnauthorizedExceptionsBeforeRestart;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpConfiguration"/> class.
         /// </summary>
+        /// <param name="options">The specific options for Azure Service Bus Topics.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
         public AzureServiceBusMessagePumpConfiguration(AzureServiceBusQueueMessagePumpOptions options)
         {
-            Guard.NotNull(options, nameof(options));
+            Guard.NotNull(options, nameof(options), "Requires an Azure Service Bus options for Topics");
 
             MaxConcurrentCalls = options.MaxConcurrentCalls;
             AutoComplete = options.AutoComplete;
@@ -26,9 +30,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpConfiguration"/> class.
         /// </summary>
+        /// <param name="options">The specific options for Azure Service Bus Queues.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
         public AzureServiceBusMessagePumpConfiguration(AzureServiceBusTopicMessagePumpOptions options)
         {
-            Guard.NotNull(options, nameof(options));
+            Guard.NotNull(options, nameof(options), "Requires an Azure Service Bus options for Queues");
 
             MaxConcurrentCalls = options.MaxConcurrentCalls;
             TopicSubscription = options.TopicSubscription;
@@ -73,6 +79,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the fallback when the Azure Key Vault notification doesn't get delivered correctly,
         /// how many times should the message pump run into an <see cref="UnauthorizedException"/> before restarting.
         /// </summary>
-        public int MaximumUnauthorizedExceptionsBeforeRestart { get; set; }
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than zero.</exception>
+        public int MaximumUnauthorizedExceptionsBeforeRestart
+        {
+            get => _maximumUnauthorizedExceptionsBeforeRestart;
+            set
+            {
+                Guard.NotLessThan(value, 0, nameof(value), "Requires an unauthorized exceptions count that's greater than zero");
+                _maximumUnauthorizedExceptionsBeforeRestart = value;
+            }
+        }
     }
 }

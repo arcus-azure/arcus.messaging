@@ -19,15 +19,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         private readonly IServiceProvider _serviceProvider;
 
         /// <summary>
-        ///     Constructor
+        ///     Initializes a new instance of the <see cref="AzureServiceBusMessagePumpSettings"/> class.
         /// </summary>
-        /// <param name="entityName">Name of the entity to process</param>
-        /// <param name="subscriptionName">Name of the subscription to process</param>
-        /// <param name="serviceBusEntity">Entity type of the Service Bus</param>
-        /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
-        /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
-        /// <param name="options">Options that influence the behavior of the message pump</param>
-        /// <param name="serviceProvider">Collection of services to use</param>
+        /// <param name="entityName">The name of the entity to process.</param>
+        /// <param name="subscriptionName">The name of the subscription to process.</param>
+        /// <param name="serviceBusEntity">The entity type of the Azure Service Bus.</param>
+        /// <param name="getConnectionStringFromConfigurationFunc">The function to look up the connection string from the configuration.</param>
+        /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store.</param>
+        /// <param name="options">The options that influence the behavior of the <see cref="AzureServiceBusMessagePump"/>.</param>
+        /// <param name="serviceProvider">The collection of services to use during the lifetime of the <see cref="AzureServiceBusMessagePump"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> or <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="getConnectionStringFromConfigurationFunc"/> nor the <paramref name="getConnectionStringFromSecretFunc"/> is available.
+        /// </exception>
         public AzureServiceBusMessagePumpSettings(
             string entityName,
             string subscriptionName,
@@ -38,10 +42,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             IServiceProvider serviceProvider)
         {
             Guard.For<ArgumentException>(
-                () => getConnectionStringFromConfigurationFunc == null && getConnectionStringFromSecretFunc == null,
-                "Unable to determine connection string as it was not defined how to look it up");
-            Guard.NotNull(options, nameof(options));
-            Guard.NotNull(serviceProvider, nameof(serviceProvider));
+                () => getConnectionStringFromConfigurationFunc is null && getConnectionStringFromSecretFunc is null,
+                $"Requires an function that determines the connection string from either either an {nameof(IConfiguration)} or {nameof(ISecretProvider)} instance");
+            Guard.NotNull(options, nameof(options), "Requires message pump options that influence the behavior of the message pump");
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to get additional registered services during the lifetime of the message pump");
 
             _serviceProvider = serviceProvider;
             _getConnectionStringFromConfigurationFunc = getConnectionStringFromConfigurationFunc;
@@ -97,10 +101,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 
         private async Task<string> GetConnectionStringFromSecretAsync()
         {
-            ISecretProvider userDefinedSecretProvider = _serviceProvider.GetService<ICachedSecretProvider>()
-                                                        ?? _serviceProvider.GetService<ISecretProvider>();
+            ISecretProvider userDefinedSecretProvider =
+                _serviceProvider.GetService<ICachedSecretProvider>()
+                ?? _serviceProvider.GetService<ISecretProvider>();
 
-            if (userDefinedSecretProvider == null)
+            if (userDefinedSecretProvider is null)
             {
                 throw new KeyNotFoundException(
                     $"No configured {nameof(ICachedSecretProvider)} or {nameof(ISecretProvider)} implementation found in the service container. "
@@ -108,9 +113,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             }
 
             var getConnectionStringTask = _getConnectionStringFromSecretFunc(userDefinedSecretProvider);
-            if (getConnectionStringTask == null)
+            if (getConnectionStringTask is null)
             {
-                throw new InvalidOperationException("Get connection string function return a task that is null.");
+                throw new InvalidOperationException(
+                    $"Cannot retrieve Azure Service Bus connection string via calling the {nameof(ISecretProvider)} because the operation resulted in 'null'");
             }
 
             return await getConnectionStringTask;
