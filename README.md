@@ -19,6 +19,8 @@ PM > Install-Package Arcus.Messaging.Pumps.ServiceBus
 PM > Install-Package Arcus.Messaging.Health
 ```
 
+For a more thorough overview, we recommend reading [our documentation](#documentation).
+
 # Documentation
 All documentation can be found on [here](https://messaging.arcus-azure.net/).
 
