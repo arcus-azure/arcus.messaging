@@ -494,6 +494,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 Logger.LogCritical(ex, "Unable to process message with ID '{MessageId}'",  message.MessageId);
                 await HandleReceiveExceptionAsync(ex);
+
+                throw;
             }
         }
 
