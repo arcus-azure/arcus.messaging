@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
@@ -7,7 +8,9 @@ using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
 using Arcus.Security.Core;
 using GuardNet;
+using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
@@ -703,7 +706,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services));
 
-            services.AddSingleton<IMessageHandler<TMessage, AzureServiceBusMessageContext>, TMessageHandler>();
+            services.AddTransient<IMessageHandler<TMessage, AzureServiceBusMessageContext>, TMessageHandler>();
 
             return services;
         }
@@ -725,7 +728,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services));
             Guard.NotNull(implementationFactory, nameof(implementationFactory));
 
-            services.AddSingleton<IMessageHandler<TMessage, AzureServiceBusMessageContext>, TMessageHandler>(implementationFactory);
+            services.AddTransient<IMessageHandler<TMessage, AzureServiceBusMessageContext>, TMessageHandler>(implementationFactory);
 
             return services;
         }
@@ -786,7 +789,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services), "Requires a services collection to add the Azure Service Bus fallback message handler to");
 
-            return services.AddSingleton<IAzureServiceBusFallbackMessageHandler, TMessageHandler>();
+            return services.AddTransient<IAzureServiceBusFallbackMessageHandler, TMessageHandler>();
         }
 
         /// <summary>
@@ -804,7 +807,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services), "Requires a services collection to add the fallback message handler to");
             Guard.NotNull(createImplementation, nameof(createImplementation), "Requires a function to create the fallback message handler");
 
-            return services.AddSingleton<IAzureServiceBusFallbackMessageHandler, TMessageHandler>(createImplementation);
+            return services.AddTransient<IAzureServiceBusFallbackMessageHandler, TMessageHandler>(createImplementation);
         }
     }
 }

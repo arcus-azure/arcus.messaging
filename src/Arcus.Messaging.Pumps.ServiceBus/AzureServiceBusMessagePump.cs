@@ -54,7 +54,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             JobId = Settings.Options.JobId;
             SubscriptionName = Settings.SubscriptionName;
 
-            _fallbackMessageHandler = ServiceProvider.GetService<IAzureServiceBusFallbackMessageHandler>();
+            _fallbackMessageHandler = serviceProvider.GetService<IAzureServiceBusFallbackMessageHandler>();
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
             _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
         }
@@ -78,6 +78,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// Gets the name of the topic subscription; combined from the <see cref="AzureServiceBusMessagePumpSettings.SubscriptionName"/> and the <see cref="JobId"/>.
         /// </summary>
         protected string SubscriptionName { get; }
+
+        /// <summary>
+        /// Gets the Azure Service Bus message receiver that this message pump uses.
+        /// </summary>
+        internal MessageReceiver MessageReceiver => _messageReceiver;
 
         /// <summary>
         /// Triggered when the application host is ready to start the service.
@@ -480,13 +485,18 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 using (IServiceScope serviceScope = ServiceProvider.CreateScope())
                 {
                     var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();
-                    correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
-
-                    using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
+                    if (correlationInfoAccessor is null)
                     {
-                        Logger.LogInformation("Received message '{MessageId}'", message.MessageId);
+                        Logger.LogTrace("No message correlation configured");
                         await ProcessMessageAsync(message, cancellationToken, correlationInfo);
-                        Logger.LogInformation("Message {MessageId} processed", message.MessageId);
+                    }
+                    else
+                    {
+                        correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
+                        using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
+                        {
+                            await ProcessMessageAsync(message, cancellationToken, correlationInfo);
+                        }
                     }
                 }
             }
@@ -499,11 +509,33 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
         }
 
+        /// <summary>
+        /// Pre-process the message by setting the necessary values the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.
+        /// </summary>
+        /// <param name="messageHandler">The message handler to be used to process the message.</param>
+        /// <param name="messageContext">The message context of the message that will be handled.</param>
+        protected override Task PreProcessMessageAsync<TMessageContext>(MessageHandler messageHandler, TMessageContext messageContext)
+        {
+            Guard.NotNull(messageHandler, nameof(messageHandler), "Requires a message handler instance to pre-process the message");
+            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to pre-process the message");
+
+            if (messageHandler.Service is AzureServiceBusMessageHandlerTemplate template 
+                && messageContext is AzureServiceBusMessageContext serviceBusMessageContext)
+            {
+                template.SetLockToken(serviceBusMessageContext.SystemProperties.LockToken);
+                template.SetMessageReceiver(_messageReceiver);
+            }
+
+            return Task.CompletedTask;
+        }
+
         private async Task ProcessMessageAsync(
             Message message,
             CancellationToken cancellationToken,
             MessageCorrelationInfo correlationInfo)
         {
+            Logger.LogInformation("Received message '{MessageId}'", message.MessageId);
+
             var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
             Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
             string messageBody = encoding.GetString(message.Body);
@@ -514,6 +546,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             else
             {
+                if (_fallbackMessageHandler is AzureServiceBusMessageHandlerTemplate specificMessageHandler)
+                {
+                    specificMessageHandler.SetMessageReceiver(_messageReceiver);
+                }
+
                 MessageHandlerResult result = await ProcessMessageAndCaptureAsync(messageBody, messageContext, correlationInfo, cancellationToken);
                 if (result.Exception != null)
                 {
@@ -525,6 +562,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     await _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
                 }
             }
+
+            Logger.LogInformation("Message '{MessageId}' processed", message.MessageId);
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)

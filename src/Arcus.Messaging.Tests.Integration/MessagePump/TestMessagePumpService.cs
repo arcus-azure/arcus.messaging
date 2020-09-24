@@ -15,6 +15,7 @@ using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Polly;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -92,38 +93,86 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var operationId = Guid.NewGuid().ToString();
             var transactionId = Guid.NewGuid().ToString();
 
+            Order order = OrderGenerator.Generate();
+            Message orderMessage = order.AsServiceBusMessage(operationId, transactionId);
+            orderMessage.UserProperties["Topic"] = "Orders";
+            await SendMessageToServiceBusAsync(connectionString, orderMessage);
+
+            string receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId, retryCount: 10);
+            Assert.NotEmpty(receivedEvent);
+
+            EventBatch<Event> eventBatch = EventParser.Parse(receivedEvent);
+            Assert.NotNull(eventBatch);
+            Event orderCreatedEvent = Assert.Single(eventBatch.Events);
+            Assert.NotNull(orderCreatedEvent);
+
+            var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
+            Assert.NotNull(orderCreatedEventData);
+            Assert.NotNull(orderCreatedEventData.CorrelationInfo);
+            Assert.Equal(order.Id, orderCreatedEventData.Id);
+            Assert.Equal(order.Amount, orderCreatedEventData.Amount);
+            Assert.Equal(order.ArticleNumber, orderCreatedEventData.ArticleNumber);
+            Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
+            Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
+            Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
+        }
+
+        /// <summary>
+        /// Sends an Azure Service Bus message to the message pump.
+        /// </summary>
+        /// <param name="connectionString">The connection string to connect to the service bus.</param>
+        /// <param name="message">The message to send.</param>
+        public async Task SendMessageToServiceBusAsync(string connectionString, Message message)
+        {
+            Guard.NotNullOrWhitespace(connectionString, nameof(connectionString));
+
             var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
             var messageSender = new MessageSender(serviceBusConnectionStringBuilder);
 
             try
             {
-                Order order = OrderGenerator.Generate();
-                Message orderMessage = order.AsServiceBusMessage(operationId, transactionId);
-                orderMessage.UserProperties["Topic"] = "Orders";
-
-                await messageSender.SendAsync(orderMessage);
-
-                string receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId, 10);
-                Assert.NotEmpty(receivedEvent);
-
-                EventBatch<Event> eventBatch = EventParser.Parse(receivedEvent);
-                Assert.NotNull(eventBatch);
-                Event orderCreatedEvent = Assert.Single(eventBatch.Events);
-                Assert.NotNull(orderCreatedEvent);
-
-                var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
-                Assert.NotNull(orderCreatedEventData);
-                Assert.NotNull(orderCreatedEventData.CorrelationInfo);
-                Assert.Equal(order.Id, orderCreatedEventData.Id);
-                Assert.Equal(order.Amount, orderCreatedEventData.Amount);
-                Assert.Equal(order.ArticleNumber, orderCreatedEventData.ArticleNumber);
-                Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
-                Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
-                Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
+                await messageSender.SendAsync(message);
             }
             finally
             {
                 await messageSender.CloseAsync();
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="connectionString"></param>
+        /// <returns></returns>
+        public async Task AssertDeadLetterMessageAsync(string connectionString)
+        {
+            var connectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
+            connectionStringBuilder.EntityPath = EntityNameHelper.FormatTransferDeadLetterPath(connectionStringBuilder.EntityPath);
+            var messageReceiver = new MessageReceiver(connectionStringBuilder);
+
+            try
+            {
+                bool received = false;
+                messageReceiver.RegisterMessageHandler(
+                    (message, ct) =>
+                    {
+                        received = true;
+                        return Task.CompletedTask;
+                    },
+                    new MessageHandlerOptions(exception =>
+                    {
+                        _logger.LogError(exception.Exception, "Failure during receiving dead lettered messages");
+                        return Task.CompletedTask;
+                    }));
+
+                Policy.Timeout(TimeSpan.FromMinutes(1))
+                      .Wrap(Policy.HandleResult<bool>(result => !result)
+                                  .WaitAndRetryForever(i => TimeSpan.FromSeconds(1)))
+                      .Execute(() => received);
+            }
+            finally
+            {
+                await messageReceiver.CloseAsync();
             }
         }
 

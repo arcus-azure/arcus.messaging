@@ -26,7 +26,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services));
 
-            services.AddSingleton<IMessageHandler<TMessage, MessageContext>, TMessageHandler>();
+            services.AddTransient<IMessageHandler<TMessage, MessageContext>, TMessageHandler>();
 
             return services;
         }
@@ -48,7 +48,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services));
             Guard.NotNull(implementationFactory, nameof(implementationFactory));
 
-            services.AddSingleton<IMessageHandler<TMessage, MessageContext>, TMessageHandler>(implementationFactory);
+            services.AddTransient<IMessageHandler<TMessage, MessageContext>, TMessageHandler>(implementationFactory);
 
             return services;
         }
@@ -68,7 +68,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services));
 
-            services.AddSingleton<IMessageHandler<TMessage, TMessageContext>, TMessageHandler>();
+            services.AddTransient<IMessageHandler<TMessage, TMessageContext>, TMessageHandler>();
 
             return services;
         }
@@ -92,7 +92,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services));
             Guard.NotNull(implementationFactory, nameof(implementationFactory));
 
-            services.AddSingleton<IMessageHandler<TMessage, TMessageContext>, TMessageHandler>(implementationFactory);
+            services.AddTransient<IMessageHandler<TMessage, TMessageContext>, TMessageHandler>(implementationFactory);
 
             return services;
         }
@@ -186,7 +186,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageContextFilter,  nameof(messageContextFilter));
             Guard.NotNull(implementationFactory, nameof(implementationFactory));
 
-            return services.AddSingleton<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
+            return services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
                 serviceProvider => new MessageHandlerRegistration<TMessage, TMessageContext>(
                     messageContextFilter, implementationFactory(serviceProvider)));
         }

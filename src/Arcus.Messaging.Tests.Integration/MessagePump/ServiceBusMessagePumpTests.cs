@@ -127,6 +127,26 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
         }
 
+        [Fact]
+        public async Task ServiceBusMessagePumpWithServiceBusDeadLetterFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var commandArguments = new[]
+            {
+                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
+            };
+
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueWithServiceBusDeadLetterFallbackProgram>(config, _logger, commandArguments))
+            {
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+                {
+                    // Act / Assert
+                    await service.AssertDeadLetterMessageAsync(connectionString);
+                }
+            }
+        }
 
         [Fact]
         public async Task ServiceBusMessagePump_RotateServiceBusConnectionKeys_MessagePumpRestartsThenMessageSuccessfullyProcessed()
