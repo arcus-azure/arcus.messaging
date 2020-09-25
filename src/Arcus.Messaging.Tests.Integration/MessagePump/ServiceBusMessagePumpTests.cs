@@ -149,7 +149,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 {
                     // Act
                     await service.SendMessageToServiceBusAsync(connectionString, order.AsServiceBusMessage());
-                    
+
                     // Assert
                     await service.AssertDeadLetterMessageAsync(connectionString);
                 }

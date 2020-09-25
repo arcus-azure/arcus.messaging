@@ -154,10 +154,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 bool received = false;
                 messageReceiver.RegisterMessageHandler(
-                    (message, ct) =>
+                    async (message, ct) =>
                     {
                         received = true;
-                        return Task.CompletedTask;
+                        _logger.LogInformation("Received dead lettered message in test suite");
+                        await messageReceiver.CompleteAsync(message.SystemProperties.LockToken);
                     },
                     new MessageHandlerOptions(exception =>
                     {
@@ -165,7 +166,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                         return Task.CompletedTask;
                     }));
 
-                Policy.Timeout(TimeSpan.FromMinutes(1))
+                Policy.Timeout(TimeSpan.FromMinutes(2))
                       .Wrap(Policy.HandleResult<bool>(result => !result)
                                   .WaitAndRetryForever(i => TimeSpan.FromSeconds(1)))
                       .Execute(() => received);

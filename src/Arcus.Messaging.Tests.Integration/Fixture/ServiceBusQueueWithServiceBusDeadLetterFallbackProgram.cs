@@ -30,7 +30,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                 .ConfigureLogging(loggingBuilder => loggingBuilder.AddConsole(options => options.IncludeScopes = true))
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = false)
                             .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
                             .WithServiceBusFallbackMessageHandler<OrdersAzureServiceBusDeadLetterFallbackMessageHandler>();
 

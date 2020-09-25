@@ -36,7 +36,9 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
+            Logger.LogTrace("Dead letter message '{MessageId}'...", message.MessageId);
             await DeadLetterAsync(message);
+            Logger.LogInformation("Message '{MessageId}' is dead lettered", message.MessageId);
         }
     }
 }
