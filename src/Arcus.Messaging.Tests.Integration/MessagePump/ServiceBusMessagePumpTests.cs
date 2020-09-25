@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Tests.Core.Generators;
+using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.ServiceBus;
 using Arcus.Messaging.Tests.Workers.ServiceBus;
@@ -8,6 +10,7 @@ using Arcus.Security.Providers.AzureKeyVault.Authentication;
 using Arcus.Testing.Logging;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -138,11 +141,16 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
             };
 
+            Order order = OrderGenerator.Generate();
+
             using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueWithServiceBusDeadLetterFallbackProgram>(config, _logger, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
-                    // Act / Assert
+                    // Act
+                    await service.SendMessageToServiceBusAsync(connectionString, order.AsServiceBusMessage());
+                    
+                    // Assert
                     await service.AssertDeadLetterMessageAsync(connectionString);
                 }
             }
