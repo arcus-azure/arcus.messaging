@@ -31,6 +31,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
                             .WithServiceBusFallbackMessageHandler<OrdersAzureServiceBusDeadLetterFallbackMessageHandler>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
