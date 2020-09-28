@@ -147,8 +147,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task AssertDeadLetterMessageAsync(string connectionString)
         {
             var connectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
-            connectionStringBuilder.EntityPath = EntityNameHelper.FormatTransferDeadLetterPath(connectionStringBuilder.EntityPath);
-            var messageReceiver = new MessageReceiver(connectionStringBuilder);
+            connectionStringBuilder.EntityPath = EntityNameHelper.FormatDeadLetterPath(connectionStringBuilder.EntityPath);
+            var messageReceiver = new MessageReceiver(connectionStringBuilder, ReceiveMode.ReceiveAndDelete);
 
             try
             {
