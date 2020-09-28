@@ -5,6 +5,7 @@ layout: default
 
 # Azure Service Bus Message Pump
 
+
 Azure Service Bus Message Pump will perform all the plumbing that is required for processing queues & topics:
 
 - Manage message pump lifecycle
@@ -14,7 +15,6 @@ Azure Service Bus Message Pump will perform all the plumbing that is required fo
 - Provide telemetry
 
 As a user, the only thing you have to do is **focus on processing messages, not how to get them**.
-
 You can do this by creating a message handler which implements from `IAzureServiceBusMessageHandler<TMessage>` (or `IMessageHandler<TMessage, MessageContext>`).
 
 Here is an example of a message handler that expects messages of type `Order`:
@@ -56,6 +56,13 @@ public class OrdersMessageHandler : IMessageHandler<Order>
     }
 }
 ```
+
+Other topics:
+- [Configuration](#configuration)
+- [Customized configuration](#customized-configuration)
+- [Fallback message handling](#fallback-message-handling)
+- [Influence handling of Service Bus message in a message handler](#influence-handling-of-Service-Bus-message-in-message-handler)
+- [Correlation](#correlation)
 
 ## Configuration
 
@@ -191,6 +198,89 @@ And to register such an implementation:
 public void ConfigureServices(IServiceCollection services)
 {
     services.WithServiceBusFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+}
+```
+
+## Influence handling of Service Bus message in message handler
+
+When an Azure Service Bus message is received (either via regular message handlers or fallback message handlers), we allow specific Azure Service Bus operations during the message handling.
+Currently we support [**Dead letter**](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dead-letter-queues) and [*Abandon**](https://docs.microsoft.com/en-us/dotnet/api/microsoft.servicebus.messaging.messagereceiver.abandon?view=azure-dotnet).
+
+### During (regular) message handling
+
+To have access to the Azure Service Bus operations, you have to implement the `abstract` `AzureServiceBusMessageHandler<T>` class. 
+Behind the screens it implements the `IMessageHandler<>` interface, so you can register this the same way as your other regular message handlers.
+
+This base class provides several protected methods to call the Azure Service Bus operations:
+- `.DeadLetterMessageAsync`
+- `.AbandonMessageAsync`
+
+Example:
+
+```csharp
+public class AbandonsUnknownOrderMessageHandler : AzureServiceBusMessageHandler<Order>
+{
+    public AbandonsUnknownOrderMessageHandler(ILogger<AbandonsUnknownOrderMessageHandler> logger)
+        : base(logger)
+    {
+    }
+
+    public override async Task ProcessMessageAsync(Order order, AzureServiceBusMessageContext context, ...)
+    {
+        if (order.Id < 1)
+        {
+            await AbandonMessageAsync();
+        }
+        else
+        {
+            Logger.LogInformation("Received valid order");
+        }
+    }
+}
+```
+
+The registration happens the same as any other regular message handler:
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.WithServiceBusMessageHandler<AbandonUnknownOrderMessageHandler, Order>();
+}
+```
+
+### During fallback message handling
+
+To have access to the Azure Service Bus operations, you have to implement the `abstract` AzureServiceBusFallbackMessageHandler` class.
+Behind the scenes it implements the `IServiceBusFallbackMessageHandler`, so you can register this the same way as any other fallback message handler.
+
+This base class provides several protected methods to call the Azure Service Bus operations:
+- `.DeadLetterAsync`
+- `.AbandonAsync`
+
+Example:
+
+```csharp
+public class DeadLetterFallbackMessageHandler : AzureServiceBusFallbackMessageHandler
+{
+    public DeadLetterFallbackMessageHandler(ILogger<DeadLetterFallbackMessageHandler> logger)
+        : base(logger)
+    {
+    }
+
+    public override async Task ProcessMessageAsync(Message message, AzureServiceBusMessageContext context, ...)
+    {
+        Logger.LogInformation("Message is not handled by any message handler, will dead letter");
+        await DeadLetterAsync(message);
+    }
+}
+```
+
+The registration happens the same way as any other fallback message handler:
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.WithServiceBusFallbackMessageHandler<DeadLetterFallbackMessageHandler>();
 }
 ```
 
