@@ -78,7 +78,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 throw new InvalidOperationException($"Cannot DeadLetter the message '{message.MessageId}' because the message receiver was not yet initialized yet");
             }
 
-            Logger.LogTrace("DeadLettering message '{MessageId}'...", message.MessageId);
+            Logger.LogTrace("Dead-lettering message '{MessageId}'...", message.MessageId);
             await MessageReceiver.DeadLetterAsync(message.SystemProperties.LockToken, deadLetterReason, deadLetterErrorDescription);
             Logger.LogTrace("Message '{MessageId}' was dead-lettered!", message.MessageId);
         }
