@@ -158,8 +158,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
         }
 
-        [Fact]
-        public async Task ServiceBusMessagePumpWithServiceBusAbandon_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        [Theory]
+        [InlineData(typeof(ServiceBusTopicWithServiceBusAbandonProgram))]
+        [InlineData(typeof(ServiceBusTopicWithServiceBusAbandonFallbackProgram))]
+        public async Task ServiceBusMessagePumpWithServiceBusAbandon_PublishServiceBusMessage_MessageSuccessfullyProcessed(Type programType)
         {
             // Arrange
             var config = TestConfig.Create();
@@ -171,7 +173,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString)
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusTopicWithServiceBusAbandonFallbackProgram>(config, _logger, commandArguments))
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {

@@ -13,7 +13,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessageHandlerTemplate"/> class.
         /// </summary>
-        public OrdersAzureServiceBusDeadLetterMessageHandler(ILogger logger) : base(logger)
+        public OrdersAzureServiceBusDeadLetterMessageHandler(ILogger<OrdersAzureServiceBusDeadLetterMessageHandler> logger) : base(logger)
         {
         }
 
