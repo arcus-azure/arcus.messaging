@@ -249,7 +249,7 @@ public void ConfigureServices(IServiceCollection services)
 
 ### During fallback message handling
 
-To have access to the Azure Service Bus operations, you have to implement the `abstract` AzureServiceBusFallbackMessageHandler` class.
+To have access to the Azure Service Bus operations, you have to implement the abstract `AzureServiceBusFallbackMessageHandler` class.
 Behind the scenes it implements the `IServiceBusFallbackMessageHandler`, so you can register this the same way as any other fallback message handler.
 
 This base class provides several protected methods to call the Azure Service Bus operations:
