@@ -569,7 +569,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 }
             }
 
-            Logger.LogInformation("Message '{MessageId}' processed", message.MessageId);
+            Logger.LogTrace("Message '{MessageId}' processed", message.MessageId);
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
