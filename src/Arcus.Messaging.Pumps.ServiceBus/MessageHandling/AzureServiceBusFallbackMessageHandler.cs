@@ -56,7 +56,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
 
             Logger.LogTrace("DeadLettering message '{MessageId}'...", message.MessageId);
             await MessageReceiver.DeadLetterAsync(message.SystemProperties.LockToken, newMessageProperties);
-            Logger.LogInformation("Message '{MessageId}' was DeadLettered!", message.MessageId);
+            Logger.LogTrace("Message '{MessageId}' was dead-lettered", message.MessageId);
         }
 
         /// <summary>
