@@ -5,7 +5,6 @@ layout: default
 
 # Azure Service Bus Message Pump
 
-
 Azure Service Bus Message Pump will perform all the plumbing that is required for processing queues & topics:
 
 - Manage message pump lifecycle
