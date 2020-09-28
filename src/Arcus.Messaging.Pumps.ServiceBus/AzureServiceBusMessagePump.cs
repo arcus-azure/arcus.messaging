@@ -519,13 +519,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Guard.NotNull(messageHandler, nameof(messageHandler), "Requires a message handler instance to pre-process the message");
             Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to pre-process the message");
 
+            Logger.LogTrace("Start pre-processing message handler {MessageHandlerType}...", messageHandler.ServiceType.Name);
+
             if (messageHandler.Service is AzureServiceBusMessageHandlerTemplate template 
                 && messageContext is AzureServiceBusMessageContext serviceBusMessageContext)
             {
                 template.SetLockToken(serviceBusMessageContext.SystemProperties.LockToken);
                 template.SetMessageReceiver(_messageReceiver);
             }
-
+            else
+            {
+                Logger.LogTrace("Nothing to pre-process for message handler type '{MessageHandlerType}'", messageHandler.ServiceType.Name);
+            }
+            
             return Task.CompletedTask;
         }
 
