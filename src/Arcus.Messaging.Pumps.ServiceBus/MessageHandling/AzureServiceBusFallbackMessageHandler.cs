@@ -101,7 +101,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
 
             Logger.LogTrace("Abandoning message '{MessageId}'...", message.MessageId);
             await MessageReceiver.AbandonAsync(message.SystemProperties.LockToken, newMessageProperties);
-            Logger.LogInformation("Message '{MessageId}' was Abandoned!", message.MessageId);
+            Logger.LogTrace("Message '{MessageId}' was abandoned", message.MessageId);
         }
     }
 }
