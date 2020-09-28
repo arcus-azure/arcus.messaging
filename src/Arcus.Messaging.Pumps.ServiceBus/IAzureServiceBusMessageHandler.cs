@@ -1,5 +1,4 @@
-﻿using Arcus.Messaging.Pumps.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+﻿using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Microsoft.Azure.ServiceBus;
 
 namespace Arcus.Messaging.Pumps.ServiceBus

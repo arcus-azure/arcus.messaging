@@ -135,7 +135,7 @@ stages:
 
   - stage: SelfContainingIntegrationTests
     displayName: Self-Containing Integration Tests
-    dependsOn: Build
+    dependsOn: DockerIntegrationTests
     condition: succeeded()
     variables:
       - name: 'Arcus.Health.Port.Queue'
