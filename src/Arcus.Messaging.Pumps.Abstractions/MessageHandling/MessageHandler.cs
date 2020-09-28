@@ -38,7 +38,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         }
 
         /// <summary>
-        /// 
+        /// Gets the instance of the message handler that this abstracted message handler represents.
         /// </summary>
         public object Service { get; }
 
