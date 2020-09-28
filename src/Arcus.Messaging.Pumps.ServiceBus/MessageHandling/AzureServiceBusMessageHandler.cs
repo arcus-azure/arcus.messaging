@@ -51,9 +51,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 throw new InvalidOperationException($"Cannot dead letter the message because the message receiver was not yet initialized");
             }
 
-            Logger.LogTrace("DeadLettering message...");
+            Logger.LogTrace("Dead-lettering message using lock token '{LockToken}'...", LockToken);
             await MessageReceiver.DeadLetterAsync(LockToken, newMessageProperties);
-            Logger.LogInformation("Message was DeadLettered!");
+            Logger.LogTrace("Message was dead-lettered using lock token '{LockToken}'!", LockToken);
         }
 
         /// <summary>
@@ -78,9 +78,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 throw new InvalidOperationException($"Cannot dead letter the message because the message receiver was not yet initialized");
             }
 
-            Logger.LogTrace("DeadLettering message...");
+            Logger.LogTrace("Dead-lettering message using lock token '{LockToken}' because '{Reason}'...", LockToken, deadLetterReason);
             await MessageReceiver.DeadLetterAsync(LockToken, deadLetterReason, deadLetterErrorDescription);
-            Logger.LogInformation("Message was DeadLettered!");
+            Logger.LogTrace("Message was dead-lettered using lock token '{LockToken}' because '{Reason}'!", LockToken, deadLetterReason);
         }
 
         /// <summary>
@@ -100,9 +100,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 throw new InvalidOperationException($"Cannot Abandon the message because the message receiver was not yet initialized");
             }
 
-            Logger.LogTrace("Abandoning message...");
+            Logger.LogTrace("Abandoning message using lock token '{LockToken}'...", LockToken);
             await MessageReceiver.AbandonAsync(LockToken, newMessageProperties);
-            Logger.LogInformation("Message was Abandoned!");
+            Logger.LogTrace("Message was abandoned using lock token '{LockToken}'!", LockToken);
         }
     }
 }

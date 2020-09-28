@@ -54,9 +54,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 throw new InvalidOperationException($"Cannot DeadLetter the message '{message.MessageId}' because the message receiver was not yet initialized yet");
             }
 
-            Logger.LogTrace("Dead-lettering message '{MessageId}'...", message.MessageId);
+            Logger.LogTrace("Dead-lettering message '{MessageId}' using lock token '{LockToken}'...", message.MessageId, message.SystemProperties.LockToken);
             await MessageReceiver.DeadLetterAsync(message.SystemProperties.LockToken, newMessageProperties);
-            Logger.LogTrace("Message '{MessageId}' was dead-lettered", message.MessageId);
+            Logger.LogTrace("Message '{MessageId}' was dead-lettered using lock token '{LockToken}'!", message.MessageId, message.SystemProperties.LockToken);
         }
 
         /// <summary>
@@ -78,9 +78,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 throw new InvalidOperationException($"Cannot DeadLetter the message '{message.MessageId}' because the message receiver was not yet initialized yet");
             }
 
-            Logger.LogTrace("Dead-lettering message '{MessageId}'...", message.MessageId);
+            Logger.LogTrace("Dead-lettering message '{MessageId}' using lock token '{LockToken}' because '{Reason}'...", message.MessageId, message.SystemProperties.LockToken, deadLetterReason);
             await MessageReceiver.DeadLetterAsync(message.SystemProperties.LockToken, deadLetterReason, deadLetterErrorDescription);
-            Logger.LogTrace("Message '{MessageId}' was dead-lettered!", message.MessageId);
+            Logger.LogTrace("Message '{MessageId}' was dead-lettered using lock token '{LockToken}' because '{Reason}'!", message.MessageId, message.SystemProperties.LockToken, deadLetterReason);
         }
 
         /// <summary>
@@ -99,9 +99,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 throw new InvalidOperationException($"Cannot Abandon the message '{message.MessageId}' because the message receiver was not yet initialized yet");
             }
 
-            Logger.LogTrace("Abandoning message '{MessageId}'...", message.MessageId);
+            Logger.LogTrace("Abandoning message '{MessageId}' using lock token '{LockToken}'...", message.MessageId, message.SystemProperties.LockToken);
             await MessageReceiver.AbandonAsync(message.SystemProperties.LockToken, newMessageProperties);
-            Logger.LogTrace("Message '{MessageId}' was abandoned", message.MessageId);
+            Logger.LogTrace("Message '{MessageId}' was abandoned using '{LockToken}'!", message.MessageId, message.SystemProperties.LockToken);
         }
     }
 }
