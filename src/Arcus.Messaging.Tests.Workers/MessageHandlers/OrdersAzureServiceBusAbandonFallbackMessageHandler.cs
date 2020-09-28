@@ -87,7 +87,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 
             await _eventGridPublisher.PublishAsync(orderCreatedEvent);
 
-            _logger.LogInformation("Event {EventId} was published with subject {EventSubject}", orderCreatedEvent.Id, orderCreatedEvent.Subject);
+            Logger.LogInformation("Event {EventId} was published with subject {EventSubject}", orderCreatedEvent.Id, orderCreatedEvent.Subject);
         }
     }
 }
