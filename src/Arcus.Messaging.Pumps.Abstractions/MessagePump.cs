@@ -221,14 +221,14 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             if (!canProcessMessage)
             {
-                Logger.LogInformation(
+                Logger.LogTrace(
                     "Message handler '{MessageHandlerType}' is not able to process the message because the message context '{MessageContextType}' didn't match the correct message handler's message context",
                     handler.ServiceType.Name, handler.MessageContextType.Name);
             }
 
             if (!tryDeserializeToMessageFormat)
             {
-                Logger.LogInformation(
+                Logger.LogTrace(
                     "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message that the message handler can handle",
                     handler.ServiceType.Name);
             }
@@ -264,7 +264,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             await processMessageAsync;
 
-            Logger.LogInformation("Fallback message handler has processed the message");
+            Logger.LogTrace("Fallback message handler has processed the message");
         }
 
         /// <summary>
@@ -296,13 +296,13 @@ namespace Arcus.Messaging.Pumps.Abstractions
             var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
             if (success)
             {
-                Logger.LogInformation("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
+                Logger.LogTrace("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
 
                 result = value;
                 return true;
             }
 
-            Logger.LogInformation("Incoming message failed to be JSON deserialized to message type '{MessageType}'", messageType.Name);
+            Logger.LogTrace("Incoming message failed to be JSON deserialized to message type '{MessageType}'", messageType.Name);
 
             result = null;
             return false;
