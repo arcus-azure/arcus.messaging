@@ -45,7 +45,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <summary>
         /// Gets the type of the message handler that this abstracted message handler represents.
         /// </summary>
-        internal Type ServiceType { get; }
+        public Type ServiceType { get; }
 
         /// <summary>
         /// Gets the type of the message that this abstracted message handler can process.
