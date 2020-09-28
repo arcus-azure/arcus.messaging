@@ -140,10 +140,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         /// <summary>
-        /// 
+        /// Tries receiving a single dead lettered message on the Azure Service Bus dead letter queue.
         /// </summary>
-        /// <param name="connectionString"></param>
-        /// <returns></returns>
+        /// <param name="connectionString">The connection string to connect to the Azure Service Bus.</param>
         public async Task AssertDeadLetterMessageAsync(string connectionString)
         {
             var connectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
