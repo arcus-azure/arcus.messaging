@@ -130,8 +130,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
         }
 
-        [Fact]
-        public async Task ServiceBusMessagePumpWithServiceBusDeadLetterFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        [Theory]
+        [InlineData(typeof(ServiceBusQueueWithServiceBusDeadLetterProgram))]
+        [InlineData(typeof(ServiceBusQueueWithServiceBusDeadLetterFallbackProgram))]
+        public async Task ServiceBusMessagePumpWithServiceBusDeadLetter_PublishServiceBusMessage_MessageSuccessfullyProcessed(Type programType)
         {
             // Arrange
             var config = TestConfig.Create();
@@ -143,7 +145,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             Order order = OrderGenerator.Generate();
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueWithServiceBusDeadLetterFallbackProgram>(config, _logger, commandArguments))
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
@@ -152,6 +154,29 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
                     // Assert
                     await service.AssertDeadLetterMessageAsync(connectionString);
+                }
+            }
+        }
+
+        [Fact]
+        public async Task ServiceBusMessagePumpWithServiceBusAbandon_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            var commandArguments = new[]
+            {
+                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
+                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
+                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString)
+            };
+
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusTopicWithServiceBusAbandonFallbackProgram>(config, _logger, commandArguments))
+            {
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+                {
+                    // Act
+                    await service.SimulateMessageProcessingAsync(connectionString);
                 }
             }
         }
