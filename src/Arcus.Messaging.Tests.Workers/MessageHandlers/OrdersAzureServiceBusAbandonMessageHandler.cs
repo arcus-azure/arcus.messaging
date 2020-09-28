@@ -21,7 +21,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
     {
         private readonly IEventGridPublisher _eventGridPublisher;
 
-        private int _deliveryCount;
+        private static int _deliveryCount;
 
         public OrdersAzureServiceBusAbandonMessageHandler(IEventGridPublisher eventGridPublisher, ILogger<OrdersAzureServiceBusAbandonMessageHandler> logger)
             : base(logger)
