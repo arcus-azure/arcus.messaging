@@ -540,7 +540,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             CancellationToken cancellationToken,
             MessageCorrelationInfo correlationInfo)
         {
-            Logger.LogInformation("Received message '{MessageId}'", message.MessageId);
+            Logger.LogTrace("Received message '{MessageId}'", message.MessageId);
 
             var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
             Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
