@@ -133,7 +133,12 @@ namespace Arcus.Messaging.Health.Tcp
                     HealthReport report = await _healthService.CheckHealthAsync();
                     string clientId = client.Client?.RemoteEndPoint?.ToString() ?? string.Empty;
                     _logger.LogTrace("Return '{Status}' health report to client {ClientId}", report.Status, clientId);
-                    
+
+                    if (report.Status != HealthStatus.Healthy)
+                    {
+                        _logger.LogWarning($"Health probe is reporting '{report.Status}' status");
+                    }
+
                     byte[] response = SerializeHealthReport(report);
                     clientStream.Write(response, 0, response.Length);
 
