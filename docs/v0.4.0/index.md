@@ -1,14 +1,11 @@
 ---
 title: "Home"
 layout: default
-permalink: /
-redirect_from:
- - /index.html
 ---
 
 # Installation
 
-[![NuGet Badge](https://buildstats.info/nuget/Arcus.Messaging.Abstractions?packageVersion=0.1.0)](https://www.nuget.org/packages/Arcus.Messaging.Abstractions/0.4.0)
+[![NuGet Badge](https://buildstats.info/nuget/Arcus.Messaging.Abstractions?packageVersion=0.4.0)](https://www.nuget.org/packages/Arcus.Messaging.Abstractions/0.4.0)
 
 The features are available on NuGet:
 

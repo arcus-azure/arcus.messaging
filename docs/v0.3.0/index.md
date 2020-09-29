@@ -23,6 +23,7 @@ PM > Install-Package Arcus.Messaging.* -Version 0.3.0
 
 ## Older versions
 
+- [v0.2.0](v0.2.0)
 - [v0.1.0](v0.1.0)
 
 # License
