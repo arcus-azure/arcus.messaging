@@ -14,6 +14,8 @@ We allow several customizations while implementing your own message pump.
 
 ## Control custom deserialization
 
+### Altering custom message pump
+
 When inheriting from an `...MessagePump` type, there's a way to control how the incoming raw message is being deserialized.
 Based on the message type of the registered message handlers, the pump determines if the incoming message can be deserialized to that type.
 
@@ -43,6 +45,43 @@ public class OrderMessagePump : MessagePump
     }
 }
 ```
+
+### Delegating deserialization
+
+You can also choose to delegate the message deserialization to different deserializers. 
+This allows for more reuse, asynchronous, and is available without altering your message pump. 
+
+You start by implemeting an `IMessageBodyHandler`. The following example shows how an expected type can be transformed to something else. 
+The result type (in this case `OrderBatch`) will be then be used to check if there is an `IMessageHandler` registered with that message type.
+
+```csharp
+public class OrderBatchMessageBodyHandler : IMessageBodyHandler
+{
+    public async Task<MessageResult> DeserializeMessageAsync(string messageBody)
+    {
+        var orders = JsonConvert.DeserializeObject<Order[]>(messageBody);
+        return MessageResult.Success(new OrderBatch(orders));
+    }
+}
+```
+
+The registration of these message body handlers can be done just as easily as an `IMessageHandler`:
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    // Register the message body handler in the dependency container where the dependent services will be injected.
+    services.WithMessageBodyHandler<OrderBatchMessageBodyHandler>();
+
+    // Register the message body handler in the dependency container where the dependent services are manually injected.
+    services.WithMessageBodyHandler(serviceProvider => 
+    {
+        var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
+        return new OrderBatchMessageHandler(logger);
+    });
+}
+```
+
 
 ## Filter messages based on message context
 
