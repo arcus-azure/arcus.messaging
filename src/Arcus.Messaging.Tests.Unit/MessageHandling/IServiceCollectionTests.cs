@@ -1,5 +1,4 @@
 ﻿using System;
-using Arcus.Messaging.Pumps.Abstractions.Extensions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Microsoft.Extensions.DependencyInjection;
