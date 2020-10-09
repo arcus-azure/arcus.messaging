@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Pumps.Abstractions.Extensions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
