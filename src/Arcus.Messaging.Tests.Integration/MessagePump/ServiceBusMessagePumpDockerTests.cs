@@ -18,8 +18,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     [Trait("Category", "Docker")]
     public class ServiceBusMessagePumpDockerTests : IntegrationTest, IAsyncLifetime
     {
-        private const string QueueConnectionStringKey = "Arcus:ServiceBus:ConnectionStringWithQueue";
-        private const string TopicConnectionStringKey = "Arcus:ServiceBus:ConnectionStringWithTopic";
+        private const string QueueConnectionStringKey = "Arcus:ServiceBus:Docker:ConnectionStringWithQueue";
+        private const string TopicConnectionStringKey = "Arcus:ServiceBus:Docker:ConnectionStringWithTopic";
 
         public static IEnumerable<object[]> Encodings
         {
