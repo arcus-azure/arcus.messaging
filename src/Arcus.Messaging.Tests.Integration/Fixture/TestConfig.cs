@@ -71,8 +71,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             switch (entity)
             {
-                case ServiceBusEntity.Queue: return _config["Arcus:ServiceBus:ConnectionStringWithQueue"];
-                case ServiceBusEntity.Topic: return _config["Arcus:ServiceBus:ConnectionStringWithTopic"];
+                case ServiceBusEntity.Queue: return _config["Arcus:ServiceBus:SelfContained:ConnectionStringWithQueue"];
+                case ServiceBusEntity.Topic: return _config["Arcus:ServiceBus:SelfContained:ConnectionStringWithTopic"];
                 default:
                     throw new ArgumentOutOfRangeException(nameof(entity), entity, "Unknown Service Bus entity");
             }
