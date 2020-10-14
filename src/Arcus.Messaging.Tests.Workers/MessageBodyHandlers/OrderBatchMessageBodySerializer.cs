@@ -7,16 +7,16 @@ using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Tests.Workers.MessageBodyHandlers
 {
-    public class OrderBatchMessageBodyHandler : IMessageBodyHandler
+    public class OrderBatchMessageBodySerializer : IMessageBodySerializer
     {
-        private readonly ILogger<OrderBatchMessageBodyHandler> _logger;
+        private readonly ILogger<OrderBatchMessageBodySerializer> _logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OrderBatchMessageBodyHandler"/> class.
+        /// Initializes a new instance of the <see cref="OrderBatchMessageBodySerializer"/> class.
         /// </summary>
-        public OrderBatchMessageBodyHandler(ILogger<OrderBatchMessageBodyHandler> logger)
+        public OrderBatchMessageBodySerializer(ILogger<OrderBatchMessageBodySerializer> logger)
         {
-            _logger = logger ?? NullLogger<OrderBatchMessageBodyHandler>.Instance;
+            _logger = logger ?? NullLogger<OrderBatchMessageBodySerializer>.Instance;
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageBodyHandlers
             if (order is null)
             {
                 _logger.LogError("Cannot deserialize incoming message to an 'Order', so can't use 'Order'");
-                return Task.FromResult(MessageResult.Failure());
+                return Task.FromResult(MessageResult.Failure("Cannot deserialize incoming message to an 'Order', so can't use 'Order'"));
             }
 
             _logger.LogInformation("Deserialized to an 'Order', using 'Order'");

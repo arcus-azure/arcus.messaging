@@ -41,9 +41,9 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                             .Build();
                     });
                     services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                            .WithMessageBodyHandler<PassThruMessageBodyHandler>()
-                            .WithMessageBodyHandler<OrderBatchMessageBodyHandler>()
-                            .WithMessageBodyHandler(serviceProvider => new PassThruMessageBodyHandler())
+                            .WithMessageBodySerializer<PassThruMessageBodySerializer>()
+                            .WithMessageBodySerializer<OrderBatchMessageBodySerializer>()
+                            .WithMessageBodySerializer(serviceProvider => new PassThruMessageBodySerializer())
                             .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");

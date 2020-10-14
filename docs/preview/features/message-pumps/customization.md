@@ -8,9 +8,43 @@ layout: default
 While the message processing is handled by the `IMessageHandler<>` implementations, the message pump controls in what format the message is received.
 We allow several customizations while implementing your own message pump.
 
-- [Control custom deserialization](#control-custom-deserialization)
 - [Filter messages based on message context](#filter-messages-based-on-message-context)
+- [Control custom deserialization](#control-custom-deserialization)
+  - [Extending the message pump](#extending-the-message-pump)
+  - [Bring your own deserialization](#bring-your-own-deserialization)
 - [Fallback message handling](#fallback-message-handling)
+
+## Filter messages based on message context
+
+When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.
+
+This can be useful when you are sending different message types on the same queue. Another use-case is being able to handle different versions of the same message type which have different contracts because you are migrating your application.
+
+Following example shows how a message handler should only process a certain message when a property's in the context is present.
+
+We'll use a simple message handler implementation:
+
+```csharp
+public class OrderMessageHandler : IMessageHandler<Order>
+{
+    public async Task ProcessMessageAsync(Order order, MessageContext context, ...)
+    {
+        // Do some processing...
+	}
+}
+```
+
+We would like that this handler only processed the message when the context contains `MessageType` equals `Order`.
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+}
+```
+
+> Note that the order in which the message handlers are registered is important in the message processing.
+> In the example, when a message handler above this one is registered that could also handle the message (same message type) than that handler may be chosen instead of the one with the specific filter.
 
 ## Control custom deserialization
 
@@ -51,69 +85,40 @@ public class OrderMessagePump : MessagePump
 You can also choose to extend the built-in message deserialization with additional deserializer to meet your needs. 
 This allows you to easily deserialize into different message formats or reuse existing (de)serialization capabilities that you already have without altering your message pump. 
 
-You start by implemeting an `IMessageBodyHandler`. The following example shows how an expected type can be transformed to something else. 
+You start by implemeting an `IMessageBodySerializer`. The following example shows how an expected type can be transformed to something else. 
 The result type (in this case `OrderBatch`) will be then be used to check if there is an `IMessageHandler` registered with that message type.
 
 ```csharp
-public class OrderBatchMessageBodyHandler : IMessageBodyHandler
+public class OrderBatchMessageBodySerializer : IMessageBodySerializer
 {
     public async Task<MessageResult> DeserializeMessageAsync(string messageBody)
     {
-        var orders = JsonConvert.DeserializeObject<Order[]>(messageBody);
-        return MessageResult.Success(new OrderBatch(orders));
+        var serializer = new XmlSerializer(typeof(Order[]));
+        using (var contents = new MemoryStream(Encoding.UTF8.GetBytes(messageBody)))
+        {
+            var orders = (Order[]) serializer.Deserialize(contents);
+            return MessageResult.Success(new OrderBatch(orders));
+        }
     }
 }
 ```
 
-The registration of these message body handlers can be done just as easily as an `IMessageHandler`:
+The registration of these message body handlers can be done just as easily as an `IMessageSerializer`:
 
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    // Register the message body handler in the dependency container where the dependent services will be injected.
-    services.WithMessageBodyHandler<OrderBatchMessageBodyHandler>();
+    // Register the message body serializer in the dependency container where the dependent services will be injected.
+    services.WithMessageBodySerializer<OrderBatchMessageBodyHandler>();
 
-    // Register the message body handler in the dependency container where the dependent services are manually injected.
-    services.WithMessageBodyHandler(serviceProvider => 
+    // Register the message body serializer  in the dependency container where the dependent services are manually injected.
+    services.WithMessageBodySerializer(serviceProvider => 
     {
         var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
         return new OrderBatchMessageHandler(logger);
     });
 }
 ```
-
-
-## Filter messages based on message context
-
-When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.
-
-This can be useful when you are sending different message types on the same queue. Another use-case is being able to handle different versions of the same message type which have different contracts because you are migrating your application.
-
-Following example shows how a message handler should only process a certain message when a property's in the context is present.
-
-We'll use a simple message handler implementation:
-
-```csharp
-public class OrderMessageHandler : IMessageHandler<Order>
-{
-    public async Task ProcessMessageAsync(Order order, MessageContext context, ...)
-    {
-        // Do some processing...
-	}
-}
-```
-
-We would like that this handler only processed the message when the context contains `MessageType` equals `Order`.
-
-```csharp
-public void ConfigureServices(IServiceCollection services)
-{
-    services.WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
-}
-```
-
-> Note that the order in which the message handlers are registered is important in the message processing.
-> In the example, when a message handler above this one is registered that could also handle the message (same message type) than that handler may be chosen instead of the one with the specific filter.
 
 ## Fallback message handling
 

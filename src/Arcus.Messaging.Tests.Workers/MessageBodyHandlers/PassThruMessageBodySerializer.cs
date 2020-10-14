@@ -6,7 +6,7 @@ using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 
 namespace Arcus.Messaging.Tests.Workers.MessageBodyHandlers
 {
-    public class PassThruMessageBodyHandler : IMessageBodyHandler
+    public class PassThruMessageBodySerializer : IMessageBodySerializer
     {
         /// <summary>
         /// Tries to deserialize the incoming <paramref name="messageBody"/> to a message instance.

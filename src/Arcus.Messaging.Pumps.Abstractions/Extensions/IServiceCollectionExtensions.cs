@@ -224,37 +224,37 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds an <see cref="IMessageBodyHandler"/> implementation which the message pump can use to
+        /// Adds an <see cref="IMessageBodySerializer"/> implementation which the message pump can use to
         /// deserialize the incoming message before processing through the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.
         /// </summary>
         /// <typeparam name="TMessageBodyHandler">the type of the message body handler.</typeparam>
         /// <param name="services">The services to add the message body handler to.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
-        public static IServiceCollection WithMessageBodyHandler<TMessageBodyHandler>(this IServiceCollection services) 
-            where TMessageBodyHandler : class, IMessageBodyHandler
+        public static IServiceCollection WithMessageBodySerializer<TMessageBodyHandler>(this IServiceCollection services) 
+            where TMessageBodyHandler : class, IMessageBodySerializer
         {
             Guard.NotNull(services, nameof(services), "Requires a services collection to add the message body handler to");
 
-            return services.AddSingleton<IMessageBodyHandler, TMessageBodyHandler>();
+            return services.AddSingleton<IMessageBodySerializer, TMessageBodyHandler>();
         }
 
         /// <summary>
-        /// Adds an <see cref="IMessageBodyHandler"/> implementation which the message pump can use to
+        /// Adds an <see cref="IMessageBodySerializer"/> implementation which the message pump can use to
         /// deserialize the incoming message before processing through the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.
         /// </summary>
         /// <typeparam name="TMessageBodyHandler">the type of the message body handler.</typeparam>
         /// <param name="services">The services to add the message body handler to.</param>
         /// <param name="createImplementation">The function to create the message body handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or the <paramref name="createImplementation"/> is <c>null</c>.</exception>
-        public static IServiceCollection WithMessageBodyHandler<TMessageBodyHandler>(
+        public static IServiceCollection WithMessageBodySerializer<TMessageBodyHandler>(
             this IServiceCollection services,
             Func<IServiceProvider, TMessageBodyHandler> createImplementation)
-            where TMessageBodyHandler : class, IMessageBodyHandler
+            where TMessageBodyHandler : class, IMessageBodySerializer
         {
             Guard.NotNull(services, nameof(services), "Requires a services collection to add the message body handler to");
             Guard.NotNull(createImplementation, nameof(createImplementation), "Requires a function to create the message body handler");
 
-            return services.AddSingleton<IMessageBodyHandler, TMessageBodyHandler>(createImplementation);
+            return services.AddSingleton<IMessageBodySerializer, TMessageBodyHandler>(createImplementation);
         }
     }
 }

@@ -7,7 +7,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
     /// </summary>
     /// <seealso cref="IMessageHandler{TMessage,TMessageContext}"/>
     /// <seealso cref="MessagePump"/>
-    public interface IMessageBodyHandler
+    public interface IMessageBodySerializer
     {
         /// <summary>
         /// Tries to deserialize the incoming <paramref name="messageBody"/> to a message instance.

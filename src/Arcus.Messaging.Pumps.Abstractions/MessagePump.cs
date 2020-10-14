@@ -242,9 +242,9 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
         private async Task<MessageResult> DeserializeMessageAsync(string message, Type messageType)
         {
-            IEnumerable<IMessageBodyHandler> messageBodyHandlers = ServiceProvider.GetServices<IMessageBodyHandler>();
+            IEnumerable<IMessageBodySerializer> messageBodyHandlers = ServiceProvider.GetServices<IMessageBodySerializer>();
 
-            foreach (IMessageBodyHandler messageBodyHandler in messageBodyHandlers)
+            foreach (IMessageBodySerializer messageBodyHandler in messageBodyHandlers)
             {
                 MessageResult result = await messageBodyHandler.DeserializeMessageAsync(message);
                 if (result.IsSuccess && result.DeserializedMessage.GetType() == messageType)
@@ -258,7 +258,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
                 return MessageResult.Success(deserializedByType);
             }
 
-            return MessageResult.Failure();
+            return MessageResult.Failure($"Incoming message cannot be deserialized to type '{messageType.Name}' because it is not in the correct format");
         }
 
         private async Task FallbackProcessMessageAsync<TMessageContext>(
