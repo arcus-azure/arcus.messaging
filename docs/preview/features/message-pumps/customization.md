@@ -14,7 +14,7 @@ We allow several customizations while implementing your own message pump.
 
 ## Control custom deserialization
 
-### Altering custom message pump
+### Extending the message pump
 
 When inheriting from an `...MessagePump` type, there's a way to control how the incoming raw message is being deserialized.
 Based on the message type of the registered message handlers, the pump determines if the incoming message can be deserialized to that type.
