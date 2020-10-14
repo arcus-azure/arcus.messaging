@@ -46,7 +46,7 @@ public class OrderMessagePump : MessagePump
 }
 ```
 
-### Delegating deserialization
+### Bring your own deserialization
 
 You can also choose to delegate the message deserialization to different deserializers. 
 This allows for more reuse, asynchronous, and is available without altering your message pump. 
