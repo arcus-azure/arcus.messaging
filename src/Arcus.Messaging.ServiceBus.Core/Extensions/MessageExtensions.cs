@@ -35,11 +35,12 @@ namespace Microsoft.Azure.ServiceBus
         ///     Gets the correlation information for a given message.
         /// </summary>
         /// <param name="message">The received message.</param>
-        public static MessageCorrelationInfo GetCorrelationInfo(this Message message)
+        /// <param name="transactionIdPropertyName">Name of the property to determine the transaction id.</param>
+        public static MessageCorrelationInfo GetCorrelationInfo(this Message message, string transactionIdPropertyName = PropertyNames.TransactionId)
         {
             Guard.NotNull(message, nameof(message));
 
-            string transactionId = GetTransactionId(message);
+            string transactionId = GetTransactionId(message, transactionIdPropertyName);
             string operationId = DetermineOperationId(message.CorrelationId);
 
             var messageCorrelationInfo = new MessageCorrelationInfo(operationId, transactionId);
@@ -60,11 +61,12 @@ namespace Microsoft.Azure.ServiceBus
         /// <summary>	
         ///     Gets the transaction id that is linked to this message	
         /// </summary>	
-        /// <param name="message">Message to process</param>	
+        /// <param name="message">Message to process</param>
+        /// <param name="transactionIdPropertyName">Name of the property to determine the transaction id.</param>
         /// <returns>Transaction id for message</returns>
-        public static string GetTransactionId(this Message message)
+        public static string GetTransactionId(this Message message, string transactionIdPropertyName = PropertyNames.TransactionId)
         {
-            return message.UserProperties.TryGetValue(PropertyNames.TransactionId, out object transactionId)
+            return message.UserProperties.TryGetValue(transactionIdPropertyName, out object transactionId)
                 ? transactionId.ToString()
                 : string.Empty;
         }

@@ -83,9 +83,30 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             {
                 UserProperties = { [PropertyNames.TransactionId] = expectedTransactionId }
             };
-            
+
             // Act
             MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+
+            // Assert
+            Assert.NotNull(correlationInfo);
+            Assert.NotEmpty(correlationInfo.CycleId);
+            Assert.NotEmpty(correlationInfo.OperationId);
+            Assert.Equal(expectedTransactionId, correlationInfo.TransactionId);
+        }
+
+        [Fact]
+        public void GetMessageCorrelationInfo_WithTransactionIdInCustomUserProperty_ReturnsCorrelationInfoWithGeneratedOperationId()
+        {
+            // Arrange
+            string expectedTransactionId = $"transaction-{Guid.NewGuid()}";
+            const string transactionIdPropertyName = "Correlation-Transaction-Id";
+            var message = new Message
+            {
+                UserProperties = { [transactionIdPropertyName] = expectedTransactionId }
+            };
+
+            // Act
+            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo(transactionIdPropertyName: transactionIdPropertyName);
 
             // Assert
             Assert.NotNull(correlationInfo);
