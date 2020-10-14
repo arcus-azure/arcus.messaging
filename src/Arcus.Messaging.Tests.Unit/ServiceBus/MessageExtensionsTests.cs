@@ -121,7 +121,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Arrange
             string expectedOperationId = $"operation-{Guid.NewGuid()}";
             var message = new Message { CorrelationId = expectedOperationId };
-            
+
             // Act
             MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
 
@@ -130,6 +130,61 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.NotEmpty(correlationInfo.CycleId);
             Assert.Equal(expectedOperationId, correlationInfo.OperationId);
             Assert.Empty(correlationInfo.TransactionId);
+        }
+
+        [Fact]
+        public void GetTransactionId_WithoutTransactionIdAsUserProperty_ReturnsEmptyString()
+        {
+            // Arrange
+            string expectedTransactionId = string.Empty;
+            var message = new Message
+            {
+                UserProperties = {  }
+            };
+
+            // Act
+            var transactionId = message.GetTransactionId();
+
+            // Assert
+            Assert.NotNull(transactionId);
+            Assert.Equal(expectedTransactionId, transactionId);
+        }
+
+        [Fact]
+        public void GetTransactionId_WithTransactionIdAsUserProperty_ReturnsCorrectTransactionId()
+        {
+            // Arrange
+            string expectedTransactionId = $"transaction-{Guid.NewGuid()}";
+            var message = new Message
+            {
+                UserProperties = { [PropertyNames.TransactionId] = expectedTransactionId }
+            };
+
+            // Act
+            var transactionId = message.GetTransactionId();
+
+            // Assert
+            Assert.NotNull(transactionId);
+            Assert.Equal(expectedTransactionId, transactionId);
+        }
+
+        [Fact]
+        public void GetTransactionId_WithTransactionIdInCustomUserProperty_ReturnsCorrectTransactionId()
+        {
+            // Arrange
+            string expectedTransactionId = $"transaction-{Guid.NewGuid()}";
+            const string transactionIdPropertyName = "Correlation-Transaction-Id";
+            var message = new Message
+            {
+                UserProperties = { [transactionIdPropertyName] = expectedTransactionId }
+            };
+
+            // Act
+            var transactionId = message.GetTransactionId(transactionIdPropertyName: transactionIdPropertyName);
+
+            // Assert
+            Assert.NotNull(transactionId);
+            Assert.Equal(expectedTransactionId, transactionId);
         }
     }
 }
