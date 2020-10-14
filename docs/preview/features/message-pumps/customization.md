@@ -49,7 +49,7 @@ public class OrderMessagePump : MessagePump
 ### Bring your own deserialization
 
 You can also choose to extend the built-in message deserialization with additional deserializer to meet your needs. 
-This allows for more reuse, asynchronous, and is available without altering your message pump. 
+This allows you to easily deserialize into different message formats or reuse existing (de)serialization capabilities that you already have without altering your message pump. 
 
 You start by implemeting an `IMessageBodyHandler`. The following example shows how an expected type can be transformed to something else. 
 The result type (in this case `OrderBatch`) will be then be used to check if there is an `IMessageHandler` registered with that message type.
