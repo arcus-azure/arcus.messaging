@@ -56,10 +56,9 @@ namespace Arcus.Messaging.Health.Tcp
         private static int GetTcpHealthPort(IConfiguration configuration, string tcpHealthPortKey)
         {
             string tcpPortString = configuration[tcpHealthPortKey];
-            if (!Int32.TryParse(tcpPortString, out int tcpPort))
+            if (!int.TryParse(tcpPortString, out int tcpPort))
             {
-                throw new ArithmeticException(
-                    $"Requires a configuration implementation with a '{tcpHealthPortKey}' key containing a TCP port number");
+                throw new ArithmeticException($"Requires a configuration implementation with a '{tcpHealthPortKey}' key containing a TCP port number");
             }
 
             return tcpPort;
@@ -128,12 +127,17 @@ namespace Arcus.Messaging.Health.Tcp
             _logger.LogTrace("Accepting TCP client on port {Port}...", Port);
             using (TcpClient client = await _listener.AcceptTcpClientAsync())
             {
-                _logger.LogInformation("TCP client accepted on port {Port}!", Port);
+                _logger.LogTrace("TCP client accepted on port {Port}!", Port);
                 using (NetworkStream clientStream = client.GetStream())
                 {
                     HealthReport report = await _healthService.CheckHealthAsync();
-                    string clientId = client.Client?.RemoteEndPoint?.ToString() ?? String.Empty;
-                    _logger.LogInformation("Return '{Status}' health report to client {ClientId}", report.Status, clientId);
+                    string clientId = client.Client?.RemoteEndPoint?.ToString() ?? string.Empty;
+                    _logger.LogTrace("Return '{Status}' health report to client {ClientId}", report.Status, clientId);
+
+                    if (report.Status != HealthStatus.Healthy)
+                    {
+                        _logger.LogWarning($"Health probe is reporting '{report.Status}' status");
+                    }
 
                     byte[] response = SerializeHealthReport(report);
                     clientStream.Write(response, 0, response.Length);

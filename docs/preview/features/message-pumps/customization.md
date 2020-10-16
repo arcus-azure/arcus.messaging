@@ -8,6 +8,10 @@ layout: default
 While the message processing is handled by the `IMessageHandler<>` implementations, the message pump controls in what format the message is received.
 We allow several customizations while implementing your own message pump.
 
+- [Control custom deserialization](#control-custom-deserialization)
+- [Filter messages based on message context](#filter-messages-based-on-message-context)
+- [Fallback message handling](#fallback-message-handling)
+
 ## Control custom deserialization
 
 When inheriting from an `...MessagePump` type, there's a way to control how the incoming raw message is being deserialized.

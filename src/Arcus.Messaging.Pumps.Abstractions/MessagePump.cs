@@ -91,6 +91,17 @@ namespace Arcus.Messaging.Pumps.Abstractions
         }
 
         /// <summary>
+        /// Pre-process the message by setting the necessary values the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.
+        /// </summary>
+        /// <param name="messageHandler">The message handler to be used to process the message.</param>
+        /// <param name="messageContext">The message context of the message that will be handled.</param>
+        protected virtual Task PreProcessMessageAsync<TMessageContext>(MessageHandler messageHandler, TMessageContext messageContext) 
+            where TMessageContext : MessageContext
+        {
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
         ///     Handle a new message that was received
         /// </summary>
         /// <typeparam name="TMessageContext">Type of message context for the provider</typeparam>
@@ -173,7 +184,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-            IEnumerable<MessageHandler> handlers = _messageHandlers.Value;
+            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(ServiceProvider, Logger);
             if (!handlers.Any() && _fallbackMessageHandler is null)
             {
                 throw new InvalidOperationException(
@@ -219,19 +230,21 @@ namespace Arcus.Messaging.Pumps.Abstractions
                     
                 }
 
-                return await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
+                await PreProcessMessageAsync(handler, messageContext);
+                await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
+                return true;
             }
 
             if (!canProcessMessage)
             {
-                Logger.LogInformation(
+                Logger.LogTrace(
                     "Message handler '{MessageHandlerType}' is not able to process the message because the message context '{MessageContextType}' didn't match the correct message handler's message context",
                     handler.ServiceType.Name, handler.MessageContextType.Name);
             }
 
             if (!tryDeserializeToMessageFormat)
             {
-                Logger.LogInformation(
+                Logger.LogTrace(
                     "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message that the message handler can handle",
                     handler.ServiceType.Name);
             }
@@ -282,7 +295,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             await processMessageAsync;
 
-            Logger.LogInformation("Fallback message handler has processed the message");
+            Logger.LogTrace("Fallback message handler has processed the message");
         }
 
         /// <summary>
@@ -314,13 +327,13 @@ namespace Arcus.Messaging.Pumps.Abstractions
             var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
             if (success)
             {
-                Logger.LogInformation("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
+                Logger.LogTrace("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
 
                 result = value;
                 return true;
             }
 
-            Logger.LogInformation("Incoming message failed to be JSON deserialized to message type '{MessageType}'", messageType.Name);
+            Logger.LogTrace("Incoming message failed to be JSON deserialized to message type '{MessageType}'", messageType.Name);
 
             result = null;
             return false;

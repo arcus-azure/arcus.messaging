@@ -18,7 +18,6 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
     /// </summary>
     public class MessageHandler
     {
-        private readonly object _service;
         private readonly ILogger _logger;
 
         private MessageHandler(Type serviceType, object service, ILogger logger)
@@ -29,19 +28,24 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             Guard.For<ArgumentException>(
                 () => serviceType.GenericTypeArguments.Length != 2, 
                 $"Message handler type '{serviceType.Name}' has not the expected 2 generic type arguments");
-            
-            _service = service;
+
             _logger = logger;
 
+            Service = service;
             ServiceType = serviceType;
             MessageType = ServiceType.GenericTypeArguments[0];
             MessageContextType = ServiceType.GenericTypeArguments[1];
         }
 
         /// <summary>
+        /// Gets the instance of the message handler that this abstracted message handler represents.
+        /// </summary>
+        public object Service { get; }
+
+        /// <summary>
         /// Gets the type of the message handler that this abstracted message handler represents.
         /// </summary>
-        internal Type ServiceType { get; }
+        public Type ServiceType { get; }
 
         /// <summary>
         /// Gets the type of the message that this abstracted message handler can process.
@@ -112,7 +116,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                     "Message context type '{ActualMessageContextType}' matches registered message handler's {MessageHandlerType} context type {ExpectedMessageContextType}",
                     actualMessageContextType.Name, ServiceType.Name, expectedMessageContextType.Name);
 
-                if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
+                if (Service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
                 {
                     try
                     {
@@ -120,10 +124,10 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                             "Determining whether the message context predicate registered with the message handler {MessageHandlerType} holds...",
                             ServiceType.Name);
 
-                        var canProcessMessage = (bool)_service.InvokeMethod(
-                            "CanProcessMessage",
-                            BindingFlags.Instance | BindingFlags.NonPublic,
-                            messageContext);
+                    var canProcessMessage = (bool) Service.InvokeMethod(
+                        "CanProcessMessage",
+                        BindingFlags.Instance | BindingFlags.NonPublic,
+                        messageContext);
 
                         _logger.LogInformation(
                             "Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message",
@@ -188,13 +192,13 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             try
             {
                 var processMessageAsync =
-                        (Task)_service.InvokeMethod(
+                        (Task)Service.InvokeMethod(
                             methodName, BindingFlags.Instance | BindingFlags.Public, message, messageContext, correlationInfo, cancellationToken);
 
                 if (processMessageAsync is null)
                 {
                     throw new InvalidOperationException(
-                        $"The '{typeof(IMessageHandler<,>).Name}' implementation '{_service.GetType().Name}' returned 'null' while calling the '{methodName}' method");
+                        $"The '{typeof(IMessageHandler<,>).Name}' implementation '{Service.GetType().Name}' returned 'null' while calling the '{methodName}' method");
                 }
 
                 await processMessageAsync;
@@ -211,12 +215,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                     "Ambiguous match found of '{MethodName}' methods in the '{MessageHandlerType}'. Make sure that only 1 matching '{MethodName}' was found on the '{MessageHandlerType}' message handler",
                     methodName, ServiceType.Name, methodName, ServiceType.Name);
 
-                return false;
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, "Message handler '{MessageHandlerType}' failed to process '{MessageType}' message", ServiceType.Name, MessageType.Name);
-                return false;
+                throw new AmbiguousMatchException(
+                    $"Ambiguous match found of '{methodName}' methods in the '{Service.GetType().Name}'. ", exception);
             }
         }
     }

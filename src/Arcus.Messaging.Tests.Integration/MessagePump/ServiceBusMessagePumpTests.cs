@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Tests.Core.Generators;
+using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.ServiceBus;
 using Arcus.Messaging.Tests.Workers.ServiceBus;
@@ -8,6 +10,7 @@ using Arcus.Security.Providers.AzureKeyVault.Authentication;
 using Arcus.Testing.Logging;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -127,6 +130,58 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
         }
 
+        [Theory]
+        [InlineData(typeof(ServiceBusQueueWithServiceBusDeadLetterProgram))]
+        [InlineData(typeof(ServiceBusQueueWithServiceBusDeadLetterFallbackProgram))]
+        public async Task ServiceBusMessagePumpWithServiceBusDeadLetter_PublishServiceBusMessage_MessageSuccessfullyProcessed(Type programType)
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var commandArguments = new[]
+            {
+                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
+            };
+
+            Order order = OrderGenerator.Generate();
+
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
+            {
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+                {
+                    // Act
+                    await service.SendMessageToServiceBusAsync(connectionString, order.AsServiceBusMessage());
+
+                    // Assert
+                    await service.AssertDeadLetterMessageAsync(connectionString);
+                }
+            }
+        }
+
+        [Theory]
+        [InlineData(typeof(ServiceBusTopicWithServiceBusAbandonProgram))]
+        [InlineData(typeof(ServiceBusTopicWithServiceBusAbandonFallbackProgram))]
+        public async Task ServiceBusMessagePumpWithServiceBusAbandon_PublishServiceBusMessage_MessageSuccessfullyProcessed(Type programType)
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            var commandArguments = new[]
+            {
+                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
+                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
+                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString)
+            };
+
+            using (var project = await ServiceBusWorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
+            {
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+                {
+                    // Act
+                    await service.SimulateMessageProcessingAsync(connectionString);
+                }
+            }
+        }
 
         [Fact]
         public async Task ServiceBusMessagePump_RotateServiceBusConnectionKeys_MessagePumpRestartsThenMessageSuccessfullyProcessed()
