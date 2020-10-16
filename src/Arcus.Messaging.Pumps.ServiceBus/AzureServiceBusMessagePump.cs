@@ -86,6 +86,81 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         internal MessageReceiver MessageReceiver => _messageReceiver;
 
         /// <summary>
+        /// Reconfigure the Azure Service Bus options on this message pump.
+        /// </summary>
+        /// <param name="reconfigure">The function to reconfigure the Azure Service Bus options.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
+        public void ReconfigureOptions(Action<AzureServiceBusMessagePumpOptions> reconfigure)
+        {
+            Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus options");
+
+            var options = new AzureServiceBusMessagePumpOptions
+            {
+                AutoComplete = Settings.Options.AutoComplete,
+                JobId = Settings.Options.JobId,
+                KeyRotationTimeout = Settings.Options.KeyRotationTimeout,
+                MaxConcurrentCalls = Settings.Options.MaxConcurrentCalls,
+                MaximumUnauthorizedExceptionsBeforeRestart = Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart
+            };
+
+            reconfigure(options);
+            Settings.Options = new AzureServiceBusMessagePumpConfiguration(options);
+        }
+
+        /// <summary>
+        /// Reconfigure the Azure Service Bus Queue options on this message pump.
+        /// </summary>
+        /// <param name="reconfigure">The function to reconfigure the Azure Service Bus Queue options.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
+        /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Queues.</exception>
+        public void ReconfigureQueueOptions(Action<AzureServiceBusQueueMessagePumpOptions> reconfigure)
+        {
+            Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus Queue options");
+            Guard.For<NotSupportedException>(
+                () => Settings.ServiceBusEntity is ServiceBusEntity.Topic, 
+                "Requires the message pump to be configured for Azure Service Bus Queue to reconfigure these options, use the Topic overload instead");
+
+            var options = new AzureServiceBusQueueMessagePumpOptions
+            {
+                AutoComplete = Settings.Options.AutoComplete,
+                JobId = Settings.Options.JobId,
+                KeyRotationTimeout = Settings.Options.KeyRotationTimeout,
+                MaxConcurrentCalls = Settings.Options.MaxConcurrentCalls,
+                MaximumUnauthorizedExceptionsBeforeRestart = Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart
+            };
+
+            reconfigure(options);
+            Settings.Options = new AzureServiceBusMessagePumpConfiguration(options);
+        }
+
+        /// <summary>
+        /// Reconfigure the Azure Service Bus Topic options on this message pump.
+        /// </summary>
+        /// <param name="reconfigure">The function to reconfigure the Azure Service Bus Topic options.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
+        /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Topics.</exception>
+        public void ReconfigureTopicOptions(Action<AzureServiceBusTopicMessagePumpOptions> reconfigure)
+        {
+            Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus Topics options");
+            Guard.For<NotSupportedException>(
+                () => Settings.ServiceBusEntity is ServiceBusEntity.Queue,
+                "Requires a message pump to be configured for Azure Service Bus Topic to reconfigure these options, use the Queue overload instead");
+
+            var options = new AzureServiceBusTopicMessagePumpOptions
+            {
+                AutoComplete = Settings.Options.AutoComplete,
+                JobId = Settings.Options.JobId,
+                MaxConcurrentCalls = Settings.Options.MaxConcurrentCalls,
+                KeyRotationTimeout = Settings.Options.KeyRotationTimeout,
+                MaximumUnauthorizedExceptionsBeforeRestart = Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart,
+                TopicSubscription = Settings.Options.TopicSubscription
+            };
+
+            reconfigure(options);
+            Settings.Options = new AzureServiceBusMessagePumpConfiguration(options);
+        }
+
+        /// <summary>
         /// Triggered when the application host is ready to start the service.
         /// </summary>
         /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>

@@ -77,7 +77,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         ///     Options that influence the behavior of the message pump
         /// </summary>
-        public AzureServiceBusMessagePumpConfiguration Options { get; }
+        public AzureServiceBusMessagePumpConfiguration Options { get; internal set; }
 
         /// <summary>
         ///     Gets the configured connection string

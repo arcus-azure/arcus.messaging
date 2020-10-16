@@ -14,15 +14,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpConfiguration"/> class.
         /// </summary>
-        /// <param name="options">The specific options for Azure Service Bus Topics.</param>
+        /// <param name="options">The specific options for Azure Service Bus.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
-        public AzureServiceBusMessagePumpConfiguration(AzureServiceBusQueueMessagePumpOptions options)
+        internal AzureServiceBusMessagePumpConfiguration(AzureServiceBusMessagePumpOptions options)
         {
-            Guard.NotNull(options, nameof(options), "Requires an Azure Service Bus options for Topics");
+            Guard.NotNull(options, nameof(options), "Requires an Azure Service Bus options");
 
             MaxConcurrentCalls = options.MaxConcurrentCalls;
             AutoComplete = options.AutoComplete;
-            JobId = options.JobId;
+            MaxConcurrentCalls = options.MaxConcurrentCalls;
             KeyRotationTimeout = options.KeyRotationTimeout;
             MaximumUnauthorizedExceptionsBeforeRestart = options.MaximumUnauthorizedExceptionsBeforeRestart;
         }
@@ -30,18 +30,22 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpConfiguration"/> class.
         /// </summary>
+        /// <param name="options">The specific options for Azure Service Bus Topics.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
+        public AzureServiceBusMessagePumpConfiguration(AzureServiceBusQueueMessagePumpOptions options) : this((AzureServiceBusMessagePumpOptions) options)
+        {
+            Guard.NotNull(options, nameof(options), "Requires an Azure Service Bus options for Topics");
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpConfiguration"/> class.
+        /// </summary>
         /// <param name="options">The specific options for Azure Service Bus Queues.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
-        public AzureServiceBusMessagePumpConfiguration(AzureServiceBusTopicMessagePumpOptions options)
+        public AzureServiceBusMessagePumpConfiguration(AzureServiceBusTopicMessagePumpOptions options) : this((AzureServiceBusMessagePumpOptions) options)
         {
             Guard.NotNull(options, nameof(options), "Requires an Azure Service Bus options for Queues");
-
-            MaxConcurrentCalls = options.MaxConcurrentCalls;
             TopicSubscription = options.TopicSubscription;
-            AutoComplete = options.AutoComplete;
-            JobId = options.JobId;
-            KeyRotationTimeout = options.KeyRotationTimeout;
-            MaximumUnauthorizedExceptionsBeforeRestart = options.MaximumUnauthorizedExceptionsBeforeRestart;
         }
 
         /// <summary>

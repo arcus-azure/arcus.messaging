@@ -23,6 +23,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
         /// <param name="jobId">The unique background job ID to identify which message pump to restart.</param>
         /// <param name="subscriptionNamePrefix">The name of the Azure Service Bus subscription that will be created to receive <see cref="CloudEvent"/>'s.</param>
         /// <param name="serviceBusTopicConnectionStringSecretKey">The secret key that points to the Azure Service Bus Topic connection string.</param>
+        /// <param name="targetConnectionStringKey">The secret key where the connection string credentials are located for the target message pump that needs to be auto-restarted.</param>
         /// <param name="maximumUnauthorizedExceptionsBeforeRestart">
         ///     The fallback when the Azure Key Vault notification doesn't get delivered correctly,
         ///     how many times should the message pump run into an <see cref="UnauthorizedException"/> before restarting.
@@ -32,20 +33,22 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionNamePrefix"/> or <paramref name="serviceBusTopicConnectionStringSecretKey"/> is blank.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="maximumUnauthorizedExceptionsBeforeRestart"/> is less then zero.</exception>
-        public static IServiceCollection WithReAuthenticationOnNewSecretVersion(
+        public static IServiceCollection WithAutoRestartOnRotatedCredentials(
             this IServiceCollection services,
             string jobId,
             string subscriptionNamePrefix,
             string serviceBusTopicConnectionStringSecretKey,
+            string targetConnectionStringKey,
             int maximumUnauthorizedExceptionsBeforeRestart = 5)
         {
             Guard.NotNull(services, nameof(services), "Requires a collection of services to add the re-authentication background job");
             Guard.NotNullOrWhitespace(subscriptionNamePrefix, nameof(subscriptionNamePrefix), "Requires a non-blank subscription name of the Azure Service Bus Topic subscription, to receive Azure Key Vault events");
             Guard.NotNullOrWhitespace(serviceBusTopicConnectionStringSecretKey, nameof(serviceBusTopicConnectionStringSecretKey), "Requires a non-blank secret key that points to a Azure Service Bus Topic");
+            Guard.NotNullOrWhitespace(targetConnectionStringKey, nameof(targetConnectionStringKey), "Requires a non-blank secret key that points to the credentials that holds the connection string of the target message pump");
             Guard.NotLessThan(maximumUnauthorizedExceptionsBeforeRestart, 0, nameof(maximumUnauthorizedExceptionsBeforeRestart), "Requires an unauthorized exceptions count that is greater than zero");
 
             services.AddCloudEventBackgroundJob(subscriptionNamePrefix, serviceBusTopicConnectionStringSecretKey);
-            services.WithServiceBusMessageHandler<ReAuthenticateMessageHandler, CloudEvent>(serviceProvider =>
+            services.WithServiceBusMessageHandler<ReAuthenticateOnRotatedCredentialsMessageHandler, CloudEvent>(serviceProvider =>
             {
                 AzureServiceBusMessagePump messagePump =
                     serviceProvider.GetServices<IHostedService>()
@@ -55,10 +58,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
                 Guard.NotNull(messagePump, nameof(messagePump), 
                     $"Cannot register re-authentication without a '{nameof(AzureServiceBusMessagePump)}' with 'JobId' = '{jobId}'");
 
-                messagePump.Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart = maximumUnauthorizedExceptionsBeforeRestart;
+                messagePump.ReconfigureOptions(options => options.MaximumUnauthorizedExceptionsBeforeRestart = maximumUnauthorizedExceptionsBeforeRestart);
 
-                var messageHandlerLogger = serviceProvider.GetRequiredService<ILogger<ReAuthenticateMessageHandler>>();
-                return new ReAuthenticateMessageHandler(messagePump, messageHandlerLogger);
+                var messageHandlerLogger = serviceProvider.GetRequiredService<ILogger<ReAuthenticateOnRotatedCredentialsMessageHandler>>();
+                return new ReAuthenticateOnRotatedCredentialsMessageHandler(targetConnectionStringKey, messagePump, messageHandlerLogger);
             });
 
             return services;

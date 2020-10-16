@@ -58,12 +58,14 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                     });
 
                     string jobId = Guid.NewGuid().ToString();
-                    services.AddServiceBusQueueMessagePump(hostContext.Configuration["ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME"], options => options.JobId = jobId)
+                    string secretName = hostContext.Configuration["ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME"];
+                    services.AddServiceBusQueueMessagePump(secretName, options => options.JobId = jobId)
                             .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>()
-                            .WithReAuthenticationOnNewSecretVersion(
+                            .WithAutoRestartOnRotatedCredentials(
                                 jobId: jobId, 
                                 subscriptionNamePrefix: "TestSub", 
                                 serviceBusTopicConnectionStringSecretKey: "ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING",
+                                targetConnectionStringKey: secretName,
                                 // Unrealistic big maximum exception count so that we're certain that the message pump gets restarted based on the notification and not the unauthorized exception.
                                 maximumUnauthorizedExceptionsBeforeRestart: 1000);
 

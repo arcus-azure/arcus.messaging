@@ -6,7 +6,7 @@
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
     <Product>Arcus.Messaging</Product>
-    <Description>Provides capability related to key rotation of Azure Service Bus message pumps</Description>
+    <Description>Provides capability related to the resiliency of Azure Service Bus message pumps in case of key rotation</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
     <PackageLicenseUrl>https://github.com/arcus-azure/arcus.messaging/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/arcus-azure/arcus.messaging</PackageProjectUrl>

@@ -15,22 +15,26 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
     /// Represents an <see cref="IMessageHandler{TMessage, TMessageContext}"/> that processes <see cref="CloudEvent"/>s representing <see cref="SecretNewVersionCreated"/> events
     /// that will eventually result in restarting an <see cref="AzureServiceBusMessagePump"/> instance.
     /// </summary>
-    public class ReAuthenticateMessageHandler : IAzureServiceBusMessageHandler<CloudEvent>
+    public class ReAuthenticateOnRotatedCredentialsMessageHandler : IAzureServiceBusMessageHandler<CloudEvent>
     {
+        private readonly string _targetConnectionStringKey;
         private readonly AzureServiceBusMessagePump _messagePump;
         private readonly ILogger _logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ReAuthenticateMessageHandler"/> class.
+        /// Initializes a new instance of the <see cref="ReAuthenticateOnRotatedCredentialsMessageHandler"/> class.
         /// </summary>
+        /// <param name="targetConnectionStringKey">The secret key where the connection string credentials are located for the target message pump that needs to be auto-restarted.</param>
         /// <param name="messagePump">The message pump instance to restart when the message handler process an <see cref="SecretNewVersionCreated"/> event.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the processing of the event.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messagePump"/> or <paramref name="logger"/> is <c>null</c>.</exception>
-        public ReAuthenticateMessageHandler(AzureServiceBusMessagePump messagePump, ILogger<ReAuthenticateMessageHandler> logger)
+        public ReAuthenticateOnRotatedCredentialsMessageHandler(string targetConnectionStringKey, AzureServiceBusMessagePump messagePump, ILogger<ReAuthenticateOnRotatedCredentialsMessageHandler> logger)
         {
+            Guard.NotNullOrWhitespace(targetConnectionStringKey, nameof(targetConnectionStringKey), "Requires a non-blank secret key that points to the credentials that holds the connection string of the target message pump");
             Guard.NotNull(messagePump, nameof(messagePump), $"Requires an message pump instance to restart when the message handler process an {nameof(SecretNewVersionCreated)} event");
             Guard.NotNull(logger, nameof(logger), "Requires an logger instance to write diagnostic trace messages during the processing of the event");
 
+            _targetConnectionStringKey = targetConnectionStringKey;
             _messagePump = messagePump;
             _logger = logger;
         }
@@ -64,9 +68,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
                     "Azure Key Vault job cannot map Event Grid event to CloudEvent because the event data isn't recognized as a 'SecretNewVersionCreated' schema");
             }
 
-            _logger.LogInformation("Received Azure Key vault 'Secret New Version Created' event");
-            
-            await _messagePump.RestartAsync();
+            if (_targetConnectionStringKey == secretNewVersionCreated.ObjectName)
+            {
+                _logger.LogInformation("Received Azure Key vault 'Secret New Version Created' event, restarting target message pump {JobId}", _messagePump.JobId);
+                await _messagePump.RestartAsync();
+            }
+            else
+            {
+                _logger.LogTrace("Received Azure Key Vault 'Secret New Version Created' event but for wrong message pump");
+            }
         }
     }
 }

@@ -17,7 +17,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="keyVault"/>, <paramref name="servicePrincipal"/>, or <paramref name="serviceBusNamespace"/> is <c>null</c>.
         /// </exception>
-        public KeyRotationConfig(KeyVault keyVault, ServicePrincipal servicePrincipal, ServiceBusNamespace serviceBusNamespace)
+        public KeyRotationConfig(KeyVaultConfig keyVault, ServicePrincipal servicePrincipal, ServiceBusNamespace serviceBusNamespace)
         {
             Guard.NotNull(keyVault, nameof(keyVault));
             Guard.NotNull(servicePrincipal, nameof(servicePrincipal));
@@ -31,7 +31,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <summary>
         /// Gets the config representing a Azure Key Vault secret.
         /// </summary>
-        public KeyVault KeyVault { get; }
+        public KeyVaultConfig KeyVault { get; }
 
         /// <summary>
         /// Gets the config to authenticate to Azure resources.
