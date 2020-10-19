@@ -22,7 +22,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 
             MaxConcurrentCalls = options.MaxConcurrentCalls;
             AutoComplete = options.AutoComplete;
-            MaxConcurrentCalls = options.MaxConcurrentCalls;
+            JobId = options.JobId;
             KeyRotationTimeout = options.KeyRotationTimeout;
             MaximumUnauthorizedExceptionsBeforeRestart = options.MaximumUnauthorizedExceptionsBeforeRestart;
         }
