@@ -24,7 +24,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             AutoComplete = options.AutoComplete;
             JobId = options.JobId;
             KeyRotationTimeout = options.KeyRotationTimeout;
-            MaximumUnauthorizedExceptionsBeforeRestart = options.MaximumUnauthorizedExceptionsBeforeRestart;
+            
+            _maximumUnauthorizedExceptionsBeforeRestart = options.MaximumUnauthorizedExceptionsBeforeRestart;
         }
 
         /// <summary>
