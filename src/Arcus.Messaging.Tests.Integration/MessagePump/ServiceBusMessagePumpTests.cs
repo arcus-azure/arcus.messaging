@@ -227,7 +227,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                         result.CustomDimensions.TryGetValue(ContextProperties.Correlation.TransactionId, out string actualTransactionId);
                         result.CustomDimensions.TryGetValue(ContextProperties.Correlation.OperationId, out string actualOperationId);
 
-                        return transactionId == actualTransactionId && operationId == actualOperationId;
+                        return transactionId == actualTransactionId && operationId == actualOperationId && operationId == result.Operation.Id;
                     });
                 }, timeout: TimeSpan.FromMinutes(5));
             }
