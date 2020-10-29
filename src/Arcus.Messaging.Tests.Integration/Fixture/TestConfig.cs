@@ -79,6 +79,18 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         }
 
         /// <summary>
+        /// Gets the Application Insights configuration from the application configuration.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when one of the Application Insights configuration values is blank.</exception>
+        public ApplicationInsightsConfig GetApplicationInsightsConfig()
+        {
+            var instrumentationKey = _config.GetValue<string>("Arcus:ApplicationInsights:InstrumentationKey");
+            var applicationId = _config.GetValue<string>("Arcus:ApplicationInsights:ApplicationId");
+
+            return new ApplicationInsightsConfig(instrumentationKey, applicationId);
+        }
+
+        /// <summary>
         /// Gets the project directory where the fixtures are located.
         /// </summary>
         public DirectoryInfo GetIntegrationTestProjectDirectory()

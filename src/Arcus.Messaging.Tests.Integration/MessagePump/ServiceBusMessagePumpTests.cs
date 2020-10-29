@@ -1,19 +1,25 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.ServiceBus;
 using Arcus.Messaging.Tests.Workers.ServiceBus;
+using Arcus.Observability.Telemetry.Core;
 using Arcus.Security.Providers.AzureKeyVault.Authentication;
 using Arcus.Testing.Logging;
+using Microsoft.Azure.ApplicationInsights.Query;
+using Microsoft.Azure.ApplicationInsights.Query.Models;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
+using Polly;
 using Xunit;
 using Xunit.Abstractions;
+using RetryPolicy = Polly.Retry.RetryPolicy;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
@@ -186,6 +192,48 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Fact]
+        public async Task ServiceBusMessagePump_FailureDuringMessageHandling_TracksCorrelationInApplicationInsights()
+        {
+            // Arrange
+            string operationId = $"operation-{Guid.NewGuid()}", transactionId = $"transaction-{Guid.NewGuid()}";
+
+            var config = TestConfig.Create();
+            ApplicationInsightsConfig applicationInsightsConfig = config.GetApplicationInsightsConfig();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var commandArguments = new[]
+            {
+                CommandArgument.CreateSecret("APPLICATIONINSIGHTS_INSTRUMENTATIONKEY", applicationInsightsConfig.InstrumentationKey),
+                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString)
+            };
+
+            using var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueTrackCorrelationOnExceptionProgram>(config, _logger, commandArguments);
+            await using var service = await TestMessagePumpService.StartNewAsync(config, _logger);
+            Message orderMessage = OrderGenerator.Generate().AsServiceBusMessage(operationId, transactionId);
+                    
+            // Act
+            await service.SendMessageToServiceBusAsync(connectionString, orderMessage);
+
+            // Assert
+            using (ApplicationInsightsDataClient client = CreateApplicationInsightsClient(applicationInsightsConfig.InstrumentationKey))
+            {
+                await RetryAssertUntilTelemetryShouldBeAvailableAsync(async () =>
+                {
+                    const string onlyLastHourFilter = "timestamp gt now() sub duration'PT1H'";
+                    EventsResults<EventsExceptionResult> results = 
+                        await client.Events.GetExceptionEventsAsync(applicationInsightsConfig.ApplicationId, filter: onlyLastHourFilter);
+
+                    Assert.Contains(results.Value, result =>
+                    {
+                        result.CustomDimensions.TryGetValue(ContextProperties.Correlation.TransactionId, out string actualTransactionId);
+                        result.CustomDimensions.TryGetValue(ContextProperties.Correlation.OperationId, out string actualOperationId);
+
+                        return transactionId == actualTransactionId && operationId == actualOperationId;
+                    });
+                }, timeout: TimeSpan.FromMinutes(5));
+            }
+        }
+
+        [Fact]
         public async Task ServiceBusMessagePump_RotateServiceBusConnectionKeys_MessagePumpRestartsThenMessageSuccessfullyProcessed()
         {
             // Arrange
@@ -232,6 +280,29 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 vaultBaseUrl: keyRotationConfig.KeyVaultSecret.VaultUri,
                 secretName: keyRotationConfig.KeyVaultSecret.SecretName,
                 value: rotatedConnectionString);
+        }
+
+        private static ApplicationInsightsDataClient CreateApplicationInsightsClient(string instrumentationKey)
+        {
+            var clientCredentials = new ApiKeyClientCredentials(instrumentationKey);
+            var client = new ApplicationInsightsDataClient(clientCredentials);
+
+            return client;
+        }
+
+        private async Task RetryAssertUntilTelemetryShouldBeAvailableAsync(Func<Task> assertion, TimeSpan timeout)
+        {
+            RetryPolicy retryPolicy =
+                Policy.Handle<Exception>(exception =>
+                      {
+                          _logger.LogError(exception, "Failed to contact Azure Application Insights");
+                          return true;
+                      })
+                      .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(1));
+
+            await Policy.TimeoutAsync(timeout)
+                        .WrapAsync(retryPolicy)
+                        .ExecuteAsync(assertion);
         }
     }
 }
