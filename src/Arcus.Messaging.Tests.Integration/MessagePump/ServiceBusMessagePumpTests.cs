@@ -214,7 +214,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await service.SendMessageToServiceBusAsync(connectionString, orderMessage);
 
             // Assert
-            using (ApplicationInsightsDataClient client = CreateApplicationInsightsClient(applicationInsightsConfig.InstrumentationKey))
+            using (ApplicationInsightsDataClient client = CreateApplicationInsightsClient(applicationInsightsConfig.ApiKey))
             {
                 await RetryAssertUntilTelemetryShouldBeAvailableAsync(async () =>
                 {
@@ -295,7 +295,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             RetryPolicy retryPolicy =
                 Policy.Handle<Exception>(exception =>
                       {
-                          _logger.LogError(exception, "Failed to contact Azure Application Insights");
+                          _logger.LogError(exception, "Failed to contact Azure Application Insights. Reason: {Message}", exception.Message);
                           return true;
                       })
                       .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(1));

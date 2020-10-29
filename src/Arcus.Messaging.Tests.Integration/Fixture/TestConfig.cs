@@ -86,8 +86,9 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             var instrumentationKey = _config.GetValue<string>("Arcus:ApplicationInsights:InstrumentationKey");
             var applicationId = _config.GetValue<string>("Arcus:ApplicationInsights:ApplicationId");
+            var apiKey = _config.GetValue<string>("Arcus:ApplicationInsights:ApiKey");
 
-            return new ApplicationInsightsConfig(instrumentationKey, applicationId);
+            return new ApplicationInsightsConfig(instrumentationKey, applicationId, apiKey);
         }
 
         /// <summary>

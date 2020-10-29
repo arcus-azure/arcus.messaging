@@ -12,14 +12,17 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         /// <param name="instrumentationKey">The instrumentation key of the Azure Application Insights resource.</param>
         /// <param name="applicationId">The application ID that has API access to the Azure Application Insights resource.</param>
-        /// <exception cref="System.ArgumentException">Thrown when the <paramref name="instrumentationKey"/> or <paramref name="applicationId"/> is blank.</exception>
-        public ApplicationInsightsConfig(string instrumentationKey, string applicationId)
+        /// <param name="apiKey">The application API key that has API access to the Azure Application Insights resource.</param>
+        /// <exception cref="System.ArgumentException">Thrown when the <paramref name="instrumentationKey"/> or <paramref name="apiKey"/> or <paramref name="apiKey"/> is blank.</exception>
+        public ApplicationInsightsConfig(string instrumentationKey, string applicationId, string apiKey)
         {
             Guard.NotNullOrWhitespace(instrumentationKey, nameof(instrumentationKey), "Requires a non-blank Application Insights instrumentation key");
-            Guard.NotNullOrWhitespace(applicationId, nameof(applicationId), "Requires a non-blank Application Insights application id");
+            Guard.NotNullOrWhitespace(apiKey, nameof(apiKey), "Requires a non-blank Application Insights application application ID");
+            Guard.NotNullOrWhitespace(apiKey, nameof(apiKey), "Requires a non-blank Application Insights application API key");
 
             InstrumentationKey = instrumentationKey;
             ApplicationId = applicationId;
+            ApiKey = apiKey;
         }
 
         /// <summary>
@@ -31,5 +34,10 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// Gets the application ID which has API access to the Application Insights resource.
         /// </summary>
         public string ApplicationId { get; }
+
+        /// <summary>
+        /// Gets the application API key which has API access to the Application Insights resource.
+        /// </summary>
+        public string ApiKey { get; }
     }
 }
