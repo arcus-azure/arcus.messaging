@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
-    public class ServiceBusTopicContextPredicateSelectionWithDeadLetterProgram
+    public class ServiceBusQueueContextPredicateSelectionWithDeadLetterProgram
     {
         public static void main(string[] args)
         {
@@ -31,18 +31,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 .ConfigureLogging(loggingBuilder => loggingBuilder.AddConsole(options => options.IncludeScopes = true))
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddTransient(svc =>
-                    {
-                        var configuration = svc.GetRequiredService<IConfiguration>();
-                        var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
-                        var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
-
-                        return EventGridPublisherBuilder
-                               .ForTopic(eventGridTopic)
-                               .UsingAuthenticationKey(eventGridKey)
-                               .Build();
-                    });
-                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = false)
+                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = false)
                             .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>(context => false)
                             .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties["Topic"].ToString() == "Customers")
                             .WithServiceBusMessageHandler<OrdersAzureServiceBusDeadLetterMessageHandler, Order>(context => context.Properties["Topic"].ToString() == "Orders");
