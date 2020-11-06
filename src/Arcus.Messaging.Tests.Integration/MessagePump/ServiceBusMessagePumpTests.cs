@@ -141,7 +141,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Theory]
         [InlineData(typeof(ServiceBusQueueWithServiceBusDeadLetterProgram))]
         [InlineData(typeof(ServiceBusQueueWithServiceBusDeadLetterFallbackProgram))]
-        [InlineData(typeof(ServiceBusTopicContextPredicateSelectionWithDeadLetterProgram))]
+        [InlineData(typeof(ServiceBusQueueContextPredicateSelectionWithDeadLetterProgram))]
         public async Task ServiceBusMessagePumpWithServiceBusDeadLetter_PublishServiceBusMessage_MessageSuccessfullyProcessed(Type programType)
         {
             // Arrange
