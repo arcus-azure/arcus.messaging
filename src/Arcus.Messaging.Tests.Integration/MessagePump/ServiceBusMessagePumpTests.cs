@@ -141,6 +141,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Theory]
         [InlineData(typeof(ServiceBusQueueWithServiceBusDeadLetterProgram))]
         [InlineData(typeof(ServiceBusQueueWithServiceBusDeadLetterFallbackProgram))]
+        [InlineData(typeof(ServiceBusTopicContextPredicateSelectionWithDeadLetterProgram))]
         public async Task ServiceBusMessagePumpWithServiceBusDeadLetter_PublishServiceBusMessage_MessageSuccessfullyProcessed(Type programType)
         {
             // Arrange
@@ -169,6 +170,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Theory]
         [InlineData(typeof(ServiceBusTopicWithServiceBusAbandonProgram))]
         [InlineData(typeof(ServiceBusTopicWithServiceBusAbandonFallbackProgram))]
+        [InlineData(typeof(ServiceBusTopicContextPredicateSelectionWithServiceBusAbandonProgram))]
         public async Task ServiceBusMessagePumpWithServiceBusAbandon_PublishServiceBusMessage_MessageSuccessfullyProcessed(Type programType)
         {
             // Arrange

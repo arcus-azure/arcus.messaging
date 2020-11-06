@@ -18,6 +18,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
     /// </summary>
     public class MessageHandler
     {
+        private readonly object _service;
+        private readonly Type _serviceType;
         private readonly ILogger _logger;
 
         private MessageHandler(Type serviceType, object service, ILogger logger)
@@ -29,23 +31,13 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                 () => serviceType.GenericTypeArguments.Length != 2, 
                 $"Message handler type '{serviceType.Name}' has not the expected 2 generic type arguments");
 
+            _service = service;
+            _serviceType = serviceType;
             _logger = logger;
 
-            Service = service;
-            ServiceType = serviceType;
-            MessageType = ServiceType.GenericTypeArguments[0];
-            MessageContextType = ServiceType.GenericTypeArguments[1];
+            MessageType = _serviceType.GenericTypeArguments[0];
+            MessageContextType = _serviceType.GenericTypeArguments[1];
         }
-
-        /// <summary>
-        /// Gets the instance of the message handler that this abstracted message handler represents.
-        /// </summary>
-        public object Service { get; }
-
-        /// <summary>
-        /// Gets the type of the message handler that this abstracted message handler represents.
-        /// </summary>
-        public Type ServiceType { get; }
 
         /// <summary>
         /// Gets the type of the message that this abstracted message handler can process.
@@ -94,34 +86,61 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         }
 
         /// <summary>
+        /// Gets the concrete class type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
+        /// </summary>
+        /// <exception cref="TypeNotFoundException">Thrown when there's a problem with finding the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</exception>
+        /// <exception cref="ValueMissingException">Thrown when there's no value for the <see cref="IMessageHandler{TMessage,TMessageContext}"/> type value.</exception>
+        public object GetMessageHandlerInstance()
+        {
+            if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
+            {
+                object messageHandlerType = _service.GetRequiredPropertyValue("Service", BindingFlags.Instance | BindingFlags.NonPublic);
+                return messageHandlerType;
+            }
+
+            return _service;
+        }
+
+        /// <summary>
+        /// Gets the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
+        /// </summary>
+        /// <exception cref="TypeNotFoundException">Thrown when there's a problem with finding the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</exception>
+        /// <exception cref="ValueMissingException">Thrown when there's no value for the <see cref="IMessageHandler{TMessage,TMessageContext}"/> type value.</exception>
+        public Type GetMessageHandlerType()
+        {
+            object messageHandlerInstance = GetMessageHandlerInstance();
+            return messageHandlerInstance.GetType();
+        }
+
+        /// <summary>
         /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
         /// </summary>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
         public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext) where TMessageContext : MessageContext
         {
-            Type expectedMessageContextType = ServiceType.GenericTypeArguments[1];
+            Type expectedMessageContextType = _serviceType.GenericTypeArguments[1];
             Type actualMessageContextType = typeof(TMessageContext);
 
             if (actualMessageContextType == expectedMessageContextType)
             {
                 _logger.LogInformation(
                     "Message context type '{ActualMessageContextType}' matches registered message handler's {MessageHandlerType} context type {ExpectedMessageContextType}",
-                    actualMessageContextType.Name, ServiceType.Name, expectedMessageContextType.Name);
+                    actualMessageContextType.Name, _serviceType.Name, expectedMessageContextType.Name);
 
-                if (Service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
+                if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
                 {
                     _logger.LogTrace(
                         "Determining whether the message context predicate registered with the message handler {MessageHandlerType} holds...",
-                         ServiceType.Name);
+                         _serviceType.Name);
 
-                    var canProcessMessage = (bool) Service.InvokeMethod(
+                    var canProcessMessage = (bool) _service.InvokeMethod(
                         "CanProcessMessage",
                         BindingFlags.Instance | BindingFlags.NonPublic,
                         messageContext);
 
                     _logger.LogInformation(
                         "Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message",
-                        ServiceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
+                        _serviceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
 
                     return canProcessMessage;
                 }
@@ -132,7 +151,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 
             _logger.LogInformation(
                 "Message context type '{ActualMessageContextType}' doesn't matches registered message handler's {MessageHandlerType} context type {ExpectedMessageContextType}",
-                actualMessageContextType.Name, ServiceType.Name, expectedMessageContextType.Name);
+                actualMessageContextType.Name, _serviceType.Name, expectedMessageContextType.Name);
 
             // Message context type doesn't match registration message context type.
             return false;
@@ -165,36 +184,37 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
+            Type messageHandlerType = GetMessageHandlerType();
             _logger.LogTrace(
                 "Start processing '{MessageType}' message in message handler '{MessageHandlerType}'...", 
-                message.GetType().Name, ServiceType.Name);
+                message.GetType().Name, messageHandlerType.Name);
 
             const string methodName = "ProcessMessageAsync";
             try
             {
                 var processMessageAsync =
-                        (Task)Service.InvokeMethod(
+                        (Task)_service.InvokeMethod(
                             methodName, BindingFlags.Instance | BindingFlags.Public, message, messageContext, correlationInfo, cancellationToken);
 
                 if (processMessageAsync is null)
                 {
                     throw new InvalidOperationException(
-                        $"The '{typeof(IMessageHandler<,>).Name}' implementation '{Service.GetType().Name}' returned 'null' while calling the '{methodName}' method");
+                        $"The '{typeof(IMessageHandler<,>).Name}' implementation '{messageHandlerType.Name}' returned 'null' while calling the '{methodName}' method");
                 }
 
                 await processMessageAsync;
 
                 _logger.LogInformation(
-                    "Message handler '{MessageHandlerType}' successfully processed '{MessageType}' message", ServiceType.Name, MessageType.Name);
+                    "Message handler '{MessageHandlerType}' successfully processed '{MessageType}' message", messageHandlerType.Name, MessageType.Name);
             }
             catch (AmbiguousMatchException exception)
             {
                 _logger.LogError(
                     "Ambiguous match found of '{MethodName}' methods in the '{MessageHandlerType}'. Make sure that only 1 matching '{MethodName}' was found on the '{MessageHandlerType}' message handler",
-                    methodName, ServiceType.Name, methodName, ServiceType.Name);
+                    methodName, messageHandlerType.Name, methodName, messageHandlerType.Name);
 
                 throw new AmbiguousMatchException(
-                    $"Ambiguous match found of '{methodName}' methods in the '{Service.GetType().Name}'. ", exception);
+                    $"Ambiguous match found of '{methodName}' methods in the '{messageHandlerType.Name}'. ", exception);
             }
         }
     }
