@@ -66,7 +66,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
                 AccessKeys keys = await RegenerateAzureServiceBusKeysAsync(Namespace.Entity, Namespace.EntityName, keyType, client);
 
-                _logger.LogInformation(
+                _logger.LogWarning(
                     "Rotated {KeyType} connection string of Azure Service Bus {EntityType} '{EntityName}'",
                     keyType, Namespace.Entity, Namespace.EntityName);
 

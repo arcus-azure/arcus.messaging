@@ -104,7 +104,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 
             if (actualMessageContextType == expectedMessageContextType)
             {
-                _logger.LogInformation(
+                _logger.LogTrace(
                     "Message context type '{ActualMessageContextType}' matches registered message handler's {MessageHandlerType} context type {ExpectedMessageContextType}",
                     actualMessageContextType.Name, ServiceType.Name, expectedMessageContextType.Name);
 
@@ -119,7 +119,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                         BindingFlags.Instance | BindingFlags.NonPublic,
                         messageContext);
 
-                    _logger.LogInformation(
+                    _logger.LogTrace(
                         "Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message",
                         ServiceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
 
@@ -130,7 +130,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                 return true;
             }
 
-            _logger.LogInformation(
+            _logger.LogTrace(
                 "Message context type '{ActualMessageContextType}' doesn't matches registered message handler's {MessageHandlerType} context type {ExpectedMessageContextType}",
                 actualMessageContextType.Name, ServiceType.Name, expectedMessageContextType.Name);
 
@@ -184,7 +184,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 
                 await processMessageAsync;
 
-                _logger.LogInformation(
+                _logger.LogTrace(
                     "Message handler '{MessageHandlerType}' successfully processed '{MessageType}' message", ServiceType.Name, MessageType.Name);
             }
             catch (AmbiguousMatchException exception)
