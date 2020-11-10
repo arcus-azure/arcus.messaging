@@ -231,18 +231,19 @@ namespace Arcus.Messaging.Pumps.Abstractions
                 return true;
             }
 
+            Type messageHandlerType = handler.GetMessageHandlerType();
             if (!canProcessMessage)
             {
                 Logger.LogTrace(
                     "Message handler '{MessageHandlerType}' is not able to process the message because the message context '{MessageContextType}' didn't match the correct message handler's message context",
-                    handler.ServiceType.Name, handler.MessageContextType.Name);
+                    messageHandlerType.Name, handler.MessageContextType.Name);
             }
 
             if (!tryDeserializeToMessageFormat)
             {
                 Logger.LogTrace(
                     "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message that the message handler can handle",
-                    handler.ServiceType.Name);
+                    messageHandlerType.Name);
             }
 
             return false;
