@@ -98,7 +98,7 @@ namespace Arcus.Messaging.Health.Tcp
             {
                 _logger.LogTrace("Starting TCP server on port {Port}...", Port);
                 _listener.Start();
-                _logger.LogInformation("TCP server started on port {Port}!", Port);
+                _logger.LogInformation("TCP server started on port {Port}", Port);
 
                 return base.StartAsync(cancellationToken);
             }
@@ -186,7 +186,7 @@ namespace Arcus.Messaging.Health.Tcp
             {
                 _logger.LogTrace("Stopping TCP server on port {Port}...", Port);
                 _listener.Stop();
-                _logger.LogInformation("TCP server stopped on port {Port}!", Port);
+                _logger.LogInformation("TCP server stopped on port {Port}", Port);
 
                 return base.StopAsync(cancellationToken);
             }
