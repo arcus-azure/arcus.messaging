@@ -1,3 +1,6 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Messages.v1;
@@ -7,10 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-// ReSharper disable once CheckNamespace
-namespace Arcus.Messaging.Tests.Workers.ServiceBus
+namespace Arcus.Messaging.Tests.Integration.Fixture
 {
-    public class ServiceBusTopicContextPredicateSelectionWithServiceBusAbandonProgram
+    public class ServiceBusTopicBodyPredicateSelectionProgram
     {
         public static void main(string[] args)
         {
@@ -36,16 +38,14 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                         var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
 
                         return EventGridPublisherBuilder
-                            .ForTopic(eventGridTopic)
-                            .UsingAuthenticationKey(eventGridKey)
-                            .Build();
+                               .ForTopic(eventGridTopic)
+                               .UsingAuthenticationKey(eventGridKey)
+                               .Build();
                     });
-                    services.AddServiceBusTopicMessagePump(
-                                "Test-Receive-All-Topic-Only", 
-                                configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], 
-                                options => options.AutoComplete = false)
-                            .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
-                            .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>((AzureServiceBusMessageContext context) => true);
+                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                            .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((string body) => false)
+                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>((string body) => body.Contains("NotExisting"))
+                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>((string body) => body.Contains("ArticleNumber"));
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });

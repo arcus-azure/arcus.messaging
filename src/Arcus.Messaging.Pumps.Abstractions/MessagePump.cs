@@ -215,7 +215,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         {
             Logger.LogTrace("Determine if message handler '{Type}' can process the message...");
 
-            bool canProcessMessage = handler.CanProcessMessage(messageContext);
+            bool canProcessMessage = handler.CanProcessMessage(message, messageContext);
             bool tryDeserializeToMessageFormat = TryDeserializeToMessageFormat(message, handler.MessageType, out var result);
 
             if (canProcessMessage && tryDeserializeToMessageFormat)

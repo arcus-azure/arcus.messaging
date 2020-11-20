@@ -41,6 +41,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueContextTypeSelectionProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicContextPredicateSelectionProgram))]
+        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicBodyPredicateSelectionProgram))]
         [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueCompleteProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicFallbackCompleteProgram))]
         public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(ServiceBusEntity entity, Type programType)

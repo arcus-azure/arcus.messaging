@@ -76,6 +76,44 @@ public void ConfigureServices(IServiceCollection services)
 > Note that the order in which the message handlers are registered is important in the message processing.
 > In the example, when a message handler above this one is registered that could also handle the message (same message type) than that handler may be chosen instead of the one with the specific filter.
 
+## Filter messages based on message body
+
+When registereing a new message handler, one can opt-in to add a filter on the incoming message body which filters out messages that are not needed to be processed.
+This can be useful when you want to route messages based on the message content itself instead of the messaging context.
+
+Following example shows how a message handler should only process a certain message when it contains in its body the value 'Done'; meaning only done `Order`s will be processed.
+
+```csharp
+// Message to be sent:
+public enum Status { Processing, Done }
+
+public class Order
+{
+    public string Id { get; set; }
+    public string Status { get; set; }
+}
+
+// Message handler
+public class OrderMessageHandler : IMessageHandler<Order>
+{
+    public async Task ProcessMessageAsync(Order order, MessageContext context, ...)
+    {
+        // Do some processing...
+    }
+}
+
+// Message handler registration
+public class Startup
+{
+    ...
+    
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.WithMessageHandler<OrderMessageHandler, Order>(body => body.Contains("Done"));
+    }
+}
+```
+
 ## Fallback message handling
 
 When receiving a message on the message pump and none of the registered `IMessageHandler`'s can correctly process the message, the message pump normally throws and logs an exception.
