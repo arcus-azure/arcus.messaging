@@ -39,6 +39,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Theory]
         [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueProgram))]
         [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueContextTypeSelectionProgram))]
+        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueContextAndBodyFilterSelectionProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicContextPredicateSelectionProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicBodyPredicateSelectionProgram))]
