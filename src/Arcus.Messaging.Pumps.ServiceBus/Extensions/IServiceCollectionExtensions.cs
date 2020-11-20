@@ -878,7 +878,6 @@ namespace Microsoft.Extensions.DependencyInjection
             return services.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(messageContextFilter, implementationFactory);
         }
 
-
         /// <summary>
         /// Adds an <see cref="IAzureServiceBusFallbackMessageHandler"/> implementation which the message pump can use to fall back to when no message handler is found to process the message.
         /// </summary>

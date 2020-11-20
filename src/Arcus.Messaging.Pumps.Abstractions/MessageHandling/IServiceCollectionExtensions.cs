@@ -245,7 +245,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 services, messageContextFilter, messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
-
         /// <summary>
         /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an <see cref="MessagePump"/> implementation.
         /// resources.
