@@ -415,32 +415,21 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                bool subscriptionExists =
-                    await serviceBusClient.SubscriptionExistsAsync(serviceBusConnectionString.EntityPath, SubscriptionName, cancellationToken);
-                
+                bool subscriptionExists = await serviceBusClient.SubscriptionExistsAsync(serviceBusConnectionString.EntityPath, SubscriptionName, cancellationToken);
                 if (subscriptionExists)
                 {
-                    Logger.LogTrace(
-                        "Deleting subscription '{SubscriptionName}' on topic '{Path}'...",
-                         SubscriptionName, serviceBusConnectionString.EntityPath);
-                    
+                    Logger.LogTrace("Deleting subscription '{SubscriptionName}' on topic '{Path}'...", SubscriptionName, serviceBusConnectionString.EntityPath);
                     await serviceBusClient.DeleteSubscriptionAsync(serviceBusConnectionString.EntityPath, SubscriptionName, cancellationToken);
-                    
-                    Logger.LogTrace(
-                        "Subscription '{SubscriptionName}' deleted on topic '{Path}'",
-                         SubscriptionName, serviceBusConnectionString.EntityPath);
+                    Logger.LogTrace("Subscription '{SubscriptionName}' deleted on topic '{Path}'", SubscriptionName, serviceBusConnectionString.EntityPath);
                 }
                 else
                 {
-                    Logger.LogTrace(
-                        "Cannot delete topic subscription with name '{SubscriptionName}' because no subscription exists on Service Bus resource",
-                         SubscriptionName); }
+                    Logger.LogTrace("Cannot delete topic subscription with name '{SubscriptionName}' because no subscription exists on Service Bus resource", SubscriptionName);
+                }
             }
             catch (Exception exception)
             {
-                Logger.LogWarning(exception, 
-                    "Failed to delete topic subscription with name '{SubscriptionName}' on Service Bus resource", 
-                     SubscriptionName);
+                Logger.LogWarning(exception, "Failed to delete topic subscription with name '{SubscriptionName}' on Service Bus resource", SubscriptionName);
             }
             finally
             {
@@ -476,36 +465,26 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (String.IsNullOrEmpty(message.CorrelationId))
             {
-                Logger.LogInformation("No operation ID was found on the message");
+                Logger.LogTrace("No operation ID was found on the message");
             }
 
-            try
+            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+            using (IServiceScope serviceScope = ServiceProvider.CreateScope())
             {
-                MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
-                using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+                var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();
+                if (correlationInfoAccessor is null)
                 {
-                    var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();
-                    if (correlationInfoAccessor is null)
+                    Logger.LogTrace("No message correlation configured");
+                    await ProcessMessageWithFallbackAsync(message, cancellationToken, correlationInfo);
+                }
+                else
+                {
+                    correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
+                    using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
                     {
-                        Logger.LogTrace("No message correlation configured");
-                        await ProcessMessageAsync(message, cancellationToken, correlationInfo);
-                    }
-                    else
-                    {
-                        correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
-                        using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
-                        {
-                            await ProcessMessageAsync(message, cancellationToken, correlationInfo);
-                        }
+                        await ProcessMessageWithFallbackAsync(message, cancellationToken, correlationInfo);
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogCritical(ex, "Unable to process message with ID '{MessageId}'",  message.MessageId);
-                await HandleReceiveExceptionAsync(ex);
-
-                throw;
             }
         }
 
@@ -519,9 +498,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Guard.NotNull(messageHandler, nameof(messageHandler), "Requires a message handler instance to pre-process the message");
             Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to pre-process the message");
 
-            Logger.LogTrace("Start pre-processing message handler {MessageHandlerType}...", messageHandler.ServiceType.Name);
+            object messageHandlerInstance = messageHandler.GetMessageHandlerInstance();
+            Type messageHandlerType = messageHandlerInstance.GetType();
 
-            if (messageHandler.Service is AzureServiceBusMessageHandlerTemplate template 
+            Logger.LogTrace("Start pre-processing message handler {MessageHandlerType}...", messageHandlerType.Name);
+            
+            if (messageHandlerInstance is AzureServiceBusMessageHandlerTemplate template 
                 && messageContext is AzureServiceBusMessageContext serviceBusMessageContext)
             {
                 template.SetLockToken(serviceBusMessageContext.SystemProperties.LockToken);
@@ -529,47 +511,64 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             else
             {
-                Logger.LogTrace("Nothing to pre-process for message handler type '{MessageHandlerType}'", messageHandler.ServiceType.Name);
+                Logger.LogTrace("Nothing to pre-process for message handler type '{MessageHandlerType}'", messageHandlerType.Name);
             }
             
             return Task.CompletedTask;
         }
 
-        private async Task ProcessMessageAsync(
-            Message message,
-            CancellationToken cancellationToken,
-            MessageCorrelationInfo correlationInfo)
+        private async Task ProcessMessageWithFallbackAsync(Message message, CancellationToken cancellationToken, MessageCorrelationInfo correlationInfo)
         {
-            Logger.LogTrace("Received message '{MessageId}'", message.MessageId);
-
-            var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
-            Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
-            string messageBody = encoding.GetString(message.Body);
-
-            if (_fallbackMessageHandler is null)
+            try
             {
-                await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+                Logger.LogTrace("Received message '{MessageId}'", message.MessageId);
+
+                var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
+                Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
+                string messageBody = encoding.GetString(message.Body);
+
+                if (_fallbackMessageHandler is null)
+                {
+                    await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+                }
+                else
+                {
+                    await FallbackProcessMessageAsync(message, messageBody, messageContext, correlationInfo, cancellationToken);
+                }
+
+                Logger.LogTrace("Message '{MessageId}' processed", message.MessageId);
             }
-            else
+            catch (Exception exception)
             {
-                if (_fallbackMessageHandler is AzureServiceBusMessageHandlerTemplate specificMessageHandler)
-                {
-                    specificMessageHandler.SetMessageReceiver(_messageReceiver);
-                }
+                Logger.LogCritical(exception, "Unable to process message with ID '{MessageId}'",  message.MessageId);
+                await HandleReceiveExceptionAsync(exception);
 
-                MessageHandlerResult result = await ProcessMessageAndCaptureAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-                if (result.Exception != null)
-                {
-                    throw result.Exception;
-                }
+                throw;
+            }
+        }
 
-                if (!result.IsProcessed)
-                {
-                    await _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                }
+        private async Task FallbackProcessMessageAsync(
+            Message message,
+            string messageBody,
+            AzureServiceBusMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellationToken)
+        {
+            if (_fallbackMessageHandler is AzureServiceBusMessageHandlerTemplate specificMessageHandler)
+            {
+                specificMessageHandler.SetMessageReceiver(_messageReceiver);
             }
 
-            Logger.LogTrace("Message '{MessageId}' processed", message.MessageId);
+            MessageHandlerResult result = await ProcessMessageAndCaptureAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+            if (result.Exception != null)
+            {
+                throw result.Exception;
+            }
+
+            if (!result.IsProcessed)
+            {
+                await _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+            }
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)

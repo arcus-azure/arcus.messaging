@@ -213,8 +213,9 @@ namespace Arcus.Messaging.Pumps.Abstractions
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-            Logger.LogTrace("Determine if message handler '{Type}' can process the message...");
-
+            Type messageHandlerType = handler.GetMessageHandlerType();
+            Logger.LogTrace("Determine if message handler '{MessageHandlerType}' can process the message...", messageHandlerType.Name);
+            
             bool canProcessMessage = handler.CanProcessMessage(messageContext);
             if (canProcessMessage)
             {
@@ -228,13 +229,13 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
                 Logger.LogTrace(
                     "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message that the message handler can handle",
-                    handler.ServiceType.Name);
+                    messageHandlerType.Name);
             }
             else 
             {
                 Logger.LogTrace(
                     "Message handler '{MessageHandlerType}' is not able to process the message because the message context '{MessageContextType}' didn't match the correct message handler's message context",
-                    handler.ServiceType.Name, handler.MessageContextType.Name);
+                    messageHandlerType.Name, handler.MessageContextType.Name);
             }
 
             return false;

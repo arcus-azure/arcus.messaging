@@ -211,6 +211,7 @@ To have access to the Azure Service Bus operations, you have to implement the `a
 Behind the screens it implements the `IMessageHandler<>` interface, so you can register this the same way as your other regular message handlers.
 
 This base class provides several protected methods to call the Azure Service Bus operations:
+- `.CompleteMessageAsync`
 - `.DeadLetterMessageAsync`
 - `.AbandonMessageAsync`
 
@@ -253,6 +254,7 @@ To have access to the Azure Service Bus operations, you have to implement the ab
 Behind the scenes it implements the `IServiceBusFallbackMessageHandler`, so you can register this the same way as any other fallback message handler.
 
 This base class provides several protected methods to call the Azure Service Bus operations:
+- `.CompleteAsync`
 - `.DeadLetterAsync`
 - `.AbandonAsync`
 

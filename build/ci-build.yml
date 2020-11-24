@@ -112,7 +112,7 @@ stages:
               imageName: '$(Images.ServiceBus.Queue)'
               imageTag: $(Build.BuildId)
               healthPort: $(Arcus.Health.Port.Queue)
-              connectionString: '$(Arcus.ServiceBus.ConnectionStringWithQueue)'
+              connectionString: '$(Arcus.ServiceBus.Docker.ConnectionStringWithQueue)'
           - template: templates/build-and-run-worker-container.yml
             parameters:
               projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Topic'
@@ -120,7 +120,7 @@ stages:
               imageName: '$(Images.ServiceBus.Topic)'
               imageTag: $(Build.BuildId)
               healthPort: $(Arcus.Health.Port.Topic)
-              connectionString: '$(Arcus.ServiceBus.ConnectionStringWithTopic)'
+              connectionString: '$(Arcus.ServiceBus.Docker.ConnectionStringWithTopic)'
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
@@ -135,7 +135,7 @@ stages:
 
   - stage: SelfContainingIntegrationTests
     displayName: Self-Containing Integration Tests
-    dependsOn: DockerIntegrationTests
+    dependsOn: Build
     condition: succeeded()
     variables:
       - name: 'Arcus.Health.Port.Queue'
