@@ -31,6 +31,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="MessageHandling\MessageContext.IServiceCollectionExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Extensions\MessageContext.IServiceCollectionExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Enrichers" Version="0.2.1" />
     <PackageReference Include="Guard.NET" Version="1.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />

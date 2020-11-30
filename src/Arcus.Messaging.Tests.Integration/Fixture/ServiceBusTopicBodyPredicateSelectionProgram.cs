@@ -1,18 +1,19 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using Arcus.EventGrid.Publishing;
-using Arcus.Messaging.Pumps.Abstractions.Extensions;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Xunit.Sdk;
 
-// ReSharper disable once CheckNamespace
-namespace Arcus.Messaging.Tests.Workers.ServiceBus
+namespace Arcus.Messaging.Tests.Integration.Fixture
 {
-    public class ServiceBusTopicFallbackCompleteProgram
+    public class ServiceBusTopicBodyPredicateSelectionProgram
     {
         public static void main(string[] args)
         {
@@ -42,11 +43,12 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                                .UsingAuthenticationKey(eventGridKey)
                                .Build();
                     });
-                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = false)
-                            .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
-                            .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
+                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                            .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order body) => false)
+                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>((Customer body) => body is null)
+                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>((Order body) => body.Id != null);
 
-                    services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
+                    services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });
     }
 }

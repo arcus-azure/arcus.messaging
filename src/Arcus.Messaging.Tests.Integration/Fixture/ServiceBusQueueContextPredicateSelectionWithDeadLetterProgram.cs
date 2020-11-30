@@ -32,7 +32,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = false)
-                            .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>(context => false)
+                            .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext context) => false)
                             .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties["Topic"].ToString() == "Customers")
                             .WithServiceBusMessageHandler<OrdersAzureServiceBusDeadLetterMessageHandler, Order>(context => context.Properties["Topic"].ToString() == "Orders");
 

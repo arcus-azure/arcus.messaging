@@ -1,5 +1,6 @@
 using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Pumps.Abstractions.Extensions;
+using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.Configuration;
@@ -42,7 +43,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                                .Build();
                     });
                     services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                            .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(context => false)
+                            .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
                             .WithServiceBusFallbackMessageHandler<OrdersServiceBusFallbackMessageHandler>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
