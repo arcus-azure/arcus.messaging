@@ -19,11 +19,42 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageHandlerRegistration{TMessage, TMessageContext}"/> class.
         /// </summary>
+        /// <param name="messageBodySerializer">The optional custom serializer that will deserialize the incoming message for the <paramref name="messageHandlerImplementation"/>.</param>
+        /// <param name="messageHandlerImplementation">The <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation that this registration instance represents.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageContextFilter"/> or <paramref name="messageHandlerImplementation"/> is <c>null</c>.</exception>
+        internal MessageHandlerRegistration(
+            IMessageBodySerializer messageBodySerializer,
+            IMessageHandler<TMessage, TMessageContext> messageHandlerImplementation)
+        {
+            Guard.NotNull(messageHandlerImplementation, nameof(messageHandlerImplementation));
+
+            Service = messageHandlerImplementation;
+            Serializer = messageBodySerializer;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MessageHandlerRegistration{TMessage, TMessageContext}"/> class.
+        /// </summary>
         /// <param name="messageContextFilter">The filter to determine if a given <see cref="MessageContext"/> can be handled by the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.</param>
         /// <param name="messageHandlerImplementation">The <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation that this registration instance represents.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageContextFilter"/> or <paramref name="messageHandlerImplementation"/> is <c>null</c>.</exception>
         internal MessageHandlerRegistration(
             Func<TMessageContext, bool> messageContextFilter,
+            IMessageHandler<TMessage, TMessageContext> messageHandlerImplementation)
+            : this(messageContextFilter, messageBodySerializer: null, messageHandlerImplementation: messageHandlerImplementation)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MessageHandlerRegistration{TMessage, TMessageContext}"/> class.
+        /// </summary>
+        /// <param name="messageContextFilter">The filter to determine if a given <see cref="MessageContext"/> can be handled by the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.</param>
+        /// <param name="messageBodySerializer">The optional custom serializer that will deserialize the incoming message for the <paramref name="messageHandlerImplementation"/>.</param>
+        /// <param name="messageHandlerImplementation">The <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation that this registration instance represents.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageContextFilter"/> or <paramref name="messageHandlerImplementation"/> is <c>null</c>.</exception>
+        internal MessageHandlerRegistration(
+            Func<TMessageContext, bool> messageContextFilter,
+            IMessageBodySerializer messageBodySerializer,
             IMessageHandler<TMessage, TMessageContext> messageHandlerImplementation)
         {
             Guard.NotNull(messageContextFilter, nameof(messageContextFilter));
@@ -32,12 +63,18 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             _messageContextFilter = messageContextFilter;
             
             Service = messageHandlerImplementation;
+            Serializer = messageBodySerializer;
         }
 
         /// <summary>
         /// Gets the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.
         /// </summary>
         internal IMessageHandler<TMessage, TMessageContext> Service { get; }
+
+        /// <summary>
+        /// Gets the optional <see cref="IMessageBodySerializer"/> implementation that will custom deserialize the incoming message for the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.
+        /// </summary>
+        internal IMessageBodySerializer Serializer { get; }
 
         /// <summary>
         /// Determine if the <see cref="IMessageHandler{TMessage,TMessageContext}"/> can process messages within the given <paramref name="messageContext"/> type.
@@ -48,7 +85,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// </returns>
         internal bool CanProcessMessage(TMessageContext messageContext)
         {
-            return _messageContextFilter(messageContext);
+            return _messageContextFilter?.Invoke(messageContext) ?? false;
         }
 
         /// <summary>

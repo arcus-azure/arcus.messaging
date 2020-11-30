@@ -219,7 +219,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             bool canProcessMessage = handler.CanProcessMessage(messageContext);
             if (canProcessMessage)
             {
-                MessageResult messageResult = await DeserializeMessageAsync(message, handler.MessageType);
+                MessageResult messageResult = await DeserializeMessageAsync(handler, message, handler.MessageType);
                 if (messageResult.IsSuccess)
                 {
                     await PreProcessMessageAsync(handler, messageContext);
@@ -241,17 +241,12 @@ namespace Arcus.Messaging.Pumps.Abstractions
             return false;
         }
 
-        private async Task<MessageResult> DeserializeMessageAsync(string message, Type messageType)
+        private async Task<MessageResult> DeserializeMessageAsync(MessageHandler handler, string message, Type messageType)
         {
-            IEnumerable<IMessageBodySerializer> messageBodyHandlers = ServiceProvider.GetServices<IMessageBodySerializer>();
-
-            foreach (IMessageBodySerializer messageBodyHandler in messageBodyHandlers)
+            MessageResult result = await handler.TryCustomDeserializeMessageAsync(message);
+            if (result.IsSuccess && result.DeserializedMessage.GetType() == messageType)
             {
-                MessageResult result = await messageBodyHandler.DeserializeMessageAsync(message);
-                if (result.IsSuccess && result.DeserializedMessage.GetType() == messageType)
-                {
-                    return result;
-                }
+                return result;
             }
 
             if (TryDeserializeToMessageFormat(message, messageType, out object? deserializedByType) && deserializedByType != null)

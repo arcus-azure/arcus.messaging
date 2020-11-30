@@ -127,6 +127,46 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         internal static object GetRequiredPropertyValue(this object instance, string propertyName, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
         {
             Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the property '{propertyName}'");
+
+            object propertyValue = GetPropertyValue(instance, propertyName, bindingFlags);
+            if (propertyValue is null)
+            {
+                Type instanceType = instance.GetType();
+                throw new ValueMissingException($"There's no value for the property '{propertyName}' on instance '{instanceType.Name}'");
+            }
+
+            return propertyValue;
+        }
+
+        /// <summary>
+        /// Gets the value of the property of the current <paramref name="instance"/>.
+        /// </summary>
+        /// <param name="instance">The instance to get the property from.</param>
+        /// <param name="propertyName">The name of the property on the <paramref name="instance"/>.</param>
+        /// <param name="bindingFlags">The way the property is declared  on the <paramref name="instance"/>.</param>
+        internal static TValue GetPropertyValue<TValue>(this object instance, string propertyName, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
+        {
+            Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the property '{propertyName}'");
+
+            object propertyValue = GetPropertyValue(instance, propertyName, bindingFlags);
+            if (propertyValue is TValue typedPropertyValue)
+            {
+                return typedPropertyValue;
+            }
+
+            throw new InvalidCastException(
+                $"Cannot cast '{propertyName.GetType().Name}' to type '{typeof(TValue).Name}' while getting property '{propertyName}' on instance '{instance.GetType().Name}'");
+        }
+
+        /// <summary>
+        /// Gets the value of the property of the current <paramref name="instance"/>.
+        /// </summary>
+        /// <param name="instance">The instance to get the property from.</param>
+        /// <param name="propertyName">The name of the property on the <paramref name="instance"/>.</param>
+        /// <param name="bindingFlags">The way the property is declared  on the <paramref name="instance"/>.</param>
+        internal static object GetPropertyValue(this object instance, string propertyName, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
+        {
+            Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the property '{propertyName}'");
             Type instanceType = instance.GetType();
             
             PropertyInfo propertyInfo = instanceType.GetProperty(propertyName, bindingFlags);
@@ -136,11 +176,6 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             }
 
             object propertyValue = propertyInfo.GetValue(instance);
-            if (propertyValue is null)
-            {
-                throw new ValueMissingException($"There's no value for the property '{propertyName}' on instance '{instanceType.Name}'");
-            }
-
             return propertyValue;
         }
 
