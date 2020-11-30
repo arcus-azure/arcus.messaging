@@ -17,7 +17,6 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         where TMessageContext : MessageContext
     {
         private readonly Func<TMessageContext, bool> _messageContextFilter;
-        private readonly Func<string, bool> _messageBodyFilter;
         private readonly Func<TMessage, bool> _messageFilter;
         private readonly ILogger _logger;
 

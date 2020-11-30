@@ -250,30 +250,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         }
 
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void CustomMessageHandlerFactory_WithMessageBodyFilter_SubtractsRegistration(bool matchesBody)
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            var spyHandler = new TestMessageHandler();
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
-                (TestMessage messageBody) => matchesBody,
-                provider => spyHandler);
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
-
-            // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
-
-            // Assert
-            MessageHandler messageHandler = Assert.Single(messageHandlers);
-            Assert.NotNull(messageHandler);
-            
-            var context = TestMessageContext.Generate();
-            Assert.Equal(matchesBody, messageHandler.CanProcessMessage(messageContext: context));
-        }
-
-        [Theory]
         [InlineData(false, false)]
         [InlineData(false, true)]
         [InlineData(true, false)]
