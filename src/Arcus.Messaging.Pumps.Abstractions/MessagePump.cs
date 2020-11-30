@@ -214,36 +214,38 @@ namespace Arcus.Messaging.Pumps.Abstractions
             where TMessageContext : MessageContext
         {
             Logger.LogTrace("Determine if message handler '{Type}' can process the message...");
+            Type messageHandlerType = handler.GetMessageHandlerType();
 
-            bool canProcessMessage = handler.CanProcessMessage(message, messageContext);
-            bool tryDeserializeToMessageFormat = TryDeserializeToMessageFormat(message, handler.MessageType, out var result);
-
-            if (canProcessMessage && tryDeserializeToMessageFormat)
+            bool canProcessMessage = handler.CanProcessMessage(messageContext);
+            if (canProcessMessage)
             {
-                if (result is null)
+                bool tryDeserializeToMessageFormat = TryDeserializeToMessageFormat(message, handler.MessageType, out var result);
+                if (tryDeserializeToMessageFormat)
                 {
-                    throw new InvalidCastException(
-                        "Successful parsing from abstracted message to concrete message handler type did unexpectedly result in a 'null' parsing result");
+                    if (result is null)
+                    {
+                        throw new InvalidCastException(
+                            "Successful parsing from abstracted message to concrete message handler type did unexpectedly result in a 'null' parsing result");
+                    }
+
+                    bool canProcessDeserializedMessage = handler.CanProcessMessageBasedOnMessage(result);
+                    if (canProcessDeserializedMessage)
+                    {
+                        await PreProcessMessageAsync(handler, messageContext);
+                        await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
+                        return true;
+                    }
                 }
 
-                await PreProcessMessageAsync(handler, messageContext);
-                await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
-                return true;
+                Logger.LogTrace(
+                    "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message that the message handler can handle",
+                    messageHandlerType.Name);
             }
-
-            Type messageHandlerType = handler.GetMessageHandlerType();
-            if (!canProcessMessage)
+            else
             {
                 Logger.LogTrace(
                     "Message handler '{MessageHandlerType}' is not able to process the message because the message context '{MessageContextType}' didn't match the correct message handler's message context",
                     messageHandlerType.Name, handler.MessageContextType.Name);
-            }
-
-            if (!tryDeserializeToMessageFormat)
-            {
-                Logger.LogTrace(
-                    "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message that the message handler can handle",
-                    messageHandlerType.Name);
             }
 
             return false;

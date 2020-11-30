@@ -18,6 +18,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
     {
         private readonly Func<TMessageContext, bool> _messageContextFilter;
         private readonly Func<string, bool> _messageBodyFilter;
+        private readonly Func<TMessage, bool> _messageFilter;
         private readonly ILogger _logger;
 
         /// <summary>
@@ -44,21 +45,21 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageHandlerRegistration{TMessage, TMessageContext}"/> class.
         /// </summary>
-        /// <param name="messageBodyFilter">The filter to determine if a given message body can be handled by the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.</param>
+        /// <param name="messageFilter">The filter to determine if a given message can be handled by the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.</param>
         /// <param name="messageHandlerImplementation">The <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation that this registration instance represents.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the restriction filters.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageHandlerImplementation"/> is <c>null</c>.</exception>
         internal MessageHandlerRegistration(
-            Func<string, bool> messageBodyFilter,
+            Func<TMessage, bool> messageFilter,
             IMessageHandler<TMessage, TMessageContext> messageHandlerImplementation,
             ILogger<MessageHandlerRegistration<TMessage, TMessageContext>> logger)
         {
             Guard.NotNull(messageHandlerImplementation, nameof(messageHandlerImplementation), "Requires a message handler implementation to apply the message processing filters to");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a message body filter to restrict the message processing based on the message body");
+            Guard.NotNull(messageFilter, nameof(messageFilter), "Requires a message body filter to restrict the message processing based on the message body");
 
-            _messageBodyFilter = messageBodyFilter;
+            _messageFilter = messageFilter;
             _logger = logger ?? NullLogger<MessageHandlerRegistration<TMessage, TMessageContext>>.Instance;
-            
+
             Service = messageHandlerImplementation;
         }
 
@@ -66,22 +67,22 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// Initializes a new instance of the <see cref="MessageHandlerRegistration{TMessage, TMessageContext}"/> class.
         /// </summary>
         /// <param name="messageContextFilter">The filter to determine if a given <see cref="MessageContext"/> can be handled by the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.</param>
-        /// <param name="messageBodyFilter">The filter to determine if a given message body can be handled by the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.</param>
+        /// <param name="messageFilter">The filter to determine if a given message can be handled by the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.</param>
         /// <param name="messageHandlerImplementation">The <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation that this registration instance represents.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the restriction filters.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageHandlerImplementation"/> is <c>null</c>.</exception>
         internal MessageHandlerRegistration(
             Func<TMessageContext, bool> messageContextFilter,
-            Func<string, bool> messageBodyFilter,
+            Func<TMessage, bool> messageFilter,
             IMessageHandler<TMessage, TMessageContext> messageHandlerImplementation,
             ILogger<MessageHandlerRegistration<TMessage, TMessageContext>> logger)
         {
             Guard.NotNull(messageHandlerImplementation, nameof(messageHandlerImplementation), "Requires a message handler implementation to apply the message processing filters to");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a message body filter to restrict the message processing based on the message body");
+            Guard.NotNull(messageFilter, nameof(messageFilter), "Requires a message body filter to restrict the message processing based on the message body");
             Guard.NotNull(messageContextFilter, nameof(messageContextFilter), "Requires a message context filter to restrict message processing within a certain message context");
 
             _messageContextFilter = messageContextFilter;
-            _messageBodyFilter = messageBodyFilter;
+            _messageFilter = messageFilter;
             _logger = logger ?? NullLogger<MessageHandlerRegistration<TMessage, TMessageContext>>.Instance;
             
             Service = messageHandlerImplementation;
@@ -113,21 +114,21 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         }
 
         /// <summary>
-        /// Determine if the <see cref="IMessageHandler{TMessage,TMessageContext}"/> can process the messages based on the raw message body.
+        /// Determine if the <see cref="IMessageHandler{TMessage,TMessageContext}"/> can process the messages based on the incoming deserialized message.
         /// </summary>
-        /// <param name="messageBody">The raw message body that's about to be deserialized.</param>
+        /// <param name="message">The incoming message that's deserialized.</param>
         /// <returns>
-        ///     [true] if the <see cref="IMessageHandler{TMessage,TMessageContext}"/> can process the message body; [false] otherwise.
+        ///     [true] if the <see cref="IMessageHandler{TMessage,TMessageContext}"/> can process the message; [false] otherwise.
         /// </returns>
-        internal bool CanProcessMessageBasedOnMessageBody(string messageBody)
+        internal bool CanProcessMessageBasedOnMessage(TMessage message)
         {
             try
             {
-                return _messageBodyFilter?.Invoke(messageBody) ?? true;
+                return _messageFilter?.Invoke(message) ?? true;
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Failed to run message body predicate for {MessageHandlerType}", Service.GetType().Name);
+                _logger.LogError(exception, "Failed to run message predicate for {MessageHandlerType}", Service.GetType().Name);
                 return false;
             }
         }

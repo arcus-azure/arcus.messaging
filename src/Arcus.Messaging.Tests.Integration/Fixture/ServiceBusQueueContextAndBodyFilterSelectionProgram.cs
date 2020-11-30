@@ -46,7 +46,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                             .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.ContainsKey("NotExisting"), body => false)
                             .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>(
                                 context => context.Properties["Topic"].ToString() == "Orders", 
-                                body => body.Contains("ArticleNumber"));
+                                body => body.Id != null);
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
                 });

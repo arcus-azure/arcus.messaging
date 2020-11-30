@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Xunit.Sdk;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
@@ -43,9 +44,9 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                                .Build();
                     });
                     services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                            .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((string body) => false)
-                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>((string body) => body.Contains("NotExisting"))
-                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>((string body) => body.Contains("ArticleNumber"));
+                            .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order body) => false)
+                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>((Customer body) => body is null)
+                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>((Order body) => body.Id != null);
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });

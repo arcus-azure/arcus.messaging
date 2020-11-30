@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage>(
             this IServiceCollection services,
             Func<MessageContext, bool> messageContextFilter,
-            Func<string, bool> messageBodyFilter,
+            Func<TMessage, bool> messageBodyFilter,
             Func<IServiceProvider, TMessageHandler> implementationFactory)
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
@@ -53,7 +53,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage>(
             this IServiceCollection services,
             Func<MessageContext, bool> messageContextFilter,
-            Func<string, bool> messageBodyFilter)
+            Func<TMessage, bool> messageBodyFilter)
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {

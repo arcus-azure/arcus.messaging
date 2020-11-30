@@ -141,7 +141,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(messageBodyFilter: null));
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(messageFilter: null));
         }
 
         [Fact]
@@ -154,7 +154,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.ThrowsAny<ArgumentException>(
                 () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageContextFilter: null,
-                    messageBodyFilter: body => true));
+                    messageFilter: body => true));
         }
 
         [Fact]
@@ -166,7 +166,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
                 () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    messageBodyFilter: null,
+                    messageFilter: null,
                     messageContextFilter: context => true));
         }
 
@@ -218,7 +218,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.ThrowsAny<ArgumentException>(
                 () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: null,
-                    messageBodyFilter: body => true));
+                    messageFilter: body => true));
         }
 
         [Fact]
@@ -231,7 +231,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.ThrowsAny<ArgumentException>(
                 () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: serviceProvider => new TestServiceBusMessageHandler(), 
-                    messageBodyFilter: null));
+                    messageFilter: null));
         }
 
         [Fact]
@@ -245,7 +245,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: null,
                     messageContextFilter: context => true,
-                    messageBodyFilter: body => true));
+                    messageFilter: body => true));
         }
 
         [Fact]
@@ -259,7 +259,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: servivceProvider => new TestServiceBusMessageHandler(), 
                     messageContextFilter: null,
-                    messageBodyFilter: body => true));
+                    messageFilter: body => true));
         }
 
         [Fact]
@@ -273,7 +273,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: serviceProvider => new TestServiceBusMessageHandler(), 
                     messageContextFilter: context => true,
-                    messageBodyFilter: null));
+                    messageFilter: null));
         }
 
         [Fact]

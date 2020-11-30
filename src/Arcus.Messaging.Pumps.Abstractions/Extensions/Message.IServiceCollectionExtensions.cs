@@ -25,7 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
         public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage>(
             this IServiceCollection services,
-            Func<string, bool> messageBodyFilter)
+            Func<TMessage, bool> messageBodyFilter)
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
@@ -48,7 +48,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
         public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this IServiceCollection services,
-            Func<string, bool> messageBodyFilter)
+            Func<TMessage, bool> messageBodyFilter)
             where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
             where TMessage : class
             where TMessageContext : MessageContext
@@ -72,7 +72,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/>, <paramref name="messageBodyFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
         public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage>(
             this IServiceCollection services,
-            Func<string, bool> messageBodyFilter,
+            Func<TMessage, bool> messageBodyFilter,
             Func<IServiceProvider, TMessageHandler> implementationFactory)
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
@@ -97,7 +97,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/>, <paramref name="messageBodyFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
         public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this IServiceCollection services,
-            Func<string, bool> messageBodyFilter,
+            Func<TMessage, bool> messageBodyFilter,
             Func<IServiceProvider, TMessageHandler> implementationFactory)
             where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
             where TMessage : class
@@ -109,7 +109,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
                 serviceProvider => new MessageHandlerRegistration<TMessage, TMessageContext>(
-                    messageBodyFilter: messageBodyFilter, 
+                    messageFilter: messageBodyFilter, 
                     messageHandlerImplementation: implementationFactory(serviceProvider),
                     logger: serviceProvider.GetService<ILogger<MessageHandlerRegistration<TMessage, TMessageContext>>>()));
         }

@@ -81,16 +81,16 @@ public void ConfigureServices(IServiceCollection services)
 When registereing a new message handler, one can opt-in to add a filter on the incoming message body which filters out messages that are not needed to be processed.
 This can be useful when you want to route messages based on the message content itself instead of the messaging context.
 
-Following example shows how a message handler should only process a certain message when it contains in its body the value 'Done'; meaning only done `Order`s will be processed.
+Following example shows how a message handler should only process a certain message when the status is 'Sales'; meaning only `Order` for the sales division will be processed.
 
 ```csharp
 // Message to be sent:
-public enum Status { Processing, Done }
+public enum Department { Sales, Marketing, Operations }
 
 public class Order
 {
     public string Id { get; set; }
-    public string Status { get; set; }
+    public Department Type { get; set; }
 }
 
 // Message handler
@@ -109,7 +109,7 @@ public class Startup
     
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithMessageHandler<OrderMessageHandler, Order>(body => body.Contains("Done"));
+        services.WithMessageHandler<OrderMessageHandler, Order>((Order order) => order.Type == Department.Sales);
     }
 }
 ```

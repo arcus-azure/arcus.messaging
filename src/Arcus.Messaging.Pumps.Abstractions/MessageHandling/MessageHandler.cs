@@ -116,9 +116,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
         /// </summary>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
-        /// <param name="messageBody">The incoming message body.</param>
         /// <param name="messageContext">The context in which the incoming message is processed.</param>
-        public bool CanProcessMessage<TMessageContext>(string messageBody, TMessageContext messageContext) where TMessageContext : MessageContext
+        public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext) where TMessageContext : MessageContext
         {
             Type expectedMessageContextType = _serviceType.GenericTypeArguments[1];
             Type actualMessageContextType = typeof(TMessageContext);
@@ -131,9 +130,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                 if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
                 {
                     bool canProcessMessageWithinMessageContext = CanProcessMessageWithinMessageContext(messageContext);
-                    bool canProcessMessageBasedOnMessageBody = CanProcessMessageBasedOnMessageBody(messageBody);
-
-                    return canProcessMessageWithinMessageContext && canProcessMessageBasedOnMessageBody;
+                    return canProcessMessageWithinMessageContext;
                 }
 
                 // Message context type matches registration message context type; registered without predicate.
@@ -161,17 +158,26 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             return canProcessMessage;
         }
 
-        private bool CanProcessMessageBasedOnMessageBody(string messageBody)
+        /// <summary>
+        /// Determines if the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> can process the incoming deserialized message based on the consumer-provided message predicate.
+        /// </summary>
+        /// <param name="message">The incoming deserialized message body.</param>
+        public bool CanProcessMessageBasedOnMessage(object? message)
         {
-            _logger.LogTrace("Determining whether the message context predicate registered with the message handler {MessageHandlerType} holds...", _serviceType.Name);
+            if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
+            {
+                _logger.LogTrace("Determining whether the message context predicate registered with the message handler {MessageHandlerType} holds...", _serviceType.Name);
 
-            var canProcessMessage = 
-                (bool) _service.InvokeMethod("CanProcessMessageBasedOnMessageBody", BindingFlags.Instance | BindingFlags.NonPublic, messageBody);
+                var canProcessMessage = 
+                    (bool) _service.InvokeMethod("CanProcessMessageBasedOnMessage", BindingFlags.Instance | BindingFlags.NonPublic, message);
 
-            _logger.LogTrace("Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message", 
-                _serviceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
+                _logger.LogTrace("Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message", 
+                                 _serviceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
             
-            return canProcessMessage;
+                return canProcessMessage;
+            }
+
+            return true;
         }
 
         /// <summary>

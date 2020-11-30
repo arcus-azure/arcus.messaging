@@ -28,7 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this IServiceCollection services,
             Func<TMessageContext, bool> messageContextFilter,
-            Func<string, bool> messageBodyFilter)
+            Func<TMessage, bool> messageBodyFilter)
             where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
             where TMessage : class
             where TMessageContext : MessageContext
@@ -56,7 +56,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this IServiceCollection services,
             Func<TMessageContext, bool> messageContextFilter,
-            Func<string, bool> messageBodyFilter,
+            Func<TMessage, bool> messageBodyFilter,
             Func<IServiceProvider, TMessageHandler> implementationFactory)
             where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
             where TMessage : class
@@ -70,7 +70,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
                 serviceProvider => new MessageHandlerRegistration<TMessage, TMessageContext>(
                     messageContextFilter: messageContextFilter, 
-                    messageBodyFilter: messageBodyFilter,
+                    messageFilter: messageBodyFilter,
                     messageHandlerImplementation: implementationFactory(serviceProvider),
                     logger: serviceProvider.GetService<ILogger<MessageHandlerRegistration<TMessage, TMessageContext>>>()));
         }
