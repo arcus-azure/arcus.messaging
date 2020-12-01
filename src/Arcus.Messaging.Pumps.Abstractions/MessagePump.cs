@@ -115,7 +115,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
-        protected async Task<MessageHandlerResult> ProcessMessageAndCaptureAsync<TMessageContext>(
+        protected async Task<bool> ProcessMessageAndCaptureAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -126,20 +126,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
-            try
-            {
-                bool isProcessed = await TryProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                if (isProcessed)
-                {
-                    return MessageHandlerResult.Success();
-                }
-
-                return MessageHandlerResult.Pending();
-            }
-            catch (Exception exception)
-            {
-                return MessageHandlerResult.Failure(exception);
-            }
+            var isProcessed = await TryProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+            return isProcessed;
         }
 
         /// <summary>
