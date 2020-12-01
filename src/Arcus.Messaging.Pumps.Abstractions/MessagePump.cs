@@ -157,7 +157,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
             bool isProcessed = await TryProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-            if (isProcessed == false)
+            if (isProcessed)
             {
                 return;
             }
