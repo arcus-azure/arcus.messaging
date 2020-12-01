@@ -533,7 +533,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 }
                 else
                 {
-                    await FallbackProcessMessageAsync(message, messageBody, messageContext, correlationInfo, cancellationToken);
+                    await ProcessMessageWithPotentialFallbackAsync(message, messageBody, messageContext, correlationInfo, cancellationToken);
                 }
 
                 Logger.LogTrace("Message '{MessageId}' processed", message.MessageId);
@@ -547,7 +547,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
         }
 
-        private async Task FallbackProcessMessageAsync(
+        private async Task ProcessMessageWithPotentialFallbackAsync(
             Message message,
             string messageBody,
             AzureServiceBusMessageContext messageContext,
@@ -559,13 +559,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 specificMessageHandler.SetMessageReceiver(_messageReceiver);
             }
 
-            MessageHandlerResult result = await ProcessMessageAndCaptureAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-            if (result.Exception != null)
-            {
-                throw result.Exception;
-            }
-
-            if (!result.IsProcessed)
+            var isProcessed = await ProcessMessageAndCaptureAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+            if (isProcessed == false)
             {
                 await _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
             }
