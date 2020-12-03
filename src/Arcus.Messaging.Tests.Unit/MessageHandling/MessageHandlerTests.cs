@@ -9,11 +9,8 @@ using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Testing.Logging;
 using Bogus;
-using Microsoft.Azure.ServiceBus;
-using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
 using Xunit;
@@ -107,7 +104,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         {
             // Arrange
             var services = new ServiceCollection();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(messageContext => matchesContext);
+            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>((MessageContext messageContext) => matchesContext);
             ServiceProvider serviceProvider = services.BuildServiceProvider();
 
             // Act
@@ -118,7 +115,45 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var context = new MessageContext("message-id", new Dictionary<string, object>());
-            Assert.Equal(matchesContext, messageHandler.CanProcessMessage(context));
+            Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(context));
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void CustomMessageHandlerConstructor_WithDefaultMessageBodyFilter_SubtractsRegistration(bool matches)
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>((TestMessage messageBody) => matches);
+            ServiceProvider serviceProvider = services.BuildServiceProvider();
+
+            // Act
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
+
+            // Assert
+            MessageHandler messageHandler = Assert.Single(messageHandlers);
+            Assert.NotNull(messageHandler);
+            Assert.Equal(matches, messageHandler.CanProcessMessageBasedOnMessage(new TestMessage()));
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void CustomMessageHandlerConstructor_WithMessageBodyFilter_SubtractsRegistration(bool matches)
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>((TestMessage message) => matches);
+            ServiceProvider serviceProvider = services.BuildServiceProvider();
+
+            // Act
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
+
+            // Assert
+            MessageHandler messageHandler = Assert.Single(messageHandlers);
+            Assert.NotNull(messageHandler);
+            Assert.Equal(matches, messageHandler.CanProcessMessageBasedOnMessage(new TestMessage()));
         }
 
         [Theory]
@@ -128,7 +163,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         {
             // Arrange
             var services = new ServiceCollection();
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(messageContext => matchesContext);
+            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>((TestMessageContext messageContext) => matchesContext);
             ServiceProvider serviceProvider = services.BuildServiceProvider();
 
             // Act
@@ -139,7 +174,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var context = TestMessageContext.Generate();
-            Assert.Equal(matchesContext, messageHandler.CanProcessMessage(context));
+            Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
         }
 
         [Theory]
@@ -151,7 +186,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             var services = new ServiceCollection();
             var spyHandler = new DefaultTestMessageHandler();
             services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(
-                messageContext => matchesContext,
+                (MessageContext messageContext) => matchesContext,
                 provider => spyHandler);
             ServiceProvider serviceProvider = services.BuildServiceProvider();
 
@@ -163,7 +198,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var context = new MessageContext("message-id", new Dictionary<string, object>());
-            Assert.Equal(matchesContext, messageHandler.CanProcessMessage(context));
+            Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
         }
 
         [Fact]
@@ -199,7 +234,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             var services = new ServiceCollection();
             var spyHandler = new TestMessageHandler();
             services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
-                messageContext => matchesContext,
+                (TestMessageContext messageContext) => matchesContext,
                 provider => spyHandler);
             ServiceProvider serviceProvider = services.BuildServiceProvider();
 
@@ -211,7 +246,35 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
             
             var context = TestMessageContext.Generate();
-            Assert.Equal(matchesContext, messageHandler.CanProcessMessage(context));
+            Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
+        }
+
+        [Theory]
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void CustomMessageHandlerFactory_WithMessageBodyAndContextFilter_SubtractsRegistration(bool matchesBody, bool matchesContext)
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var spyHandler = new TestMessageHandler();
+            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
+                (TestMessageContext messageContext) => matchesContext,
+                (TestMessage messageBody) => matchesBody,
+                provider => spyHandler);
+            ServiceProvider serviceProvider = services.BuildServiceProvider();
+
+            // Act
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
+
+            // Assert
+            MessageHandler messageHandler = Assert.Single(messageHandlers);
+            Assert.NotNull(messageHandler);
+            
+            var context = TestMessageContext.Generate();
+            Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
+            Assert.Equal(matchesBody, messageHandler.CanProcessMessageBasedOnMessage(new TestMessage()));
         }
 
         [Fact]

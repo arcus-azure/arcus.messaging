@@ -1,4 +1,5 @@
 using Arcus.EventGrid.Publishing;
+using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.Configuration;
@@ -43,8 +44,8 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                                 "Test-Receive-All-Topic-Only", 
                                 configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], 
                                 options => options.AutoComplete = false)
-                            .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(context => false)
-                            .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>(context => true);
+                            .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
+                            .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>((AzureServiceBusMessageContext context) => true);
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });

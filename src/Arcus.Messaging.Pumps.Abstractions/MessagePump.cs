@@ -216,15 +216,19 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Type messageHandlerType = handler.GetMessageHandlerType();
             Logger.LogTrace("Determine if message handler '{MessageHandlerType}' can process the message...", messageHandlerType.Name);
             
-            bool canProcessMessage = handler.CanProcessMessage(messageContext);
+            bool canProcessMessage = handler.CanProcessMessageBasedOnContext(messageContext);
             if (canProcessMessage)
             {
                 MessageResult messageResult = await DeserializeMessageAsync(handler, message, handler.MessageType);
                 if (messageResult.IsSuccess)
                 {
-                    await PreProcessMessageAsync(handler, messageContext);
-                    await handler.ProcessMessageAsync(messageResult.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
-                    return true;
+                    bool canProcessDeserializedMessage = handler.CanProcessMessageBasedOnMessage(messageResult.DeserializedMessage);
+                    if (canProcessDeserializedMessage)
+                    {
+                        await PreProcessMessageAsync(handler, messageContext);
+                        await handler.ProcessMessageAsync(messageResult.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
+                        return true;
+                    }
                 }
 
                 Logger.LogTrace(
