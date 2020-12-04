@@ -149,13 +149,18 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the property '{propertyName}'");
 
             object propertyValue = GetPropertyValue(instance, propertyName, bindingFlags);
+            if (propertyValue is null)
+            {
+                return default;
+            }
+            
             if (propertyValue is TValue typedPropertyValue)
             {
                 return typedPropertyValue;
             }
 
             throw new InvalidCastException(
-                $"Cannot cast '{propertyName.GetType().Name}' to type '{typeof(TValue).Name}' while getting property '{propertyName}' on instance '{instance.GetType().Name}'");
+                $"Cannot cast '{propertyValue.GetType().Name}' to type '{typeof(TValue).Name}' while getting property '{propertyName}' on instance '{instance.GetType().Name}'");
         }
 
         /// <summary>

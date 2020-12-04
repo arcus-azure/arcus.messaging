@@ -316,11 +316,11 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
 
             var services = new ServiceCollection();
             services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
-                ctx => ctx.MessageId == "some other ID",
-                provider => spyHandler2);
+                messageContextFilter: ctx => ctx.MessageId == "some other ID",
+                implementationFactory: provider => spyHandler2);
             services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
-                ctx => ctx.MessageId == messageId,
-                provider => spyHandler1);
+                messageContextFilter: ctx => ctx.MessageId == messageId,
+                implementationFactory: provider => spyHandler1);
             services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>();
             services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>();
 
