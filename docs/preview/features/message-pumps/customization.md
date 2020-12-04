@@ -109,10 +109,10 @@ The registration of these message body handlers can be done just as easily as an
 public void ConfigureServices(IServiceCollection services)
 {
     // Register the message body serializer in the dependency container where the dependent services will be injected.
-    services.WithMessageBodySerializer<OrderBatchMessageBodyHandler>();
+    services.WithMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
 
     // Register the message body serializer  in the dependency container where the dependent services are manually injected.
-    services.WithMessageBodySerializer(serviceProvider => 
+    services.WithMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
     {
         var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
         return new OrderBatchMessageHandler(logger);

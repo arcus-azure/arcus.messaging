@@ -35,8 +35,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
 
-            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
-                services, messageBodySerializer, messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageBodySerializer, messageBodyFilter);
         }
 
         /// <summary>
@@ -60,8 +59,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer to deserialize the incoming message for the message handler");
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
 
-            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
-                services, messageBodySerializerImplementationFactory, messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageBodySerializerImplementationFactory, messageBodyFilter);
         }
 
         /// <summary>

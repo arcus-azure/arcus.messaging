@@ -76,8 +76,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
             Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
 
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
-                messageBodySerializer, implementationFactory);
+            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageBodySerializer, implementationFactory);
         }
 
         /// <summary>

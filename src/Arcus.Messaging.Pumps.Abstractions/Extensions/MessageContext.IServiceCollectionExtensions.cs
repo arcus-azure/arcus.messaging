@@ -32,8 +32,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
             Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
 
-            return services.WithMessageHandler<TMessageHandler, TMessage>(
-                messageContextFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageContextFilter);
         }
 
         /// <summary>
