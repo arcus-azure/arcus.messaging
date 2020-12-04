@@ -1,4 +1,4 @@
-using Arcus.EventGrid.Publishing;
+﻿using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 // ReSharper disable once CheckNamespace
 namespace Arcus.Messaging.Tests.Workers.ServiceBus
 {
-    public class ServiceBusTopicWithOrderBatchProgram
+    public class ServiceBusQueueWithContextAndBodyFilterAndBodySerializerProgram
     {
         public static void main(string[] args)
         {
@@ -40,12 +40,17 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                             .UsingAuthenticationKey(eventGridKey)
                             .Build();
                     });
-                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                            .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(messageBodySerializerImplementationFactory: serviceProvider =>
-                            {
-                                var logger = serviceProvider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
-                                return new OrderBatchMessageBodySerializer(logger);
-                            });
+                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                            .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(messageContextFilter: context => false)
+                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(messageBodyFilter: message => false)
+                            .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(
+                                messageContextFilter: context => context != null,
+                                messageBodySerializerImplementationFactory: serviceProvider =>
+                                {
+                                    var logger = serviceProvider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
+                                    return new OrderBatchMessageBodySerializer(logger);
+                                },
+                                messageBodyFilter: message => message.Orders.Length == 1);
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });
