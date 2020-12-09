@@ -32,8 +32,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
 
-            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
-                services, messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageBodyFilter);
         }
 
         /// <summary>
@@ -56,8 +55,8 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
 
-            return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-                services, messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return services.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+                messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
         /// <summary>
@@ -81,7 +80,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
 
-            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageBodyFilter, implementationFactory);
+            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageBodyFilter, implementationFactory);
         }
 
         /// <summary>
@@ -109,7 +108,9 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
                 serviceProvider => new MessageHandlerRegistration<TMessage, TMessageContext>(
-                    messageFilter: messageBodyFilter, 
+                    messageContextFilter: null,
+                    messageBodySerializer: null,
+                    messageBodyFilter: messageBodyFilter,
                     messageHandlerImplementation: implementationFactory(serviceProvider),
                     logger: serviceProvider.GetService<ILogger<MessageHandlerRegistration<TMessage, TMessageContext>>>()));
         }

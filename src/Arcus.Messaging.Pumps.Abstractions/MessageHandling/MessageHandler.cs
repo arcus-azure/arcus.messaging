@@ -117,7 +117,21 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// </summary>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
         /// <param name="messageContext">The context in which the incoming message is processed.</param>
-        public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext) where TMessageContext : MessageContext
+        [Obsolete("Use the " + nameof(CanProcessMessageBasedOnContext) + " specific message context overload instead")]
+        public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext)
+            where TMessageContext : MessageContext
+        {
+            bool canProcessMessageBasedOnContext = CanProcessMessageBasedOnContext(messageContext);
+            return canProcessMessageBasedOnContext;
+        }
+
+        /// <summary>
+        /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
+        /// </summary>
+        /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
+        /// <param name="messageContext">The context in which the incoming message is processed.</param>
+        public bool CanProcessMessageBasedOnContext<TMessageContext>(TMessageContext messageContext) 
+            where TMessageContext : MessageContext
         {
             Type expectedMessageContextType = _serviceType.GenericTypeArguments[1];
             Type actualMessageContextType = typeof(TMessageContext);
@@ -172,12 +186,54 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                     (bool) _service.InvokeMethod("CanProcessMessageBasedOnMessage", BindingFlags.Instance | BindingFlags.NonPublic, message);
 
                 _logger.LogTrace("Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message", 
-                                 _serviceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
+                    _serviceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
             
                 return canProcessMessage;
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Tries to custom deserialize the incoming <paramref name="message"/> via a optional additional <see cref="IMessageBodySerializer"/>
+        /// that was provided with the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>.
+        /// </summary>
+        /// <param name="message">The incoming message to deserialize.</param>
+        /// <returns>
+        ///     A <see cref="MessageResult"/> instance that either represents a successful or faulted deserialization of the incoming <paramref name="message"/>.
+        /// </returns>
+        public async Task<MessageResult> TryCustomDeserializeMessageAsync(string message)
+        {
+            if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
+            {
+                _logger.LogTrace("Custom {MessageBodySerializerType} found on the registered message handler, start custom deserialization...", nameof(IMessageBodySerializer));
+
+                var serializer = _service.GetPropertyValue<IMessageBodySerializer>("Serializer", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (serializer != null)
+                {
+                    Task<MessageResult> deserializeMessageAsync = serializer.DeserializeMessageAsync(message);
+                    if (deserializeMessageAsync != null)
+                    {
+                        MessageResult result = await deserializeMessageAsync;
+                        if (result != null)
+                        {
+                            if (result.IsSuccess)
+                            {
+                                _logger.LogTrace("Custom {MessageBodySerializerType} message deserialization was successful", nameof(IMessageBodySerializer));
+                                return result;
+                            }
+
+                            _logger.LogTrace("Custom {MessageBodySerializerType} message deserialization failed: {ErrorMessage} {Exception}", nameof(IMessageBodySerializer), result.ErrorMessage, result.Exception);
+                        }
+                    }
+
+                    _logger.LogTrace("Invalid {MessageBodySerializerType} message deserialization was configured on the registered message handler, custom deserialization returned 'null'", nameof(IMessageBodySerializer));
+                    return MessageResult.Failure("Invalid custom deserialization was configured on the registered message handler");
+                }
+            }
+
+            _logger.LogTrace("No {MessageBodySerializerType} was found on the registered message handler, so no custom deserialization is available", nameof(IMessageBodySerializer));
+            return MessageResult.Failure("No custom deserialization was found on the registered message handler");
         }
 
         /// <summary>

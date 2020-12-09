@@ -3,6 +3,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using GuardNet;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection

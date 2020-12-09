@@ -201,26 +201,20 @@ namespace Arcus.Messaging.Pumps.Abstractions
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-            Logger.LogTrace("Determine if message handler '{Type}' can process the message...");
             Type messageHandlerType = handler.GetMessageHandlerType();
-
-            bool canProcessMessage = handler.CanProcessMessage(messageContext);
+            Logger.LogTrace("Determine if message handler '{MessageHandlerType}' can process the message...", messageHandlerType.Name);
+            
+            bool canProcessMessage = handler.CanProcessMessageBasedOnContext(messageContext);
             if (canProcessMessage)
             {
-                bool tryDeserializeToMessageFormat = TryDeserializeToMessageFormat(message, handler.MessageType, out var result);
-                if (tryDeserializeToMessageFormat)
+                MessageResult messageResult = await DeserializeMessageAsync(handler, message, handler.MessageType);
+                if (messageResult.IsSuccess)
                 {
-                    if (result is null)
-                    {
-                        throw new InvalidCastException(
-                            "Successful parsing from abstracted message to concrete message handler type did unexpectedly result in a 'null' parsing result");
-                    }
-
-                    bool canProcessDeserializedMessage = handler.CanProcessMessageBasedOnMessage(result);
+                    bool canProcessDeserializedMessage = handler.CanProcessMessageBasedOnMessage(messageResult.DeserializedMessage);
                     if (canProcessDeserializedMessage)
                     {
                         await PreProcessMessageAsync(handler, messageContext);
-                        await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
+                        await handler.ProcessMessageAsync(messageResult.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
                         return true;
                     }
                 }
@@ -229,7 +223,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
                     "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message that the message handler can handle",
                     messageHandlerType.Name);
             }
-            else
+            else 
             {
                 Logger.LogTrace(
                     "Message handler '{MessageHandlerType}' is not able to process the message because the message context '{MessageContextType}' didn't match the correct message handler's message context",
@@ -237,6 +231,22 @@ namespace Arcus.Messaging.Pumps.Abstractions
             }
 
             return false;
+        }
+
+        private async Task<MessageResult> DeserializeMessageAsync(MessageHandler handler, string message, Type messageType)
+        {
+            MessageResult result = await handler.TryCustomDeserializeMessageAsync(message);
+            if (result.IsSuccess && result.DeserializedMessage.GetType() == messageType)
+            {
+                return result;
+            }
+
+            if (TryDeserializeToMessageFormat(message, messageType, out object? deserializedByType) && deserializedByType != null)
+            {
+                return MessageResult.Success(deserializedByType);
+            }
+
+            return MessageResult.Failure($"Incoming message cannot be deserialized to type '{messageType.Name}' because it is not in the correct format");
         }
 
         private async Task FallbackProcessMessageAsync<TMessageContext>(
