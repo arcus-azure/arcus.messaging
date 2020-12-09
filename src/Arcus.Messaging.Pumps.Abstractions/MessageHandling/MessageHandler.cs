@@ -117,7 +117,21 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// </summary>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
         /// <param name="messageContext">The context in which the incoming message is processed.</param>
-        public bool CanProcessMessageBasedOnContext<TMessageContext>(TMessageContext messageContext) where TMessageContext : MessageContext
+        [Obsolete("Use the " + nameof(CanProcessMessageBasedOnContext) + " specific message context overload instead")]
+        public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext)
+            where TMessageContext : MessageContext
+        {
+            bool canProcessMessageBasedOnContext = CanProcessMessageBasedOnContext(messageContext);
+            return canProcessMessageBasedOnContext;
+        }
+
+        /// <summary>
+        /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
+        /// </summary>
+        /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
+        /// <param name="messageContext">The context in which the incoming message is processed.</param>
+        public bool CanProcessMessageBasedOnContext<TMessageContext>(TMessageContext messageContext) 
+            where TMessageContext : MessageContext
         {
             Type expectedMessageContextType = _serviceType.GenericTypeArguments[1];
             Type actualMessageContextType = typeof(TMessageContext);
