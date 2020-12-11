@@ -95,6 +95,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// </summary>
         /// <param name="messageHandler">The message handler to be used to process the message.</param>
         /// <param name="messageContext">The message context of the message that will be handled.</param>
+        [Obsolete("Consider using the " + nameof(IServiceCollectionExtensions.WithMessageRouting) + " instead to register an " + nameof(IMessageRouter) + " implementation that you can use directly in your message pump")]
         protected virtual Task PreProcessMessageAsync<TMessageContext>(MessageHandler messageHandler, TMessageContext messageContext) 
             where TMessageContext : MessageContext
         {
@@ -115,6 +116,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
+        [Obsolete("Consider using the " + nameof(IServiceCollectionExtensions.WithMessageRouting) + " instead to register an " + nameof(IMessageRouter) + " implementation that you can use directly in your message pump")]
         protected async Task<bool> ProcessMessageAndCaptureAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -145,6 +147,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+        [Obsolete("Consider using the " + nameof(IServiceCollectionExtensions.WithMessageRouting) + " instead to register an " + nameof(IMessageRouter) + " implementation that you can use directly in your message pump")]
         protected async Task ProcessMessageAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -289,6 +292,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <returns>
         ///     [true] if the <paramref name="message"/> conforms the <see cref="IMessageHandler{TMessage,TMessageContext}"/>'s contract; otherwise [false].
         /// </returns>
+        [Obsolete("Consider using the " + nameof(IServiceCollectionExtensions.WithMessageRouting) + " instead to register an " + nameof(IMessageRouter) + " implementation that you can use directly in your message pump")]
         public virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object? result)
         {
             Guard.NotNullOrWhitespace(message, nameof(message), "Can't parse a blank raw message against a message handler's contract");

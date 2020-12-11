@@ -652,6 +652,7 @@ namespace Microsoft.Extensions.DependencyInjection
             AzureServiceBusMessagePumpConfiguration options = 
                 DetermineAzureServiceBusMessagePumpOptions(serviceBusEntity, configureQueueMessagePump, configureTopicMessagePump);
 
+            services.WithServiceBusMessageRouting();
             services.AddHostedService(serviceProvider =>
             {
                 var settings = new AzureServiceBusMessagePumpSettings(
@@ -664,8 +665,9 @@ namespace Microsoft.Extensions.DependencyInjection
                     serviceProvider);
 
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+                var router = serviceProvider.GetService<IAzureServiceBusMessageRouter>();
                 var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
-                return new AzureServiceBusMessagePump(settings, configuration, serviceProvider, logger);
+                return new AzureServiceBusMessagePump(settings, configuration, serviceProvider, router, logger);
             });
         }
 
@@ -691,6 +693,44 @@ namespace Microsoft.Extensions.DependencyInjection
                 default:
                     throw new ArgumentOutOfRangeException(nameof(serviceBusEntity), serviceBusEntity, "Unknown Azure Service Bus entity");
             }
+        }
+
+        /// <summary>
+        /// Adds an <see cref="IAzureServiceBusMessageRouter"/> implementation to route the incoming messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.
+        /// </summary>
+        /// <param name="services">The collection of services to add the router to.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        public static IServiceCollection WithServiceBusMessageRouting(this IServiceCollection services)
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
+
+            return services.WithServiceBusMessageRouting(serviceProvider =>
+            {
+                var logger = serviceProvider.GetService<ILogger<AzureServiceBusMessageRouter>>();
+                return new AzureServiceBusMessageRouter(serviceProvider, logger);
+            });
+        }
+
+        /// <summary>
+        /// Adds an <see cref="IAzureServiceBusMessageRouter"/> implementation to route the incoming messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.
+        /// </summary>
+        /// <param name="services">The collection of services to add the router to.</param>
+        /// <param name="implementationFactory">The function to create the <typeparamref name="TMessageRouter"/> implementation.</param>
+        /// <typeparam name="TMessageRouter">The type of the <see cref="IAzureServiceBusMessageRouter"/> implementation.</typeparam>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        public static IServiceCollection WithServiceBusMessageRouting<TMessageRouter>(
+            this IServiceCollection services,
+            Func<IServiceProvider, TMessageRouter> implementationFactory)
+            where TMessageRouter : IAzureServiceBusMessageRouter
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
+            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure Service Bus message router");
+
+            services.AddSingleton<IAzureServiceBusMessageRouter>(serviceProvider => implementationFactory(serviceProvider));
+            services.WithMessageRouting<IAzureServiceBusMessageRouter, AzureServiceBusMessageContext>(
+                serviceProvider => serviceProvider.GetRequiredService<IAzureServiceBusMessageRouter>());
+
+            return services;
         }
 
         /// <summary>

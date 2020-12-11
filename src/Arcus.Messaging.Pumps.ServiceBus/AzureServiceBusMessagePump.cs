@@ -33,6 +33,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
+        private IAzureServiceBusMessageRouter _messageRouter;
 
         /// <summary>
         ///     Constructor
@@ -42,9 +43,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="serviceProvider">Collection of services that are configured</param>
         /// <param name="logger">Logger to write telemetry to</param>
         public AzureServiceBusMessagePump(
-            AzureServiceBusMessagePumpSettings settings, 
+            AzureServiceBusMessagePumpSettings settings,
             IConfiguration configuration, 
             IServiceProvider serviceProvider, 
+            IAzureServiceBusMessageRouter messageRouter,
             ILogger<AzureServiceBusMessagePump> logger)
             : base(configuration, serviceProvider, logger)
         {
@@ -54,6 +56,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             JobId = Settings.Options.JobId;
             SubscriptionName = Settings.SubscriptionName;
 
+            _messageRouter = messageRouter;
             _fallbackMessageHandler = serviceProvider.GetService<IAzureServiceBusFallbackMessageHandler>();
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
             _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
@@ -468,101 +471,25 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message");
             }
 
+            var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
             MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
             {
                 var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();
                 if (correlationInfoAccessor is null)
                 {
                     Logger.LogTrace("No message correlation configured");
-                    await ProcessMessageWithFallbackAsync(message, cancellationToken, correlationInfo);
+                    await _messageRouter.ProcessMessageAsync(_messageReceiver, message, messageContext, correlationInfo, cancellationToken);
                 }
                 else
                 {
                     correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
                     using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
                     {
-                        await ProcessMessageWithFallbackAsync(message, cancellationToken, correlationInfo);
+                        await _messageRouter.ProcessMessageAsync(_messageReceiver, message, messageContext, correlationInfo, cancellationToken);
                     }
                 }
-            }
-        }
-
-        /// <summary>
-        /// Pre-process the message by setting the necessary values the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.
-        /// </summary>
-        /// <param name="messageHandler">The message handler to be used to process the message.</param>
-        /// <param name="messageContext">The message context of the message that will be handled.</param>
-        protected override Task PreProcessMessageAsync<TMessageContext>(MessageHandler messageHandler, TMessageContext messageContext)
-        {
-            Guard.NotNull(messageHandler, nameof(messageHandler), "Requires a message handler instance to pre-process the message");
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to pre-process the message");
-
-            object messageHandlerInstance = messageHandler.GetMessageHandlerInstance();
-            Type messageHandlerType = messageHandlerInstance.GetType();
-
-            Logger.LogTrace("Start pre-processing message handler {MessageHandlerType}...", messageHandlerType.Name);
-            
-            if (messageHandlerInstance is AzureServiceBusMessageHandlerTemplate template 
-                && messageContext is AzureServiceBusMessageContext serviceBusMessageContext)
-            {
-                template.SetLockToken(serviceBusMessageContext.SystemProperties.LockToken);
-                template.SetMessageReceiver(_messageReceiver);
-            }
-            else
-            {
-                Logger.LogTrace("Nothing to pre-process for message handler type '{MessageHandlerType}'", messageHandlerType.Name);
-            }
-            
-            return Task.CompletedTask;
-        }
-
-        private async Task ProcessMessageWithFallbackAsync(Message message, CancellationToken cancellationToken, MessageCorrelationInfo correlationInfo)
-        {
-            try
-            {
-                Logger.LogTrace("Received message '{MessageId}'", message.MessageId);
-
-                var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
-                Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
-                string messageBody = encoding.GetString(message.Body);
-
-                if (_fallbackMessageHandler is null)
-                {
-                    await ProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-                }
-                else
-                {
-                    await ProcessMessageWithPotentialFallbackAsync(message, messageBody, messageContext, correlationInfo, cancellationToken);
-                }
-
-                Logger.LogTrace("Message '{MessageId}' processed", message.MessageId);
-            }
-            catch (Exception exception)
-            {
-                Logger.LogCritical(exception, "Unable to process message with ID '{MessageId}'",  message.MessageId);
-                await HandleReceiveExceptionAsync(exception);
-
-                throw;
-            }
-        }
-
-        private async Task ProcessMessageWithPotentialFallbackAsync(
-            Message message,
-            string messageBody,
-            AzureServiceBusMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
-        {
-            if (_fallbackMessageHandler is AzureServiceBusMessageHandlerTemplate specificMessageHandler)
-            {
-                specificMessageHandler.SetMessageReceiver(_messageReceiver);
-            }
-
-            var isProcessed = await ProcessMessageAndCaptureAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-            if (isProcessed == false)
-            {
-                await _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
             }
         }
 
