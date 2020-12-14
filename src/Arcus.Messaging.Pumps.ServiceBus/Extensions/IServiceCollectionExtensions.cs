@@ -10,6 +10,7 @@ using Arcus.Security.Core;
 using GuardNet;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -726,8 +727,10 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure Service Bus message router");
 
-            return services.AddSingleton<IAzureServiceBusMessageRouter>(serviceProvider => implementationFactory(serviceProvider))
-                           .WithMessageRouting(serviceProvider => serviceProvider.GetRequiredService<IAzureServiceBusMessageRouter>());
+            services.TryAddSingleton<IAzureServiceBusMessageRouter>(serviceProvider => implementationFactory(serviceProvider));
+            services.WithMessageRouting(serviceProvider => serviceProvider.GetRequiredService<IAzureServiceBusMessageRouter>());
+
+            return services;
         }
 
         /// <summary>
