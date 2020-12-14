@@ -9,9 +9,9 @@ using Microsoft.Azure.ServiceBus.Core;
 namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
 {
     /// <summary>
-    /// Represents an <see cref="IMessageRouter{TMessageContext}"/> that can route Azure Service Bus <see cref="Message"/>s.
+    /// Represents an <see cref="IMessageRouter"/> that can route Azure Service Bus <see cref="Message"/>s.
     /// </summary>
-    public interface IAzureServiceBusMessageRouter : IMessageRouter<AzureServiceBusMessageContext>
+    public interface IAzureServiceBusMessageRouter : IMessageRouter
     {
         /// <summary>
         ///     Handle a new message that was received.

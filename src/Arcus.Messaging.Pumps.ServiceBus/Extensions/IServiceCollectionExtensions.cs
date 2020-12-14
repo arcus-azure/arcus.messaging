@@ -726,11 +726,8 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure Service Bus message router");
 
-            services.AddSingleton<IAzureServiceBusMessageRouter>(serviceProvider => implementationFactory(serviceProvider));
-            services.WithMessageRouting<IAzureServiceBusMessageRouter, AzureServiceBusMessageContext>(
-                serviceProvider => serviceProvider.GetRequiredService<IAzureServiceBusMessageRouter>());
-
-            return services;
+            return services.AddSingleton<IAzureServiceBusMessageRouter>(serviceProvider => implementationFactory(serviceProvider))
+                           .WithMessageRouting(serviceProvider => serviceProvider.GetRequiredService<IAzureServiceBusMessageRouter>());
         }
 
         /// <summary>

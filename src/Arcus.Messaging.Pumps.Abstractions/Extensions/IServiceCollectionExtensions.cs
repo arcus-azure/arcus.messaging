@@ -28,27 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 var logger = serviceProvider.GetService<ILogger<MessageRouter>>();
                 return new MessageRouter(serviceProvider, logger);
             });
-            services.AddSingleton<IMessageRouter<MessageContext>>(serviceProvider => serviceProvider.GetRequiredService<IMessageRouter>());
-
             return services;
-        }
-
-        /// <summary>
-        /// Adds a <see cref="MessageRouter"/> implementation to route the incoming messages through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.
-        /// </summary>
-        /// <typeparam name="TMessageContext">The type of the <see cref="MessageContext"/> in which the incoming message are processed.</typeparam>
-        /// <param name="services">The collection of services to add the router to.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
-        public static IServiceCollection WithMessageRouting<TMessageContext>(this IServiceCollection services)
-            where TMessageContext : MessageContext
-        {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message routing");
-
-            return services.AddSingleton<IMessageRouter<TMessageContext>>(serviceProvider =>
-            {
-                var logger = serviceProvider.GetService<ILogger<MessageRouter<TMessageContext>>>();
-                return new MessageRouter<TMessageContext>(serviceProvider, logger);
-            });
         }
 
         /// <summary>
@@ -70,24 +50,23 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a <see cref="MessageRouter"/> implementation to route the incoming messages through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.
+        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an <see cref="MessagePump"/> implementation.
+        /// resources.
         /// </summary>
-        /// <typeparam name="TMessageRouter">The type of the <see cref="IMessageRouter"/> implementation.</typeparam>
-        /// <typeparam name="TMessageContext">The type of the <see cref="MessageContext"/> in which the incoming message are processed.</typeparam>
-        /// <param name="services">The collection of services to add the router to.</param>
-        /// <param name="implementationFactory">The function to create the <see cref="MessageRouter"/>.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        public static IServiceCollection WithMessageRouting<TMessageRouter, TMessageContext>(
-            this IServiceCollection services,
-            Func<IServiceProvider, TMessageRouter> implementationFactory)
-            where TMessageRouter : IMessageRouter<TMessageContext>
-            where TMessageContext : MessageContext
+        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
+        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
+        /// <param name="services">The collection of services to use in the application.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage>(
+            this IServiceCollection services)
+            where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
+            where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message routing");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message router");
+            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
 
-            return services.AddSingleton<IMessageRouter<TMessageContext>>(serviceProvider => implementationFactory(serviceProvider));
+            services.AddTransient<IMessageHandler<TMessage, MessageContext>, TMessageHandler>();
 
+            return services;
         }
 
         /// <summary>

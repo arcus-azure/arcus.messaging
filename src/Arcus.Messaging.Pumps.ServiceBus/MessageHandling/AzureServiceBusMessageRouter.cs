@@ -16,11 +16,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
 {
     /// <summary>
-    /// Represents an <see cref="IMessageRouter{TMessageContext}"/> that can route Azure Service Bus <see cref="Message"/>s.
+    /// Represents an <see cref="IMessageRouter"/> that can route Azure Service Bus <see cref="Message"/>s.
     /// </summary>
-    public class AzureServiceBusMessageRouter : MessageRouter<AzureServiceBusMessageContext>, IAzureServiceBusMessageRouter
+    public class AzureServiceBusMessageRouter : MessageRouter, IAzureServiceBusMessageRouter
     {
-        private readonly IAzureServiceBusFallbackMessageHandler _fallbackMessageHandler;
+        private readonly Lazy<IAzureServiceBusFallbackMessageHandler> _fallbackMessageHandler;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
@@ -35,7 +35,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
 
-            _fallbackMessageHandler = serviceProvider.GetService<IAzureServiceBusFallbackMessageHandler>();
+            _fallbackMessageHandler = new Lazy<IAzureServiceBusFallbackMessageHandler>(() => serviceProvider.GetService<IAzureServiceBusFallbackMessageHandler>());
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
             CancellationToken cancellationToken)
         {
             IEnumerable<MessageHandler> messageHandlers = GetRegisteredMessageHandlers();
-            if (!messageHandlers.Any() && _fallbackMessageHandler is null)
+            if (!messageHandlers.Any() && _fallbackMessageHandler.Value is null)
             {
                 throw new InvalidOperationException(
                     "Azure Service Bus message pump cannot correctly process the message in the message context "
@@ -134,7 +134,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 "Fallback on registered {FallbackMessageHandlerType} because none of the message handlers were able to process the message",
                 nameof(IAzureServiceBusFallbackMessageHandler));
 
-            if (_fallbackMessageHandler is null)
+            if (_fallbackMessageHandler.Value is null)
             {
                 throw new InvalidOperationException(
                     $"Message pump cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' "
@@ -142,7 +142,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                     + $"Make sure you call the correct '.WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
             }
 
-            await _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+            await _fallbackMessageHandler.Value.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
             Logger.LogTrace("Fallback message handler has processed the message");
         }
 

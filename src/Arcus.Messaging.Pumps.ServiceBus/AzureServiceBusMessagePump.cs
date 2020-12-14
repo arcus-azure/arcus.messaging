@@ -27,21 +27,22 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// </summary>
     public class AzureServiceBusMessagePump : MessagePump
     {
-        private readonly IAzureServiceBusFallbackMessageHandler _fallbackMessageHandler;
+        private readonly IAzureServiceBusMessageRouter _messageRouter;
         private readonly MessageHandlerOptions _messageHandlerOptions;
         private readonly IDisposable _loggingScope;
         
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
-        private IAzureServiceBusMessageRouter _messageRouter;
 
         /// <summary>
-        ///     Constructor
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump"/> class.
         /// </summary>
         /// <param name="settings">Settings to configure the message pump</param>
         /// <param name="configuration">Configuration of the application</param>
         /// <param name="serviceProvider">Collection of services that are configured</param>
+        /// <param name="messageRouter">The router to route incoming Azure Service Bus messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.</param>
         /// <param name="logger">Logger to write telemetry to</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="settings"/>, <paramref name="configuration"/>, <paramref name="serviceProvider"/>, <paramref name="messageRouter"/> is <c>null</c>.</exception>
         public AzureServiceBusMessagePump(
             AzureServiceBusMessagePumpSettings settings,
             IConfiguration configuration, 
@@ -51,13 +52,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             : base(configuration, serviceProvider, logger)
         {
             Guard.NotNull(settings, nameof(settings), "Requires a set of settings to correctly configure the message pump");
+            Guard.NotNull(configuration, nameof(configuration), "Requires a configuration instance to retrieve application-specific information");
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to retrieve the registered message handlers");
+            Guard.NotNull(messageRouter, nameof(messageRouter), "Requires a message router to route incoming Azure Service Bus messages through registered message handlers");
             
             Settings = settings;
             JobId = Settings.Options.JobId;
             SubscriptionName = Settings.SubscriptionName;
 
             _messageRouter = messageRouter;
-            _fallbackMessageHandler = serviceProvider.GetService<IAzureServiceBusFallbackMessageHandler>();
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
             _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
         }
