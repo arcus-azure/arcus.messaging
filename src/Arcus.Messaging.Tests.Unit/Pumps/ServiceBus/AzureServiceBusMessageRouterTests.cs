@@ -154,7 +154,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
             AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
-            ;
+
             Message message = expectedMessage.AsServiceBusMessage();
             await router.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
@@ -184,7 +184,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
             AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
-            ;
+
             Message message = expectedMessage.AsServiceBusMessage();
             await router.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
@@ -231,7 +231,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
             var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
-            
+
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             Message message = expectedMessage.AsServiceBusMessage();
             await router.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);

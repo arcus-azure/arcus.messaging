@@ -28,7 +28,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-
         Task ProcessMessageAsync(
             Message message,
             AzureServiceBusMessageContext messageContext,
@@ -49,7 +48,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-
         Task ProcessMessageAsync(
             MessageReceiver messageReceiver,
             Message message,

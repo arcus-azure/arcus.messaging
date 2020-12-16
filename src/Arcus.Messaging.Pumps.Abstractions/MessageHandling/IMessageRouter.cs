@@ -22,7 +22,6 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-
         Task ProcessMessageAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
