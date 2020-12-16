@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Generators;
@@ -10,6 +11,7 @@ using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Stubs;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Xunit;
 using Order = Arcus.Messaging.Tests.Core.Messages.v1.Order;
@@ -238,6 +240,23 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             Assert.False(ignoredHandler1.IsProcessed);
             Assert.False(ignoredHandler2.IsProcessed);
             Assert.False(ignoredHandler3.IsProcessed);
+        }
+
+        [Fact]
+        public void WithServiceBusRouting_WithCustomRouter_RegistersCustomRouter()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>();
+            
+            // Act
+            services.WithServiceBusMessageRouting(serviceProvider =>
+                new TestAzureServiceBusMessageRouter(serviceProvider, NullLogger.Instance));
+            
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            Assert.IsType<TestAzureServiceBusMessageRouter>(provider.GetRequiredService<IAzureServiceBusMessageRouter>());
+            Assert.IsType<TestAzureServiceBusMessageRouter>(provider.GetRequiredService<IMessageRouter>());
         }
     }
 }

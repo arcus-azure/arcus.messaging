@@ -28,9 +28,18 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public AzureServiceBusMessageRouter(
-            IServiceProvider serviceProvider, 
-            ILogger<AzureServiceBusMessageRouter> logger) 
+        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger<AzureServiceBusMessageRouter> logger)
+            : this(serviceProvider, (ILogger) logger)
+        {
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger logger)
             : base(serviceProvider, logger ?? NullLogger<AzureServiceBusMessageRouter>.Instance)
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
