@@ -11,11 +11,11 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
     public interface IMessageRouter
     {
         /// <summary>
-        ///     Handle a new message that was received.
+        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s
+        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
-        /// <typeparam name="TMessageContext">The type of the message context within the incoming messages are processed.</typeparam>
         /// <param name="message">The message that was received.</param>
-        /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
+        /// <param name="messageContext">The context providing more information concerning the processing.</param>
         /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
         /// <param name="cancellationToken">The token to cancel the message processing.</param>
         /// <exception cref="ArgumentNullException">

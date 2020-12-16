@@ -14,7 +14,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
     public interface IAzureServiceBusMessageRouter : IMessageRouter
     {
         /// <summary>
-        ///     Handle a new message that was received.
+        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
+        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message that was received.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
@@ -35,7 +36,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
             CancellationToken cancellationToken);
 
         /// <summary>
-        ///     Handle a new message that was received.
+        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
+        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
         ///     The instance that can receive Azure Service Bus <see cref="Message"/>; used within <see cref="IMessageHandler{TMessage,TMessageContext}"/>s with Azure Service Bus specific operations.
