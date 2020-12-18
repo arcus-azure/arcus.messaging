@@ -11,6 +11,7 @@ using Arcus.Testing.Logging;
 using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
 using Xunit;
@@ -408,6 +409,25 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
 
             // Assert
             Assert.True(spyHandler.IsProcessed);
+        }
+        
+        [Fact]
+        public void WithMultipleMessageHandlers_WithSameMessageType_RegistersBoth()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(message => message.TestProperty == "Some value");
+            
+            // Act
+            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(message => message.TestProperty == "Some other value");
+            
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
+            Assert.Collection(
+                handlers,
+                handler => Assert.True(handler.CanProcessMessageBasedOnMessage(new TestMessage { TestProperty = "Some value" })),
+                handler => Assert.True(handler.CanProcessMessageBasedOnMessage(new TestMessage { TestProperty = "Some other value" })));
         }
     }
 }

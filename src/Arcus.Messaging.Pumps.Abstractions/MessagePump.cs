@@ -21,7 +21,6 @@ namespace Arcus.Messaging.Pumps.Abstractions
     /// </summary>
     public abstract class MessagePump : BackgroundService
     {
-        private readonly Lazy<IEnumerable<MessageHandler>> _messageHandlers;
         private readonly IFallbackMessageHandler _fallbackMessageHandler;
 
         /// <summary>
@@ -76,7 +75,6 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Configuration = configuration;
             ServiceProvider = serviceProvider;
 
-            _messageHandlers = new Lazy<IEnumerable<MessageHandler>>(() => MessageHandler.SubtractFrom(ServiceProvider, logger));
             _fallbackMessageHandler = serviceProvider.GetService<IFallbackMessageHandler>();
         }
 

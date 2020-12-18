@@ -71,7 +71,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             {
                 var serviceType = (Type) descriptor.GetRequiredPropertyValue("ServiceType");
                 if (serviceType.Name == typeof(IMessageHandler<,>).Name 
-                    && serviceType.Namespace == typeof(IMessageHandler<>).Namespace)
+                    && serviceType.Namespace == typeof(IMessageHandler<>).Namespace
+                    && messageHandlers.All(handler => handler._serviceType != serviceType))
                 {
                     IEnumerable<object> services = serviceProvider.GetServices(serviceType);
                     foreach (object service in services)
