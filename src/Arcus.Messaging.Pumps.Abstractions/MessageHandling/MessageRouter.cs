@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 
 namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 {
@@ -141,8 +142,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-            IEnumerable<MessageHandler> handlers = GetRegisteredMessageHandlers();
-            if (!handlers.Any() && _fallbackMessageHandler.Value is null)
+            MessageHandler[] handlers = GetRegisteredMessageHandlers().ToArray();
+            if (handlers.Length <= 0 && _fallbackMessageHandler.Value is null)
             {
                 throw new InvalidOperationException(
                     $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
@@ -183,46 +184,40 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         ///     and all the required predicates that the <paramref name="handler"/> requires are met; [<see cref="MessageResult.Failure(string)"/>] otherwise.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handler"/> is <c>null</c>.</exception>
-        protected async Task<MessageResult> DeserializeMessageForHandlerAsync<TMessageContext>(string message, TMessageContext messageContext, MessageHandler handler)
+        protected async Task<MessageResult> DeserializeMessageForHandlerAsync<TMessageContext>(
+            string message,
+            TMessageContext messageContext,
+            MessageHandler handler)
             where TMessageContext : MessageContext
-         {
+        {
             Guard.NotNull(handler, nameof(handler), "Requires an message handler instance for which the incoming message can be deserialized");
 
-             Type messageHandlerType = handler.GetMessageHandlerType();
-             Logger.LogTrace("Determine if message handler '{MessageHandlerType}' can process the message...", messageHandlerType.Name);
-            
-             bool canProcessMessage = handler.CanProcessMessageBasedOnContext(messageContext);
-             if (canProcessMessage)
-             {
-                 MessageResult messageResult = await DeserializeMessageAsync(handler, message, handler.MessageType);
-                 if (messageResult.IsSuccess)
-                 {
-                     bool canProcessDeserializedMessage = handler.CanProcessMessageBasedOnMessage(messageResult.DeserializedMessage);
-                     if (canProcessDeserializedMessage)
-                     {
-                         return messageResult;
-                     }
+            Type messageHandlerType = handler.GetMessageHandlerType();
+            Logger.LogTrace("Determine if message handler '{MessageHandlerType}' can process the message...", messageHandlerType.Name);
 
-                     Logger.LogTrace(
-                         "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message '{MessageType}' doesn't match the registered message filter",
-                         messageHandlerType.Name, handler.MessageType.Name);
+            bool canProcessMessageBasedOnContext = handler.CanProcessMessageBasedOnContext(messageContext);
+            if (!canProcessMessageBasedOnContext)
+            {
+                Logger.LogTrace("Message handler '{MessageHandlerType}' is not able to process the message because the message context '{MessageContextType}' didn't match the correct message handler's message context and/or filter", messageHandlerType.Name, handler.MessageContextType.Name);
+                return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message with message context '{handler.MessageContextType.Name}'");
+            }
 
-                     return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message because it fails the '{handler.MessageType.Name}' filter");
-                 }
+            MessageResult deserializationResult = await DeserializeMessageAsync(handler, message, handler.MessageType);
+            if (!deserializationResult.IsSuccess)
+            {
+                Logger.LogTrace("Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message '{MessageType}' that the message handler can handle", messageHandlerType.Name, handler.MessageType.Name);
+                return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message because it can't be deserialized to message type '{handler.MessageType.Name}'");
+            }
 
-                 Logger.LogTrace(
-                     "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message '{MessageType}' that the message handler can handle",
-                     messageHandlerType.Name, handler.MessageType.Name);
+            bool canProcessDeserializedMessage = handler.CanProcessMessageBasedOnMessage(deserializationResult.DeserializedMessage);
+            if (canProcessDeserializedMessage)
+            {
+                return deserializationResult;
+            }
 
-                 return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message because it can't be deserialized to message type '{handler.MessageType.Name}'");
-             }
-
-             Logger.LogTrace(
-                 "Message handler '{MessageHandlerType}' is not able to process the message because the message context '{MessageContextType}' didn't match the correct message handler's message context and/or filter",
-                 messageHandlerType.Name, handler.MessageContextType.Name);
-                
-             return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message with message context '{handler.MessageContextType.Name}'");
-         }
+            Logger.LogTrace("Message handler '{MessageHandlerType}' is not able to process the message because the incoming message '{MessageType}' doesn't match the registered message filter", messageHandlerType.Name, handler.MessageType.Name);
+            return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message because it fails the '{handler.MessageType.Name}' filter");
+        }
 
         private async Task<MessageResult> DeserializeMessageAsync(MessageHandler handler, string message, Type handlerMessageType)
         {
@@ -305,13 +300,16 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             {
                 MissingMemberHandling = MissingMemberHandling.Error
             };
-            jsonSerializer.Error += (sender, args) =>
+            EventHandler<ErrorEventArgs> eventHandler = (sender, args) =>
             {
                 success = false;
                 args.ErrorContext.Handled = true;
             };
-
+            
+            jsonSerializer.Error += eventHandler;
             var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
+            jsonSerializer.Error -= eventHandler;
+
             if (success)
             {
                 Logger.LogTrace("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);

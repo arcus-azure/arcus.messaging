@@ -144,8 +144,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
 
             try
             {
-                IEnumerable<MessageHandler> messageHandlers = GetRegisteredMessageHandlers();
-                if (!messageHandlers.Any() && _fallbackMessageHandler.Value is null)
+                MessageHandler[] messageHandlers = GetRegisteredMessageHandlers().ToArray();
+                if (messageHandlers.Length <= 0 && !HasFallbackMessageHandler && !HasAzureServiceBusFallbackHandler)
                 {
                     throw new InvalidOperationException(
                         "Azure Service Bus message pump cannot correctly process the message in the message context "
@@ -167,7 +167,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                     }
                 }
 
-                if (HasFallbackMessageHandler == false && HasAzureServiceBusFallbackHandler == false)
+                if (!HasFallbackMessageHandler && !HasAzureServiceBusFallbackHandler)
                 {
                     throw new InvalidOperationException(
                         $"Message pump cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' "
@@ -177,7 +177,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 }
 
                 await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-                await ServiceBusFallbackMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+                await TryServiceBusFallbackMessageAsync(message, messageContext, correlationInfo, cancellationToken);
             }
             catch (Exception exception)
             {
@@ -226,15 +226,18 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         /// <param name="correlationInfo"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        protected async Task ServiceBusFallbackMessageAsync(
+        protected async Task TryServiceBusFallbackMessageAsync(
             Message message, 
             AzureServiceBusMessageContext messageContext, 
             MessageCorrelationInfo correlationInfo, 
             CancellationToken cancellationToken)
         {
-            Logger.LogTrace("Fallback on registered {FallbackMessageHandlerType} because none of the message handlers were able to process the message", nameof(IAzureServiceBusFallbackMessageHandler));
-            await _fallbackMessageHandler.Value.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-            Logger.LogTrace("Fallback message handler has processed the message");
+            if (HasAzureServiceBusFallbackHandler)
+            {
+                Logger.LogTrace("Fallback on registered {FallbackMessageHandlerType} because none of the message handlers were able to process the message", nameof(IAzureServiceBusFallbackMessageHandler));
+                await _fallbackMessageHandler.Value.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+                Logger.LogTrace("Fallback message handler has processed the message"); 
+            }
         }
     }
 }
