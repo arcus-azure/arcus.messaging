@@ -177,7 +177,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 }
 
                 await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-                await TryServiceBusFallbackMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+                await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
             }
             catch (Exception exception)
             {
@@ -219,21 +219,36 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         }
 
         /// <summary>
-        /// 
+        /// Tries to process the unhandled <paramref name="message"/> through an potential registered <see cref="IAzureServiceBusFallbackMessageHandler"/> instance.
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="messageContext"></param>
-        /// <param name="correlationInfo"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
+        /// <param name="messageReceiver">
+        ///     The instance that can receive Azure Service Bus <see cref="Message"/>; used within <see cref="IAzureServiceBusFallbackMessageHandler"/>s with Azure Service Bus specific operations.
+        /// </param>
+        /// <param name="message">The message that was received by the <paramref name="messageReceiver"/>.</param>
+        /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
+        /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
+        /// <param name="cancellationToken">The token to cancel the message processing.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
+        /// </exception>
         protected async Task TryServiceBusFallbackMessageAsync(
-            Message message, 
-            AzureServiceBusMessageContext messageContext, 
-            MessageCorrelationInfo correlationInfo, 
+            MessageReceiver messageReceiver,
+            Message message,
+            AzureServiceBusMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
+            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus message to be processed by the registered fallback message handler");
+            Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
+            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
+            
             if (HasAzureServiceBusFallbackHandler)
             {
+                if (messageReceiver != null && _fallbackMessageHandler.Value is AzureServiceBusMessageHandlerTemplate template)
+                {
+                    template.SetMessageReceiver(messageReceiver);
+                }
+                
                 Logger.LogTrace("Fallback on registered {FallbackMessageHandlerType} because none of the message handlers were able to process the message", nameof(IAzureServiceBusFallbackMessageHandler));
                 await _fallbackMessageHandler.Value.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
                 Logger.LogTrace("Fallback message handler has processed the message"); 
