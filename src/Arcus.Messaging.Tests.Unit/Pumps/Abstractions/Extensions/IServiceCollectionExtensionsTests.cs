@@ -49,7 +49,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions.Extensions
             var services = new ServiceCollection();
 
             // Act
-            services.WithMessageRouting();
+            services.AddMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -63,7 +63,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions.Extensions
             var services = new ServiceCollection();
 
             // Act
-            services.WithMessageRouting(serviceProvider => new TestMessageRouter(serviceProvider, NullLogger.Instance));
+            services.AddMessageRouting(serviceProvider => new TestMessageRouter(serviceProvider, NullLogger.Instance));
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -78,7 +78,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions.Extensions
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithMessageRouting<TestMessageRouter>(implementationFactory: null));
+                () => services.AddMessageRouting<TestMessageRouter>(implementationFactory: null));
         }
     }
 }

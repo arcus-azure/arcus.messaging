@@ -31,7 +31,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
                     .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
             // Act
-            services.WithMessageRouting();
+            services.AddMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -61,7 +61,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
                     .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
             // Act
-            services.WithMessageRouting(serviceProvider => new TestMessageRouter(serviceProvider, NullLogger.Instance));
+            services.AddMessageRouting(serviceProvider => new TestMessageRouter(serviceProvider, NullLogger.Instance));
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -94,7 +94,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
                     .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
             // Act
-            services.WithMessageRouting();
+            services.AddMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -128,7 +128,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
                     .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
             // Act
-            services.WithMessageRouting();
+            services.AddMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -172,7 +172,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
                     .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
             // Act
-            services.WithMessageRouting();
+            services.AddMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();

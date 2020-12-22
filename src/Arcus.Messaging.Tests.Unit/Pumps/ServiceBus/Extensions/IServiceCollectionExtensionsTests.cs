@@ -15,7 +15,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageRouting<TestAzureServiceBusMessageRouter>(implementationFactory: null));
+                () => services.AddServiceBusMessageRouting<TestAzureServiceBusMessageRouter>(implementationFactory: null));
         }
     }
 }

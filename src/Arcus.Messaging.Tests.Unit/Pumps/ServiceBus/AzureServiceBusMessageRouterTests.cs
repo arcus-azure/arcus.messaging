@@ -31,7 +31,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
                     .WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(serviceProvider => ignoredHandler);
 
             // Act
-            services.WithServiceBusMessageRouting();
+            services.AddServiceBusMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -60,7 +60,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
                         messageContextFilter: ctx => false, implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
-            services.WithServiceBusMessageRouting();
+            services.AddServiceBusMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -89,7 +89,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
                         messageBodyFilter: body => false, implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
-            services.WithServiceBusMessageRouting();
+            services.AddServiceBusMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -116,7 +116,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
                     .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodyFilter: body => true, implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
-            services.WithServiceBusMessageRouting();
+            services.AddServiceBusMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -147,7 +147,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
                     .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
-            services.WithServiceBusMessageRouting();
+            services.AddServiceBusMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -177,7 +177,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
                     .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
-            services.WithServiceBusMessageRouting();
+            services.AddServiceBusMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -226,7 +226,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
                         implementationFactory: serviceProvider => ignoredHandler1);
 
             // Act
-            services.WithServiceBusMessageRouting();
+            services.AddServiceBusMessageRouting();
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -250,7 +250,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>();
             
             // Act
-            services.WithServiceBusMessageRouting(serviceProvider =>
+            services.AddServiceBusMessageRouting(serviceProvider =>
                 new TestAzureServiceBusMessageRouter(serviceProvider, NullLogger.Instance));
             
             // Assert

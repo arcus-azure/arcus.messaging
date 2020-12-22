@@ -19,7 +19,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <param name="services">The collection of services to add the router to.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
-        public static IServiceCollection WithMessageRouting(this IServiceCollection services)
+        public static IServiceCollection AddMessageRouting(this IServiceCollection services)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the message routing");
 
@@ -38,7 +38,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to add the router to.</param>
         /// <param name="implementationFactory">The function to create the <see cref="MessageRouter"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        public static IServiceCollection WithMessageRouting<TMessageRouter>(
+        public static IServiceCollection AddMessageRouting<TMessageRouter>(
             this IServiceCollection services,
             Func<IServiceProvider, TMessageRouter> implementationFactory)
             where TMessageRouter : IMessageRouter
