@@ -249,7 +249,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                     template.SetMessageReceiver(messageReceiver);
                 }
                 
-                Logger.LogTrace("Fallback on registered {FallbackMessageHandlerType} because none of the message handlers were able to process the message", nameof(IAzureServiceBusFallbackMessageHandler));
+                Logger.LogTrace("Fallback on registered {FallbackMessageHandlerType} because none of the message handlers w ere able to process the message", nameof(IAzureServiceBusFallbackMessageHandler));
                 await _fallbackMessageHandler.Value.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
                 Logger.LogTrace("Fallback message handler has processed the message"); 
             }
