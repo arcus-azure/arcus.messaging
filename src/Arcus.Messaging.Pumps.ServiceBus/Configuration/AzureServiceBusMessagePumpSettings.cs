@@ -6,6 +6,8 @@ using Arcus.Security.Core.Caching;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
@@ -81,6 +83,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <returns>Connection string to authenticate with</returns>
         public async Task<string> GetConnectionStringAsync()
         {
+            ILogger logger = 
+                _serviceProvider.GetService<ILogger<AzureServiceBusMessagePumpSettings>>() 
+                ?? NullLogger<AzureServiceBusMessagePumpSettings>.Instance;
+
+            logger.LogSecurityEvent("Get Azure Service Bus connection string", new Dictionary<string, object>
+            {
+                ["Service Bus entity"] = ServiceBusEntity,
+                ["Entity name"] = EntityName,
+                ["Job ID"] = Options.JobId
+            });
+            
             if (_getConnectionStringFromSecretFunc != null)
             {
                 return await GetConnectionStringFromSecretAsync();
@@ -97,18 +110,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 
         private async Task<string> GetConnectionStringFromSecretAsync()
         {
-            ISecretProvider userDefinedSecretProvider = _serviceProvider.GetService<ICachedSecretProvider>()
-                                                        ?? _serviceProvider.GetService<ISecretProvider>();
+            ISecretProvider userDefinedSecretProvider = 
+                _serviceProvider.GetService<ICachedSecretProvider>()
+                ?? _serviceProvider.GetService<ISecretProvider>();
 
-            if (userDefinedSecretProvider == null)
+            if (userDefinedSecretProvider is null)
             {
                 throw new KeyNotFoundException(
                     $"No configured {nameof(ICachedSecretProvider)} or {nameof(ISecretProvider)} implementation found in the service container. "
                     + "Please configure such an implementation (ex. in the Startup) of your application");
             }
 
-            var getConnectionStringTask = _getConnectionStringFromSecretFunc(userDefinedSecretProvider);
-            if (getConnectionStringTask == null)
+            Task<string> getConnectionStringTask = _getConnectionStringFromSecretFunc(userDefinedSecretProvider);
+            if (getConnectionStringTask is null)
             {
                 throw new InvalidOperationException("Get connection string function return a task that is null.");
             }
