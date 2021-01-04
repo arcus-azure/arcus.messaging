@@ -125,6 +125,9 @@ public void ConfigureServices(IServiceCollection services)
             // if no exceptions occured andprocessing has finished (default: true).
             options.AutoComplete = true;
 
+            // Indicate whether or not the message pump should emit security events (default: false).
+            options.EmitSecurityEvents = true;
+
             // The amount of concurrent calls to process messages 
             // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
             options.MaxConcurrentCalls = 5;
@@ -145,6 +148,9 @@ public void ConfigureServices(IServiceCollection services)
             // Indicate whether or not messages should be automatically marked as completed 
             // if no exceptions occured andprocessing has finished (default: true).
             options.AutoComplete = true;
+
+            // Indicate whether or not the message pump should emit security events (default: false).
+            options.EmitSecurityEvents = true;
 
             // The amount of concurrent calls to process messages 
             // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).

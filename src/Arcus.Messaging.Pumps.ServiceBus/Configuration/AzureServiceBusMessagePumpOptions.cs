@@ -37,6 +37,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         public bool AutoComplete { get; set; }
 
         /// <summary>
+        /// Gets or sets the flag to indicate whether or not to emit security events during the lifetime of the message pump.
+        /// </summary>
+        public bool EmitSecurityEvents { get; set; } = false;
+
+        /// <summary>
         /// Gets or sets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
         /// </summary>
         public string JobId

@@ -83,16 +83,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <returns>Connection string to authenticate with</returns>
         public async Task<string> GetConnectionStringAsync()
         {
-            ILogger logger = 
-                _serviceProvider.GetService<ILogger<AzureServiceBusMessagePumpSettings>>() 
-                ?? NullLogger<AzureServiceBusMessagePumpSettings>.Instance;
-
-            logger.LogSecurityEvent("Get Azure Service Bus connection string", new Dictionary<string, object>
+            if (Options.EmitSecurityEvents)
             {
-                ["Service Bus entity"] = ServiceBusEntity,
-                ["Entity name"] = EntityName,
-                ["Job ID"] = Options.JobId
-            });
+                ILogger logger =
+                    _serviceProvider.GetService<ILogger<AzureServiceBusMessagePumpSettings>>()
+                    ?? NullLogger<AzureServiceBusMessagePumpSettings>.Instance;
+
+                logger.LogSecurityEvent("Get Azure Service Bus connection string", new Dictionary<string, object>
+                {
+                    ["Service Bus entity"] = ServiceBusEntity,
+                    ["Entity name"] = EntityName,
+                    ["Job ID"] = Options.JobId
+                }); 
+            }
             
             if (_getConnectionStringFromSecretFunc != null)
             {
