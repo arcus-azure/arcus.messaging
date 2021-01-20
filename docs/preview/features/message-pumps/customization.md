@@ -25,6 +25,9 @@ Following example shows how a message handler should only process a certain mess
 We'll use a simple message handler implementation:
 
 ```csharp
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessagingHandling;
+
 public class OrderMessageHandler : IMessageHandler<Order>
 {
     public async Task ProcessMessageAsync(Order order, MessageContext context, ...)
@@ -37,9 +40,14 @@ public class OrderMessageHandler : IMessageHandler<Order>
 We would like that this handler only processed the message when the context contains `MessageType` equals `Order`.
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
 {
-    services.WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+    }
 }
 ```
 
@@ -54,6 +62,12 @@ When inheriting from an `...MessagePump` type, there's a way to control how the 
 Based on the message type of the registered message handlers, the pump determines if the incoming message can be deserialized to that type.
 
 ```csharp
+using System;
+using Arcus.Messaging.Pumps.Abstractions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 public class OrderMessagePump : MessagePump
 {
     public OrderMessagePump(
@@ -89,6 +103,8 @@ You start by implemeting an `IMessageBodySerializer`. The following example show
 The result type (in this case `OrderBatch`) will be then be used to check if there is an `IMessageHandler` registered with that message type.
 
 ```csharp
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+
 public class OrderBatchMessageBodySerializer : IMessageBodySerializer
 {
     public async Task<MessageResult> DeserializeMessageAsync(string messageBody)
@@ -106,17 +122,22 @@ public class OrderBatchMessageBodySerializer : IMessageBodySerializer
 The registration of these message body handlers can be done just as easily as an `IMessageSerializer`:
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
-{
-    // Register the message body serializer in the dependency container where the dependent services will be injected.
-    services.WithMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
+using Microsoft.Extensions.DependencyInjection;
 
-    // Register the message body serializer  in the dependency container where the dependent services are manually injected.
-    services.WithMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
     {
-        var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
-        return new OrderBatchMessageHandler(logger);
-    });
+        // Register the message body serializer in the dependency container where the dependent services will be injected.
+        services.WithMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
+
+        // Register the message body serializer  in the dependency container where the dependent services are manually injected.
+        services.WithMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
+        {
+            var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
+            return new OrderBatchMessageHandler(logger);
+        });
+    }
 }
 ```
 
@@ -140,6 +161,9 @@ public class Order
     public Department Type { get; set; }
 }
 
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+
 // Message handler
 public class OrderMessageHandler : IMessageHandler<Order>
 {
@@ -148,6 +172,8 @@ public class OrderMessageHandler : IMessageHandler<Order>
         // Do some processing...
     }
 }
+
+using Microsoft.Extensions.DependencyInjection;
 
 // Message handler registration
 public class Startup
@@ -173,6 +199,10 @@ This extra message handler will then process the remaining messages that can't b
 Following example shows how such a message handler can be implemented:
 
 ```csharp
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Microsoft.Extensions.Logging;
+
 public class WarnsUserFallbackMessageHandler : IFallbackMessageHandller
 {
     private readonly ILogger _logger;
@@ -192,9 +222,14 @@ public class WarnsUserFallbackMessageHandler : IFallbackMessageHandller
 And to register such an implementation:
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
 {
-    services.WithFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.WithFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+    }
 }
 ```
 
