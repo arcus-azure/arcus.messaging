@@ -23,7 +23,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
         public async Task TcpHealthListener_ProbeForHealthReport_ResponseHealthy()
         {
             // Arrange
-            var service = new TcpHealthService(_healthTcpPort);
+            var service = new TcpHealthService(_healthTcpPort, Logger);
             
             // Act
             HealthReport report = await service.GetHealthReportAsync();
