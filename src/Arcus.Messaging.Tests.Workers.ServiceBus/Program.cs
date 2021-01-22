@@ -32,18 +32,22 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                 .ConfigureLogging(loggingBuilder => loggingBuilder.AddConsole(options => options.IncludeScopes = true))
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddTcpHealthProbes(
-                        "ARCUS_HEALTH_PORT", 
-                        builder => builder.AddCheck("toggle", 
-                            () => Environment.GetEnvironmentVariable("ARCUS_HEALTH_STATUS", EnvironmentVariableTarget.Machine) == "Healthy" 
-                                ? HealthCheckResult.Healthy() 
-                                : HealthCheckResult.Unhealthy()),
-                        options => options.RejectTcpConnectionWhenUnhealthy = true,
-                        options =>
-                        {
-                            options.Delay = TimeSpan.Zero;
-                            options.Period = TimeSpan.FromSeconds(1);
-                        });
+                    services.AddTransient(svc =>
+                    {
+                        var configuration = svc.GetRequiredService<IConfiguration>();
+                        var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
+                        var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
+                        
+                        return EventGridPublisherBuilder
+                            .ForTopic(eventGridTopic)
+                            .UsingAuthenticationKey(eventGridKey)
+                            .Build();
+                    });
+                    
+                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+                    
+                    services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy());
                 });
     }
 }

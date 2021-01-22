@@ -26,38 +26,26 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Queue
                 {
                     configuration.AddCommandLine(args);
                     configuration.AddEnvironmentVariables();
-                    configuration.AddInMemoryCollection(new List<KeyValuePair<string, string>>
-                    {
-                        new KeyValuePair<string, string>("ARCUS_HEALTH_PORT", 5000.ToString())
-                    });
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddLogging(logging => logging.SetMinimumLevel(LogLevel.Trace));
-                    //services.AddTransient(svc =>
-                    //{
-                    //    var configuration = svc.GetRequiredService<IConfiguration>();
-                    //    var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
-                    //    var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
+                    services.AddLogging();
+                    services.AddTransient(svc =>
+                    {
+                        var configuration = svc.GetRequiredService<IConfiguration>();
+                        var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
+                        var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
 
-                    //    return EventGridPublisherBuilder
-                    //        .ForTopic(eventGridTopic)
-                    //        .UsingAuthenticationKey(eventGridKey)
-                    //        .Build();
-                    //});
-                    //services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                    //        .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
-                    int index = -1;
-                    services.AddTcpHealthProbes(
-                        "ARCUS_HEALTH_PORT", 
-                        builder => builder.AddCheck("sample", () => ++index % 5 == 0 ? HealthCheckResult.Unhealthy() : HealthCheckResult.Healthy()),
-                        options => options.RejectTcpConnectionWhenUnhealthy = true,
-                        options =>
-                        {
-                            options.Delay = TimeSpan.Zero;
-                            options.Period = TimeSpan.FromSeconds(5);
-                        });
+                        return EventGridPublisherBuilder
+                               .ForTopic(eventGridTopic)
+                               .UsingAuthenticationKey(eventGridKey)
+                               .Build();
+                    });
+                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+
+                    services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
                 });
     }
 }
