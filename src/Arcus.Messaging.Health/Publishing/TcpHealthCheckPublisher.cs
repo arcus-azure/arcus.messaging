@@ -13,7 +13,7 @@ namespace Arcus.Messaging.Health.Publishing
     /// <summary>
     /// Represents an <see cref="IHealthCheckPublisher"/> that lets the <see cref="TcpHealthListener"/> accept or reject TCP connections based on the published <see cref="HealthReport"/>.
     /// </summary>
-    public class TcpHealthCheckPublisher : IHealthCheckPublisher
+    internal class TcpHealthCheckPublisher : IHealthCheckPublisher
     {
         private readonly TcpHealthListener _healthListener;
         private readonly TcpHealthListenerOptions _options;

@@ -105,7 +105,7 @@ namespace Arcus.Messaging.Health.Tcp
         /// <summary>
         /// Gets the flag indicating whether or not the TCP probe is listening for client connections.
         /// </summary>
-        public bool IsListening => _listener.Active;
+        internal bool IsListening => _listener.Active;
         
         /// <summary>
         /// Triggered when the application host is ready to start the service.
@@ -120,7 +120,7 @@ namespace Arcus.Messaging.Health.Tcp
         /// <summary>
         /// Accepts TCP client connections.
         /// </summary>
-        public void StartListeningForTcpConnections()
+        internal void StartListeningForTcpConnections()
         {
             _logger.LogTrace("Starting TCP server on port {Port}...", Port);
             _listener.Start();
@@ -210,7 +210,7 @@ namespace Arcus.Messaging.Health.Tcp
         /// <summary>
         /// Rejects TCP client connections.
         /// </summary>
-        public void StopListeningForTcpConnections()
+        internal void StopListeningForTcpConnections()
         {
             _logger.LogTrace("Stopping TCP server on port {Port}...", Port);
             _listener.Stop();
