@@ -64,7 +64,6 @@ namespace Arcus.Messaging.Tests.Integration.Health
                                .WrapAsync(Policy.Handle<TException>()
                                                 .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(1)))
                                .ExecuteAsync(assertion);
-
         }
 
         /// <summary>

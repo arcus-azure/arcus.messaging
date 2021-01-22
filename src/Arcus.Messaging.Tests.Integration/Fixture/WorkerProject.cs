@@ -175,7 +175,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             }
         }
 
-
         private void RunDotNet(string command)
         {
             try
