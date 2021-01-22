@@ -137,11 +137,8 @@ namespace Arcus.Messaging.Health.Tcp
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                if (IsListening)
-                {
-                    HealthReport report = await _healthService.CheckHealthAsync(stoppingToken);
-                    await AcceptConnectionAsync(report);
-                }
+                HealthReport report = await _healthService.CheckHealthAsync(stoppingToken);
+                await AcceptConnectionAsync(report);
             }
         }
 

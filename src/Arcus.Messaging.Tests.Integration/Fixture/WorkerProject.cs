@@ -143,7 +143,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                       .WaitAndRetryForeverAsync(retryNumber => TimeSpan.FromSeconds(1));
 
             PolicyResult result = 
-                await Policy.TimeoutAsync(TimeSpan.FromSeconds(10))
+                await Policy.TimeoutAsync(TimeSpan.FromSeconds(15))
                             .WrapAsync(waitAndRetryForeverAsync)
                             .ExecuteAndCaptureAsync(() => TryToConnectToTcpListenerAsync(healthPort));
 
