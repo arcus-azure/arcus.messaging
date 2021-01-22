@@ -17,15 +17,17 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// <summary>
     /// Representation of a project containing a Azure Service Bus message pump.
     /// </summary>
-    public class ServiceBusWorkerProject : IDisposable
+    public class WorkerProject : IDisposable
     {
+        public const int HealthPort = 40643;
+        
         private readonly Process _process;
         private readonly DirectoryInfo _projectDirectory;
         private readonly ILogger _logger;
         
         private bool _disposed;
 
-        private ServiceBusWorkerProject(DirectoryInfo projectDirectory, ILogger logger)
+        private WorkerProject(DirectoryInfo projectDirectory, ILogger logger)
         {
             _process = new Process();
             _projectDirectory = projectDirectory;
@@ -39,13 +41,13 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
         /// <param name="logger">The logger to write diagnostic messages during the creation of the project.</param>
         /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
-        public static async Task<ServiceBusWorkerProject> StartNewWithAsync<TProgram>(
+        public static async Task<WorkerProject> StartNewWithAsync<TProgram>(
             TestConfig config, 
             ILogger logger,
             params CommandArgument[] commandArguments)
         {
             Type programType = typeof(TProgram);
-            ServiceBusWorkerProject project = await StartNewWithAsync(programType, config, logger, commandArguments);
+            WorkerProject project = await StartNewWithAsync(programType, config, logger, commandArguments);
 
             return project;
         }
@@ -57,7 +59,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
         /// <param name="logger">The logger to write diagnostic messages during the creation of the project.</param>
         /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
-        public static async Task<ServiceBusWorkerProject> StartNewWithAsync(
+        public static async Task<WorkerProject> StartNewWithAsync(
             Type programType,
             TestConfig config,
             ILogger logger,
@@ -73,11 +75,10 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
             ReplaceProgramFile(programType, integrationTestDirectory, emptyServiceBusWorkerDirectory);
 
-            var project = new ServiceBusWorkerProject(emptyServiceBusWorkerDirectory, logger);
+            var project = new WorkerProject(emptyServiceBusWorkerDirectory, logger);
 
-            const int healthPort = 40643;
-            project.Start(commandArguments.Prepend(CommandArgument.CreateOpen("ARCUS_HEALTH_PORT", healthPort)));
-            await project.WaitUntilWorkerIsAvailableAsync(healthPort);
+            project.Start(commandArguments.Prepend(CommandArgument.CreateOpen("ARCUS_HEALTH_PORT", HealthPort)));
+            await project.WaitUntilWorkerIsAvailableAsync(HealthPort);
 
             return project;
         }

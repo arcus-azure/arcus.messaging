@@ -11,7 +11,7 @@
     <PackageLicenseUrl>https://github.com/arcus-azure/arcus.messaging/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/arcus-azure/arcus.messaging</PackageProjectUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png</PackageIconUrl>
-    <RepositoryUrl>>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
+    <RepositoryUrl>&gt;https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>Azure;Messaging;Health;Operations</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>

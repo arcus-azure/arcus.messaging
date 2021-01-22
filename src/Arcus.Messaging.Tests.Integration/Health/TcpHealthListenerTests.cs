@@ -1,50 +1,83 @@
-﻿using System.IO;
-using System.Net;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
+using Arcus.Messaging.Tests.Integration.Fixture;
+using Arcus.Messaging.Tests.Workers.ServiceBus;
+using Arcus.Testing.Logging;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Newtonsoft.Json;
+using Microsoft.Extensions.Logging;
+using Polly;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Arcus.Messaging.Tests.Integration.Health
 {
-    [Trait("Category", "Docker")]
-    public class TcpHealthListenerTests : IntegrationTest
+    [Trait("Category", "Integration")]
+    public class TcpHealthListenerTests : IDisposable
     {
-        private readonly int _healthTcpPort;
+        private const string ArcusHealthStatus = "ARCUS_HEALTH_STATUS";
+        
+        private readonly ILogger _logger;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TcpHealthListenerTests"/> class.
-        /// </summary>
-        public TcpHealthListenerTests(ITestOutputHelper testOutput) : base(testOutput)
+        public TcpHealthListenerTests(ITestOutputHelper outputWriter)
         {
-            _healthTcpPort = Configuration.GetValue<int>("Arcus:Health:Port");
+            _logger = new XunitTestLogger(outputWriter);
+            
+            SetHealthStatus(HealthStatus.Healthy);
         }
-
+        
         [Fact]
-        public async Task TcpHealthListener_ProbeForHealthReport_ResponseHealthy()
+        public async Task TcpHealthListenerWithRejectionActivated_RejectsTcpConnection_WhenHealthCheckIsUnhealthy()
         {
             // Arrange
-            using (var client = new TcpClient())
+            var config = TestConfig.Create();
+            var service = new TcpHealthService(WorkerProject.HealthPort, _logger);
+            
+            using (var project = await WorkerProject.StartNewWithAsync<TcpConnectionRejectionProgram>(config, _logger))
             {
-                await client.ConnectAsync(IPAddress.Parse("127.0.0.1"), _healthTcpPort);
-                using (NetworkStream clientStream = client.GetStream())
-                using (var reader = new StreamReader(clientStream))
-                {
-                    // Act
-                    string healthReport = await reader.ReadToEndAsync();
-
-                    // Assert
-                    var report = JsonConvert.DeserializeObject<HealthReport>(healthReport, new HealthReportEntryConverter());
-                    Assert.NotNull(report);
-                    Assert.Equal(HealthStatus.Healthy, report.Status);
-                    (string entryName, HealthReportEntry entry) = Assert.Single(report.Entries);
-                    Assert.Equal("sample", entryName);
-                    Assert.Equal(HealthStatus.Healthy, entry.Status);
-                }
+                HealthReport beforeReport = await service.GetHealthReportAsync();
+                Assert.NotNull(beforeReport);
+                Assert.Equal(HealthStatus.Healthy, beforeReport.Status);
+                
+                // Act
+                SetHealthStatus(HealthStatus.Unhealthy);
+                
+                // Assert
+                await RetryAssert<ThrowsException, SocketException>(
+                    () => Assert.ThrowsAnyAsync<SocketException>(() => service.GetHealthReportAsync()));
+                
+                SetHealthStatus(HealthStatus.Healthy);
+                
+                HealthReport afterReport = await RetryAssert<SocketException, HealthReport>(
+                    () => service.GetHealthReportAsync());
+                Assert.NotNull(afterReport);
+                Assert.Equal(HealthStatus.Healthy, afterReport.Status);
             }
+        }
+
+        private static async Task<TResult> RetryAssert<TException, TResult>(Func<Task<TResult>> assertion) where TException : Exception
+        {
+            return await Policy.TimeoutAsync(TimeSpan.FromSeconds(30))
+                               .WrapAsync(Policy.Handle<TException>()
+                                                .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(1)))
+                               .ExecuteAsync(assertion);
+
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            Environment.SetEnvironmentVariable(ArcusHealthStatus, value: null, target: EnvironmentVariableTarget.Machine);
+        }
+
+        private static void SetHealthStatus(HealthStatus status)
+        {
+            Environment.SetEnvironmentVariable(ArcusHealthStatus, status.ToString(), EnvironmentVariableTarget.Machine);
         }
     }
 }

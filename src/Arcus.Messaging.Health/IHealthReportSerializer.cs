@@ -10,7 +10,7 @@ namespace Arcus.Messaging.Health
         /// <summary>
         /// Serializes the given <paramref name="healthReport"/> to a series of bytes.
         /// </summary>
-        /// <param name="healthReport">The report to serialize.</param>
+        /// <param name="healthReport">The healthReport to serialize.</param>
         byte[] Serialize(HealthReport healthReport);
     }
 }

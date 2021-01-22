@@ -59,7 +59,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
+            using (var project = await WorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
@@ -84,7 +84,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_TOPIC", config.GetServiceBusConnectionString(ServiceBusEntity.Topic)),
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueAndTopicProgram>(config, _logger, commandArguments))
+            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueAndTopicProgram>(config, _logger, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
@@ -108,7 +108,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueWithFallbackProgram>(config, _logger, commandArguments))
+            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueWithFallbackProgram>(config, _logger, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
@@ -132,7 +132,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueWithServiceBusFallbackProgram>(config, _logger, commandArguments))
+            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueWithServiceBusFallbackProgram>(config, _logger, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
@@ -158,7 +158,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             Order order = OrderGenerator.Generate();
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
+            using (var project = await WorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
@@ -187,7 +187,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString)
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
+            using (var project = await WorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
@@ -212,7 +212,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString)
             };
 
-            using var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueTrackCorrelationOnExceptionProgram>(config, _logger, commandArguments);
+            using var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueTrackCorrelationOnExceptionProgram>(config, _logger, commandArguments);
             await using var service = await TestMessagePumpService.StartNewAsync(config, _logger);
             Message orderMessage = OrderGenerator.Generate().AsServiceBusMessage(operationId, transactionId);
                     
@@ -264,7 +264,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTSECRET", keyRotationConfig.ServicePrincipal.ClientSecret), 
             };
 
-            using (var project = await ServiceBusWorkerProject.StartNewWithAsync<ServiceBusQueueKeyVaultProgram>(config, _logger, commandArguments))
+            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueKeyVaultProgram>(config, _logger, commandArguments))
             {
                 string newSecondaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.SecondaryKey);
                 await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, newSecondaryConnectionString);

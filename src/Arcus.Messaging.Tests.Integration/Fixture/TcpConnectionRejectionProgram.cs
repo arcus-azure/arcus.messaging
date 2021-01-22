@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using Arcus.EventGrid.Publishing;
@@ -13,9 +13,9 @@ using Microsoft.Extensions.Logging;
 // ReSharper disable once CheckNamespace
 namespace Arcus.Messaging.Tests.Workers.ServiceBus
 {
-    public class Program
+    public class TcpConnectionRejectionProgram
     {
-        public static void Main(string[] args)
+        public static void main(string[] args)
         {
             CreateHostBuilder(args)
                 .Build()

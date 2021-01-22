@@ -62,6 +62,11 @@ public class Startup
 
                 // Configure how the health report should be serialized.
                 options.HealthReportSerializer = new MyHealthReportSerializer();
+
+                // Configure how the health report status should affect the TCP probe's availability.
+                // When set to `true`, unhealthy health reports will result in rejecting of TCP client connection attempts.
+                // When set to `false` (default), TCP client connection attempts will be accepted but the returned health report will have a uhealthy health status.
+                options.RejectTcpConnectionWhenUnhealthy = true;
             });
     }
 }
