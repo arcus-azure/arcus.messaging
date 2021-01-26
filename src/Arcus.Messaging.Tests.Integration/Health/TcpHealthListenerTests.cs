@@ -29,7 +29,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
             SetHealthStatus(HealthStatus.Healthy);
         }
         
-        [Fact(Skip = "Temp disable")]
+        [Fact]
         public async Task TcpHealthListenerWithRejectionActivated_RejectsTcpConnection_WhenHealthCheckIsUnhealthy()
         {
             // Arrange
