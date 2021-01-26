@@ -49,12 +49,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 options.TcpPortConfigurationKey = tcpConfigurationKey;
                 configureTcpListenerOptions?.Invoke(options);
             });
-            services.Configure<HealthCheckPublisherOptions>(options =>
-            {
-                configureHealthCheckPublisherOptions?.Invoke(options);
-            });
+            //services.Configure<HealthCheckPublisherOptions>(options =>
+            //{
+            //    configureHealthCheckPublisherOptions?.Invoke(options);
+            //});
 
-            services.AddSingleton<IHealthCheckPublisher, TcpHealthCheckPublisher>();
+            //services.AddSingleton<IHealthCheckPublisher, TcpHealthCheckPublisher>();
             services.AddSingleton<TcpHealthListener>();
             services.AddHostedService(serviceProvider => serviceProvider.GetRequiredService<TcpHealthListener>());
 
