@@ -18,6 +18,12 @@ When inheriting from an `...MessagePump` type, there's a way to control how the 
 Based on the message type of the registered message handlers, the pump determines if the incoming message can be deserialized to that type.
 
 ```csharp
+using System;
+using Arcus.Messaging.Pumps.Abstractions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 public class OrderMessagePump : MessagePump
 {
     public OrderMessagePump(
@@ -55,6 +61,9 @@ Following example shows how a message handler should only process a certain mess
 We'll use a simple message handler implementation:
 
 ```csharp
+using Arcus.Messaging.Abstrations;
+using Arcus.Messaging.Pumps.Abstractions;
+
 public class OrderMessageHandler : IMessageHandler<Order>
 {
     public async Task ProcessMessageAsync(Order order, MessageContext context, ...)
@@ -67,9 +76,14 @@ public class OrderMessageHandler : IMessageHandler<Order>
 We would like that this handler only processed the message when the context contains `MessageType` equals `Order`.
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
 {
-    services.WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+    }
 }
 ```
 
@@ -88,6 +102,10 @@ This extra message handler will then process the remaining messages that can't b
 Following example shows how such a message handler can be implemented:
 
 ```csharp
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions;
+using Microsoft.Extensions.Logging;
+
 public class WarnsUserFallbackMessageHandler : IFallbackMessageHandller
 {
     private readonly ILogger _logger;
@@ -107,9 +125,14 @@ public class WarnsUserFallbackMessageHandler : IFallbackMessageHandller
 And to register such an implementation:
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
 {
-    services.WithFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.WithFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+    }
 }
 ```
 

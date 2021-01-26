@@ -19,19 +19,30 @@ You can do this by creating a message handler which implements from `IAzureServi
 Here is an example of a message handler that expects messages of type `Order`:
 
 ```csharp
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.ServiceBus;
+using Microsoft.Extensions.Logging;
+
 public class OrdersMessageHandler : IAzureServiceBusMessageHandler<Order>
 {
-    public async Task ProcessMessageAsync(
-    Order orderMessage, 
-    AzureServiceBusMessageContext messageContext, 
-    MessageCorrelationInfo correlationInfo, 
-    CancellationToken cancellationToken)
+    private readonly ILogger _logger;
+
+    public OrdersMessageHandler(ILogger<OrdersMessageHandler> logger)
     {
-        Logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber, orderMessage.Customer.FirstName, orderMessage.Customer.LastName);
+        _logger = logger;
+    }
+
+    public async Task ProcessMessageAsync(
+        Order orderMessage, 
+        AzureServiceBusMessageContext messageContext, 
+        MessageCorrelationInfo correlationInfo, 
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber, orderMessage.Customer.FirstName, orderMessage.Customer.LastName);
 
         // Custom logic
 
-        Logger.LogInformation("Order {OrderId} processed", orderMessage.Id);
+        _logger.LogInformation("Order {OrderId} processed", orderMessage.Id);
     }
 }
 ```
@@ -39,19 +50,30 @@ public class OrdersMessageHandler : IAzureServiceBusMessageHandler<Order>
 or with using the more general `IMessageHandler<>`, that will use the more general `MessageContext` instead of the one specific for Azure Service Bus.
 
 ```csharp
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Microsoft.Extensions.Logging;
+
 public class OrdersMessageHandler : IMessageHandler<Order>
 {
-    public async Task ProcessMessageAsync(
-    Order orderMessage, 
-    MessageContext messageContext, 
-    MessageCorrelationInfo correlationInfo, 
-    CancellationToken cancellationToken)
+    private readonly ILogger _logger;
+
+    public OrdersMessageHandler(ILogger<OrdersMessageHandler> logger)
     {
-        Logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber, orderMessage.Customer.FirstName, orderMessage.Customer.LastName);
+        _logger = logger;
+    }
+
+    public async Task ProcessMessageAsync(
+        Order orderMessage, 
+        MessageContext messageContext, 
+        MessageCorrelationInfo correlationInfo, 
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber, orderMessage.Customer.FirstName, orderMessage.Customer.LastName);
 
         // Custom logic
 
-        Logger.LogInformation("Order {OrderId} processed", orderMessage.Id);
+        _logger.LogInformation("Order {OrderId} processed", orderMessage.Id);
     }
 }
 ```
@@ -69,19 +91,24 @@ Other topics:
 Once the message handler is created, you can very easily configure it:
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
 {
-    // Add Service Bus Queue message pump and use OrdersMessageHandler to process the messages
-    // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
-    services.AddServiceBusQueueMessagePump("ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
-            .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // Add Service Bus Queue message pump and use OrdersMessageHandler to process the messages
+        // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
+        services.AddServiceBusQueueMessagePump("ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
+                .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
-    // Add Service Bus Topic message pump and use OrdersMessageHandler to process the messages on the 'My-Subscription-Name' subscription
-    // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
-    services.AddServiceBusTopicMessagePump("My-Subscription-Name", "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
-            .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
+        // Add Service Bus Topic message pump and use OrdersMessageHandler to process the messages on the 'My-Subscription-Name' subscription
+        // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
+        services.AddServiceBusTopicMessagePump("My-Subscription-Name", "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
+                .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
-    // Note, that only a single call to the `.WithServiceBusMessageHandler` has to be made when the handler should be used across message pumps.
+        // Note, that only a single call to the `.WithServiceBusMessageHandler` has to be made when the handler should be used across message pumps.
+    }
 }
 ```
 
@@ -99,67 +126,78 @@ Next to that, we provide a **variety of overloads** to allow you to:
 - Read the connection string from the configuration *(although we highly recommend using a secret store instead)*
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
 {
-    // Specify the name of the Service Bus Queue:
-    services.AddServiceBusQueueMessagePump(
-        "My-Service-Bus-Queue-Name",
-        "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // Specify the name of the Service Bus Queue:
+        services.AddServiceBusQueueMessagePump(
+            "My-Service-Bus-Queue-Name",
+            "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
-    // Specify the name of the Service Bus Topic, and provide a name for the Topic subscription:
-    services.AddServiceBusMessageTopicPump<OrdersMessageHandler>(
-        "My-Service-Bus-Topic-Name",
-        "My-Service-Bus-Topic-Subscription-Name",
-        "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
+        // Specify the name of the Service Bus Topic, and provide a name for the Topic subscription:
+        services.AddServiceBusMessageTopicPump<OrdersMessageHandler>(
+            "My-Service-Bus-Topic-Name",
+            "My-Service-Bus-Topic-Subscription-Name",
+            "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
-    // Specify a topic subscription prefix instead of a name to separate topic message pumps.
-    services.AddServiceBusTopicPumpWithPrefix(
-        "My-Service-Bus-Topic-Name"
-        "My-Service-Bus-Subscription-Prefix",
-        "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
+        // Specify a topic subscription prefix instead of a name to separate topic message pumps.
+        services.AddServiceBusTopicPumpWithPrefix(
+            "My-Service-Bus-Topic-Name"
+            "My-Service-Bus-Subscription-Prefix",
+            "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
-    services.AddServiceBusTopicMessagePump(
-        "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
-        options => 
-        {
-            // Indicate whether or not messages should be automatically marked as completed 
-            // if no exceptions occured andprocessing has finished (default: true).
-            options.AutoComplete = true;
+        services.AddServiceBusTopicMessagePump(
+            "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
+            options => 
+            {
+                // Indicate whether or not messages should be automatically marked as completed 
+                // if no exceptions occured andprocessing has finished (default: true).
+                options.AutoComplete = true;
 
-            // The amount of concurrent calls to process messages 
-            // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
-            options.MaxConcurrentCalls = 5;
+                // Indicate whether or not the message pump should emit security events (default: false).
+                options.EmitSecurityEvents = true;
 
-            // The unique identifier for this background job to distinguish 
-            // this job instance in a multi-instance deployment (default: guid).
-            options.JobId = Guid.NewGuid().ToString();
+                // The amount of concurrent calls to process messages 
+                // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
+                options.MaxConcurrentCalls = 5;
 
-            // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
-            // when the message pump starts/stops (default: CreateOnStart & DeleteOnStop).
-            options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
-        });
+                // The unique identifier for this background job to distinguish 
+                // this job instance in a multi-instance deployment (default: guid).
+                options.JobId = Guid.NewGuid().ToString();
 
-    services.AddServiceBusQueueMessagePump(
-        "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
-        options => 
-        {
-            // Indicate whether or not messages should be automatically marked as completed 
-            // if no exceptions occured andprocessing has finished (default: true).
-            options.AutoComplete = true;
+                // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
+                // when the message pump starts/stops (default: CreateOnStart & DeleteOnStop).
+                options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
+            });
 
-            // The amount of concurrent calls to process messages 
-            // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
-            options.MaxConcurrentCalls = 5;
+        services.AddServiceBusQueueMessagePump(
+            "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
+            options => 
+            {
+                // Indicate whether or not messages should be automatically marked as completed 
+                // if no exceptions occured andprocessing has finished (default: true).
+                options.AutoComplete = true;
 
-            // The unique identifier for this background job to distinguish 
-            // this job instance in a multi-instance deployment (default: guid).
-            options.JobId = Guid.NewGuid().ToString();
-        });
+                // Indicate whether or not the message pump should emit security events (default: false).
+                options.EmitSecurityEvents = true;
 
-    // Multiple message handlers can be added to the servies, based on the message type (ex. 'Order', 'Customer'...), 
-    // the correct message handler will be selected.
-    services.WithServiceBusMessageHandler<OrdersMessageHandler, Order>()
-            .WithMessageHandler<CustomerMessageHandler, Customer>();
+                // The amount of concurrent calls to process messages 
+                // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
+                options.MaxConcurrentCalls = 5;
+
+                // The unique identifier for this background job to distinguish 
+                // this job instance in a multi-instance deployment (default: guid).
+                options.JobId = Guid.NewGuid().ToString();
+            });
+
+        // Multiple message handlers can be added to the servies, based on the message type (ex. 'Order', 'Customer'...), 
+        // the correct message handler will be selected.
+        services.WithServiceBusMessageHandler<OrdersMessageHandler, Order>()
+                .WithMessageHandler<CustomerMessageHandler, Customer>();
+    }
 }
 ```
 
@@ -174,6 +212,11 @@ This extra message handler will then process the remaining messages that can't b
 Following example shows how such a message handler can be implemented:
 
 ```csharp
+using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
+using Microsoft.Azure.ServiceBus;
+using Microsoft.Extensions.Logging;
+
 public class WarnsUserFallbackMessageHandler : IAzureServiceBusFallbackMessageHandller
 {
     private readonly ILogger _logger;
@@ -195,9 +238,14 @@ public class WarnsUserFallbackMessageHandler : IAzureServiceBusFallbackMessageHa
 And to register such an implementation:
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
 {
-    services.WithServiceBusFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.WithServiceBusFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+    }
 }
 ```
 
@@ -219,6 +267,10 @@ This base class provides several protected methods to call the Azure Service Bus
 Example:
 
 ```csharp
+using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
+using Microsoft.Extensions.Logging;
+
 public class AbandonsUnknownOrderMessageHandler : AzureServiceBusMessageHandler<Order>
 {
     public AbandonsUnknownOrderMessageHandler(ILogger<AbandonsUnknownOrderMessageHandler> logger)
@@ -243,9 +295,14 @@ public class AbandonsUnknownOrderMessageHandler : AzureServiceBusMessageHandler<
 The registration happens the same as any other regular message handler:
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
 {
-    services.WithServiceBusMessageHandler<AbandonUnknownOrderMessageHandler, Order>();
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.WithServiceBusMessageHandler<AbandonUnknownOrderMessageHandler, Order>();
+    }
 }
 ```
 
@@ -262,6 +319,11 @@ This base class provides several protected methods to call the Azure Service Bus
 Example:
 
 ```csharp
+using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
+using Microsoft.Azure.ServiceBus;
+using Microsoft.Extensions.Logging;
+
 public class DeadLetterFallbackMessageHandler : AzureServiceBusFallbackMessageHandler
 {
     public DeadLetterFallbackMessageHandler(ILogger<DeadLetterFallbackMessageHandler> logger)
@@ -280,9 +342,14 @@ public class DeadLetterFallbackMessageHandler : AzureServiceBusFallbackMessageHa
 The registration happens the same way as any other fallback message handler:
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
 {
-    services.WithServiceBusFallbackMessageHandler<DeadLetterFallbackMessageHandler>();
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.WithServiceBusFallbackMessageHandler<DeadLetterFallbackMessageHandler>();
+    }
 }
 ```
 
@@ -337,8 +404,10 @@ public void ConfigureServices(IServiceCollection services)
 To retrieve the correlation information of Azure Service Bus messages, we provide an extension that wraps all correlation information.
 
 ```csharp
-Message message = ...
+using Arcus.Messaging.Abstractions;
+using Microsoft.Azure.ServiceBus;
 
+Message message = ...
 MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
 
 // Unique identifier that indicates an attempt to process a given message.

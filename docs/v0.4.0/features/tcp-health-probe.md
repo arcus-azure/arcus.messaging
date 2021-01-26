@@ -20,18 +20,24 @@ PM > Install-Package Arcus.Messaging.Health
 To include the TCP endpoint, add the following line of code in the `Startup.ConfigureServices` method:
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
-{
-    // Add TCP health probe without extra health checks.
-    services.AddTcpHealthProbes("MyConfigurationKeyToTcpHealthPort");
+using Microsoft.Extensions.DependencyInjeciton;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-    // Or, add your extra health checks in a configuration delegate.
-    services.AddTcpHealthProbes(
-        "MyConfigurationkeyToTcpHealthPort",
-        configureHealthChecks: healthBuilder => 
-        {
-            healthBuilder.AddCheck("Example", () => HealthCheckResult.Healthy("Example is OK!"), tags: new[] { "example" })
-        });
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // Add TCP health probe without extra health checks.
+        services.AddTcpHealthProbes("MyConfigurationKeyToTcpHealthPort");
+
+        // Or, add your extra health checks in a configuration delegate.
+        services.AddTcpHealthProbes(
+            "MyConfigurationkeyToTcpHealthPort",
+            configureHealthChecks: healthBuilder => 
+            {
+                healthBuilder.AddCheck("Example", () => HealthCheckResult.Healthy("Example is OK!"), tags: new[] { "example" })
+            });
+    }
 }
 ```
 
@@ -40,20 +46,28 @@ public void ConfigureServices(IServiceCollection services)
 The TCP probe allows several additional configuration options.
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
-{
-    // Add TCP health probe with or whitout extra health checks.
-    services.AddTcpHealthProbes(
-        "MyConfigurationKeyToTcpHealthPort",
-        configureTcpListenerOptions: options =>
-        {
-            // Configure the configuration key on which the health report is exposed.
-            options.TcpPortConfigurationKey = "MyConfigurationKey";
+using Microsoft.Extensions.DependencyInjection;
 
-            // Configure how the health report should be serialized.
-            options.HealthReportSerializer = new MyHealthReportSerializer();
-        });
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // Add TCP health probe with or whitout extra health checks.
+        services.AddTcpHealthProbes(
+            "MyConfigurationKeyToTcpHealthPort",
+            configureTcpListenerOptions: options =>
+            {
+                // Configure the configuration key on which the health report is exposed.
+                options.TcpPortConfigurationKey = "MyConfigurationKey";
+
+                // Configure how the health report should be serialized.
+                options.HealthReportSerializer = new MyHealthReportSerializer();
+            });
+    }
 }
+
+using Arcus.Messaging.Health;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 public class MyHealthReportSerializer : IHealthReportSerializer
 {
