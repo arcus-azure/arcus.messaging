@@ -16,17 +16,13 @@ using Xunit.Sdk;
 namespace Arcus.Messaging.Tests.Integration.Health
 {
     [Trait("Category", "Integration")]
-    public class TcpHealthListenerTests : IDisposable
+    public class TcpHealthListenerTests
     {
-        private const string ArcusHealthStatus = "ARCUS_HEALTH_STATUS";
-        
         private readonly ILogger _logger;
 
         public TcpHealthListenerTests(ITestOutputHelper outputWriter)
         {
             _logger = new XunitTestLogger(outputWriter);
-            
-            SetHealthStatus(HealthStatus.Healthy);
         }
         
         [Fact]
@@ -38,23 +34,14 @@ namespace Arcus.Messaging.Tests.Integration.Health
             
             using (var project = await WorkerProject.StartNewWithAsync<TcpConnectionRejectionProgram>(config, _logger))
             {
-                HealthReport beforeReport = await service.GetHealthReportAsync();
-                Assert.NotNull(beforeReport);
-                Assert.Equal(HealthStatus.Healthy, beforeReport.Status);
-                
-                // Act
-                SetHealthStatus(HealthStatus.Unhealthy);
-                
-                // Assert
-                await RetryAssert<ThrowsException, SocketException>(
-                    () => Assert.ThrowsAnyAsync<SocketException>(() => service.GetHealthReportAsync()));
-                
-                SetHealthStatus(HealthStatus.Healthy);
-                
                 HealthReport afterReport = await RetryAssert<SocketException, HealthReport>(
                     () => service.GetHealthReportAsync());
                 Assert.NotNull(afterReport);
                 Assert.Equal(HealthStatus.Healthy, afterReport.Status);
+                
+                // Act / Assert
+                await RetryAssert<ThrowsException, SocketException>(
+                    () => Assert.ThrowsAnyAsync<SocketException>(() => service.GetHealthReportAsync()));
             }
         }
 
@@ -64,19 +51,6 @@ namespace Arcus.Messaging.Tests.Integration.Health
                                .WrapAsync(Policy.Handle<TException>()
                                                 .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(1)))
                                .ExecuteAsync(assertion);
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
-        {
-            Environment.SetEnvironmentVariable(ArcusHealthStatus, value: null, target: EnvironmentVariableTarget.Machine);
-        }
-
-        private static void SetHealthStatus(HealthStatus status)
-        {
-            Environment.SetEnvironmentVariable(ArcusHealthStatus, status.ToString(), EnvironmentVariableTarget.Machine);
         }
     }
 }

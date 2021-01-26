@@ -15,6 +15,8 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
 {
     public class TcpConnectionRejectionProgram
     {
+        private static int Index = -1;
+        
         public static void main(string[] args)
         {
             CreateHostBuilder(args)
@@ -35,7 +37,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                     services.AddTcpHealthProbes(
                         "ARCUS_HEALTH_PORT", 
                         builder => builder.AddCheck("toggle", 
-                            () => Environment.GetEnvironmentVariable("ARCUS_HEALTH_STATUS", EnvironmentVariableTarget.Machine) == "Healthy" 
+                            () => ++Index < 10
                                 ? HealthCheckResult.Healthy() 
                                 : HealthCheckResult.Unhealthy()),
                         options => options.RejectTcpConnectionWhenUnhealthy = true,
