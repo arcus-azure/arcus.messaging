@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using Arcus.EventGrid.Publishing;
@@ -13,9 +13,11 @@ using Microsoft.Extensions.Logging;
 // ReSharper disable once CheckNamespace
 namespace Arcus.Messaging.Tests.Workers.ServiceBus
 {
-    public class Program
+    public class TcpConnectionRejectionProgram
     {
-        public static void Main(string[] args)
+        private static int Index = -1;
+        
+        public static void main(string[] args)
         {
             CreateHostBuilder(args)
                 .Build()
@@ -32,22 +34,18 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                 .ConfigureLogging(loggingBuilder => loggingBuilder.AddConsole(options => options.IncludeScopes = true))
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddTransient(svc =>
-                    {
-                        var configuration = svc.GetRequiredService<IConfiguration>();
-                        var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
-                        var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
-                        
-                        return EventGridPublisherBuilder
-                            .ForTopic(eventGridTopic)
-                            .UsingAuthenticationKey(eventGridKey)
-                            .Build();
-                    });
-                    
-                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
-                            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
-                    
-                    services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
+                    services.AddTcpHealthProbes(
+                        "ARCUS_HEALTH_PORT", 
+                        builder => builder.AddCheck("toggle", 
+                            () => ++Index < 10
+                                ? HealthCheckResult.Healthy() 
+                                : HealthCheckResult.Unhealthy()),
+                        options => options.RejectTcpConnectionWhenUnhealthy = true,
+                        options =>
+                        {
+                            options.Delay = TimeSpan.Zero;
+                            options.Period = TimeSpan.FromSeconds(1);
+                        });
                 });
     }
 }
