@@ -124,7 +124,7 @@ namespace Arcus.Messaging.Health.Tcp
         {
             _logger.LogTrace("Starting TCP server on port {Port}...", Port);
             _listener.Start();
-            _logger.LogInformation("TCP server started on port {Port}", Port);
+            _logger.LogTrace("TCP server started on port {Port}", Port);
         }
 
         /// <summary>
