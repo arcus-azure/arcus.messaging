@@ -211,7 +211,7 @@ namespace Arcus.Messaging.Health.Tcp
         {
             _logger.LogTrace("Stopping TCP server on port {Port}...", Port);
             _listener.Stop();
-            _logger.LogInformation("TCP server stopped on port {Port}", Port);
+            _logger.LogTrace("TCP server stopped on port {Port}", Port);
         }
     }
 }
