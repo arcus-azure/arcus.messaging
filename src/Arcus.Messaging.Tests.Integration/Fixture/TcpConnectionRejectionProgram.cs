@@ -37,7 +37,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                     services.AddTcpHealthProbes(
                         "ARCUS_HEALTH_PORT", 
                         builder => builder.AddCheck("toggle", 
-                            () => ++Index < 10
+                            () => ++Index < 5
                                 ? HealthCheckResult.Healthy() 
                                 : HealthCheckResult.Unhealthy()),
                         options => options.RejectTcpConnectionWhenUnhealthy = true,
