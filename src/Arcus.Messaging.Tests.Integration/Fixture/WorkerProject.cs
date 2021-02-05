@@ -116,7 +116,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
         private void Start(IEnumerable<CommandArgument> commandArguments)
         {
-            RunDotNet($"build -c Release {_projectDirectory.FullName}");
+            RunDotNet($"build --nologo --no-incremental -c Release {_projectDirectory.FullName}");
             
             string targetAssembly = Path.Combine(_projectDirectory.FullName, $"bin/Release/netcoreapp3.1/Arcus.Messaging.Tests.Workers.ServiceBus.dll");
             string exposedSecretsCommands = String.Join(" ", commandArguments.Select(arg => arg.ToExposedString()));
