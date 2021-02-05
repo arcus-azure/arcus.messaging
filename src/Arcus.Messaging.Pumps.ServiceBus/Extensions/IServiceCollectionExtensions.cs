@@ -9,6 +9,7 @@ using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
 using Arcus.Security.Core;
 using GuardNet;
 using Microsoft.Azure.ServiceBus.Core;
+using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -182,7 +183,37 @@ namespace Microsoft.Extensions.DependencyInjection
             AddServiceBusQueueMessagePump(
                 services,
                 entityName: queueName,
-                getConnectionStringFromConfigurationFunc,
+                getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
+                configureQueueMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message pump to consume messages from Azure Service Bus Queue
+        /// </summary>
+        /// <param name="queueName">Name of the queue to process</param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="endpoint">Fully qualified domain name for your Azure Service Bus. Most likely, {yournamespace}.servicebus.windows.net.</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> or <paramref name="endpoint"/> is blank.</exception>
+        public static IServiceCollection AddServiceBusQueueMessagePumpUsingManagedIdentity(
+            this IServiceCollection services,
+            string queueName,
+            string endpoint,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus Queue message pump");
+            Guard.NotNullOrWhitespace(queueName, nameof(queueName), "Requires the name of the Azure Service Bus Queue");
+            Guard.NotNullOrWhitespace(endpoint, nameof(endpoint), "Requires an endpoint where the Azure Service Bus is located, most likely in the form: '{yournamespace}.servicebus.windows.net'");
+
+            AddServiceBusQueueMessagePump(
+                services,
+                entityName: queueName,
+                endpoint: endpoint,
+                tokenProvider: TokenProvider.CreateManagedIdentityTokenProvider(),
                 configureQueueMessagePump: configureMessagePump);
 
             return services;
@@ -191,8 +222,10 @@ namespace Microsoft.Extensions.DependencyInjection
         private static void AddServiceBusQueueMessagePump(
             IServiceCollection services,
             string entityName,
+            string endpoint = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
+            ITokenProvider tokenProvider = null,
             Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
@@ -202,9 +235,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName,
                 subscriptionName: null,
                 ServiceBusEntity.Queue,
+                endpoint: endpoint,
                 configureQueueMessagePump: configureQueueMessagePump,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
-                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc);
+                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
+                tokenProvider: tokenProvider);
         }
 
         /// <summary>
@@ -383,8 +418,40 @@ namespace Microsoft.Extensions.DependencyInjection
             AddServiceBusTopicMessagePump(
                 services,
                 entityName: topicName,
-                subscriptionName,
-                getConnectionStringFromConfigurationFunc,
+                subscriptionName: subscriptionName,
+                getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
+                configureTopicMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <param name="topicName">Name of the topic to work with</param>
+        /// <param name="subscriptionName">Name of the subscription to process</param>
+        /// <param name="services">Collection of services to use in the application</param>
+        /// <param name="endpoint">Fully qualified domain name for your Azure Service Bus. Most likely, {yournamespace}.servicebus.windows.net.</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
+        /// <returns>Collection of services to use in the application</returns>
+        public static IServiceCollection AddServiceBusTopicMessagePumpUsingManagedIdentity(
+            this IServiceCollection services,
+            string topicName,
+            string subscriptionName,
+            string endpoint,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus Topic message pump");
+            Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires the name of the Azure Service Bus Topic");
+            Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName), "Requires a subscription name to add to the Topic subscription name");
+            Guard.NotNullOrWhitespace(endpoint, nameof(endpoint), "Requires an endpoint where the Azure Service Bus is located, most likely in the form: '{yournamespace}.servicebus.windows.net'");
+
+            AddServiceBusTopicMessagePump(
+                services,
+                entityName: topicName,
+                subscriptionName: subscriptionName,
+                endpoint: endpoint,
+                tokenProvider: TokenProvider.CreateManagedIdentityTokenProvider(),
                 configureTopicMessagePump: configureMessagePump);
 
             return services;
@@ -589,7 +656,44 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName: topicName,
                 subscriptionPrefix,
-                getConnectionStringFromConfigurationFunc,
+                getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
+                configureTopicMessagePump: configureMessagePump);
+
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a message pump to consume messages from Azure Service Bus Topic
+        /// </summary>
+        /// <param name="topicName">Name of the topic to work with</param>
+        /// <param name="subscriptionPrefix">
+        /// Prefix of the subscription to process, concat with the
+        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
+        /// </param>
+        /// <param name="services">Collection of services to use in the application.</param>
+        /// <param name="endpoint">Fully qualified domain name for your Azure Service Bus. Most likely, {yournamespace}.servicebus.windows.net.</param>
+        /// <param name="configureMessagePump">Capability to configure how the message pump should behave.</param>
+        /// <returns>Collection of services to use in the application</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionPrefix"/> or <paramref name="endpoint"/> is blank.</exception>
+        public static IServiceCollection AddServiceBusTopicMessagePumpWithPrefixUsingManagedIdentity(
+            this IServiceCollection services,
+            string topicName,
+            string subscriptionPrefix,
+            string endpoint,
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus Topic message pump");
+            Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires the name of the Azure Service Bus Topic");
+            Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix), "Requires a subscription suffix to add to the Topic subscription name");
+            Guard.NotNullOrWhitespace(endpoint, nameof(endpoint), "Requires an endpoint where the Azure Service Bus is located, most likely in the form: '{yournamespace}.servicebus.windows.net'");
+            
+            AddServiceBusTopicMessagePumpWithPrefix(
+                services,
+                entityName: topicName,
+                subscriptionPrefix: subscriptionPrefix,
+                endpoint: endpoint,
+                tokenProvider: TokenProvider.CreateManagedIdentityTokenProvider(),
                 configureTopicMessagePump: configureMessagePump);
 
             return services;
@@ -599,9 +703,11 @@ namespace Microsoft.Extensions.DependencyInjection
             IServiceCollection services,
             string entityName,
             string subscriptionPrefix,
+            string endpoint = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
+            Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null,
+            ITokenProvider tokenProvider = null)
         {
             var messagePumpOptions = AzureServiceBusTopicMessagePumpOptions.Default;
             string subscriptionName = $"{subscriptionPrefix}-{messagePumpOptions.JobId}";
@@ -610,17 +716,21 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName: entityName,
                 subscriptionName,
+                endpoint: endpoint,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
-                configureTopicMessagePump: configureTopicMessagePump);
+                configureTopicMessagePump: configureTopicMessagePump,
+                tokenProvider: tokenProvider);
         }
 
         private static void AddServiceBusTopicMessagePump(
             IServiceCollection services,
             string entityName,
             string subscriptionName = null,
+            string endpoint = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
+            ITokenProvider tokenProvider = null,
             Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
         {
             Guard.NotNull(services, nameof(services));
@@ -630,9 +740,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName,
                 subscriptionName,
                 ServiceBusEntity.Topic,
+                endpoint: endpoint,
                 configureTopicMessagePump: configureTopicMessagePump,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
-                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc);
+                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
+                tokenProvider: tokenProvider);
         }
 
         private static void AddServiceBusMessagePump(
@@ -640,10 +752,12 @@ namespace Microsoft.Extensions.DependencyInjection
             string entityName,
             string subscriptionName,
             ServiceBusEntity serviceBusEntity,
+            string endpoint = null,
             Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null,
             Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
-            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null)
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
+            ITokenProvider tokenProvider = null)
         {
             Guard.NotNull(services, nameof(services));
 
@@ -654,15 +768,17 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddHostedService(serviceProvider =>
             {
-                var settings = new AzureServiceBusMessagePumpSettings(
-                    entityName,
-                    subscriptionName,
-                    serviceBusEntity,
-                    getConnectionStringFromConfigurationFunc,
-                    getConnectionStringFromSecretFunc,
-                    options,
-                    serviceProvider);
-
+                AzureServiceBusMessagePumpSettings settings;
+                if (tokenProvider is null)
+                {
+                    settings = new AzureServiceBusMessagePumpSettings(
+                        entityName, subscriptionName, serviceBusEntity, getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, options, serviceProvider);
+                }
+                else
+                {
+                    settings = new AzureServiceBusMessagePumpSettings(entityName, subscriptionName, endpoint, serviceBusEntity, options, tokenProvider, serviceProvider);
+                }
+                
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
                 return new AzureServiceBusMessagePump(settings, configuration, serviceProvider, logger);
@@ -691,6 +807,19 @@ namespace Microsoft.Extensions.DependencyInjection
                 default:
                     throw new ArgumentOutOfRangeException(nameof(serviceBusEntity), serviceBusEntity, "Unknown Azure Service Bus entity");
             }
+        }
+
+        private static void AddMessagePumpHostedService(
+            IServiceCollection services,
+            Func<IServiceProvider, AzureServiceBusMessagePumpSettings> createSettings)
+        {
+            services.AddHostedService(serviceProvider =>
+            {
+                AzureServiceBusMessagePumpSettings settings = createSettings(serviceProvider);
+                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+                var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
+                return new AzureServiceBusMessagePump(settings, configuration, serviceProvider, logger);
+            });
         }
 
         /// <summary>

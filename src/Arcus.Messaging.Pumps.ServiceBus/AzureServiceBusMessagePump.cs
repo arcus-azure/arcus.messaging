@@ -15,6 +15,7 @@ using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Azure.ServiceBus.Management;
+using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -101,42 +102,33 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private async Task CreateTopicSubscriptionAsync(CancellationToken cancellationToken)
         {
-            ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
-            var serviceBusClient = new ManagementClient(serviceBusConnectionString);
+            string entityPath = Settings.GetEntityPath();
+            ManagementClient serviceBusClient = await Settings.CreatesManagementClientAsync();
 
             try
             {
-                bool subscriptionExists =
-                   await serviceBusClient.SubscriptionExistsAsync(
-                       serviceBusConnectionString.EntityPath, SubscriptionName, cancellationToken);
+                bool subscriptionExists = await serviceBusClient.SubscriptionExistsAsync(entityPath, SubscriptionName, cancellationToken);
                 if (subscriptionExists)
                 {
-                    Logger.LogTrace("Topic subscription with name '{SubscriptionName}' already exists on Service Bus resource",
-                         SubscriptionName);
+                    Logger.LogTrace("Topic subscription with name '{SubscriptionName}' already exists on Service Bus resource", SubscriptionName);
                 }
                 else
                 {
-                    Logger.LogTrace(
-                        "Creating subscription '{SubscriptionName}' on topic '{TopicPath}'...",
-                         SubscriptionName, serviceBusConnectionString.EntityPath);
+                    Logger.LogTrace("Creating subscription '{SubscriptionName}' on topic '{TopicPath}'...", SubscriptionName, entityPath);
                     
-                    var subscriptionDescription = new SubscriptionDescription(serviceBusConnectionString.EntityPath, SubscriptionName)
+                    var subscriptionDescription = new SubscriptionDescription(entityPath, SubscriptionName)
                     {
                         UserMetadata = $"Subscription created by Arcus job: '{JobId}' to process Service Bus messages."
                     };
                     var ruleDescription = new RuleDescription("Accept-All", new TrueFilter());
                     await serviceBusClient.CreateSubscriptionAsync(subscriptionDescription, ruleDescription, cancellationToken)
                                           .ConfigureAwait(continueOnCapturedContext: false);
-                    Logger.LogTrace(
-                        "Subscription '{SubscriptionName}' created on topic '{TopicPath}'",
-                         SubscriptionName, serviceBusConnectionString.EntityPath);
+                    Logger.LogTrace("Subscription '{SubscriptionName}' created on topic '{TopicPath}'", SubscriptionName, entityPath);
                 }
             }
             catch (Exception exception)
             {
-                Logger.LogWarning(exception, 
-                    "Failed to create topic subscription with name '{SubscriptionName}' on Service Bus resource", 
-                     SubscriptionName);
+                Logger.LogWarning(exception, "Failed to create topic subscription with name '{SubscriptionName}' on Service Bus resource", SubscriptionName);
             }
             finally
             {
@@ -324,26 +316,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private async Task<MessageReceiver> CreateMessageReceiverAsync(AzureServiceBusMessagePumpSettings messagePumpSettings)
         {
-            var rawConnectionString = await messagePumpSettings.GetConnectionStringAsync();
-            var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(rawConnectionString);
-
-            MessageReceiver messageReceiver;
-            if (string.IsNullOrWhiteSpace(serviceBusConnectionStringBuilder.EntityPath))
-            {
-                // Connection string doesn't include the entity so we're using the message pump settings
-                if (string.IsNullOrWhiteSpace(messagePumpSettings.EntityName))
-                {
-                    throw new ArgumentException("No entity name was specified while the connection string is scoped to the namespace");
-                }
-
-                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, messagePumpSettings.EntityName, SubscriptionName);
-            }
-            else
-            {
-                // Connection string includes the entity so we're using that instead of the message pump settings
-                messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, serviceBusConnectionStringBuilder.EntityPath, SubscriptionName);
-            }
-
+            MessageReceiver messageReceiver = await messagePumpSettings.CreateMessageReceiverAsync();
             Namespace = messageReceiver.ServiceBusConnection?.Endpoint?.Host;
 
             ConfigurePlugins();
@@ -351,19 +324,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             RegisterClientInformation(messageReceiver.ClientId, messageReceiver.Path);
 
             return messageReceiver;
-        }
-
-        private static MessageReceiver CreateReceiver(ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder, string entityName, string subscriptionName)
-        {
-            var entityPath = entityName;
-
-            if (string.IsNullOrWhiteSpace(subscriptionName) == false)
-            {
-                entityPath = $"{entityPath}/subscriptions/{subscriptionName}";
-            }
-
-            var connectionString = serviceBusConnectionStringBuilder.GetNamespaceConnectionString();
-            return new MessageReceiver(connectionString, entityPath);
         }
 
         private void ConfigurePlugins()
@@ -410,17 +370,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private async Task DeleteTopicSubscriptionAsync(CancellationToken cancellationToken)
         {
-            ServiceBusConnectionStringBuilder serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
-            var serviceBusClient = new ManagementClient(serviceBusConnectionString);
+            string entityPath = Settings.GetEntityPath();
+            ManagementClient serviceBusClient = await Settings.CreatesManagementClientAsync();
 
             try
             {
-                bool subscriptionExists = await serviceBusClient.SubscriptionExistsAsync(serviceBusConnectionString.EntityPath, SubscriptionName, cancellationToken);
+                bool subscriptionExists = await serviceBusClient.SubscriptionExistsAsync(entityPath, SubscriptionName, cancellationToken);
                 if (subscriptionExists)
                 {
-                    Logger.LogTrace("Deleting subscription '{SubscriptionName}' on topic '{Path}'...", SubscriptionName, serviceBusConnectionString.EntityPath);
-                    await serviceBusClient.DeleteSubscriptionAsync(serviceBusConnectionString.EntityPath, SubscriptionName, cancellationToken);
-                    Logger.LogTrace("Subscription '{SubscriptionName}' deleted on topic '{Path}'", SubscriptionName, serviceBusConnectionString.EntityPath);
+                    Logger.LogTrace("Deleting subscription '{SubscriptionName}' on topic '{Path}'...", SubscriptionName, entityPath);
+                    await serviceBusClient.DeleteSubscriptionAsync(entityPath, SubscriptionName, cancellationToken);
+                    Logger.LogTrace("Subscription '{SubscriptionName}' deleted on topic '{Path}'", SubscriptionName, entityPath);
                 }
                 else
                 {
@@ -435,16 +395,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 await serviceBusClient.CloseAsync().ConfigureAwait(continueOnCapturedContext: false);
             }
-        }
-
-        private async Task<ServiceBusConnectionStringBuilder> GetServiceBusConnectionStringAsync()
-        {
-            Logger.LogTrace("Getting Azure Service Bus Topic connection string on topic '{TopicPath}'...",  Settings.EntityName);
-            string connectionString = await Settings.GetConnectionStringAsync();
-            var serviceBusConnectionBuilder = new ServiceBusConnectionStringBuilder(connectionString);
-            Logger.LogTrace("Got Azure Service Bus Topic connection string on topic '{TopicPath}'",  Settings.EntityName);
-
-            return serviceBusConnectionBuilder;
         }
 
         private async Task HandleMessageAsync(Message message, CancellationToken cancellationToken)
