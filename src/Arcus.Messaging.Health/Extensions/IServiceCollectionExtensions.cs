@@ -46,6 +46,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             var listenerOptions = new TcpHealthListenerOptions { TcpPortConfigurationKey = tcpConfigurationKey };
             configureTcpListenerOptions?.Invoke(listenerOptions);
+            services.AddSingleton(listenerOptions);
             
             if (listenerOptions.RejectTcpConnectionWhenUnhealthy)
             {
@@ -56,8 +57,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
                 services.AddSingleton<IHealthCheckPublisher, TcpHealthCheckPublisher>();
             }
-
-            services.AddSingleton(listenerOptions);
+            
             services.AddSingleton<TcpHealthListener>();
             services.AddHostedService(serviceProvider => serviceProvider.GetRequiredService<TcpHealthListener>());
 
