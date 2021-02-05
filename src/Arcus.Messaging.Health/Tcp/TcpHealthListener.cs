@@ -43,7 +43,7 @@ namespace Arcus.Messaging.Health.Tcp
             : this(configuration, tcpListenerOptions, healthService, NullLogger<TcpHealthListener>.Instance)
         {
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
         /// </summary>
@@ -58,13 +58,46 @@ namespace Arcus.Messaging.Health.Tcp
             IOptions<TcpHealthListenerOptions> tcpListenerOptions,
             HealthCheckService healthService, 
             ILogger<TcpHealthListener> logger)
+            : this(configuration, tcpListenerOptions?.Value, healthService, logger)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
+        /// </summary>
+        /// <param name="configuration">The key-value application configuration properties.</param>
+        /// <param name="tcpListenerOptions">The additional options to configure the TCP listener.</param>
+        /// <param name="healthService">The service to retrieve the current health of the application.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/>, <paramref name="tcpListenerOptions"/>, or <paramref name="healthService"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> doesn't have a filled-out value.</exception>
+        public TcpHealthListener(
+            IConfiguration configuration,
+            TcpHealthListenerOptions tcpListenerOptions,
+            HealthCheckService healthService)
+            : this(configuration, tcpListenerOptions, healthService, NullLogger<TcpHealthListener>.Instance)
+        {
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
+        /// </summary>
+        /// <param name="configuration">The key-value application configuration properties.</param>
+        /// <param name="tcpListenerOptions">The additional options to configure the TCP listener.</param>
+        /// <param name="healthService">The service to retrieve the current health of the application.</param>
+        /// <param name="logger">The logging implementation to write diagnostic messages during the running of the TCP listener.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/>, <paramref name="tcpListenerOptions"/>, <paramref name="healthService"/>, or <paramref name="logger"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> doesn't have a filled-out value.</exception>
+        public TcpHealthListener(
+            IConfiguration configuration,
+            TcpHealthListenerOptions tcpListenerOptions,
+            HealthCheckService healthService, 
+            ILogger<TcpHealthListener> logger)
         {
             Guard.NotNull(tcpListenerOptions, nameof(tcpListenerOptions), "Requires a set of TCP listener options to correctly run the TCP listener");
             Guard.NotNull(healthService, nameof(healthService), "Requires a health service to retrieve the current health status of the application");
             Guard.NotNull(logger, nameof(logger), "Requires a logger implementation to write diagnostic messages during the running of the TCP listener");
-            Guard.For(() => tcpListenerOptions.Value is null, new ArgumentException("Requires a set of TCP listener options to correctly run the TCP listener", nameof(tcpListenerOptions)));
 
-            _tcpListenerOptions = tcpListenerOptions.Value;
+            _tcpListenerOptions = tcpListenerOptions;
             _healthService = healthService;
             _logger = logger;
 
