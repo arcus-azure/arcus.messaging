@@ -115,7 +115,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
-        protected async Task<MessageHandlerResult> ProcessMessageAndCaptureAsync<TMessageContext>(
+        protected async Task<bool> ProcessMessageAndCaptureAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -126,20 +126,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
-            try
-            {
-                bool isProcessed = await TryProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                if (isProcessed)
-                {
-                    return MessageHandlerResult.Success();
-                }
-
-                return MessageHandlerResult.Pending();
-            }
-            catch (Exception exception)
-            {
-                return MessageHandlerResult.Failure(exception);
-            }
+            var isProcessed = await TryProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+            return isProcessed;
         }
 
         /// <summary>
@@ -213,43 +201,52 @@ namespace Arcus.Messaging.Pumps.Abstractions
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-            Logger.LogTrace("Determine if message handler '{Type}' can process the message...");
-
-            bool canProcessMessage = handler.CanProcessMessage(messageContext);
-            bool tryDeserializeToMessageFormat = SafeguardTryDeserializeToMessageFormat(message, handler.MessageType, out var result);
-
-            if (canProcessMessage && tryDeserializeToMessageFormat)
+            Type messageHandlerType = handler.GetMessageHandlerType();
+            Logger.LogTrace("Determine if message handler '{MessageHandlerType}' can process the message...", messageHandlerType.Name);
+            
+            bool canProcessMessage = handler.CanProcessMessageBasedOnContext(messageContext);
+            if (canProcessMessage)
             {
-                if (result is null)
+                MessageResult messageResult = await DeserializeMessageAsync(handler, message, handler.MessageType);
+                if (messageResult.IsSuccess)
                 {
-                    Logger.LogError(
-                        "Parsing from abstracted message to concrete message type '{MessageType}' did unexpectedly result in a 'null' parsing result, so the '{MessageHandlerType}' cannot process this message", 
-                        handler.MessageType.Name, handler.ServiceType.Name);
-
-                    return false;
-                    
+                    bool canProcessDeserializedMessage = handler.CanProcessMessageBasedOnMessage(messageResult.DeserializedMessage);
+                    if (canProcessDeserializedMessage)
+                    {
+                        await PreProcessMessageAsync(handler, messageContext);
+                        bool isProcessed = await handler.ProcessMessageAsync(messageResult.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
+                        return isProcessed;
+                    }
                 }
 
-                await PreProcessMessageAsync(handler, messageContext);
-                await handler.ProcessMessageAsync(result, messageContext, correlationInfo, cancellationToken);
-                return true;
+                Logger.LogTrace(
+                    "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message that the message handler can handle",
+                    messageHandlerType.Name);
             }
-
-            if (!canProcessMessage)
+            else 
             {
                 Logger.LogTrace(
                     "Message handler '{MessageHandlerType}' is not able to process the message because the message context '{MessageContextType}' didn't match the correct message handler's message context",
-                    handler.ServiceType.Name, handler.MessageContextType.Name);
-            }
-
-            if (!tryDeserializeToMessageFormat)
-            {
-                Logger.LogTrace(
-                    "Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message that the message handler can handle",
-                    handler.ServiceType.Name);
+                    messageHandlerType.Name, handler.MessageContextType.Name);
             }
 
             return false;
+        }
+
+        private async Task<MessageResult> DeserializeMessageAsync(MessageHandler handler, string message, Type messageType)
+        {
+            MessageResult result = await handler.TryCustomDeserializeMessageAsync(message);
+            if (result.IsSuccess && result.DeserializedMessage.GetType() == messageType)
+            {
+                return result;
+            }
+
+            if (TryDeserializeToMessageFormat(message, messageType, out object? deserializedByType) && deserializedByType != null)
+            {
+                return MessageResult.Success(deserializedByType);
+            }
+
+            return MessageResult.Failure($"Incoming message cannot be deserialized to type '{messageType.Name}' because it is not in the correct format");
         }
 
         private bool SafeguardTryDeserializeToMessageFormat(string message, Type messageType, out object? result)

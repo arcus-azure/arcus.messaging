@@ -14,6 +14,12 @@ When inheriting from an `...MessagePump` type, there's a way to control how the 
 Based on the message type of the registered message handlers, the pump determines if the incoming message can be deserialized to that type.
 
 ```csharp
+using System;
+using Arcus.Messaging.Pumps.Abstractions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 public class OrderMessagePump : MessagePump
 {
     public OrderMessagePump(

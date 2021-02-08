@@ -18,6 +18,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
     /// </summary>
     public class MessageHandler
     {
+        private readonly object _service;
+        private readonly Type _serviceType;
         private readonly ILogger _logger;
 
         private MessageHandler(Type serviceType, object service, ILogger logger)
@@ -29,23 +31,13 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                 () => serviceType.GenericTypeArguments.Length != 2, 
                 $"Message handler type '{serviceType.Name}' has not the expected 2 generic type arguments");
 
+            _service = service;
+            _serviceType = serviceType;
             _logger = logger;
 
-            Service = service;
-            ServiceType = serviceType;
-            MessageType = ServiceType.GenericTypeArguments[0];
-            MessageContextType = ServiceType.GenericTypeArguments[1];
+            MessageType = _serviceType.GenericTypeArguments[0];
+            MessageContextType = _serviceType.GenericTypeArguments[1];
         }
-
-        /// <summary>
-        /// Gets the instance of the message handler that this abstracted message handler represents.
-        /// </summary>
-        public object Service { get; }
-
-        /// <summary>
-        /// Gets the type of the message handler that this abstracted message handler represents.
-        /// </summary>
-        public Type ServiceType { get; }
 
         /// <summary>
         /// Gets the type of the message that this abstracted message handler can process.
@@ -95,6 +87,33 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         }
 
         /// <summary>
+        /// Gets the concrete class type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
+        /// </summary>
+        /// <exception cref="TypeNotFoundException">Thrown when there's a problem with finding the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</exception>
+        /// <exception cref="ValueMissingException">Thrown when there's no value for the <see cref="IMessageHandler{TMessage,TMessageContext}"/> type value.</exception>
+        public object GetMessageHandlerInstance()
+        {
+            if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
+            {
+                object messageHandlerType = _service.GetRequiredPropertyValue("Service", BindingFlags.Instance | BindingFlags.NonPublic);
+                return messageHandlerType;
+            }
+
+            return _service;
+        }
+
+        /// <summary>
+        /// Gets the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
+        /// </summary>
+        /// <exception cref="TypeNotFoundException">Thrown when there's a problem with finding the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</exception>
+        /// <exception cref="ValueMissingException">Thrown when there's no value for the <see cref="IMessageHandler{TMessage,TMessageContext}"/> type value.</exception>
+        public Type GetMessageHandlerType()
+        {
+            object messageHandlerInstance = GetMessageHandlerInstance();
+            return messageHandlerInstance.GetType();
+        }
+
+        /// <summary>
         /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
         /// </summary>
         /// <param name="messageContext">The messaging context information that holds information about the currently processing message.</param>
@@ -102,8 +121,22 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         ///     [true] if the registered <typeparamref name="TMessageContext"/> predicate holds; [false] otherwise.
         /// </returns>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageContext"/> is <c>null</c>.</exception>
-        public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext) where TMessageContext : MessageContext
+        /// <param name="messageContext">The context in which the incoming message is processed.</param>
+        [Obsolete("Use the " + nameof(CanProcessMessageBasedOnContext) + " specific message context overload instead")]
+        public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext)
+            where TMessageContext : MessageContext
+        {
+            bool canProcessMessageBasedOnContext = CanProcessMessageBasedOnContext(messageContext);
+            return canProcessMessageBasedOnContext;
+        }
+
+        /// <summary>
+        /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
+        /// </summary>
+        /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
+        /// <param name="messageContext">The context in which the incoming message is processed.</param>
+        public bool CanProcessMessageBasedOnContext<TMessageContext>(TMessageContext messageContext) 
+            where TMessageContext : MessageContext
         {
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an message context instance to determine if the message handler can process the message");
 
@@ -112,46 +145,110 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 
             if (actualMessageContextType == expectedMessageContextType)
             {
-                _logger.LogInformation(
-                    "Message context type '{ActualMessageContextType}' matches registered message handler's {MessageHandlerType} context type {ExpectedMessageContextType}",
-                    actualMessageContextType.Name, ServiceType.Name, expectedMessageContextType.Name);
+                _logger.LogTrace("Message context type '{ActualMessageContextType}' matches registered message handler's {MessageHandlerType} context type {ExpectedMessageContextType}", 
+                    actualMessageContextType.Name, _serviceType.Name, expectedMessageContextType.Name);
 
-                if (Service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
+                if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
                 {
-                    try
-                    {
-                        _logger.LogTrace(
-                            "Determining whether the message context predicate registered with the message handler {MessageHandlerType} holds...",
-                            ServiceType.Name);
-
-                    var canProcessMessage = (bool) Service.InvokeMethod(
-                        "CanProcessMessage",
-                        BindingFlags.Instance | BindingFlags.NonPublic,
-                        messageContext);
-
-                        _logger.LogInformation(
-                            "Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message",
-                            ServiceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
-
-                        return canProcessMessage;
-                    }
-                    catch (Exception exception)
-                    {
-                        _logger.LogError(exception, "Message context predicate registered with message handler {MessageHandlerType} faulted, so can't process this message");
-                        return false;
-                    }
+                    bool canProcessMessageWithinMessageContext = CanProcessMessageWithinMessageContext(messageContext);
+                    return canProcessMessageWithinMessageContext;
                 }
 
                 // Message context type matches registration message context type; registered without predicate.
                 return true;
             }
 
-            _logger.LogInformation(
-                "Message context type '{ActualMessageContextType}' doesn't matches registered message handler's {MessageHandlerType} context type {ExpectedMessageContextType}",
-                actualMessageContextType.Name, ServiceType.Name, expectedMessageContextType.Name);
+            _logger.LogTrace("Message context type '{ActualMessageContextType}' doesn't matches registered message handler's {MessageHandlerType} context type {ExpectedMessageContextType}", 
+                actualMessageContextType.Name, _serviceType.Name, expectedMessageContextType.Name);
 
             // Message context type doesn't match registration message context type.
             return false;
+        }
+
+        private bool CanProcessMessageWithinMessageContext<TMessageContext>(TMessageContext messageContext)
+            where TMessageContext : MessageContext
+        {
+            _logger.LogTrace("Determining whether the message context predicate registered with the message handler {MessageHandlerType} holds...", _serviceType.Name);
+
+            var canProcessMessage = 
+                (bool) _service.InvokeMethod("CanProcessMessageWithinMessageContext", BindingFlags.Instance | BindingFlags.NonPublic, messageContext);
+
+            _logger.LogTrace("Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message", 
+                _serviceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
+            
+            return canProcessMessage;
+        }
+
+        /// <summary>
+        /// Determines if the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> can process the incoming deserialized message based on the consumer-provided message predicate.
+        /// </summary>
+        /// <param name="message">The incoming deserialized message body.</param>
+        public bool CanProcessMessageBasedOnMessage(object? message)
+        {
+            if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
+            {
+                try
+                {
+                    _logger.LogTrace("Determining whether the message context predicate registered with the message handler {MessageHandlerType} holds...", _serviceType.Name);
+
+                    var canProcessMessage = 
+                        (bool) _service.InvokeMethod("CanProcessMessageBasedOnMessage", BindingFlags.Instance | BindingFlags.NonPublic, message);
+
+                    _logger.LogTrace("Message predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message", 
+                        _serviceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
+            
+                    return canProcessMessage;   
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Message predicate faulted during execution");
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Tries to custom deserialize the incoming <paramref name="message"/> via a optional additional <see cref="IMessageBodySerializer"/>
+        /// that was provided with the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>.
+        /// </summary>
+        /// <param name="message">The incoming message to deserialize.</param>
+        /// <returns>
+        ///     A <see cref="MessageResult"/> instance that either represents a successful or faulted deserialization of the incoming <paramref name="message"/>.
+        /// </returns>
+        public async Task<MessageResult> TryCustomDeserializeMessageAsync(string message)
+        {
+            if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
+            {
+                _logger.LogTrace("Custom {MessageBodySerializerType} found on the registered message handler, start custom deserialization...", nameof(IMessageBodySerializer));
+
+                var serializer = _service.GetPropertyValue<IMessageBodySerializer>("Serializer", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (serializer != null)
+                {
+                    Task<MessageResult> deserializeMessageAsync = serializer.DeserializeMessageAsync(message);
+                    if (deserializeMessageAsync != null)
+                    {
+                        MessageResult result = await deserializeMessageAsync;
+                        if (result != null)
+                        {
+                            if (result.IsSuccess)
+                            {
+                                _logger.LogTrace("Custom {MessageBodySerializerType} message deserialization was successful", nameof(IMessageBodySerializer));
+                                return result;
+                            }
+
+                            _logger.LogTrace("Custom {MessageBodySerializerType} message deserialization failed: {ErrorMessage} {Exception}", nameof(IMessageBodySerializer), result.ErrorMessage, result.Exception);
+                        }
+                    }
+
+                    _logger.LogTrace("Invalid {MessageBodySerializerType} message deserialization was configured on the registered message handler, custom deserialization returned 'null'", nameof(IMessageBodySerializer));
+                    return MessageResult.Failure("Invalid custom deserialization was configured on the registered message handler");
+                }
+            }
+
+            _logger.LogTrace("No {MessageBodySerializerType} was found on the registered message handler, so no custom deserialization is available", nameof(IMessageBodySerializer));
+            return MessageResult.Failure("No custom deserialization was found on the registered message handler");
         }
 
         /// <summary>
@@ -184,39 +281,41 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
+            Type messageHandlerType = GetMessageHandlerType();
             _logger.LogTrace(
                 "Start processing '{MessageType}' message in message handler '{MessageHandlerType}'...", 
-                message.GetType().Name, ServiceType.Name);
+                message.GetType().Name, messageHandlerType.Name);
 
             const string methodName = "ProcessMessageAsync";
             try
             {
                 var processMessageAsync =
-                        (Task)Service.InvokeMethod(
-                            methodName, BindingFlags.Instance | BindingFlags.Public, message, messageContext, correlationInfo, cancellationToken);
+                    (Task) _service.InvokeMethod(
+                        methodName, BindingFlags.Instance | BindingFlags.Public, message, messageContext, correlationInfo, cancellationToken);
 
                 if (processMessageAsync is null)
                 {
                     throw new InvalidOperationException(
-                        $"The '{typeof(IMessageHandler<,>).Name}' implementation '{Service.GetType().Name}' returned 'null' while calling the '{methodName}' method");
+                        $"The '{typeof(IMessageHandler<,>).Name}' implementation '{messageHandlerType.Name}' returned 'null' while calling the '{methodName}' method");
                 }
 
                 await processMessageAsync;
-
-                _logger.LogInformation(
-                    "Message handler '{MessageHandlerType}' successfully processed '{MessageType}' message", ServiceType.Name, MessageType.Name);
+                _logger.LogTrace("Message handler '{MessageHandlerType}' successfully processed '{MessageType}' message", messageHandlerType.Name, MessageType.Name);
 
                 return true;
             }
             catch (AmbiguousMatchException exception)
             {
-                _logger.LogError(
-                    exception,
+                _logger.LogError(exception,
                     "Ambiguous match found of '{MethodName}' methods in the '{MessageHandlerType}'. Make sure that only 1 matching '{MethodName}' was found on the '{MessageHandlerType}' message handler",
-                    methodName, ServiceType.Name, methodName, ServiceType.Name);
+                    methodName, messageHandlerType.Name, methodName, messageHandlerType.Name);
 
-                throw new AmbiguousMatchException(
-                    $"Ambiguous match found of '{methodName}' methods in the '{Service.GetType().Name}'. ", exception);
+                return false;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Message handler '{MessageHandlerType}' failed to process '{MessageType}' due to a thrown exception", messageHandlerType.Name);
+                return false;
             }
         }
     }

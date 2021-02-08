@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Pumps.Abstractions.Extensions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
@@ -131,6 +130,149 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             {
                 spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
             }
+        }
+
+        [Fact]
+        public void WithServiceBusMessageHandler_WithoutContextFilter_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(messageBodyFilter: null));
+        }
+
+        [Fact]
+        public void WithServiceBusMessageHandler_WithBodyFilterWithoutContextFilter_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                    messageContextFilter: null,
+                    messageBodyFilter: body => true));
+        }
+
+        [Fact]
+        public void WithServiceBusMessageHandler_WithoutBodyFilterWithContextFilter_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                    messageBodyFilter: null,
+                    messageContextFilter: context => true));
+        }
+
+        [Fact]
+        public void WithServiceBusMessageHandler_WithoutImplementationFactory_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                    implementationFactory: null));
+        }
+
+        [Fact]
+        public void WithServiceBusMessageHandler_WithoutImplementationFactoryWithContextFilter_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                    implementationFactory: null,
+                    messageContextFilter: context => true));
+        }
+
+        [Fact]
+        public void WithServiceBusMessageHandler_WithImplementationFactoryWithoutContextFilter_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler(), 
+                    messageContextFilter: null));
+        }
+
+        [Fact]
+        public void WithServiceBusMessageHandler_WithoutImplementationFactoryWithBodyFilter_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                    implementationFactory: null,
+                    messageBodyFilter: body => true));
+        }
+
+        [Fact]
+        public void WithServiceBusMessageHandler_WithImplementationFactoryWithoutBodyFilter_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler(), 
+                    messageBodyFilter: null));
+        }
+
+        [Fact]
+        public void WithServiceBusMessageHandler_WithoutImplementationFactoryWithContextFilterWithBodyFilter_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                    implementationFactory: null,
+                    messageContextFilter: context => true,
+                    messageBodyFilter: body => true));
+        }
+
+        [Fact]
+        public void WithServiceBusMessageHandler_WithImplementationFactoryWithoutContextFilterWithBodyFilter_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                    implementationFactory: servivceProvider => new TestServiceBusMessageHandler(), 
+                    messageContextFilter: null,
+                    messageBodyFilter: body => true));
+        }
+
+        [Fact]
+        public void WithServiceBusMessageHandler_WithImplementationFactoryWithContextFilterWithoutBodyFilter_Throws()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler(), 
+                    messageContextFilter: context => true,
+                    messageBodyFilter: null));
         }
 
         [Fact]

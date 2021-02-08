@@ -39,6 +39,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
             CancellationToken cancellationToken);
 
         /// <summary>
+        /// Completes the Azure Service Bus message on Azure.
+        /// </summary>
+        /// <param name="message">The Azure Service Bus message to be completed.</param>
+        protected async Task CompleteAsync(Message message)
+        {
+            Guard.NotNull(message, nameof(message), "Requires a message to be completed");
+
+            await MessageReceiver.CompleteAsync(message.SystemProperties.LockToken);
+        }
+
+        /// <summary>
         /// Dead letters the Azure Service Bus <paramref name="message"/> on Azure while providing <paramref name="newMessageProperties"/> for properties that has to be modified in the process.
         /// </summary>
         /// <param name="message">The message that has to be dead lettered.</param>

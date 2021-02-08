@@ -35,6 +35,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
             CancellationToken cancellationToken);
 
         /// <summary>
+        /// Completes the Azure Service Bus message on Azure.
+        /// </summary>
+        protected async Task CompleteMessageAsync()
+        {
+            if (LockToken is null)
+            {
+                throw new InvalidOperationException("Cannot complete the message because the message receiver was not yet initialized");
+            }
+
+            await MessageReceiver.CompleteAsync(LockToken);
+        }
+
+        /// <summary>
         /// Dead letters the Azure Service Bus message on Azure while providing <paramref name="newMessageProperties"/> for properties that has to be modified in the process.
         /// </summary>
         /// <param name="newMessageProperties">The properties to modify on the message during the dead lettering of the message.</param>
@@ -43,12 +56,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         {
             if (LockToken is null)
             {
-                throw new InvalidOperationException("Cannot dead letter the message because the message was not yet initialized");
+                throw new InvalidOperationException("Cannot dead letter the message because the lock token was not yet initialized");
             }
 
             if (MessageReceiver is null)
             {
-                throw new InvalidOperationException($"Cannot dead letter the message because the message receiver was not yet initialized");
+                throw new InvalidOperationException("Cannot dead letter the message because the message receiver was not yet initialized");
             }
 
             Logger.LogTrace("Dead-lettering message using lock token '{LockToken}'...", LockToken);
@@ -70,12 +83,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
 
             if (LockToken is null)
             {
-                throw new InvalidOperationException("Cannot dead letter the message because the message was not yet initialized");
+                throw new InvalidOperationException("Cannot dead letter the message because the lock token was not yet initialized");
             }
 
             if (MessageReceiver is null)
             {
-                throw new InvalidOperationException($"Cannot dead letter the message because the message receiver was not yet initialized");
+                throw new InvalidOperationException("Cannot dead letter the message because the message receiver was not yet initialized");
             }
 
             Logger.LogTrace("Dead-lettering message using lock token '{LockToken}' because '{Reason}'...", LockToken, deadLetterReason);
@@ -92,12 +105,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         {
             if (LockToken is null)
             {
-                throw new InvalidOperationException("Cannot abandon the message because the message was not yet initialized");
+                throw new InvalidOperationException("Cannot abandon the message because the lock token was not yet initialized");
             }
 
             if (MessageReceiver is null)
             {
-                throw new InvalidOperationException($"Cannot Abandon the message because the message receiver was not yet initialized");
+                throw new InvalidOperationException("Cannot Abandon the message because the message receiver was not yet initialized");
             }
 
             Logger.LogTrace("Abandoning message using lock token '{LockToken}'...", LockToken);

@@ -8,16 +8,66 @@ layout: default
 While the message processing is handled by the `IMessageHandler<>` implementations, the message pump controls in what format the message is received.
 We allow several customizations while implementing your own message pump.
 
-- [Control custom deserialization](#control-custom-deserialization)
 - [Filter messages based on message context](#filter-messages-based-on-message-context)
+- [Control custom deserialization](#control-custom-deserialization)
+  - [Extending the message pump](#extending-the-message-pump)
+  - [Bring your own deserialization](#bring-your-own-deserialization)
 - [Fallback message handling](#fallback-message-handling)
 
+## Filter messages based on message context
+
+When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.
+
+This can be useful when you are sending different message types on the same queue. Another use-case is being able to handle different versions of the same message type which have different contracts because you are migrating your application.
+
+Following example shows how a message handler should only process a certain message when a property's in the context is present.
+
+We'll use a simple message handler implementation:
+
+```csharp
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessagingHandling;
+
+public class OrderMessageHandler : IMessageHandler<Order>
+{
+    public async Task ProcessMessageAsync(Order order, MessageContext context, ...)
+    {
+        // Do some processing...
+	}
+}
+```
+
+We would like that this handler only processed the message when the context contains `MessageType` equals `Order`.
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+    }
+}
+```
+
+> Note that the order in which the message handlers are registered is important in the message processing.
+> In the example, when a message handler above this one is registered that could also handle the message (same message type) than that handler may be chosen instead of the one with the specific filter.
+
 ## Control custom deserialization
+
+### Extending the message pump
 
 When inheriting from an `...MessagePump` type, there's a way to control how the incoming raw message is being deserialized.
 Based on the message type of the registered message handlers, the pump determines if the incoming message can be deserialized to that type.
 
 ```csharp
+using System;
+using Arcus.Messaging.Pumps.Abstractions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
 public class OrderMessagePump : MessagePump
 {
     public OrderMessagePump(
@@ -44,37 +94,98 @@ public class OrderMessagePump : MessagePump
 }
 ```
 
-## Filter messages based on message context
+### Bring your own deserialization
 
-When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.
+You can also choose to extend the built-in message deserialization with additional deserializer to meet your needs. 
+This allows you to easily deserialize into different message formats or reuse existing (de)serialization capabilities that you already have without altering your message pump. 
 
-This can be useful when you are sending different message types on the same queue. Another use-case is being able to handle different versions of the same message type which have different contracts because you are migrating your application.
-
-Following example shows how a message handler should only process a certain message when a property's in the context is present.
-
-We'll use a simple message handler implementation:
+You start by implemeting an `IMessageBodySerializer`. The following example shows how an expected type can be transformed to something else. 
+The result type (in this case `OrderBatch`) will be then be used to check if there is an `IMessageHandler` registered with that message type.
 
 ```csharp
-public class OrderMessageHandler : IMessageHandler<Order>
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+
+public class OrderBatchMessageBodySerializer : IMessageBodySerializer
 {
-    public async Task ProcessMessageAsync(Order order, MessageContext context, ...)
+    public async Task<MessageResult> DeserializeMessageAsync(string messageBody)
     {
-        // Do some processing...
-	}
+        var serializer = new XmlSerializer(typeof(Order[]));
+        using (var contents = new MemoryStream(Encoding.UTF8.GetBytes(messageBody)))
+        {
+            var orders = (Order[]) serializer.Deserialize(contents);
+            return MessageResult.Success(new OrderBatch(orders));
+        }
+    }
 }
 ```
 
-We would like that this handler only processed the message when the context contains `MessageType` equals `Order`.
+The registration of these message body handlers can be done just as easily as an `IMessageSerializer`:
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
 {
-    services.WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // Register the message body serializer in the dependency container where the dependent services will be injected.
+        services.WithMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
+
+        // Register the message body serializer  in the dependency container where the dependent services are manually injected.
+        services.WithMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
+        {
+            var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
+            return new OrderBatchMessageHandler(logger);
+        });
+    }
 }
 ```
 
 > Note that the order in which the message handlers are registered is important in the message processing.
 > In the example, when a message handler above this one is registered that could also handle the message (same message type) than that handler may be chosen instead of the one with the specific filter.
+
+## Filter messages based on message body
+
+When registereing a new message handler, one can opt-in to add a filter on the incoming message body which filters out messages that are not needed to be processed.
+This can be useful when you want to route messages based on the message content itself instead of the messaging context.
+
+Following example shows how a message handler should only process a certain message when the status is 'Sales'; meaning only `Order` for the sales division will be processed.
+
+```csharp
+// Message to be sent:
+public enum Department { Sales, Marketing, Operations }
+
+public class Order
+{
+    public string Id { get; set; }
+    public Department Type { get; set; }
+}
+
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+
+// Message handler
+public class OrderMessageHandler : IMessageHandler<Order>
+{
+    public async Task ProcessMessageAsync(Order order, MessageContext context, ...)
+    {
+        // Do some processing...
+    }
+}
+
+using Microsoft.Extensions.DependencyInjection;
+
+// Message handler registration
+public class Startup
+{
+    ...
+    
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.WithMessageHandler<OrderMessageHandler, Order>((Order order) => order.Type == Department.Sales);
+    }
+}
+```
 
 ## Fallback message handling
 
@@ -88,6 +199,10 @@ This extra message handler will then process the remaining messages that can't b
 Following example shows how such a message handler can be implemented:
 
 ```csharp
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Microsoft.Extensions.Logging;
+
 public class WarnsUserFallbackMessageHandler : IFallbackMessageHandller
 {
     private readonly ILogger _logger;
@@ -107,9 +222,14 @@ public class WarnsUserFallbackMessageHandler : IFallbackMessageHandller
 And to register such an implementation:
 
 ```csharp
-public void ConfigureServices(IServiceCollection services)
+using Microsoft.Extensions.DependencyInjection;
+
+public class Startup
 {
-    services.WithFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.WithFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+    }
 }
 ```
 

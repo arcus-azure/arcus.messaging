@@ -20,6 +20,8 @@ PM > Install-Package Arcus.Messaging.ServiceBus.Core
 Starting from the message body, we provide an extension to quickly wrap the content in a valid Azure Service Bus `Message` type that can be send.
 
 ```csharp
+using Microsoft.Azure.ServiceBus;
+
 string rawString = "Some raw content";
 Message stringMessage = rawString.AsServiceBusMessage();
 
@@ -30,6 +32,8 @@ Message orderMessage = order.AsServiceBusMessage();
 We also provide additional, optional parameters during the creation:
 
 ```csharp
+using Microsoft.Azure.ServiceBus;
+
 byte[] rawBytes = new [] { 0x54, 0x12 };
 Message = byteMessage = rawBytes.AsServiceBusMessage(
     operationId: Guid.NewGuid().ToString(),
@@ -43,6 +47,9 @@ On receive, the Azure Service Bus message contains a set of `.UserProperties` wi
 This information can be accessed in a more simplified way:
 
 ```csharp
+using Arcus.Messaging.Abstractions;
+using Microsoft.Azure.ServiceBus;
+
 Message message = ...
 
 // Extracted all correlation information from the `.UserProperties` and wrapped inside a valid correlation type.
@@ -61,6 +68,8 @@ On receive, the context in which the message is received contains a set of `.Pro
 This information can be acces in a more simplified way:
 
 ```csharp
+using Arcus.Messaging.Abstractions;
+
 // Extract the encoding information from the `.UserProperties` and wrapped inside a valid `Encoding` type.
 MessageContext messageContext = ...
 Encoding encoding = messageContext.GetMessageEncodingProperty();
