@@ -4,7 +4,7 @@ layout: default
 ---
 
 # Azure Service Bus Message Pump for Azure Functions
-While our default message pump system provides a way to receive, route and handle incoming Service Bus messages; in Azure Functions this is a whole other story.
+While our default message pump system provides a way to receive, route, and handle incoming Service Bus messages which are, unfortunately, not supported in Azure Functions.
 An Azure Function that gets triggered upon a Service Bus message already has a system to receive such a message and only has to route and handle the message. The function functions as a 'message pump' in this scenario.
 
 That's why we extracted our message routing functionality so you can call it directly from your Azure Function.
