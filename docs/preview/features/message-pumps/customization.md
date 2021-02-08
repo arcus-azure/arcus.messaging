@@ -59,7 +59,8 @@ public class Startup
 ### Extending the message router
 
 By default, when using the `.AddMessageRouting`, an new `IMessageRouter` instance is registered that contains the basic message routing/handling for incoming messages.
-If you want for some reason alter this routing process or provide additional functionality, you can do this by implementing your own message router. You can also inherit from our built-in message router and override the necessary methods of your choosing.
+
+If you want to control the message routing or provide additional functionality, you can do this by implementing your own message router. Next to that, you can also inherit from our built-in message router and override the necessary methods of your choosing.
 
 Here's how you normally would register the message router:
 
