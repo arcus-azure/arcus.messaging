@@ -6,7 +6,7 @@ layout: default
 # Customize message pumps
 
 While the message processing is handled by the `IMessageHandler<>` implementations, the message router controls in what format the message is received.
-We allow several customizations while using a built-in or implemeting your own message router.
+We allow several customizations while using a built-in or implementing your own message router.
 
 - [Filter messages based on message context](#filter-messages-based-on-message-context)
 - [Control custom deserialization](#control-custom-deserialization)
