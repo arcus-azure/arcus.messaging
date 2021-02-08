@@ -194,17 +194,18 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                     var canProcessMessage = 
                         (bool) _service.InvokeMethod("CanProcessMessageBasedOnMessage", BindingFlags.Instance | BindingFlags.NonPublic, message);
 
-                    _logger.LogTrace("Message predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message", 
-                        _serviceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
-            
-                    return canProcessMessage;   
+                        _logger.LogTrace(
+                            "Message predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message",
+                            ServiceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
+
+                        return canProcessMessage;
+                    }
+                    catch (Exception exception)
+                    {
+                        _logger.LogError(exception, "Message predicate registered with message handler {MessageHandlerType} faulted, so can't process this message", ServiceType.Name);
+                        return false;
+                    }
                 }
-                catch (Exception exception)
-                {
-                    _logger.LogError(exception, "Message predicate faulted during execution");
-                    return false;
-                }
-            }
 
             return true;
         }

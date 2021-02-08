@@ -75,7 +75,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
             }
             else
             {
-                _logger.LogTrace("Received Azure Key Vault 'Secret New Version Created' event but for wrong message pump");
+                _logger.LogTrace("Received Azure Key Vault 'Secret New Version Created' event for another secret, ignoring.");
             }
         }
     }
