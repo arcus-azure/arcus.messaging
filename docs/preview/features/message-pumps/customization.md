@@ -109,7 +109,8 @@ public class OrderMessageRouter : MessageRouter
 > Note that our built-in `MessageRouter` implements `IMessageRouter` which you can use within your application.
 
 When inheriting from the `MessageRouter` type, we've controlled how the incoming raw message is being deserialized.
-Based on the message type of the registered message handlers, the router determines if the incoming message can be deserialized to that type
+
+Based on the message type of the registered message handlers, the router determines if the incoming message can be deserialized to that type or not.
 
 This custom message router can be registered using the following code. The custom router will then be registered as an `IMessageRouter` instance.
 
