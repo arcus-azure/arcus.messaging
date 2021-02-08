@@ -118,6 +118,7 @@ namespace MessageProcessing
 ```
 
 This extension will register an `IAzureServiceBusMessageRouter` interface allows you access to message handling with specific Service Bus operations during the message processing (like dead lettering and abandonning).
+
 It also registers an more general `IMessageRouter` you can use if the general message routing (with the message raw message body as `string` as incoming message) will suffice.
 
 In any case, this router can be injected in your function:
