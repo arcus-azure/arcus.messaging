@@ -84,7 +84,7 @@ public class OrderServiceBusMessageHandler : IAzureServiceBusMessageHandler<Orde
 }
 ```
 
-Registering both message handlers:
+Now that we have created our message handlers, we can declare when we should use them:
 
 ```csharp
 [assembly: FunctionsStartup(typeof(Startup))]
