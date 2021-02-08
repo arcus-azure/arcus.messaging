@@ -3,6 +3,8 @@ title: "Azure Service Bus Message Pump for Azure Functions"
 layout: default
 ---
 
+This article describes how you can use Arcus' message handler concept with Azure Functions; allowing you to more easily port your business logic from/to Azure Functions.
+
 # Azure Service Bus Message Pump for Azure Functions
 While our default message pump system provides a way to receive, route, and handle incoming Service Bus messages which are, unfortunately, not supported in Azure Functions.
 Today, Azure Functions acts as a message receiver meaning that the function is triggered when a message is available but does not handle message routing and handling. However, in this case, it acts as the message pump.
