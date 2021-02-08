@@ -11,7 +11,8 @@ That's why we extracted our message routing functionality so you can call it dir
 
 - [Receive Azure Service Bus message in an Azure Function](#receive-azure-service-bus-message-in-an-azure-function)
 2. [Declaring our Azure Service Bus message handlers](#specifying-service-bus-message-handlers)
-- [Activate message routing](#activate-message-routing)
+3. [Enabling message routing](#using-message-routing)
+4. Processing received messages through the message router
 
 ## Receive Azure Service Bus message in an Azure Function
 Here's an example of how an Azure Function receives an Azure Service Bus message from a topic:
