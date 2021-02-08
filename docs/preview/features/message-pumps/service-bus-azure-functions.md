@@ -102,7 +102,7 @@ namespace MessageProcessing
 ```
 
 ## Activating message routing
-To actually use these registered message handles in the Azure Function, you'll have to register the Azure Service Bus message router.
+Now that everything is setup, we need to actually use the declared message handlers by routing the messages from the Azure Function into the correct message handler.
 
 To achieve that, we need to add message routing with the `.AddServiceBusMessageRouting` extension:
 
