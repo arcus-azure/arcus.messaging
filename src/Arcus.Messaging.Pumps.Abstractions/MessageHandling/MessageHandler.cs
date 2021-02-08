@@ -129,7 +129,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                         BindingFlags.Instance | BindingFlags.NonPublic,
                         messageContext);
 
-                        _logger.LogInformation(
+                        _logger.LogTrace(
                             "Message context predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message",
                             ServiceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
 
