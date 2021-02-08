@@ -310,8 +310,7 @@ This feature allows more reliable restarting instead of relying on authenticatio
 
 ## How does this work?
 
-A background job will be run in the background which is in fact a message pump on a Service Bus Topic.
-The Azure Key Vault where the connection string for your target message pump is located should send `SecretNewVersionCreated` events to this Service Bus Topic.
+A background job is polling for `SecretNewVersionCreated` events on an Azure Service Bus Topic for the secret that stores the connection string.
 
 That way, when the background job receives a new Key Vault event, it will know that your target message pump should be restarted.
 
