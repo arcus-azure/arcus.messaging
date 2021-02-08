@@ -10,7 +10,7 @@ Today, Azure Functions acts as a message receiver meaning that the function is t
 That's why we extracted our message routing functionality so you can call it directly from your Azure Function.
 
 - [Receive Azure Service Bus message in an Azure Function](#receive-azure-service-bus-message-in-an-azure-function)
-- [Determine Service Bus message handlers](#determine-service-bus-message-handlers)
+2. [Declaring our Azure Service Bus message handlers](#specifying-service-bus-message-handlers)
 - [Activate message routing](#activate-message-routing)
 
 ## Receive Azure Service Bus message in an Azure Function
