@@ -32,7 +32,7 @@ public class MessageProcessingFunction
 
 ## Determine Service Bus message handlers
 Registering message handlers to process the Service Bus message happens just the same as using a message pump.
-Here's two message handlers with their registration in the `Startup.cs` of this example:
+Here is an example of two message handlers that are being registered during startup:
 
 Processing shipment messages:
 
