@@ -126,7 +126,8 @@ This extension will register an `IAzureServiceBusMessageRouter` interface allows
 
 It also registers an more general `IMessageRouter` you can use if the general message routing (with the message raw message body as `string` as incoming message) will suffice.
 
-In any case, this router can be injected in your function:
+We can now inject the message router in our Azure Function and process all messages with it.
+This will determine what the matching message handler is and process it accordingly:
 
 ```csharp
 public class MessageProcessingFunction
