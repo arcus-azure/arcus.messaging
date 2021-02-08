@@ -312,7 +312,7 @@ This feature allows more reliable restarting instead of relying on authenticatio
 
 A background job is polling for `SecretNewVersionCreated` events on an Azure Service Bus Topic for the secret that stores the connection string.
 
-That way, when the background job receives a new Key Vault event, it will know that your target message pump should be restarted.
+That way, when the background job receives a new Key Vault event, it will get the latest connection string, restart the message pump and authenticate with the latest credentials.
 
 ### Installation
 
