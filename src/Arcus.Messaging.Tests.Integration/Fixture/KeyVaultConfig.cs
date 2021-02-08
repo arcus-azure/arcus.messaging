@@ -38,7 +38,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         public string SecretName { get; }
 
         /// <summary>
-        /// Gets the event endpoint of the Azure Key Vault 'Secret new version created' event.
+        /// Gets the endpoint where Azure Key Vault events will be available, including 'Secret new version created' event.
         /// </summary>
         public KeyVaultEventEndpoint SecretNewVersionCreated { get; }
     }
