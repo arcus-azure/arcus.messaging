@@ -13,7 +13,7 @@ That's why we extracted our message routing functionality so you can call it dir
 
 We will walk you through the process of using message handlers with Azure Functions:
 
-- [Receive Azure Service Bus message in an Azure Function](#receive-azure-service-bus-message-in-an-azure-function)
+1. [Create a new Azure Function with Service Bus binding](#receive-azure-service-bus-message-in-an-azure-function)
 2. [Declaring our Azure Service Bus message handlers](#specifying-service-bus-message-handlers)
 3. [Enabling message routing](#using-message-routing)
 4. Processing received messages through the message router
