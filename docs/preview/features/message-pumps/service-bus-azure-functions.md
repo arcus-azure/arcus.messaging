@@ -98,7 +98,8 @@ namespace MessageProcessing
 
 ## Activating message routing
 To actually use these registered message handles in the Azure Function, you'll have to register the Azure Service Bus message router.
-This can easily done with the `.AddServiceBusRouting` extension:
+
+To achieve that, we need to add message routing with the `.AddServiceBusMessageRouting` extension:
 
 ```csharp
 [assembly: FunctionsStartup(typeof(Startup))]
