@@ -33,7 +33,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             _projectDirectory = projectDirectory;
             _logger = logger;
         }
-
+        
         /// <summary>
         /// Starts a new project with a Azure Service Bus message pump from a given <typeparamref name="TProgram"/>.
         /// </summary>
@@ -47,7 +47,27 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             params CommandArgument[] commandArguments)
         {
             Type programType = typeof(TProgram);
-            WorkerProject project = await StartNewWithAsync(programType, config, logger, commandArguments);
+            WorkerProject project = await StartNewWithAsync(programType, config, logger, startupTcpVerification: true, commandArguments);
+
+            return project;
+        }
+
+        /// <summary>
+        /// Starts a new project with a Azure Service Bus message pump from a given <typeparamref name="TProgram"/>.
+        /// </summary>
+        /// <typeparam name="TProgram">The type of the 'Program.cs' that the project should have.</typeparam>
+        /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the creation of the project.</param>
+        /// <param name="startupTcpVerification">The flag indicating whether or not the project should be verified if it's started up correctly.</param>
+        /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
+        public static async Task<WorkerProject> StartNewWithAsync<TProgram>(
+            TestConfig config, 
+            ILogger logger,
+            bool startupTcpVerification = true,
+            params CommandArgument[] commandArguments)
+        {
+            Type programType = typeof(TProgram);
+            WorkerProject project = await StartNewWithAsync(programType, config, logger, startupTcpVerification, commandArguments);
 
             return project;
         }
@@ -65,6 +85,25 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             ILogger logger,
             params CommandArgument[] commandArguments)
         {
+            WorkerProject project = await StartNewWithAsync(programType, config, logger, startupTcpVerification: true, commandArguments);
+            return project;
+        }
+
+        /// <summary>
+        /// Starts a new project with a Azure Service Bus message pump from a given <paramref name="programType"/>.
+        /// </summary>
+        /// <param name="programType">The type of the 'Program.cs' that the project should have.</param>
+        /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the creation of the project.</param>
+        /// <param name="startupTcpVerification">The flag indicating whether or not the project should be verified if it's started up correctly.</param>
+        /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
+        public static async Task<WorkerProject> StartNewWithAsync(
+            Type programType,
+            TestConfig config,
+            ILogger logger,
+            bool startupTcpVerification = true,
+            params CommandArgument[] commandArguments)
+        {
             Guard.NotNull(programType, nameof(programType));
             Guard.For<ArgumentException>(
                 () => !programType.Name.EndsWith("Program"), 
@@ -78,7 +117,10 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             var project = new WorkerProject(emptyServiceBusWorkerDirectory, logger);
 
             project.Start(commandArguments.Prepend(CommandArgument.CreateOpen("ARCUS_HEALTH_PORT", HealthPort)));
-            await project.WaitUntilWorkerIsAvailableAsync(HealthPort);
+            if (startupTcpVerification)
+            {
+                await project.WaitUntilWorkerIsAvailableAsync(HealthPort);
+            }
 
             return project;
         }
