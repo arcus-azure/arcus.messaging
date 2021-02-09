@@ -49,7 +49,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                 .UseSerilog(UpdateLoggerConfiguration)
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = true)
                             .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));

@@ -32,7 +32,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
             var config = TestConfig.Create();
             var service = new TcpHealthService(WorkerProject.HealthPort, _logger);
             
-            using (var project = await WorkerProject.StartNewWithAsync<TcpConnectionRejectionProgram>(config, _logger))
+            using (var project = await WorkerProject.StartNewWithAsync<TcpConnectionRejectionProgram>(config, _logger, startupTcpVerification: false))
             {
                 HealthReport afterReport = await RetryAssert<SocketException, HealthReport>(
                     () => service.GetHealthReportAsync());

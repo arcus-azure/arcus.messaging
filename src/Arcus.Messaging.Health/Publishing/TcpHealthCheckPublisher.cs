@@ -6,7 +6,6 @@ using GuardNet;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 namespace Arcus.Messaging.Health.Publishing
 {
@@ -26,7 +25,7 @@ namespace Arcus.Messaging.Health.Publishing
         /// <param name="options">The registered options to configure the <see cref="TcpHealthListener"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="healthListener"/>, or <paramref name="options"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="options"/> doesn't have a filled-out value.</exception>
-        public TcpHealthCheckPublisher(TcpHealthListener healthListener, IOptions<TcpHealthListenerOptions> options)
+        public TcpHealthCheckPublisher(TcpHealthListener healthListener, TcpHealthListenerOptions options)
             : this(healthListener, options, NullLogger<TcpHealthCheckPublisher>.Instance)
         {
         }
@@ -39,15 +38,14 @@ namespace Arcus.Messaging.Health.Publishing
         /// <param name="logger">The logger to write diagnostic trace messages during accepting or rejecting TCP connections.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="healthListener"/>, <paramref name="options"/>, or <paramref name="logger"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="options"/> doesn't have a filled-out value.</exception>
-        public TcpHealthCheckPublisher(TcpHealthListener healthListener, IOptions<TcpHealthListenerOptions> options, ILogger<TcpHealthCheckPublisher> logger)
+        public TcpHealthCheckPublisher(TcpHealthListener healthListener, TcpHealthListenerOptions options, ILogger<TcpHealthCheckPublisher> logger)
         {
             Guard.NotNull(healthListener, nameof(healthListener), "Requires a TCP health listener to accept or reject TCP connections");
             Guard.NotNull(options, nameof(options), "Requires a set of registered options to determine if the TCP connections should be accepted or rejected based on the health report");
             Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write diagnostic trace messages when TCP connections are accepted or rejected");
-            Guard.For(() => options.Value is null, new ArgumentException("Requires a filled-out value for the registered options to determine if the TCP connections should be accepted or rejected based on the health report", nameof(options)));
             
             _healthListener = healthListener;
-            _options = options.Value;
+            _options = options;
             _logger = logger;
         }
         
