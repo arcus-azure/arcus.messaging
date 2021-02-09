@@ -140,7 +140,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         {
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an message context instance to determine if the message handler can process the message");
 
-            Type expectedMessageContextType = ServiceType.GenericTypeArguments[1];
+            Type expectedMessageContextType = _serviceType.GenericTypeArguments[1];
             Type actualMessageContextType = typeof(TMessageContext);
 
             if (actualMessageContextType == expectedMessageContextType)
@@ -194,18 +194,17 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                     var canProcessMessage = 
                         (bool) _service.InvokeMethod("CanProcessMessageBasedOnMessage", BindingFlags.Instance | BindingFlags.NonPublic, message);
 
-                        _logger.LogTrace(
-                            "Message predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message",
-                            ServiceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
-
-                        return canProcessMessage;
-                    }
-                    catch (Exception exception)
-                    {
-                        _logger.LogError(exception, "Message predicate registered with message handler {MessageHandlerType} faulted, so can't process this message", ServiceType.Name);
-                        return false;
-                    }
+                    _logger.LogTrace("Message predicate registered with the message handler {MessageHandlerType} resulted in {Result}, so {Action} process this message", 
+                        _serviceType.Name, canProcessMessage, canProcessMessage ? "can" : "can't");
+            
+                    return canProcessMessage;   
                 }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Message predicate faulted during execution");
+                    return false;
+                }
+            }
 
             return true;
         }
