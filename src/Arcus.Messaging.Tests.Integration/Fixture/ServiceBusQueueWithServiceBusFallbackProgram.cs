@@ -42,7 +42,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                                .UsingAuthenticationKey(eventGridKey)
                                .Build();
                     });
-                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = true)
                             .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
                             .WithServiceBusFallbackMessageHandler<OrdersServiceBusFallbackMessageHandler>();
 
