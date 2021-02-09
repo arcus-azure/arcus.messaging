@@ -6,7 +6,6 @@ using GuardNet;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 namespace Arcus.Messaging.Health.Publishing
 {
