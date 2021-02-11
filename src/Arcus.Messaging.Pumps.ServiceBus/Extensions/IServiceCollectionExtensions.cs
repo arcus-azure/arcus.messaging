@@ -461,18 +461,11 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <remarks>
-        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
-        /// namespace
+        ///     When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace
         /// </remarks>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
-        /// </param>
+        /// <param name="subscriptionPrefix">Prefix of the subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" /></param>
         /// <param name="services">Collection of services to use in the application</param>
-        /// <param name="secretName">
-        /// Name of the secret to retrieve using your registered <see cref="ISecretProvider" />
-        /// implementation
-        /// </param>
+        /// <param name="secretName">Name of the secret to retrieve using your registered <see cref="ISecretProvider" /> implementation</param>
         /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
         /// <returns>Collection of services to use in the application</returns>
         public static IServiceCollection AddServiceBusTopicMessagePumpWithPrefix(
@@ -498,13 +491,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <remarks>
-        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
-        /// namespace
+        ///     When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace
         /// </remarks>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
-        /// </param>
+        /// <param name="subscriptionPrefix">Prefix of the subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" /></param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
         /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
@@ -532,13 +521,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <remarks>
-        /// When using this approach; the connection string should be scoped to the topic that is being processed, not the
-        /// namespace
+        ///     When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace
         /// </remarks>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
-        /// </param>
+        /// <param name="subscriptionPrefix">Prefix of the subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" /></param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
         /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
@@ -567,15 +552,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <param name="topicName">Name of the topic to work with</param>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
-        /// </param>
+        /// <param name="subscriptionPrefix">Prefix of the subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" /></param>
         /// <param name="services">Collection of services to use in the application</param>
-        /// <param name="secretName">
-        /// Name of the secret to retrieve using your registered <see cref="ISecretProvider" />
-        /// implementation
-        /// </param>
+        /// <param name="secretName">Name of the secret to retrieve using your registered <see cref="ISecretProvider" /> implementation</param>
         /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
         /// <returns>Collection of services to use in the application</returns>
         public static IServiceCollection AddServiceBusTopicMessagePumpWithPrefix(
@@ -602,10 +581,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <param name="topicName">Name of the topic to work with</param>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
-        /// </param>
+        /// <param name="subscriptionPrefix">Prefix of the subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" /></param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
         /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
@@ -634,10 +610,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <param name="topicName">Name of the topic to work with</param>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
-        /// </param>
+        /// <param name="subscriptionPrefix">Prefix of the subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" /></param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
         /// <param name="configureMessagePump">Capability to configure how the message pump should behave</param>
@@ -666,10 +639,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
         /// <param name="topicName">Name of the topic to work with</param>
-        /// <param name="subscriptionPrefix">
-        /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
-        /// </param>
+        /// <param name="subscriptionPrefix">Prefix of the subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" /></param>
         /// <param name="services">Collection of services to use in the application.</param>
         /// <param name="endpoint">Fully qualified domain name for your Azure Service Bus. Most likely, {yournamespace}.servicebus.windows.net.</param>
         /// <param name="configureMessagePump">Capability to configure how the message pump should behave.</param>
@@ -768,21 +738,42 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddHostedService(serviceProvider =>
             {
-                AzureServiceBusMessagePumpSettings settings;
-                if (tokenProvider is null)
-                {
-                    settings = new AzureServiceBusMessagePumpSettings(
-                        entityName, subscriptionName, serviceBusEntity, getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, options, serviceProvider);
-                }
-                else
-                {
-                    settings = new AzureServiceBusMessagePumpSettings(entityName, subscriptionName, endpoint, serviceBusEntity, options, tokenProvider, serviceProvider);
-                }
-                
+                AzureServiceBusMessagePumpSettings settings = 
+                    DetermineAzureServiceBusMessagePumpSettings(
+                        entityName, subscriptionName, serviceBusEntity, endpoint, 
+                        getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, tokenProvider, options, serviceProvider);
+
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
                 return new AzureServiceBusMessagePump(settings, configuration, serviceProvider, logger);
             });
+        }
+
+        private static AzureServiceBusMessagePumpSettings DetermineAzureServiceBusMessagePumpSettings(
+            string entityName,
+            string subscriptionName,
+            ServiceBusEntity serviceBusEntity,
+            string endpoint,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
+            ITokenProvider tokenProvider,
+            AzureServiceBusMessagePumpConfiguration options,
+            IServiceProvider serviceProvider)
+        {
+            if (tokenProvider is null)
+            {
+                var settings = new AzureServiceBusMessagePumpSettings(
+                    entityName, subscriptionName, serviceBusEntity, getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, options, serviceProvider);
+
+                return settings;
+            }
+            else
+            {
+                var settings = new AzureServiceBusMessagePumpSettings(
+                    entityName, subscriptionName, endpoint, serviceBusEntity, options, tokenProvider, serviceProvider);
+
+                return settings;
+            }
         }
 
         private static AzureServiceBusMessagePumpConfiguration DetermineAzureServiceBusMessagePumpOptions(
