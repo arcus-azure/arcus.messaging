@@ -64,18 +64,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
             var secretNewVersionCreated = message.GetPayload<SecretNewVersionCreated>();
             if (secretNewVersionCreated is null)
             {
-                throw new CloudException(
-                    "Azure Key Vault job cannot map Event Grid event to CloudEvent because the event data isn't recognized as a 'SecretNewVersionCreated' schema");
-            }
-
-            if (_targetConnectionStringKey == secretNewVersionCreated.ObjectName)
-            {
-                _logger.LogInformation("Received Azure Key vault 'Secret New Version Created' event, restarting target message pump {JobId}", _messagePump.JobId);
-                await _messagePump.RestartAsync();
+                _logger.LogWarning("Azure Key Vault job cannot map Event Grid event to CloudEvent because the event data isn't recognized as a 'SecretNewVersionCreated' schema");
             }
             else
             {
-                _logger.LogTrace("Received Azure Key Vault 'Secret New Version Created' event for another secret, ignoring.");
+                if (_targetConnectionStringKey == secretNewVersionCreated.ObjectName)
+                {
+                    _logger.LogInformation("Received Azure Key vault 'Secret New Version Created' event, restarting target message pump {JobId}", _messagePump.JobId);
+                    await _messagePump.RestartAsync();
+                }
+                else
+                {
+                    _logger.LogTrace("Received Azure Key Vault 'Secret New Version Created' event for another secret, ignoring.");
+                }
             }
         }
     }
