@@ -405,10 +405,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             Interlocked.Exchange(ref _unauthorizedExceptionCount, 0);
 
-            Logger.LogTrace("Restarting Azure Service Bus...");
+            Logger.LogTrace("Restarting Azure Service Bus message pump '{JobId}' ...", JobId);
             await CloseMessageReceiverAsync();
             await OpenNewMessageReceiverAsync();
-            Logger.LogInformation("Azure Service Bus restarted!");
+            Logger.LogInformation("Azure Service Bus message pump '{JobId}' restarted!", JobId);
         }
 
         private async Task<MessageReceiver> CreateMessageReceiverAsync(AzureServiceBusMessagePumpSettings messagePumpSettings)
