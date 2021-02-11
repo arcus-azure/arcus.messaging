@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Arcus.BackgroundJobs.KeyVault.Events;
 using CloudNative.CloudEvents;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
@@ -41,19 +42,21 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
             Guard.NotNullOrWhitespace(targetConnectionStringKey, nameof(targetConnectionStringKey), "Requires a non-blank secret key that points to the credentials that holds the connection string of the target message pump");
 
             services.AddCloudEventBackgroundJob(subscriptionNamePrefix, serviceBusTopicConnectionStringSecretKey);
-            services.WithServiceBusMessageHandler<ReAuthenticateOnRotatedCredentialsMessageHandler, CloudEvent>(serviceProvider =>
-            {
-                AzureServiceBusMessagePump messagePump =
-                    serviceProvider.GetServices<IHostedService>()
-                                   .OfType<AzureServiceBusMessagePump>()
-                                   .FirstOrDefault(pump => pump.JobId == jobId);
+            services.WithServiceBusMessageHandler<ReAuthenticateOnRotatedCredentialsMessageHandler, CloudEvent>(
+                messageBodyFilter: cloudEvent => cloudEvent?.GetPayload<SecretNewVersionCreated>() != null,
+                implementationFactory: serviceProvider =>
+                {
+                    AzureServiceBusMessagePump messagePump =
+                        serviceProvider.GetServices<IHostedService>()
+                                       .OfType<AzureServiceBusMessagePump>()
+                                       .FirstOrDefault(pump => pump.JobId == jobId);
 
-                Guard.NotNull(messagePump, nameof(messagePump), 
-                    $"Cannot register re-authentication without a '{nameof(AzureServiceBusMessagePump)}' with 'JobId' = '{jobId}'");
+                    Guard.NotNull(messagePump, nameof(messagePump), 
+                        $"Cannot register re-authentication without a '{nameof(AzureServiceBusMessagePump)}' with 'JobId' = '{jobId}'");
 
-                var messageHandlerLogger = serviceProvider.GetRequiredService<ILogger<ReAuthenticateOnRotatedCredentialsMessageHandler>>();
-                return new ReAuthenticateOnRotatedCredentialsMessageHandler(targetConnectionStringKey, messagePump, messageHandlerLogger);
-            });
+                    var messageHandlerLogger = serviceProvider.GetRequiredService<ILogger<ReAuthenticateOnRotatedCredentialsMessageHandler>>();
+                    return new ReAuthenticateOnRotatedCredentialsMessageHandler(targetConnectionStringKey, messagePump, messageHandlerLogger);
+                });
 
             return services;
         }
