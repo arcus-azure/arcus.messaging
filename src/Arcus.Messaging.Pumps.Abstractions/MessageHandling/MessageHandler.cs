@@ -277,7 +277,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                 "Start processing '{MessageType}' message in message handler '{MessageHandlerType}'...", 
                 message.GetType().Name, messageHandlerType.Name);
 
-            const string methodName = "ProcessMessageAsync";
+            const string methodName = nameof(IMessageHandler<object, MessageContext>.ProcessMessageAsync);
             try
             {
                 var processMessageAsync =
