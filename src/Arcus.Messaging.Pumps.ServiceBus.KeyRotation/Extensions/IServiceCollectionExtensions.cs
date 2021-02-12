@@ -24,22 +24,22 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
         /// <param name="jobId">The unique background job ID to identify which message pump to restart.</param>
         /// <param name="subscriptionNamePrefix">The name of the Azure Service Bus subscription that will be created to receive <see cref="CloudEvent"/>'s.</param>
         /// <param name="serviceBusTopicConnectionStringSecretKey">The secret key that points to the Azure Service Bus Topic connection string.</param>
-        /// <param name="targetConnectionStringKey">The secret key where the connection string credentials are located for the target message pump that needs to be auto-restarted.</param>
+        /// <param name="messagePumpConnectionStringKey">The secret key where the connection string credentials are located for the target message pump that needs to be auto-restarted.</param>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="services"/> or the searched for <see cref="AzureServiceBusMessagePump"/> based on the given <paramref name="jobId"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionNamePrefix"/> or <paramref name="serviceBusTopicConnectionStringSecretKey"/> is blank.</exception>
-        public static IServiceCollection WithAutoRestartOnRotatedCredentials(
+        public static IServiceCollection WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
             this IServiceCollection services,
             string jobId,
             string subscriptionNamePrefix,
             string serviceBusTopicConnectionStringSecretKey,
-            string targetConnectionStringKey)
+            string messagePumpConnectionStringKey)
         {
             Guard.NotNull(services, nameof(services), "Requires a collection of services to add the re-authentication background job");
             Guard.NotNullOrWhitespace(subscriptionNamePrefix, nameof(subscriptionNamePrefix), "Requires a non-blank subscription name of the Azure Service Bus Topic subscription, to receive Azure Key Vault events");
             Guard.NotNullOrWhitespace(serviceBusTopicConnectionStringSecretKey, nameof(serviceBusTopicConnectionStringSecretKey), "Requires a non-blank secret key that points to a Azure Service Bus Topic");
-            Guard.NotNullOrWhitespace(targetConnectionStringKey, nameof(targetConnectionStringKey), "Requires a non-blank secret key that points to the credentials that holds the connection string of the target message pump");
+            Guard.NotNullOrWhitespace(messagePumpConnectionStringKey, nameof(messagePumpConnectionStringKey), "Requires a non-blank secret key that points to the credentials that holds the connection string of the target message pump");
 
             services.AddCloudEventBackgroundJob(subscriptionNamePrefix, serviceBusTopicConnectionStringSecretKey);
             services.WithServiceBusMessageHandler<ReAuthenticateOnRotatedCredentialsMessageHandler, CloudEvent>(
@@ -55,7 +55,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
                         $"Cannot register re-authentication without a '{nameof(AzureServiceBusMessagePump)}' with 'JobId' = '{jobId}'");
 
                     var messageHandlerLogger = serviceProvider.GetRequiredService<ILogger<ReAuthenticateOnRotatedCredentialsMessageHandler>>();
-                    return new ReAuthenticateOnRotatedCredentialsMessageHandler(targetConnectionStringKey, messagePump, messageHandlerLogger);
+                    return new ReAuthenticateOnRotatedCredentialsMessageHandler(messagePumpConnectionStringKey, messagePump, messageHandlerLogger);
                 });
 
             return services;

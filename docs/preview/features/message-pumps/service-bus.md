@@ -405,23 +405,24 @@ public void ConfigureServices(IServiceCollection services)
 
     string secretName = hostContext.Configuration["ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME"];
     services.AddServiceBusQueueMessagePump(secretName, options => options.JobId = jobId)
+            
+            // This extension will be available to you once you installed the package.
+            .WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
+                jobId: jobId, 
+                subscriptionNamePrefix: "TestSub", 
+                
+                // The secret key where the Azure Service Bus Topic connection string is located that the background job will use to receive the Azure Key vault events.
+                serviceBusTopicConnectionStringSecretKey: "ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING",
+                
+                // The secret key where the Azure Service Bus connection string is located that your target message pump uses.
+                // This secret key name will be used to check if the received Azure Key Vault event is from this secret or not.
+                messagePumpConnectionStringKey: secretName,
+
+                // The maximum amount of thrown unauthorized exceptions that your message pump should allow before it should restart either way.
+                // This amount can be used to either wait for an Azure Key Vault event or rely on the thrown unauthorized exceptions.
+                maximumUnauthorizedExceptionsBeforeRestart: 5)
+            
             .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
-
-    // This extension will be available to you once you installed the package.
-    services.WithAutoRestartOnRotatedCredentials(
-        jobId: jobId, 
-        subscriptionNamePrefix: "TestSub", 
-        
-        // The secret key where the Azure Service Bus Topic connection string is located that the background job will use to receive the Azure Key vault events.
-        serviceBusTopicConnectionStringSecretKey: "ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING",
-        
-        // The secret key where the Azure Service Bus connection string is located that your target message pump uses.
-        // This secret key name will be used to check if the received Azure Key Vault event is from this secret or not.
-        targetConnectionStringKey: secretName,
-
-        // The maximum amount of thrown unauthorized exceptions that your message pump should allow before it should restart either way.
-        // This amount can be used to either wait for an Azure Key Vault event or rely on the thrown unauthorized exceptions.
-        maximumUnauthorizedExceptionsBeforeRestart: 5);
 }
 ```
 
