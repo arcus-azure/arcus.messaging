@@ -41,7 +41,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
 
             Order order = OrderGenerator.Generate();
             Message message = order.AsServiceBusMessage();
-            await router.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredHandler.IsProcessed);
@@ -70,7 +70,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
 
             Order order = OrderGenerator.Generate();
             Message message = order.AsServiceBusMessage();
-            await router.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredHandler.IsProcessed);
@@ -99,7 +99,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
 
             Order order = OrderGenerator.Generate();
             Message message = order.AsServiceBusMessage();
-            await router.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredHandler.IsProcessed);
@@ -126,7 +126,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
 
             Order order = OrderGenerator.Generate();
             Message message = order.AsServiceBusMessage();
-            await router.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredHandler.IsProcessed);
@@ -156,7 +156,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             Message message = expectedMessage.AsServiceBusMessage();
-            await router.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredHandler.IsProcessed);
@@ -186,7 +186,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             Message message = expectedMessage.AsServiceBusMessage();
-            await router.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredHandler.IsProcessed);
@@ -234,7 +234,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
 
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             Message message = expectedMessage.AsServiceBusMessage();
-            await router.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredHandler1.IsProcessed);

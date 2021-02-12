@@ -457,13 +457,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             if (message is null)
             {
-                Logger.LogWarning("Received message was null, skipping");
+                Logger.LogWarning("Received message on Azure Service Bus message pump '{JobId}' was null, skipping", JobId);
                 return;
             }
 
             if (_isHostShuttingDown)
             {
-                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the host is shutting down",  message.MessageId);
+                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure Service Bus message pump '{JobId}' is shutting down",  message.MessageId, JobId);
                 await AbandonMessageAsync(message.SystemProperties.LockToken);
 
                 return;
@@ -471,7 +471,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (String.IsNullOrEmpty(message.CorrelationId))
             {
-                Logger.LogTrace("No operation ID was found on the message");
+                Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus message pump '{JobId}'", message.MessageId, JobId);
             }
 
             var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
@@ -482,15 +482,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();
                 if (correlationInfoAccessor is null)
                 {
-                    Logger.LogTrace("No message correlation configured");
-                    await _messageRouter.ProcessMessageAsync(_messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                    Logger.LogTrace("No message correlation configured in Azure Service Bus message pump '{JobId}' while processing message '{MessageId}'", JobId, message.MessageId);
+                    await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationInfo, cancellationToken);
                 }
                 else
                 {
                     correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
                     using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
                     {
-                        await _messageRouter.ProcessMessageAsync(_messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                        await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationInfo, cancellationToken);
                     }
                 }
             }

@@ -23,13 +23,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         /// <param name="cancellationToken">The token to cancel the message processing.</param>
         /// <remarks>
         ///     Note that registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s with specific Azure Service Bus operations, will not be able to call those operations
-        ///     without an <see cref="MessageReceiver"/>. Use the <see cref="ProcessMessageAsync(MessageReceiver,Message,AzureServiceBusMessageContext,MessageCorrelationInfo,CancellationToken)"/> instead.
+        ///     without an <see cref="MessageReceiver"/>. Use the <see cref="RouteMessageAsync(Microsoft.Azure.ServiceBus.Core.MessageReceiver,Microsoft.Azure.ServiceBus.Message,Arcus.Messaging.Pumps.ServiceBus.AzureServiceBusMessageContext,Arcus.Messaging.Abstractions.MessageCorrelationInfo,System.Threading.CancellationToken)"/> instead.
         /// </remarks>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        Task ProcessMessageAsync(
+        Task RouteMessageAsync(
             Message message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -50,7 +50,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        Task ProcessMessageAsync(
+        Task RouteMessageAsync(
             MessageReceiver messageReceiver,
             Message message,
             AzureServiceBusMessageContext messageContext,

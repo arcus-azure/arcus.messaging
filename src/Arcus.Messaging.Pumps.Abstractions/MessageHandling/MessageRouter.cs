@@ -81,7 +81,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <returns>
         ///     [true] if the router was able to process the message through one of the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s; [false] otherwise.
         /// </returns>
-        protected async Task<bool> ProcessMessageWithoutFallbackAsync<TMessageContext>(
+        protected async Task<bool> RouteMessageWithoutFallbackAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -108,7 +108,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        public virtual async Task ProcessMessageAsync<TMessageContext>(
+        public virtual async Task RouteMessageAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -129,7 +129,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             if (!isFallbackProcessed)
             {
                 throw new InvalidOperationException(
-                    $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
+                    $"Message pump cannot correctly process the message in the '{typeof(TMessageContext).Name}' "
                     + "because none of the registered 'IMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context. "
                     + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
             }
@@ -146,7 +146,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             if (handlers.Length <= 0 && _fallbackMessageHandler.Value is null)
             {
                 throw new InvalidOperationException(
-                    $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
+                    $"Message pump cannot correctly process the message in the '{typeof(TMessageContext).Name}' "
                     + "because no 'IMessageHandler<,>' was registered in the dependency injection container. "
                     + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
             }
@@ -260,19 +260,20 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
 
             if (HasFallbackMessageHandler)
             {
-                Logger.LogTrace(
-                    "Fallback on registered {FallbackMessageHandlerType} because none of the message handlers were able to process the message",
-                    nameof(IFallbackMessageHandler));
+                string fallbackMessageHandlerTypeName = _fallbackMessageHandler.Value.GetType().Name;
+
+                Logger.LogTrace("Fallback on registered '{FallbackMessageHandlerType}' because none of the message handlers were able to process the message", fallbackMessageHandlerTypeName);
 
                 Task processMessageAsync = _fallbackMessageHandler.Value.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
                 if (processMessageAsync is null)
                 {
                     throw new InvalidOperationException(
-                        $"The '{nameof(IFallbackMessageHandler)}' was not correctly implemented to process the message");
+                        $"Cannot fallback upon the fallback message handler '{fallbackMessageHandlerTypeName}' " 
+                        + "because the handler was not correctly implemented to process the message as it returns 'null' for its asynchronous operation");
                 }
 
                 await processMessageAsync;
-                Logger.LogTrace("Fallback message handler has processed the message");
+                Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' has processed the message", fallbackMessageHandlerTypeName);
 
                 return true;
             }
@@ -305,21 +306,29 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                 success = false;
                 args.ErrorContext.Handled = true;
             };
-            
             jsonSerializer.Error += eventHandler;
-            var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
-            jsonSerializer.Error -= eventHandler;
-
-            if (success)
+            
+            try
             {
-                Logger.LogTrace("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
+                var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
+                if (success)
+                {
+                    Logger.LogTrace("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
 
-                result = value;
-                return true;
+                    result = value;
+                    return true;
+                }
             }
-
+            catch (Exception exception)
+            {
+                Logger.LogError(exception, "Incoming message failed to be JSON deserialized to message type '{MessageType]' due to an exception", messageType.Name);
+            }
+            finally
+            {
+                jsonSerializer.Error -= eventHandler;
+            }
+            
             Logger.LogTrace("Incoming message failed to be JSON deserialized to message type '{MessageType}'", messageType.Name);
-
             result = null;
             return false;
         }

@@ -40,7 +40,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             var context = TestMessageContext.Generate();
             string json = JsonConvert.SerializeObject(new TestMessage());
-            await router.ProcessMessageAsync(json, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredDefaultHandler.IsProcessed);
@@ -70,7 +70,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             var context = TestMessageContext.Generate();
             string json = JsonConvert.SerializeObject(new TestMessage());
-            await router.ProcessMessageAsync(json, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredDefaultHandler.IsProcessed);
@@ -103,7 +103,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             var context = TestMessageContext.Generate();
             string json = JsonConvert.SerializeObject(new TestMessage());
-            await router.ProcessMessageAsync(json, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredSameTypeHandler.IsProcessed);
@@ -137,7 +137,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             var context = TestMessageContext.Generate();
             string json = JsonConvert.SerializeObject(new TestMessage());
-            await router.ProcessMessageAsync(json, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredSameTypeHandler.IsProcessed);
@@ -180,7 +180,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
 
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             var context = TestMessageContext.Generate();
-            await router.ProcessMessageAsync(expectedBody, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(expectedBody, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
             Assert.False(ignoredSameTypeHandler.IsProcessed);

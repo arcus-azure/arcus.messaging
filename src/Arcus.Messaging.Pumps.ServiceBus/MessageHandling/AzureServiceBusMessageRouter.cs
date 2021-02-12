@@ -62,13 +62,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         /// <param name="cancellationToken">The token to cancel the message processing.</param>
         /// <remarks>
         ///     Note that registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s with specific Azure Service Bus operations, will not be able to call those operations
-        ///     without an <see cref="MessageReceiver"/>. Use the <see cref="ProcessMessageAsync(MessageReceiver,Message,AzureServiceBusMessageContext,MessageCorrelationInfo,CancellationToken)"/> instead.
+        ///     without an <see cref="MessageReceiver"/>. Use the <see cref="RouteMessageAsync(Microsoft.Azure.ServiceBus.Core.MessageReceiver,Microsoft.Azure.ServiceBus.Message,Arcus.Messaging.Pumps.ServiceBus.AzureServiceBusMessageContext,Arcus.Messaging.Abstractions.MessageCorrelationInfo,System.Threading.CancellationToken)"/> instead.
         /// </remarks>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        public async Task ProcessMessageAsync(
+        public async Task RouteMessageAsync(
             Message message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -78,7 +78,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
 
-            await ProcessMessageWithPotentialFallbackAsync(
+            await RouteMessageWithPotentialFallbackAsync(
                 messageReceiver: null,
                 message: message,
                 messageContext: messageContext,
@@ -101,7 +101,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        public async Task ProcessMessageAsync(
+        public async Task RouteMessageAsync(
             MessageReceiver messageReceiver,
             Message message,
             AzureServiceBusMessageContext messageContext,
@@ -113,7 +113,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
 
-            await ProcessMessageWithPotentialFallbackAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+            await RouteMessageWithPotentialFallbackAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
         }
 
         /// <summary>
@@ -131,7 +131,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        protected async Task ProcessMessageWithPotentialFallbackAsync(
+        protected async Task RouteMessageWithPotentialFallbackAsync(
             MessageReceiver messageReceiver,
             Message message,
             AzureServiceBusMessageContext messageContext,
@@ -148,9 +148,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 if (messageHandlers.Length <= 0 && !HasFallbackMessageHandler && !HasAzureServiceBusFallbackHandler)
                 {
                     throw new InvalidOperationException(
-                        "Azure Service Bus message pump cannot correctly process the message in the message context "
-                        + "because no 'IMessageHandler<,>' was registered in the dependency injection container. "
-                        + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
+                        $"Azure Service Bus message pump cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' " 
+                        + "because no 'IAzureServiceBusMessageHandler<>' was registered in the dependency injection container. "
+                        + $"Make sure you call the correct 'WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} "
+                        + "during the registration of the Azure Service Bus message pump to register a message handler");
                 }
 
                 Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
@@ -205,7 +206,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
             object messageHandlerInstance = messageHandler.GetMessageHandlerInstance();
             Type messageHandlerType = messageHandlerInstance.GetType();
 
-            Logger.LogTrace("Start pre-processing message handler {MessageHandlerType}...", messageHandlerType.Name);
+            Logger.LogTrace("Start pre-processing message handler '{MessageHandlerType}'...", messageHandlerType.Name);
 
             if (messageReceiver != null && messageHandlerInstance is AzureServiceBusMessageHandlerTemplate template)
             {
@@ -248,10 +249,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
                 {
                     template.SetMessageReceiver(messageReceiver);
                 }
-                
-                Logger.LogTrace("Fallback on registered {FallbackMessageHandlerType} because none of the message handlers w ere able to process the message", nameof(IAzureServiceBusFallbackMessageHandler));
+
+                string fallbackMessageHandlerTypeName = _fallbackMessageHandler.Value.GetType().Name;
+                Logger.LogTrace("Fallback on registered '{FallbackMessageHandlerType}' because none of the message handlers w ere able to process the message", fallbackMessageHandlerTypeName);
                 await _fallbackMessageHandler.Value.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                Logger.LogTrace("Fallback message handler has processed the message"); 
+                Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' has processed the message", fallbackMessageHandlerTypeName); 
             }
         }
     }
