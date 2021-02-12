@@ -51,8 +51,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
                                        .OfType<AzureServiceBusMessagePump>()
                                        .FirstOrDefault(pump => pump.JobId == jobId);
 
-                    Guard.NotNull(messagePump, nameof(messagePump), 
-                        $"Cannot register re-authentication without a '{nameof(AzureServiceBusMessagePump)}' with 'JobId' = '{jobId}'");
+                    if (messagePump is null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Cannot register re-authentication without a '{nameof(AzureServiceBusMessagePump)}' with 'JobId' = '{jobId}'");
+                    }
 
                     var messageHandlerLogger = serviceProvider.GetRequiredService<ILogger<ReAuthenticateOnRotatedCredentialsMessageHandler>>();
                     return new ReAuthenticateOnRotatedCredentialsMessageHandler(messagePumpConnectionStringKey, messagePump, messageHandlerLogger);
