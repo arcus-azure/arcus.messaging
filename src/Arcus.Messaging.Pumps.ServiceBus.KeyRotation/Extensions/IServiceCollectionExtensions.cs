@@ -37,6 +37,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
             string messagePumpConnectionStringKey)
         {
             Guard.NotNull(services, nameof(services), "Requires a collection of services to add the re-authentication background job");
+            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a non-blank job ID to identify the Azure Service Bus message pump which needs to restart");
             Guard.NotNullOrWhitespace(subscriptionNamePrefix, nameof(subscriptionNamePrefix), "Requires a non-blank subscription name of the Azure Service Bus Topic subscription, to receive Azure Key Vault events");
             Guard.NotNullOrWhitespace(serviceBusTopicConnectionStringSecretKey, nameof(serviceBusTopicConnectionStringSecretKey), "Requires a non-blank secret key that points to a Azure Service Bus Topic");
             Guard.NotNullOrWhitespace(messagePumpConnectionStringKey, nameof(messagePumpConnectionStringKey), "Requires a non-blank secret key that points to the credentials that holds the connection string of the target message pump");
