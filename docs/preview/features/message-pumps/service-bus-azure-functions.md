@@ -14,9 +14,8 @@ That's why we extracted our message routing functionality so you can call it dir
 We will walk you through the process of using message handlers with Azure Functions:
 
 1. [Create a new Azure Function with Service Bus binding](#receive-azure-service-bus-message-in-an-azure-function)
-2. [Declaring our Azure Service Bus message handlers](#specifying-service-bus-message-handlers)
-3. [Enabling message routing](#using-message-routing)
-4. Processing received messages through the message router
+2. [Declaring our Azure Service Bus message handlers](#declaring-our-azure-service-bus-message-handlers)
+3. [Processing received messages through the message router](#processing-received-messages-through-the-message-router)
 
 ## Receive Azure Service Bus message in an Azure Function
 Here's an example of how an Azure Function receives an Azure Service Bus message from a topic:
@@ -34,7 +33,7 @@ public class MessageProcessingFunction
 }
 ```
 
-## Determine Service Bus message handlers
+## Declaring our Azure Service Bus message handlers
 Registering message handlers to process the Service Bus message happens just the same as using a message pump.
 Here is an example of two message handlers that are being registered during startup:
 
@@ -101,7 +100,7 @@ namespace MessageProcessing
 }
 ```
 
-## Activating message routing
+## Processing received messages through the message router
 Now that everything is setup, we need to actually use the declared message handlers by routing the messages from the Azure Function into the correct message handler.
 
 To achieve that, we need to add message routing with the `.AddServiceBusMessageRouting` extension:
