@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Microsoft.Azure.ServiceBus;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
