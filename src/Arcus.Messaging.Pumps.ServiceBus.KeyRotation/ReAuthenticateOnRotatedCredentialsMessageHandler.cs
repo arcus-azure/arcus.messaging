@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.BackgroundJobs.KeyVault.Events;
@@ -87,8 +88,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
             {
                 if (_targetConnectionStringKey == secretNewVersionCreated.ObjectName)
                 {
-                    _logger.LogInformation("Received Azure Key vault 'Secret New Version Created' event, restarting target message pump {JobId}", _messagePump.JobId);
+                    _logger.LogTrace("Received Azure Key vault 'Secret New Version Created' event, restarting target message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'", _messagePump.JobId, _messagePump.EntityPath, _messagePump.Namespace);
                     await _messagePump.RestartAsync();
+                    _logger.LogEvent("Message pump restarted", new Dictionary<string, object>
+                    {
+                        ["JobId"] = _messagePump.JobId,
+                        ["EntityPath"] = _messagePump.EntityPath,
+                        ["Namespace"] = _messagePump.Namespace
+                    });
                 }
                 else
                 {

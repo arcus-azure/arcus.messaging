@@ -42,7 +42,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <summary>
         ///     Entity path that is being processed
         /// </summary>
-        protected string EntityPath { get; private set; }
+        public string EntityPath { get; private set; }
 
         /// <summary>
         ///     Logger to write telemetry to

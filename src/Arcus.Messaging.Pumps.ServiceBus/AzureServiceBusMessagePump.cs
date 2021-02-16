@@ -68,7 +68,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Service Bus namespace that contains the entity
         /// </summary>
-        protected string Namespace { get; private set; }
+        public string Namespace { get; private set; }
 
         /// <summary>
         /// Gets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
