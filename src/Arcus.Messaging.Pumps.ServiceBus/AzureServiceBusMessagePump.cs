@@ -230,7 +230,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             catch (Exception exception)
             {
-                Logger.LogCritical(exception, "Unexpected failure occured during processing of messages");
+                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages");
                 await HandleReceiveExceptionAsync(exception);
             }
             finally
@@ -243,14 +243,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             _messageReceiver = await CreateMessageReceiverAsync(Settings);
 
-            Logger.LogInformation(
-                "Starting message pump {MessagePumpId} on entity path '{EntityPath}' in namespace '{Namespace}'",
-                Id,
-                EntityPath,
-                Namespace);
-
+            Logger.LogTrace("Starting message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", JobId, EntityPath, Namespace);
             _messageReceiver.RegisterMessageHandler(HandleMessageAsync, _messageHandlerOptions);
-            Logger.LogInformation("Message pump {MessagePumpId} started", Id);
+            Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", JobId, EntityPath, Namespace);
         }
 
         private async Task CloseMessageReceiverAsync()
@@ -262,13 +257,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                Logger.LogInformation("Closing message pump {MessagePumpId}",  Id);
+                Logger.LogTrace("Closing message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'",  JobId, EntityPath, Namespace);
                 await _messageReceiver.CloseAsync();
-                Logger.LogInformation("Message pump {MessagePumpId} closed : {Time}",  Id, DateTimeOffset.UtcNow);
+                Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}",  JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
             }
             catch (Exception exception)
             {
-                Logger.LogWarning(exception, "Cannot correctly close the message pump {MessagePumpId}",  Id);
+                Logger.LogWarning(exception, "Cannot correctly close the message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'",  JobId, EntityPath, Namespace);
             }
         }
 
@@ -405,10 +400,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             Interlocked.Exchange(ref _unauthorizedExceptionCount, 0);
 
-            Logger.LogTrace("Restarting Azure Service Bus message pump '{JobId}' ...", JobId);
+            Logger.LogTrace("Restarting Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' ...", JobId, EntityPath, Namespace);
             await CloseMessageReceiverAsync();
             await OpenNewMessageReceiverAsync();
-            Logger.LogInformation("Azure Service Bus message pump '{JobId}' restarted!", JobId);
+            Logger.LogInformation("Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' restarted!", JobId, EntityPath, Namespace);
         }
 
         private async Task<MessageReceiver> CreateMessageReceiverAsync(AzureServiceBusMessagePumpSettings messagePumpSettings)
