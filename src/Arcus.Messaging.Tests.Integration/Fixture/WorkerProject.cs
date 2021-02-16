@@ -17,19 +17,39 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// <summary>
     /// Representation of a project containing a Azure Service Bus message pump.
     /// </summary>
-    public class ServiceBusWorkerProject : IDisposable
+    public class WorkerProject : IDisposable
     {
+        public const int HealthPort = 40643;
+        
         private readonly Process _process;
         private readonly DirectoryInfo _projectDirectory;
         private readonly ILogger _logger;
         
         private bool _disposed;
 
-        private ServiceBusWorkerProject(DirectoryInfo projectDirectory, ILogger logger)
+        private WorkerProject(DirectoryInfo projectDirectory, ILogger logger)
         {
             _process = new Process();
             _projectDirectory = projectDirectory;
             _logger = logger;
+        }
+        
+        /// <summary>
+        /// Starts a new project with a Azure Service Bus message pump from a given <typeparamref name="TProgram"/>.
+        /// </summary>
+        /// <typeparam name="TProgram">The type of the 'Program.cs' that the project should have.</typeparam>
+        /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the creation of the project.</param>
+        /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
+        public static async Task<WorkerProject> StartNewWithAsync<TProgram>(
+            TestConfig config, 
+            ILogger logger,
+            params CommandArgument[] commandArguments)
+        {
+            Type programType = typeof(TProgram);
+            WorkerProject project = await StartNewWithAsync(programType, config, logger, startupTcpVerification: true, commandArguments);
+
+            return project;
         }
 
         /// <summary>
@@ -38,14 +58,16 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <typeparam name="TProgram">The type of the 'Program.cs' that the project should have.</typeparam>
         /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
         /// <param name="logger">The logger to write diagnostic messages during the creation of the project.</param>
+        /// <param name="startupTcpVerification">The flag indicating whether or not the project should be verified if it's started up correctly.</param>
         /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
-        public static async Task<ServiceBusWorkerProject> StartNewWithAsync<TProgram>(
+        public static async Task<WorkerProject> StartNewWithAsync<TProgram>(
             TestConfig config, 
             ILogger logger,
+            bool startupTcpVerification = true,
             params CommandArgument[] commandArguments)
         {
             Type programType = typeof(TProgram);
-            ServiceBusWorkerProject project = await StartNewWithAsync(programType, config, logger, commandArguments);
+            WorkerProject project = await StartNewWithAsync(programType, config, logger, startupTcpVerification, commandArguments);
 
             return project;
         }
@@ -57,10 +79,29 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
         /// <param name="logger">The logger to write diagnostic messages during the creation of the project.</param>
         /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
-        public static async Task<ServiceBusWorkerProject> StartNewWithAsync(
+        public static async Task<WorkerProject> StartNewWithAsync(
             Type programType,
             TestConfig config,
             ILogger logger,
+            params CommandArgument[] commandArguments)
+        {
+            WorkerProject project = await StartNewWithAsync(programType, config, logger, startupTcpVerification: true, commandArguments);
+            return project;
+        }
+
+        /// <summary>
+        /// Starts a new project with a Azure Service Bus message pump from a given <paramref name="programType"/>.
+        /// </summary>
+        /// <param name="programType">The type of the 'Program.cs' that the project should have.</param>
+        /// <param name="config">The set of key/value pairs to extract the required configuration values for the project.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the creation of the project.</param>
+        /// <param name="startupTcpVerification">The flag indicating whether or not the project should be verified if it's started up correctly.</param>
+        /// <param name="commandArguments">The additional CLI arguments to send to the project at startup.</param>
+        public static async Task<WorkerProject> StartNewWithAsync(
+            Type programType,
+            TestConfig config,
+            ILogger logger,
+            bool startupTcpVerification = true,
             params CommandArgument[] commandArguments)
         {
             Guard.NotNull(programType, nameof(programType));
@@ -73,11 +114,13 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
             ReplaceProgramFile(programType, integrationTestDirectory, emptyServiceBusWorkerDirectory);
 
-            var project = new ServiceBusWorkerProject(emptyServiceBusWorkerDirectory, logger);
+            var project = new WorkerProject(emptyServiceBusWorkerDirectory, logger);
 
-            const int healthPort = 40643;
-            project.Start(commandArguments.Prepend(CommandArgument.CreateOpen("ARCUS_HEALTH_PORT", healthPort)));
-            await project.WaitUntilWorkerIsAvailableAsync(healthPort);
+            project.Start(commandArguments.Prepend(CommandArgument.CreateOpen("ARCUS_HEALTH_PORT", HealthPort)));
+            if (startupTcpVerification)
+            {
+                await project.WaitUntilWorkerIsAvailableAsync(HealthPort);
+            }
 
             return project;
         }
@@ -115,7 +158,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
         private void Start(IEnumerable<CommandArgument> commandArguments)
         {
-            RunDotNet($"build -c Release {_projectDirectory.FullName}");
+            RunDotNet($"build --nologo --no-incremental -c Release {_projectDirectory.FullName}");
             
             string targetAssembly = Path.Combine(_projectDirectory.FullName, $"bin/Release/netcoreapp3.1/Arcus.Messaging.Tests.Workers.ServiceBus.dll");
             string exposedSecretsCommands = String.Join(" ", commandArguments.Select(arg => arg.ToExposedString()));
@@ -142,7 +185,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                       .WaitAndRetryForeverAsync(retryNumber => TimeSpan.FromSeconds(1));
 
             PolicyResult result = 
-                await Policy.TimeoutAsync(TimeSpan.FromSeconds(10))
+                await Policy.TimeoutAsync(TimeSpan.FromSeconds(15))
                             .WrapAsync(waitAndRetryForeverAsync)
                             .ExecuteAndCaptureAsync(() => TryToConnectToTcpListenerAsync(healthPort));
 
@@ -173,7 +216,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 }
             }
         }
-
 
         private void RunDotNet(string command)
         {

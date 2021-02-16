@@ -27,5 +27,10 @@ namespace Arcus.Messaging.Health.Tcp
                 _tcpHealthPort = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets the flag to indicating whether or not the TCP health port should accept or reject TCP connections when a health dependency reports an unhealthy status.
+        /// </summary>
+        public bool RejectTcpConnectionWhenUnhealthy { get; set; }
     }
 }
