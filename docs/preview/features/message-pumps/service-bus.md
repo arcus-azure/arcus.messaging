@@ -356,9 +356,11 @@ public class Startup
 ## Alternative Service Bus message routing
 
 By default, when registering the Azure Service Bus message pump a built-in message router is registered to handle the routing throughout the previously registered message handlers.
+
 This router is registered with the `IAzureServiceBusMessageRouter` interface (which implements the more general `IMessageRouter` for non-specific Service Bus messages).
 
 When you want for some reason alter the message routing or provide additional functionality, you can register your own router which the Azure Service Bus message pump will use instead.
+
 The following example shows you how a custom router is used for additional tracking. Note that the `AzureServiceBusMessageRouter` implements the `IAzureServiceBusMessageRouter` so we can override the necessary implemenetations.
 
 ```csharp
