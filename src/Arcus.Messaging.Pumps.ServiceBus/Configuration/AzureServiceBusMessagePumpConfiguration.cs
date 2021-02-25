@@ -31,7 +31,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         private AzureServiceBusMessagePumpConfiguration(AzureServiceBusMessagePumpOptions options)
         {
             Guard.NotNull(options, nameof(options));
-
+            Guard.NotNull(options.Correlation, nameof(options), "Requires correlation options to configure the Azure Service Bus configuration for the message pump");
+            
             MaxConcurrentCalls = options.MaxConcurrentCalls;
             AutoComplete = options.AutoComplete;
             EmitSecurityEvents = options.EmitSecurityEvents;
