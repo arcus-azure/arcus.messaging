@@ -169,7 +169,7 @@ public class Startup
 
                 // The name of the Azure Service Bus message property that has the transaction ID.
                 // (default: Transaction-Id).
-                options.TransactionIdPropertyName = "X-Transaction-ID";
+                options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
 
                 // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
                 // when the message pump starts/stops (default: CreateOnStart & DeleteOnStop).

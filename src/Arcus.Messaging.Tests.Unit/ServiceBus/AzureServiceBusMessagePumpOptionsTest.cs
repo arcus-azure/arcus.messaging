@@ -58,7 +58,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var options = new AzureServiceBusMessagePumpOptions();
 
             // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => options.TransactionIdPropertyName = transactionIdPropertyName);
+            Assert.ThrowsAny<ArgumentException>(() => options.Correlation.TransactionIdPropertyName = transactionIdPropertyName);
         }
 
         [Fact]
@@ -69,10 +69,10 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             const string expected = "Transaction-ID";
             
             // Act
-            options.TransactionIdPropertyName = expected;
+            options.Correlation.TransactionIdPropertyName = expected;
             
             // Assert
-            Assert.Equal(expected, options.TransactionIdPropertyName);
+            Assert.Equal(expected, options.Correlation.TransactionIdPropertyName);
         }
     }
 }

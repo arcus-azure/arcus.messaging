@@ -37,7 +37,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             EmitSecurityEvents = options.EmitSecurityEvents;
             JobId = options.JobId;
             KeyRotationTimeout = options.KeyRotationTimeout;
-            TransactionIdPropertyName = options.TransactionIdPropertyName;
+            Correlation = options.Correlation;
         }
 
         /// <summary>
@@ -77,8 +77,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         internal TimeSpan KeyRotationTimeout { get; set; }
         
         /// <summary>
-        /// Gets or sets the name of the Azure Service Bus message property to determine the transaction ID.
+        /// Gets or sets the options to control the correlation information during the receiving of Azure Service Bus messages.
         /// </summary>
-        internal string TransactionIdPropertyName { get; set; }
+        internal AzureServiceBusCorrelationOptions Correlation { get; }
     }
 }
