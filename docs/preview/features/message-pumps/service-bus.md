@@ -167,6 +167,10 @@ public class Startup
                 // this job instance in a multi-instance deployment (default: guid).
                 options.JobId = Guid.NewGuid().ToString();
 
+                // The name of the Azure Service Bus message property that has the transaction ID.
+                // (default: Transaction-Id).
+                options.TransactionIdPropertyName = "X-Transaction-ID";
+
                 // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
                 // when the message pump starts/stops (default: CreateOnStart & DeleteOnStop).
                 options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;

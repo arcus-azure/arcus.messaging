@@ -37,6 +37,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             EmitSecurityEvents = options.EmitSecurityEvents;
             JobId = options.JobId;
             KeyRotationTimeout = options.KeyRotationTimeout;
+            TransactionIdPropertyName = options.TransactionIdPropertyName;
         }
 
         /// <summary>
@@ -74,5 +75,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the timeout when the message pump tries to restart and re-authenticate during key rotation.
         /// </summary>
         internal TimeSpan KeyRotationTimeout { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the name of the Azure Service Bus message property to determine the transaction ID.
+        /// </summary>
+        internal string TransactionIdPropertyName { get; set; }
     }
 }

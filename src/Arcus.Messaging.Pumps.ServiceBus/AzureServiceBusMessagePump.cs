@@ -468,7 +468,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message");
             }
 
-            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo(Settings.Options.TransactionIdPropertyName);
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
             {
                 var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();

@@ -49,5 +49,30 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Act & Assert
             Assert.Throws<ArgumentException>(() => createOptions(invalidConcurrentCalls));
         }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void TransactionIdPropertyName_ValueIsBlank_Throws(string transactionIdPropertyName)
+        {
+            // Arrange
+            var options = new AzureServiceBusMessagePumpOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.TransactionIdPropertyName = transactionIdPropertyName);
+        }
+
+        [Fact]
+        public void TransactionIdPropertyName_ValueNotBlank_Succeeds()
+        {
+            // Arrange
+            var options = new AzureServiceBusMessagePumpOptions();
+            const string expected = "Transaction-ID";
+            
+            // Act
+            options.TransactionIdPropertyName = expected;
+            
+            // Assert
+            Assert.Equal(expected, options.TransactionIdPropertyName);
+        }
     }
 }

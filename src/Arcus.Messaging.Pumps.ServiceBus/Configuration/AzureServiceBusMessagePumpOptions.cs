@@ -1,4 +1,5 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions;
 using GuardNet;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
@@ -11,6 +12,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         private int? _maxConcurrentCalls;
         private string _jobId;
         private TimeSpan _keyRotationTimeout = TimeSpan.FromSeconds(5);
+        private string _transactionIdProperty = PropertyNames.TransactionId;
 
         /// <summary>
         ///     Maximum concurrent calls to process messages
@@ -64,6 +66,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             {
                 Guard.NotLessThan(value, TimeSpan.Zero, nameof(value), "Key rotation timeout cannot be less than a zero time range");
                 _keyRotationTimeout = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the name of the Azure Service Bus message property to determine the transaction ID.
+        /// </summary>
+        public string TransactionIdPropertyName
+        {
+            get => _transactionIdProperty;
+            set
+            {
+                Guard.NotNullOrWhitespace(value, nameof(value), "Transaction ID message property name for Azure Service Bus Message cannot be blank");
+                _transactionIdProperty = value;
             }
         }
     }
