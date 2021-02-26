@@ -110,7 +110,7 @@ namespace Microsoft.Azure.ServiceBus
                 return transactionId.ToString();
             }
 
-            return string.Empty;
+            return null;
         }
     }
 }
