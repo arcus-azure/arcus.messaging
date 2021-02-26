@@ -23,6 +23,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Stubs
 
             var context = new AzureServiceBusMessageContext(
                 $"message-id-{Guid.NewGuid()}", 
+                $"job-id-{Guid.NewGuid()}",
                 systemProperties, 
                 new Dictionary<string, object>());
 

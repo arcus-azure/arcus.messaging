@@ -1,4 +1,5 @@
-﻿using GuardNet;
+﻿using System;
+using GuardNet;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
@@ -10,16 +11,19 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyRotationConfig" /> class.
         /// </summary>
-        /// <param name="keyVaultSecret">The config to represent a Azure Key Vault secret.</param>
+        /// <param name="keyVault">The config to represent a Azure Key Vault secret.</param>
         /// <param name="servicePrincipal">The config to authenticate to Azure resources.</param>
-        /// <param name="serviceBusNamespace">The config to represent a Azure Service Bus Queue.</param>
-        public KeyRotationConfig(KeyVaultSecret keyVaultSecret, ServicePrincipal servicePrincipal, ServiceBusNamespace serviceBusNamespace)
+        /// <param name="serviceBusNamespace">The config to represent a Azure Service Bus namespace.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="keyVault"/>, <paramref name="servicePrincipal"/>, or <paramref name="serviceBusNamespace"/> is <c>null</c>.
+        /// </exception>
+        public KeyRotationConfig(KeyVaultConfig keyVault, ServicePrincipal servicePrincipal, ServiceBusNamespace serviceBusNamespace)
         {
-            Guard.NotNull(keyVaultSecret, nameof(keyVaultSecret));
+            Guard.NotNull(keyVault, nameof(keyVault));
             Guard.NotNull(servicePrincipal, nameof(servicePrincipal));
             Guard.NotNull(serviceBusNamespace, nameof(serviceBusNamespace));
 
-            KeyVaultSecret = keyVaultSecret;
+            KeyVault = keyVault;
             ServicePrincipal = servicePrincipal;
             ServiceBusNamespace = serviceBusNamespace;
         }
@@ -27,7 +31,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <summary>
         /// Gets the config representing a Azure Key Vault secret.
         /// </summary>
-        public KeyVaultSecret KeyVaultSecret { get; }
+        public KeyVaultConfig KeyVault { get; }
 
         /// <summary>
         /// Gets the config to authenticate to Azure resources.

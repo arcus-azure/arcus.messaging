@@ -17,7 +17,7 @@ namespace Arcus.Messaging.Tests.Unit
             yield return new object[] {null};
             yield return new object[] {""};
             yield return new object[] {" "};
-            yield return new object[] {"    "};
+            yield return new object[] {"     "};
         }
 
         /// <summary>
