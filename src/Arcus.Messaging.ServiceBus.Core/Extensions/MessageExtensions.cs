@@ -52,11 +52,23 @@ namespace Microsoft.Azure.ServiceBus
             Guard.NotNull(message, nameof(message));
             Guard.NotNullOrWhitespace(transactionIdPropertyName, nameof(transactionIdPropertyName));
 
-            string transactionId = GetTransactionId(message, transactionIdPropertyName);
+            string transactionId = DetermineTransactionId(message, transactionIdPropertyName);
             string operationId = DetermineOperationId(message.CorrelationId);
 
             var messageCorrelationInfo = new MessageCorrelationInfo(operationId, transactionId);
             return messageCorrelationInfo;
+        }
+
+        private static string DetermineTransactionId(Message message, string transactionIdPropertyName)
+        {
+            string transactionId = GetTransactionId(message, transactionIdPropertyName);
+            if (string.IsNullOrWhiteSpace(transactionId))
+            {
+                string generatedTransactionId = Guid.NewGuid().ToString();
+                return generatedTransactionId;
+            }
+
+            return transactionId;
         }
 
         private static string DetermineOperationId(string messageCorrelationId)
@@ -93,9 +105,12 @@ namespace Microsoft.Azure.ServiceBus
             Guard.NotNull(message, nameof(message));
             Guard.NotNullOrWhitespace(transactionIdPropertyName, nameof(transactionIdPropertyName));
 
-            return message.UserProperties.TryGetValue(transactionIdPropertyName, out object transactionId)
-                ? transactionId.ToString()
-                : string.Empty;
+            if (message.UserProperties.TryGetValue(transactionIdPropertyName, out object transactionId))
+            {
+                return transactionId.ToString();
+            }
+
+            return string.Empty;
         }
     }
 }
