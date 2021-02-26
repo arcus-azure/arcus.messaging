@@ -34,6 +34,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         internal AzureServiceBusMessagePumpConfiguration(AzureServiceBusMessagePumpOptions options)
         {
             Guard.NotNull(options, nameof(options));
+            Guard.NotNull(options.Correlation, nameof(options), "Requires correlation options to configure the Azure Service Bus configuration for the message pump");
             
             _maximumUnauthorizedExceptionsBeforeRestart = options.MaximumUnauthorizedExceptionsBeforeRestart;
 
@@ -42,6 +43,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             EmitSecurityEvents = options.EmitSecurityEvents;
             JobId = options.JobId;
             KeyRotationTimeout = options.KeyRotationTimeout;
+            Correlation = options.Correlation;
         }
 
         /// <summary>
@@ -94,5 +96,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
                 _maximumUnauthorizedExceptionsBeforeRestart = value;
             }
         }
+      
+        /// <summary>
+        /// Gets or sets the options to control the correlation information during the receiving of Azure Service Bus messages.
+        /// </summary>
+        internal AzureServiceBusCorrelationOptions Correlation { get; }
     }
 }

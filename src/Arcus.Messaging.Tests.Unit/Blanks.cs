@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Arcus.Messaging.Tests.Unit
 {
     /// <summary>
-    /// Represents a collection of blank inputs to test against argument guards.
+    /// Represents a sequence of blank inputs used for data-driven tests.
     /// </summary>
     public class Blanks : IEnumerable<object[]>
     {

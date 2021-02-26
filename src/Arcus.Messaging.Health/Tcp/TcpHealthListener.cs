@@ -38,7 +38,7 @@ namespace Arcus.Messaging.Health.Tcp
         /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> doesn't have a filled-out value.</exception>
         public TcpHealthListener(
             IConfiguration configuration,
-            IOptions<TcpHealthListenerOptions> tcpListenerOptions,
+            TcpHealthListenerOptions tcpListenerOptions,
             HealthCheckService healthService)
             : this(configuration, tcpListenerOptions, healthService, NullLogger<TcpHealthListener>.Instance)
         {
@@ -55,16 +55,15 @@ namespace Arcus.Messaging.Health.Tcp
         /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> doesn't have a filled-out value.</exception>
         public TcpHealthListener(
             IConfiguration configuration,
-            IOptions<TcpHealthListenerOptions> tcpListenerOptions,
+            TcpHealthListenerOptions tcpListenerOptions,
             HealthCheckService healthService, 
             ILogger<TcpHealthListener> logger)
         {
             Guard.NotNull(tcpListenerOptions, nameof(tcpListenerOptions), "Requires a set of TCP listener options to correctly run the TCP listener");
             Guard.NotNull(healthService, nameof(healthService), "Requires a health service to retrieve the current health status of the application");
             Guard.NotNull(logger, nameof(logger), "Requires a logger implementation to write diagnostic messages during the running of the TCP listener");
-            Guard.For(() => tcpListenerOptions.Value is null, new ArgumentException("Requires a set of TCP listener options to correctly run the TCP listener", nameof(tcpListenerOptions)));
 
-            _tcpListenerOptions = tcpListenerOptions.Value;
+            _tcpListenerOptions = tcpListenerOptions;
             _healthService = healthService;
             _logger = logger;
 

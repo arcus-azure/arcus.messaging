@@ -40,7 +40,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                             .UsingAuthenticationKey(eventGridKey)
                             .Build();
                     });
-                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = true)
                             .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(messageBodySerializerImplementationFactory: serviceProvider =>
                             {
                                 var logger = serviceProvider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
