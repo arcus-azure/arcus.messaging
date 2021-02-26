@@ -50,6 +50,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(ServiceBusEntity entity, Type programType)
         {
             // Arrange
+            _logger.LogTrace("Start test '{MethodName}({EntityType}, {ProgramType})'", nameof(ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed), entity, programType.Name);
+            
             var config = TestConfig.Create();
             string connectionString = config.GetServiceBusConnectionString(entity);
             var commandArguments = new[]
@@ -67,6 +69,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     await service.SimulateMessageProcessingAsync(connectionString);
                 }
             }
+            
+            _logger.LogTrace("Stop test '{MethodName}({EntityType}, {ProgramType})'", nameof(ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed), entity, programType.Name);
         }
 
         [Fact]

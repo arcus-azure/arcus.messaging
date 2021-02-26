@@ -54,7 +54,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                             .UsingAuthenticationKey(eventGridKey)
                             .Build();
                     });
-                    services.AddServiceBusQueueMessagePump(hostContext.Configuration["ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME"])
+                    services.AddServiceBusQueueMessagePump(hostContext.Configuration["ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME"], options => options.AutoComplete = true)
                             .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
