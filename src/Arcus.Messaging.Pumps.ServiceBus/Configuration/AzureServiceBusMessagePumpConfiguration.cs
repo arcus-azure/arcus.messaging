@@ -31,12 +31,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         private AzureServiceBusMessagePumpConfiguration(AzureServiceBusMessagePumpOptions options)
         {
             Guard.NotNull(options, nameof(options));
-
+            Guard.NotNull(options.Correlation, nameof(options), "Requires correlation options to configure the Azure Service Bus configuration for the message pump");
+            
             MaxConcurrentCalls = options.MaxConcurrentCalls;
             AutoComplete = options.AutoComplete;
             EmitSecurityEvents = options.EmitSecurityEvents;
             JobId = options.JobId;
             KeyRotationTimeout = options.KeyRotationTimeout;
+            Correlation = options.Correlation;
         }
 
         /// <summary>
@@ -74,5 +76,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the timeout when the message pump tries to restart and re-authenticate during key rotation.
         /// </summary>
         internal TimeSpan KeyRotationTimeout { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the options to control the correlation information during the receiving of Azure Service Bus messages.
+        /// </summary>
+        internal AzureServiceBusCorrelationOptions Correlation { get; }
     }
 }

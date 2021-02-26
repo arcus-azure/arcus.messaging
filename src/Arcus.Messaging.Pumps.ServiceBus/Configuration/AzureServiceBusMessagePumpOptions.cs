@@ -1,4 +1,5 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions;
 using GuardNet;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
@@ -66,5 +67,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
                 _keyRotationTimeout = value;
             }
         }
+
+        /// <summary>
+        /// Gets the options to control the correlation information upon the receiving of Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
+        /// </summary>
+        public AzureServiceBusCorrelationOptions Correlation { get; } = new AzureServiceBusCorrelationOptions();
     }
 }
