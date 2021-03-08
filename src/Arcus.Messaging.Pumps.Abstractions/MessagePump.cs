@@ -42,7 +42,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <summary>
         ///     Entity path that is being processed
         /// </summary>
-        protected string EntityPath { get; private set; }
+        public string EntityPath { get; private set; }
 
         /// <summary>
         ///     Logger to write telemetry to
@@ -214,8 +214,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
                     if (canProcessDeserializedMessage)
                     {
                         await PreProcessMessageAsync(handler, messageContext);
-                        await handler.ProcessMessageAsync(messageResult.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
-                        return true;
+                        bool isProcessed = await handler.ProcessMessageAsync(messageResult.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
+                        return isProcessed;
                     }
                 }
 
@@ -247,6 +247,21 @@ namespace Arcus.Messaging.Pumps.Abstractions
             }
 
             return MessageResult.Failure($"Incoming message cannot be deserialized to type '{messageType.Name}' because it is not in the correct format");
+        }
+
+        private bool SafeguardTryDeserializeToMessageFormat(string message, Type messageType, out object? result)
+        {
+            try
+            {
+                return TryDeserializeToMessageFormat(message, messageType, out result);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogError(exception, "Failed to parse abstracted message to concrete message type '{MessageType}'", messageType.Name);
+
+                result = null;
+                return false;
+            }
         }
 
         private async Task FallbackProcessMessageAsync<TMessageContext>(

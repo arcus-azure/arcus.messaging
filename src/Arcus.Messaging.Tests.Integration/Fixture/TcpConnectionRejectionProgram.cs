@@ -43,8 +43,8 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                         options => options.RejectTcpConnectionWhenUnhealthy = true,
                         options =>
                         {
-                            options.Delay = TimeSpan.Zero;
-                            options.Period = TimeSpan.FromSeconds(1);
+                            options.Delay = TimeSpan.FromSeconds(3);
+                            options.Period = TimeSpan.FromSeconds(2);
                         });
                 });
     }

@@ -41,20 +41,23 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the TCP health probe to");
             Guard.NotNullOrWhitespace(tcpConfigurationKey, nameof(tcpConfigurationKey), "Requires a non-blank configuration key to retrieve the TCP port");
 
-            var healthCheckBuilder = services.AddHealthChecks();
+            IHealthChecksBuilder healthCheckBuilder = services.AddHealthChecks();
             configureHealthChecks?.Invoke(healthCheckBuilder);
 
-            services.Configure<TcpHealthListenerOptions>(options =>
+            var listenerOptions = new TcpHealthListenerOptions { TcpPortConfigurationKey = tcpConfigurationKey };
+            configureTcpListenerOptions?.Invoke(listenerOptions);
+            services.AddSingleton(listenerOptions);
+            
+            if (listenerOptions.RejectTcpConnectionWhenUnhealthy)
             {
-                options.TcpPortConfigurationKey = tcpConfigurationKey;
-                configureTcpListenerOptions?.Invoke(options);
-            });
-            services.Configure<HealthCheckPublisherOptions>(options =>
-            {
-                configureHealthCheckPublisherOptions?.Invoke(options);
-            });
+                services.Configure<HealthCheckPublisherOptions>(options =>
+                {
+                    configureHealthCheckPublisherOptions?.Invoke(options);
+                });
 
-            services.AddSingleton<IHealthCheckPublisher, TcpHealthCheckPublisher>();
+                services.AddSingleton<IHealthCheckPublisher, TcpHealthCheckPublisher>();
+            }
+            
             services.AddSingleton<TcpHealthListener>();
             services.AddHostedService(serviceProvider => serviceProvider.GetRequiredService<TcpHealthListener>());
 

@@ -43,7 +43,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                                .UsingAuthenticationKey(eventGridKey)
                                .Build();
                     });
-                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = true)
                             .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order body) => false)
                             .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>((Customer body) => body is null)
                             .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>((Order body) => body.Id != null);

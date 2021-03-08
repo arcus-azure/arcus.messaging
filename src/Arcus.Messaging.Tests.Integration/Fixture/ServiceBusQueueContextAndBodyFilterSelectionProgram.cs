@@ -42,7 +42,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                                .UsingAuthenticationKey(eventGridKey)
                                .Build();
                     });
-                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"])
+                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = true)
                             .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.ContainsKey("NotExisting"), body => false)
                             .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>(
                                 context => context.Properties["Topic"].ToString() == "Orders", 

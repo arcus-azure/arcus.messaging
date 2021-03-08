@@ -40,6 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus.KeyRotation\Arcus.Messaging.Pumps.ServiceBus.KeyRotation.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Health\Arcus.Messaging.Health.csproj" />
