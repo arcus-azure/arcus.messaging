@@ -27,7 +27,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         private readonly ILogger _logger;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="AzureServiceBusMessagePumpSettings"/> class.
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpSettings"/> class.
         /// </summary>
         /// <param name="entityName">The name of the entity to process.</param>
         /// <param name="subscriptionName">The name of the subscription to process.</param>
@@ -77,7 +77,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <param name="tokenProvider">The instance that provides the security token to connect to the Azure Service Bus resource.</param>
         /// <param name="serviceProvider">The collection of services to use.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="entityName"/> or <paramref name="endpoint"/> is blank.</exception>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="tokenProvider"/>, <paramref name="options"/>, or <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="tokenProvider"/>, <paramref name="options"/>, or <paramref name="serviceProvider"/> is <c>null</c>.
+        /// </exception>
         public AzureServiceBusMessagePumpSettings(
             string entityName,
             string subscriptionName,
