@@ -20,7 +20,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// </summary>
     public class AzureServiceBusMessagePumpSettings
     {
-        private string _entityPath;
         private readonly Func<ISecretProvider, Task<string>> _getConnectionStringFromSecretFunc;
         private readonly Func<IConfiguration, string> _getConnectionStringFromConfigurationFunc;
         private readonly ITokenProvider _tokenProvider;
@@ -139,43 +138,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         internal async Task<MessageReceiver> CreateMessageReceiverAsync()
         {
+            (string entityPath, string namespaceConnectionString) = await GetMessageReceiverParametersAsync();
+            
             if (_tokenProvider is null)
             {
-                string rawConnectionString = await GetConnectionStringAsync();
-                var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(rawConnectionString);
-
-                if (string.IsNullOrWhiteSpace(serviceBusConnectionStringBuilder.EntityPath))
-                {
-                    // Connection string doesn't include the entity so we're using the message pump settings
-                    if (string.IsNullOrWhiteSpace(EntityName))
-                    {
-                        throw new ArgumentException("No entity name was specified while the connection string is scoped to the namespace");
-                    }
-
-                    string entityPath = ConstructEntityPath();
-                    _entityPath = entityPath;
-                    
-                    MessageReceiver messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, entityPath);
-                    return messageReceiver;
-                }
-                else
-                {
-                    _entityPath = serviceBusConnectionStringBuilder.EntityPath;
-                    
-                    // Connection string includes the entity so we're using that instead of the message pump settings
-                    MessageReceiver messageReceiver = CreateReceiver(serviceBusConnectionStringBuilder, serviceBusConnectionStringBuilder.EntityPath);
-                    return messageReceiver;
-                }
+                return new MessageReceiver(namespaceConnectionString, entityPath);
             }
-            else
-            {
-                LogSecurityEvent("Get Azure Service Bus connection via security token");
-                string entityPath = ConstructEntityPath();
-                _entityPath = entityPath;
-                
-                var messageReceiver = new MessageReceiver(Endpoint, entityPath, _tokenProvider);
-                return messageReceiver;
-            }
+
+            return new MessageReceiver(Endpoint, entityPath, _tokenProvider);
         }
 
         /// <summary>
@@ -197,7 +167,52 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
                 return serviceBusClient;
             }
         }
-        
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        internal async Task<string> GetEntityPathAsync()
+        {
+            (string entityPath, string namespaceConnectionString) = await GetMessageReceiverParametersAsync();
+            return entityPath;
+        }
+
+        private async Task<(string entityPath, string namespaceConnectionString)> GetMessageReceiverParametersAsync()
+        {
+            if (_tokenProvider is null)
+            {
+                string rawConnectionString = await GetConnectionStringAsync();
+                var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(rawConnectionString);
+                
+                string namespaceConnectionString = serviceBusConnectionStringBuilder.GetNamespaceConnectionString();
+                
+                if (string.IsNullOrWhiteSpace(serviceBusConnectionStringBuilder.EntityPath))
+                {
+                    // Connection string doesn't include the entity so we're using the message pump settings
+                    if (string.IsNullOrWhiteSpace(EntityName))
+                    {
+                        throw new ArgumentException("No entity name was specified while the connection string is scoped to the namespace");
+                    }
+
+                    string entityPath = ConstructEntityPath();
+                    return (entityPath, namespaceConnectionString);
+                }
+                else
+                {
+                    // Connection string includes the entity so we're using that instead of the message pump settings
+                    return (serviceBusConnectionStringBuilder.EntityPath, namespaceConnectionString);
+                }
+            }
+            else
+            {
+                LogSecurityEvent("Get Azure Service Bus connection via security token");
+                string entityPath = ConstructEntityPath();
+
+                return (entityPath, null);
+            }
+        }
+
         /// <summary>
         /// Gets the configured connection string.
         /// </summary>
@@ -261,47 +276,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             }
 
             return await getConnectionStringTask;
-        }
-        
-        private static MessageReceiver CreateReceiver(ServiceBusConnectionStringBuilder serviceBusConnectionStringBuilder, string entityPath)
-        {
-            string connectionString = serviceBusConnectionStringBuilder.GetNamespaceConnectionString();
-            return new MessageReceiver(connectionString, entityPath);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        internal async Task<string> GetEntityPathAsync()
-        {
-            if (_tokenProvider is null)
-            {
-                string rawConnectionString = await GetConnectionStringAsync();
-                var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(rawConnectionString);
-
-                if (string.IsNullOrWhiteSpace(serviceBusConnectionStringBuilder.EntityPath))
-                {
-                    // Connection string doesn't include the entity so we're using the message pump settings
-                    if (string.IsNullOrWhiteSpace(EntityName))
-                    {
-                        throw new ArgumentException(
-                            "No entity name was specified while the connection string is scoped to the namespace");
-                    }
-
-                    string entityPath = ConstructEntityPath();
-                    return entityPath;
-                }
-                else
-                {
-                    return serviceBusConnectionStringBuilder.EntityPath;
-                }
-            }
-            else
-            {
-                string entityPath = ConstructEntityPath();
-                return entityPath;
-            }
         }
 
         private string ConstructEntityPath()

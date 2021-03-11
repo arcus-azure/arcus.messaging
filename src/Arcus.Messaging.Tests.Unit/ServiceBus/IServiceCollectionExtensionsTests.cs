@@ -39,7 +39,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             await Assert.ThrowsAnyAsync<Exception>(() => messagePump.StartAsync(CancellationToken.None));
-            spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
+            spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Exactly(2));
         }
 
         [Fact]
@@ -66,7 +66,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.IsType<AzureServiceBusMessagePump>(messagePump);
 
             await Assert.ThrowsAnyAsync<Exception>(() => messagePump.StartAsync(CancellationToken.None));
-            spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
+            spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Exactly(2));
         }
 
         [Fact]
