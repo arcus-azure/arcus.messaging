@@ -151,31 +151,23 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Creates an authenticated <see cref="ManagementClient"/> instance to manage settings on the Azure Service Bus resource.
         /// </summary>
-        internal async Task<ManagementClient> CreatesManagementClientAsync()
+        internal async Task<(ManagementClient client, string entityPath)> CreatesManagementClientAsync()
         {
             if (_tokenProvider is null)
             {
                 string connectionString = await GetConnectionStringAsync();
                 var serviceBusConnectionBuilder = new ServiceBusConnectionStringBuilder(connectionString);
-                
                 var serviceBusClient = new ManagementClient(serviceBusConnectionBuilder);
-                return serviceBusClient;
+
+                return (serviceBusClient, serviceBusConnectionBuilder.EntityPath);
             }
             else
             {
                 var serviceBusClient = new ManagementClient(Endpoint, _tokenProvider);
-                return serviceBusClient;
+                string entityPath = ConstructEntityPath();
+                
+                return (serviceBusClient, entityPath);
             }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        internal async Task<string> GetEntityPathAsync()
-        {
-            (string entityPath, string namespaceConnectionString) = await GetMessageReceiverParametersAsync();
-            return entityPath;
         }
 
         private async Task<(string entityPath, string namespaceConnectionString)> GetMessageReceiverParametersAsync()
