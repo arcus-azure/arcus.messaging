@@ -153,9 +153,11 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 clientSecret: _config.GetValue<string>("Arcus:KeyRotation:ServicePrincipal:ClientSecret"),
                 clientSecretKey: _config.GetValue<string>("Arcus:KeyRotation:ServicePrincipal:ClientSecretKey"));
 
-            var secret = new KeyVaultSecret(
+            var secret = new KeyVaultConfig(
                 vaultUri: _config.GetValue<string>("Arcus:KeyRotation:KeyVault:VaultUri"),
-                secretName: _config.GetValue<string>("Arcus:KeyRotation:KeyVault:ConnectionStringSecretName"));
+                secretName: _config.GetValue<string>("Arcus:KeyRotation:KeyVault:ConnectionStringSecretName"),
+                secretNewVersionCreated: new KeyVaultEventEndpoint(
+                    _config.GetValue<string>("Arcus:KeyRotation:KeyVault:SecretNewVersionCreated:ServiceBusConnectionStringWithTopicEndpoint")));
 
             return new KeyRotationConfig(secret, servicePrincipal, azureEnv);
         }
