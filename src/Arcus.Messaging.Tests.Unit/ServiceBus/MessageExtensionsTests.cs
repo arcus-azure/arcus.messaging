@@ -136,18 +136,16 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void GetTransactionId_WithoutTransactionIdAsUserProperty_ReturnsEmptyString()
         {
             // Arrange
-            string expectedTransactionId = string.Empty;
             var message = new Message
             {
                 UserProperties = {  }
             };
 
             // Act
-            var transactionId = message.GetTransactionId();
+            string transactionId = message.GetTransactionId();
 
             // Assert
-            Assert.NotNull(transactionId);
-            Assert.Equal(expectedTransactionId, transactionId);
+            Assert.Null(transactionId);
         }
 
         [Fact]
