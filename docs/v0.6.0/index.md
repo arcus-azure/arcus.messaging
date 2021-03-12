@@ -1,19 +1,16 @@
 ---
 title: "Home"
 layout: default
-permalink: /
-redirect_from:
- - /index.html
 ---
 
 # Installation
 
-[![NuGet Badge](https://buildstats.info/nuget/Arcus.Messaging.Abstractions)](https://www.nuget.org/packages/Arcus.Messaging.Abstractions/)
+[![NuGet Badge](https://buildstats.info/nuget/Arcus.Messaging.Abstractions?packageVersion=0.6.0)](https://www.nuget.org/packages/Arcus.Messaging.Abstractions/0.6.0)
 
 The features are available on NuGet:
 
 ```shell
-PM > Install-Package Arcus.Messaging.Abstractions
+PM > Install-Package Arcus.Messaging.Abstractions -Version 0.6.0
 ```
 
 # Features
@@ -26,11 +23,11 @@ PM > Install-Package Arcus.Messaging.Abstractions
 
 ## Older versions
 
-- [v0.5](v0.5.0)
-- [v0.4](v0.4.0)
-- [v0.3](v0.3.0)
-- [v0.2](v0.2.0)
-- [v0.1](v0.1.0)
+- [v0.5](./../v0.5.0)
+- [v0.4](./../v0.4.0)
+- [v0.3](./../v0.3.0)
+- [v0.2](./../v0.2.0)
+- [v0.1](./../v0.1.0)
 
 # License
 This is licensed under The MIT License (MIT). Which means that you can use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the web application. But you always need to state that Codit is the original author of this web application.
