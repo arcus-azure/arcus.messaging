@@ -282,9 +282,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
             Type messageHandlerType = GetMessageHandlerType();
-            _logger.LogTrace(
-                "Start processing '{MessageType}' message in message handler '{MessageHandlerType}'...", 
-                message.GetType().Name, messageHandlerType.Name);
+            Type messageType = message.GetType();
+            _logger.LogTrace("Start processing '{MessageType}' message in message handler '{MessageHandlerType}'...", messageType, messageHandlerType.Name);
 
             const string methodName = "ProcessMessageAsync";
             try
@@ -300,7 +299,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
                 }
 
                 await processMessageAsync;
-                _logger.LogTrace("Message handler '{MessageHandlerType}' successfully processed '{MessageType}' message", messageHandlerType.Name, MessageType.Name);
+                _logger.LogTrace("Message handler '{MessageHandlerType}' successfully processed '{MessageType}' message", messageHandlerType.Name, messageType.Name);
 
                 return true;
             }
@@ -314,7 +313,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Message handler '{MessageHandlerType}' failed to process '{MessageType}' due to a thrown exception", messageHandlerType.Name);
+                _logger.LogError(exception, "Message handler '{MessageHandlerType}' failed to process '{MessageType}' due to a thrown exception", messageHandlerType.Name, messageType.Name);
                 return false;
             }
         }
