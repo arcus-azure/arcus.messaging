@@ -239,7 +239,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
                         return transactionId == actualTransactionId && operationId == actualOperationId && operationId == result.Operation.Id;
                     });
-                }, timeout: TimeSpan.FromMinutes(5));
+                }, timeout: TimeSpan.FromMinutes(7));
             }
         }
 
