@@ -216,13 +216,15 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString)
             };
 
-            using var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueTrackCorrelationOnExceptionProgram>(config, _logger, commandArguments);
-            await using var service = await TestMessagePumpService.StartNewAsync(config, _logger);
             Message orderMessage = OrderGenerator.Generate().AsServiceBusMessage(operationId, transactionId);
-                    
-            // Act
-            await service.SendMessageToServiceBusAsync(connectionString, orderMessage);
 
+            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueTrackCorrelationOnExceptionProgram>(config, _logger, commandArguments))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Act
+                await service.SendMessageToServiceBusAsync(connectionString, orderMessage);
+            }
+            
             // Assert
             using (ApplicationInsightsDataClient client = CreateApplicationInsightsClient(applicationInsightsConfig.ApiKey))
             {
@@ -351,7 +353,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                           _logger.LogError(exception, "Failed to contact Azure Application Insights. Reason: {Message}", exception.Message);
                           return true;
                       })
-                      .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(1));
+                      .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(3));
 
             await Policy.TimeoutAsync(timeout)
                         .WrapAsync(retryPolicy)

@@ -28,7 +28,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                     configuration.AddCommandLine(args);
                     configuration.AddEnvironmentVariables();
                 })
-                .ConfigureLogging(loggingBuilder => loggingBuilder.AddConsole(options => options.IncludeScopes = true))
+                .ConfigureLogging(loggingBuilder => loggingBuilder.SetMinimumLevel(LogLevel.Trace).AddConsole(options => options.IncludeScopes = true))
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddTransient(svc =>
@@ -46,7 +46,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                             .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
                             .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
 
-                    services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
+                    services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });
     }
 }
