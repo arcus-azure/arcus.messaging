@@ -28,7 +28,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                     configuration.AddCommandLine(args);
                     configuration.AddEnvironmentVariables();
                 })
-                .ConfigureLogging(loggingBuilder => loggingBuilder.SetMinimumLevel(LogLevel.Trace).AddConsole(options => options.IncludeScopes = true))
+                .ConfigureLogging(loggingBuilder => loggingBuilder.AddConsole(options => options.IncludeScopes = true))
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddTransient(svc =>
@@ -42,7 +42,9 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                                .UsingAuthenticationKey(eventGridKey)
                                .Build();
                     });
-                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = false)
+                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", 
+                                configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], 
+                                options => options.AutoComplete = false)
                             .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
                             .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
 

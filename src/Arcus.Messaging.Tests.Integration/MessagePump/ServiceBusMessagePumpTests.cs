@@ -38,16 +38,31 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         [Theory]
         [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueProgram))]
-        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueContextTypeSelectionProgram))]
-        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueContextAndBodyFilterSelectionProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicProgram))]
-        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicContextPredicateSelectionProgram))]
-        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicBodyPredicateSelectionProgram))]
         [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueCompleteProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicFallbackCompleteProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicWithOrderBatchProgram))]
-        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueWithContextAndBodyFilterAndBodySerializerProgram))]
         public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(ServiceBusEntity entity, Type programType)
+        {
+            await ServiceBusMessagePumpRoutesServiceBusMessageMessageSuccessfullyProcessed(entity, programType);
+        }
+
+        [Theory]
+        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueContextTypeSelectionProgram))]
+        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueContextAndBodyFilterSelectionProgram))]
+        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicContextPredicateSelectionProgram))]
+        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicBodyPredicateSelectionProgram))]
+        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueWithContextAndBodyFilterAndBodySerializerProgram))]
+        public async Task ServiceBusMessagePump_RoutesServiceBusMessage_MessageSuccessfullyProcessed(
+            ServiceBusEntity entity,
+            Type programType)
+        {
+            await ServiceBusMessagePumpRoutesServiceBusMessageMessageSuccessfullyProcessed(entity, programType);
+        }
+
+        private async Task ServiceBusMessagePumpRoutesServiceBusMessageMessageSuccessfullyProcessed(
+            ServiceBusEntity entity,
+            Type programType)
         {
             // Arrange
             _logger.LogTrace("Start test '{MethodName}({EntityType}, {ProgramType})'", nameof(ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed), entity, programType.Name);
@@ -71,6 +86,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
             
             _logger.LogTrace("Stop test '{MethodName}({EntityType}, {ProgramType})'", nameof(ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed), entity, programType.Name);
+
         }
 
         [Fact]

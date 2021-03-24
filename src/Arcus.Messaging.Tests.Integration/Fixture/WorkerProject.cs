@@ -19,7 +19,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// </summary>
     public class WorkerProject : IDisposable
     {
-        public const int HealthPort = 40643;
+        public const int HealthPort = 5000;
         
         private readonly Process _process;
         private readonly DirectoryInfo _projectDirectory;
@@ -176,13 +176,13 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             string runCommand = $"exec {targetAssembly} {exposedSecretsCommands}";
 
             string hiddenSecretsCommands = String.Join(" ", commandArguments.Select(arg => arg.ToString()));
-            _logger.LogInformation("> dotnet exec {Assembly} {Commands}", targetAssembly, hiddenSecretsCommands);
+            _logger.LogInformation("dotnet exec {Assembly} {Commands}", targetAssembly, hiddenSecretsCommands);
 
             var processInfo = new ProcessStartInfo("dotnet", runCommand)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                WorkingDirectory = _projectDirectory.FullName,
+                WorkingDirectory = _projectDirectory.FullName
             };
 
             _process.StartInfo = processInfo;
@@ -232,7 +232,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             try
             {
-                _logger.LogInformation("> dotnet {Command}", command);
+                _logger.LogInformation("dotnet {Command}", command);
             }
             catch
             {
@@ -273,12 +273,19 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 RetryAction(StopProject)
             };
 
-            IEnumerable<Exception> exceptions =
+            Exception[] exceptions =
                 results.Where(result => result.Outcome == OutcomeType.Failure)
-                       .Select(result => result.FinalException);
+                       .Select(result => result.FinalException)
+                       .ToArray();
 
             WriteLogFilesToConsole();
-            if (exceptions.Any())
+
+            if (exceptions.Length == 1)
+            {
+                throw exceptions[0];
+            }
+            
+            if (exceptions.Length > 1)
             {
                 throw new AggregateException(exceptions);
             }
