@@ -219,29 +219,31 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Message orderMessage = OrderGenerator.Generate().AsServiceBusMessage(operationId, transactionId);
 
             using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueTrackCorrelationOnExceptionProgram>(config, _logger, commandArguments))
-            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
             {
-                // Act
-                await service.SendMessageToServiceBusAsync(connectionString, orderMessage);
-            }
-            
-            // Assert
-            using (ApplicationInsightsDataClient client = CreateApplicationInsightsClient(applicationInsightsConfig.ApiKey))
-            {
-                await RetryAssertUntilTelemetryShouldBeAvailableAsync(async () =>
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
-                    const string onlyLastHourFilter = "timestamp gt now() sub duration'PT1H'";
-                    EventsResults<EventsExceptionResult> results = 
-                        await client.Events.GetExceptionEventsAsync(applicationInsightsConfig.ApplicationId, filter: onlyLastHourFilter);
-
-                    Assert.Contains(results.Value, result =>
+                    // Act
+                    await service.SendMessageToServiceBusAsync(connectionString, orderMessage);
+                }
+            
+                // Assert
+                using (ApplicationInsightsDataClient client = CreateApplicationInsightsClient(applicationInsightsConfig.ApiKey))
+                {
+                    await RetryAssertUntilTelemetryShouldBeAvailableAsync(async () =>
                     {
-                        result.CustomDimensions.TryGetValue(ContextProperties.Correlation.TransactionId, out string actualTransactionId);
-                        result.CustomDimensions.TryGetValue(ContextProperties.Correlation.OperationId, out string actualOperationId);
+                        const string onlyLastHourFilter = "timestamp gt now() sub duration'PT1H'";
+                        EventsResults<EventsExceptionResult> results = 
+                            await client.Events.GetExceptionEventsAsync(applicationInsightsConfig.ApplicationId, filter: onlyLastHourFilter);
 
-                        return transactionId == actualTransactionId && operationId == actualOperationId && operationId == result.Operation.Id;
-                    });
-                }, timeout: TimeSpan.FromMinutes(7));
+                        Assert.Contains(results.Value, result =>
+                        {
+                            result.CustomDimensions.TryGetValue(ContextProperties.Correlation.TransactionId, out string actualTransactionId);
+                            result.CustomDimensions.TryGetValue(ContextProperties.Correlation.OperationId, out string actualOperationId);
+
+                            return transactionId == actualTransactionId && operationId == actualOperationId && operationId == result.Operation.Id;
+                        });
+                    }, timeout: TimeSpan.FromMinutes(7));
+                }
             }
         }
 

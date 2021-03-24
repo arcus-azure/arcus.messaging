@@ -112,6 +112,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             DirectoryInfo integrationTestDirectory = config.GetIntegrationTestProjectDirectory();
             DirectoryInfo emptyServiceBusWorkerDirectory = config.GetEmptyServiceBusWorkerProjectDirectory();
 
+            ClearLogFiles(emptyServiceBusWorkerDirectory);
             ReplaceProgramFile(programType, integrationTestDirectory, emptyServiceBusWorkerDirectory);
 
             var project = new WorkerProject(emptyServiceBusWorkerDirectory, logger);
@@ -123,6 +124,15 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             }
 
             return project;
+        }
+
+        private static void ClearLogFiles(DirectoryInfo serviceBusWorkerDirectory)
+        {
+            FileInfo[] logFiles = serviceBusWorkerDirectory.GetFiles("*.txt");
+            foreach (FileInfo logFile in logFiles)
+            {
+                logFile.Delete();
+            }
         }
 
         private static void ReplaceProgramFile(
@@ -257,7 +267,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             }
 
             _disposed = true;
-
+            
             PolicyResult[] results =
             {
                 RetryAction(StopProject)
@@ -267,9 +277,23 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 results.Where(result => result.Outcome == OutcomeType.Failure)
                        .Select(result => result.FinalException);
 
+            WriteLogFilesToConsole();
             if (exceptions.Any())
             {
                 throw new AggregateException(exceptions);
+            }
+        }
+
+        private  void WriteLogFilesToConsole()
+        {
+            FileInfo[] logFiles = _projectDirectory.GetFiles("*.txt");
+            foreach (FileInfo logFile in logFiles)
+            {
+                string[] contents = File.ReadAllLines(logFile.FullName);
+                foreach (string line in contents)
+                {
+                    _logger.LogTrace(line);
+                }
             }
         }
 
