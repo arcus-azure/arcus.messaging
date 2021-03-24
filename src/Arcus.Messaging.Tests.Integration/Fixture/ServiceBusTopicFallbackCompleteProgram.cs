@@ -42,10 +42,11 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                                .UsingAuthenticationKey(eventGridKey)
                                .Build();
                     });
-                    services.AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", 
+                    services.AddServiceBusTopicMessagePump(
+                                "Test-Receive-All-Topic-Only", 
                                 configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], 
                                 options => options.AutoComplete = false)
-                            .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
+                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
                             .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
