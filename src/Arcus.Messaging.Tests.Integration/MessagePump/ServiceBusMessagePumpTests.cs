@@ -39,9 +39,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Theory]
         [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicProgram))]
-        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueCompleteProgram))]
-        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicFallbackCompleteProgram))]
-        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicWithOrderBatchProgram))]
+        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicCompleteProgram))]
+        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueFallbackCompleteProgram))]
+        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusQueueWithOrderBatchProgram))]
         public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(ServiceBusEntity entity, Type programType)
         {
             await ServiceBusMessagePumpRoutesServiceBusMessageMessageSuccessfullyProcessed(entity, programType);
@@ -86,7 +86,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
             
             _logger.LogTrace("Stop test '{MethodName}({EntityType}, {ProgramType})'", nameof(ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed), entity, programType.Name);
-
         }
 
         [Fact]

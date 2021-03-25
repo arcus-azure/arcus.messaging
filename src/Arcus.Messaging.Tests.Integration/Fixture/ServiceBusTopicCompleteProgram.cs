@@ -1,6 +1,4 @@
 using Arcus.EventGrid.Publishing;
-using Arcus.Messaging.Pumps.Abstractions.Extensions;
-using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.Configuration;
@@ -12,7 +10,7 @@ using Microsoft.Extensions.Logging;
 // ReSharper disable once CheckNamespace
 namespace Arcus.Messaging.Tests.Workers.ServiceBus
 {
-    public class ServiceBusTopicFallbackCompleteProgram
+    public class ServiceBusTopicCompleteProgram
     {
         public static void main(string[] args)
         {
@@ -46,10 +44,9 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                                 "Test-Receive-All-Topic-Only", 
                                 configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], 
                                 options => options.AutoComplete = false)
-                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
-                            .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
+                            .WithServiceBusMessageHandler<OrdersAzureServiceBusCompleteMessageHandler, Order>();
 
-                    services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
+                    services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
                 });
     }
 }

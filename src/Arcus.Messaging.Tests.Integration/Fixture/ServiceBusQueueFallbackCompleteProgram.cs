@@ -1,4 +1,6 @@
 using Arcus.EventGrid.Publishing;
+using Arcus.Messaging.Pumps.Abstractions.Extensions;
+using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.Configuration;
@@ -10,7 +12,7 @@ using Microsoft.Extensions.Logging;
 // ReSharper disable once CheckNamespace
 namespace Arcus.Messaging.Tests.Workers.ServiceBus
 {
-    public class ServiceBusQueueCompleteProgram
+    public class ServiceBusQueueFallbackCompleteProgram
     {
         public static void main(string[] args)
         {
@@ -40,10 +42,13 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                                .UsingAuthenticationKey(eventGridKey)
                                .Build();
                     });
-                    services.AddServiceBusQueueMessagePump(configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], options => options.AutoComplete = false)
-                            .WithServiceBusMessageHandler<OrdersAzureServiceBusCompleteMessageHandler, Order>();
+                    services.AddServiceBusQueueMessagePump(
+                                configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], 
+                                options => options.AutoComplete = false)
+                            .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                            .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
 
-                    services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
+                    services.AddTcpHealthProbes("ARCUS_HEALTH_PORT");
                 });
     }
 }
