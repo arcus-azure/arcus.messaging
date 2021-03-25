@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Arcus.Messaging.Tests.Integration.Health;
 using GuardNet;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Interfaces;
@@ -32,7 +33,14 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             _process = new Process();
             _projectDirectory = projectDirectory;
             _logger = logger;
+
+            Health = new TcpHealthService(HealthPort, logger);
         }
+        
+        /// <summary>
+        /// Gets the service representing the interaction with the health of the running worker project.
+        /// </summary>
+        public TcpHealthService Health { get; }
         
         /// <summary>
         /// Starts a new project with a Azure Service Bus message pump from a given <typeparamref name="TProgram"/>.
@@ -180,8 +188,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
             var processInfo = new ProcessStartInfo("dotnet", runCommand)
             {
-                UseShellExecute = false,
-                CreateNoWindow = true,
+                UseShellExecute = true,
+                CreateNoWindow = false,
                 WorkingDirectory = _projectDirectory.FullName
             };
 
@@ -322,6 +330,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 _logger.LogInformation("Killed Service Bus worker project!");
             }
 
+            _process.CloseMainWindow();
             _process.Dispose();
             _logger.LogInformation("Service Bus worker project stopped!");
         }

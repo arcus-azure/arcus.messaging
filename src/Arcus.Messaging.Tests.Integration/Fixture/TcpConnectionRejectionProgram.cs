@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Arcus.EventGrid.Publishing;
-using Arcus.Messaging.Tests.Core.Messages.v1;
-using Arcus.Messaging.Tests.Workers.MessageHandlers;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -15,8 +11,6 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
 {
     public class TcpConnectionRejectionProgram
     {
-        private static int Index = -1;
-        
         public static void main(string[] args)
         {
             CreateHostBuilder(args)
@@ -31,20 +25,26 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus
                     configuration.AddCommandLine(args);
                     configuration.AddEnvironmentVariables();
                 })
-                .ConfigureLogging(loggingBuilder => loggingBuilder.AddConsole(options => options.IncludeScopes = true))
+                .ConfigureLogging(loggingBuilder => loggingBuilder.SetMinimumLevel(LogLevel.Trace).AddConsole(options => options.IncludeScopes = true))
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddTcpHealthProbes(
                         "ARCUS_HEALTH_PORT", 
-                        builder => builder.AddCheck("toggle", 
-                            () => ++Index < 10
-                                ? HealthCheckResult.Healthy() 
-                                : HealthCheckResult.Unhealthy()),
+                        builder => builder.AddAsyncCheck("toggle", async () =>
+                        {
+                            if (hostContext.Configuration.GetValue<string>("ARCUS_HEALTH_STATUS") == "Healthy")
+                            {
+                                return HealthCheckResult.Healthy();
+                            }
+
+                            // Adding some extra waiting time so we don't overload the test log with unhealthy status reports.
+                            await Task.Delay(TimeSpan.FromSeconds(10));
+                            return HealthCheckResult.Unhealthy();
+                        }),
                         options => options.RejectTcpConnectionWhenUnhealthy = true,
                         options =>
                         {
-                            options.Delay = TimeSpan.FromSeconds(3);
-                            options.Period = TimeSpan.FromSeconds(2);
+                            options.Delay = TimeSpan.Zero;
                         });
                 });
     }
