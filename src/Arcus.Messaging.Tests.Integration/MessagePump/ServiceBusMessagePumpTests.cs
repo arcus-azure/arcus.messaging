@@ -41,7 +41,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicProgram))]
         [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicCompleteProgram))]
         [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueFallbackCompleteProgram))]
-        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusQueueWithOrderBatchProgram))]
+        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueWithOrderBatchProgram))]
         public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(ServiceBusEntity entity, Type programType)
         {
             await ServiceBusMessagePumpRoutesServiceBusMessageMessageSuccessfullyProcessed(entity, programType);
