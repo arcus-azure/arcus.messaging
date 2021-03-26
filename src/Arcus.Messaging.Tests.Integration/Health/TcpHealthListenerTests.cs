@@ -49,9 +49,9 @@ namespace Arcus.Messaging.Tests.Integration.Health
 
         private static async Task<TResult> RetryAssert<TException, TResult>(Func<Task<TResult>> assertion) where TException : Exception
         {
-            return await Policy.TimeoutAsync(TimeSpan.FromSeconds(40))
+            return await Policy.TimeoutAsync(TimeSpan.FromSeconds(30))
                                .WrapAsync(Policy.Handle<TException>()
-                                                .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(3)))
+                                                .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(2)))
                                .ExecuteAsync(assertion);
         }
     }

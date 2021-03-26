@@ -204,7 +204,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                       .WaitAndRetryForeverAsync(retryNumber => TimeSpan.FromSeconds(1));
 
             PolicyResult result = 
-                await Policy.TimeoutAsync(TimeSpan.FromSeconds(15))
+                await Policy.TimeoutAsync(TimeSpan.FromSeconds(20))
                             .WrapAsync(waitAndRetryForeverAsync)
                             .ExecuteAndCaptureAsync(() => TryToConnectToTcpListenerAsync(healthPort));
 
@@ -323,6 +323,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         private void StopProject()
         {
             _logger.LogTrace("Stopping Service Bus worker project...");
+            
+            _process.CloseMainWindow();
             if (!_process.HasExited)
             {
                 _logger.LogTrace("Killing Service Bus worker project...");
@@ -330,7 +332,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 _logger.LogInformation("Killed Service Bus worker project!");
             }
 
-            _process.CloseMainWindow();
             _process.Dispose();
             _logger.LogInformation("Service Bus worker project stopped!");
         }
