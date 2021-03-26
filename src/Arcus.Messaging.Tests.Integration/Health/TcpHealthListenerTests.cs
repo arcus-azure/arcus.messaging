@@ -59,7 +59,8 @@ namespace Arcus.Messaging.Tests.Integration.Health
             options.Configuration.Add(healthPortConfigurationName, tcpPort.ToString());
             options.Services.AddTcpHealthProbes(healthPortConfigurationName, 
                 configureHealthChecks: builder => builder.AddCheck("unhealhty", () => HealthCheckResult.Unhealthy()),
-                configureTcpListenerOptions: opt => opt.RejectTcpConnectionWhenUnhealthy = true);
+                configureTcpListenerOptions: opt => opt.RejectTcpConnectionWhenUnhealthy = true,
+                configureHealthCheckPublisherOptions: opt => opt.Delay = TimeSpan.Zero);
             
             // Act
             await using (var worker = Worker.StartNew(options))

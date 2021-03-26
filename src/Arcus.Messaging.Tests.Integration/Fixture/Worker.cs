@@ -19,6 +19,9 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         public IServiceCollection Services { get; } = new ServiceCollection();
 
+        /// <summary>
+        /// Gets the configuration instance that will be included in the test <see cref="Worker"/> and which will result in an <see cref="IConfiguration"/> instance.
+        /// </summary>
         public IDictionary<string, string> Configuration { get; } = new Dictionary<string, string>();
     }
     
