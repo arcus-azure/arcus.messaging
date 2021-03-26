@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using GuardNet;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -17,6 +18,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// Gets the services that will be included in the test <see cref="Worker"/>.
         /// </summary>
         public IServiceCollection Services { get; } = new ServiceCollection();
+
+        public IDictionary<string, string> Configuration { get; } = new Dictionary<string, string>();
     }
     
     /// <summary>
@@ -42,6 +45,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             Guard.NotNull(options, nameof(options), "Requires a options instance that influence the test worker implementation");
             
             IHost host = Host.CreateDefaultBuilder()
+                .ConfigureAppConfiguration(config => config.AddInMemoryCollection(options.Configuration))
                 .ConfigureServices(services =>
                 {
                     foreach (ServiceDescriptor service in options.Services)
