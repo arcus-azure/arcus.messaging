@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.ServiceBus;
+using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.ServiceBus;
 using Arcus.Observability.Telemetry.Core;
 using Arcus.Security.Providers.AzureKeyVault.Authentication;
@@ -15,6 +17,9 @@ using Microsoft.Azure.ApplicationInsights.Query.Models;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Azure.ServiceBus;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Xunit;
@@ -143,21 +148,26 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var config = TestConfig.Create();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
-
-            var commandArguments = new[]
+            var options = new WorkerOptions();
+            options.Services.AddTransient(svc =>
             {
-                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
-                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
-            };
+                string eventGridTopic = config.GetTestInfraEventGridTopicUri();
+                string eventGridKey = config.GetTestInfraEventGridAuthKey();
 
-            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueWithServiceBusFallbackProgram>(config, _logger, commandArguments))
+                return EventGridPublisherBuilder
+                       .ForTopic(eventGridTopic)
+                       .UsingAuthenticationKey(eventGridKey)
+                       .Build();
+            });
+            options.Services.AddServiceBusQueueMessagePump(configuration => connectionString, options => options.AutoComplete = true)
+                    .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
+                    .WithServiceBusFallbackMessageHandler<OrdersServiceBusFallbackMessageHandler>();
+
+            await using (var worker = Worker.StartNew(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
             {
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
-                {
-                    // Act / Assert
-                    await service.SimulateMessageProcessingAsync(connectionString);
-                }
+                // Act / Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
 
