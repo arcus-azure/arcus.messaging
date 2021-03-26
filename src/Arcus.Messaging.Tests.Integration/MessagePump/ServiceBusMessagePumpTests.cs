@@ -134,7 +134,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
             var options = new WorkerOptions();
             options.Services.AddTransient(svc =>
             {
