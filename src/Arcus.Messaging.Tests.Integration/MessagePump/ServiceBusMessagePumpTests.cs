@@ -625,7 +625,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             });
             options.Services.AddServiceBusTopicMessagePump(
                        "Test-Receive-All-Topic-Only", 
-                       configuration => configuration["ARCUS_SERVICEBUS_CONNECTIONSTRING"], 
+                       configuration => connectionString, 
                        options => options.AutoComplete = false)
                    .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>((AzureServiceBusMessageContext context) => true);
