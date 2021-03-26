@@ -8,14 +8,24 @@ using Microsoft.Extensions.Hosting;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
+    /// <summary>
+    /// Represents the configurable options to influence the test <see cref="Worker"/>.
+    /// </summary>
     public class WorkerOptions
     {
+        /// <summary>
+        /// Gets the services that will be included in the test <see cref="Worker"/>.
+        /// </summary>
         public IServiceCollection Services { get; } = new ServiceCollection();
     }
     
+    /// <summary>
+    /// Represents a test worker implementation of a .NET SDK worker project, which includes all the options available in a worker project.
+    /// Used to test message pumps and other messaging-related components that requires the hosted services setup.
+    /// </summary>
     public class Worker : IAsyncDisposable
     {
-        private IHost _host;
+        private readonly IHost _host;
 
         private Worker(IHost host)
         {
@@ -23,12 +33,14 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         }
         
         /// <summary>
-        /// 
+        /// Spawns a new test worker configurable with <paramref name="options"/>.
         /// </summary>
-        /// <param name="options"></param>
-        /// <returns></returns>
+        /// <param name="options">The configurable options to influence the content of the test worker.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
         public static Worker StartNew(WorkerOptions options)
         {
+            Guard.NotNull(options, nameof(options), "Requires a options instance that influence the test worker implementation");
+            
             IHost host = Host.CreateDefaultBuilder()
                 .ConfigureServices(services =>
                 {
@@ -40,8 +52,9 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 .Build();
             
             var worker = new Worker(host);
+            
+            // Don't let the host block but continue while the host is starting.
             worker._host.StartAsync();
-
             return worker;
         }
 
@@ -51,8 +64,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            Guard.NotNull(_host, nameof(_host), "Requires a host instance to dispose the worker");
-            
             await _host.StopAsync();
             _host.Dispose();
         }
