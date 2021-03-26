@@ -244,7 +244,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Type programType)
         {
             // Arrange
-            _logger.LogTrace("Start test '{MethodName}({EntityType}, {ProgramType})'", nameof(ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed), entity, programType.Name);
+            _logger.LogTrace("Start test '{MethodName}({EntityType}, {ProgramType})'", nameof(ServiceBusMessagePumpRoutesServiceBusMessageMessageSuccessfullyProcessed), entity, programType.Name);
             
             var config = TestConfig.Create();
             string connectionString = config.GetServiceBusConnectionString(entity);
@@ -264,7 +264,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 }
             }
             
-            _logger.LogTrace("Stop test '{MethodName}({EntityType}, {ProgramType})'", nameof(ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed), entity, programType.Name);
+            _logger.LogTrace("Stop test '{MethodName}({EntityType}, {ProgramType})'", nameof(ServiceBusMessagePumpRoutesServiceBusMessageMessageSuccessfullyProcessed), entity, programType.Name);
         }
 
         [Fact]
