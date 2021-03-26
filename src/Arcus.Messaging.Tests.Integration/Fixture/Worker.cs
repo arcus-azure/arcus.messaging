@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
@@ -32,22 +35,26 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     public class Worker : IAsyncDisposable
     {
         private readonly IHost _host;
-
-        private Worker(IHost host)
+        private readonly string _testName;
+        
+        private Worker(IHost host, string testName)
         {
             _host = host;
+            _testName = testName;
         }
-        
+
         /// <summary>
         /// Spawns a new test worker configurable with <paramref name="options"/>.
         /// </summary>
         /// <param name="options">The configurable options to influence the content of the test worker.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
-        public static Worker StartNew(WorkerOptions options)
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> or <paramref name="logger"/> is <c>null</c>.</exception>
+        public static Worker StartNew(WorkerOptions options, [CallerMemberName] string memberName = null)
         {
             Guard.NotNull(options, nameof(options), "Requires a options instance that influence the test worker implementation");
             
+            Console.WriteLine("Start '{0}' integration test", memberName);
             IHost host = Host.CreateDefaultBuilder()
+                .ConfigureLogging(logging => logging.ClearProviders())
                 .ConfigureAppConfiguration(config => config.AddInMemoryCollection(options.Configuration))
                 .ConfigureServices(services =>
                 {
@@ -58,10 +65,10 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 })
                 .Build();
             
-            var worker = new Worker(host);
+            var worker = new Worker(host, memberName);
             
             // Don't let the host block but continue while the host is starting.
-            worker._host.StartAsync();
+            Task.Run(() => worker._host.StartAsync());
             return worker;
         }
 
@@ -71,6 +78,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
+            Console.WriteLine("Stop '{0}' integration test", _testName);
             await _host.StopAsync();
             _host.Dispose();
         }
