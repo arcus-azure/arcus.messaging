@@ -32,11 +32,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         public IDictionary<string, string> Configuration { get; } = new Dictionary<string, string>();
 
         /// <summary>
-        /// 
-        /// </summary>
-        internal IEnumerable<Action<IHostBuilder>> AdditionalHostOptions => _additionalHostOptions.AsEnumerable();
-
-        /// <summary>
         /// Adds an additional configuration option on the to-be-created <see cref="IHostBuilder"/>.
         /// </summary>
         /// <param name="additionalHostOption">The action that configures the additional option.</param>
@@ -45,6 +40,28 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             Guard.NotNull(additionalHostOption, nameof(additionalHostOption), "Requires an custom action that will add the additional hosting option");
             _additionalHostOptions.Add(additionalHostOption);
+        }
+
+        /// <summary>
+        /// Applies the previously configured additional host options to the given <paramref name="hostBuilder"/>.
+        /// </summary>
+        /// <param name="hostBuilder">The builder instance to apply the additional host options to.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="hostBuilder"/> is <c>null</c>.</exception>
+        internal void ApplyOptions(IHostBuilder hostBuilder)
+        {
+            hostBuilder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(Configuration))
+                       .ConfigureServices(services =>
+                       {
+                           foreach (ServiceDescriptor service in Services)
+                           {
+                               services.Add(service);
+                           }
+                       });
+            
+            foreach (Action<IHostBuilder> additionalHostOption in _additionalHostOptions)
+            {
+                additionalHostOption(hostBuilder);
+            }
         }
     }
     
@@ -73,17 +90,12 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             Guard.NotNull(options, nameof(options), "Requires a options instance that influence the test worker implementation");
             
             Console.WriteLine("Start '{0}' integration test", memberName);
-            IHost host = Host.CreateDefaultBuilder()
-                .ConfigureLogging(logging => logging.ClearProviders())
-                .ConfigureAppConfiguration(config => config.AddInMemoryCollection(options.Configuration))
-                .ConfigureServices(services =>
-                {
-                    foreach (ServiceDescriptor service in options.Services)
-                    {
-                        services.Add(service);
-                    }
-                })
-                .Build();
+            IHostBuilder hostBuilder =
+                Host.CreateDefaultBuilder()
+                    .ConfigureLogging(logging => logging.ClearProviders());
+            
+            options.ApplyOptions(hostBuilder);
+            IHost host = hostBuilder.Build();
             
             var worker = new Worker(host, memberName);
             
@@ -102,17 +114,12 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             Guard.NotNull(options, nameof(options), "Requires a options instance that influence the test worker implementation");
             
             Console.WriteLine("Start '{0}' integration test", memberName);
-            IHost host = Host.CreateDefaultBuilder()
-                             .ConfigureLogging(logging => logging.ClearProviders())
-                             .ConfigureAppConfiguration(config => config.AddInMemoryCollection(options.Configuration))
-                             .ConfigureServices(services =>
-                             {
-                                 foreach (ServiceDescriptor service in options.Services)
-                                 {
-                                     services.Add(service);
-                                 }
-                             })
-                             .Build();
+            IHostBuilder hostBuilder =
+                Host.CreateDefaultBuilder()
+                    .ConfigureLogging(logging => logging.ClearProviders());
+            
+            options.ApplyOptions(hostBuilder);
+            IHost host = hostBuilder.Build();
             
             var worker = new Worker(host, memberName);
             await worker._host.StartAsync();
