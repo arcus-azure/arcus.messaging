@@ -33,13 +33,14 @@ using Serilog.Events;
 using Xunit;
 using Xunit.Abstractions;
 using RetryPolicy = Polly.Retry.RetryPolicy;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     [Trait("Category", "Integration")]
     public class ServiceBusMessagePumpTests
     {
-        private readonly ILogger<> _logger;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessagePumpTests"/> class.
