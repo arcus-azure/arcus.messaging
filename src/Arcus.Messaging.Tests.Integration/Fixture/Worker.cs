@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +19,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// </summary>
     public class WorkerOptions
     {
+        private readonly ICollection<Action<IHostBuilder>> _additionalHostOptions = new Collection<Action<IHostBuilder>>();
+        
         /// <summary>
         /// Gets the services that will be included in the test <see cref="Worker"/>.
         /// </summary>
@@ -26,6 +30,22 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// Gets the configuration instance that will be included in the test <see cref="Worker"/> and which will result in an <see cref="IConfiguration"/> instance.
         /// </summary>
         public IDictionary<string, string> Configuration { get; } = new Dictionary<string, string>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        internal IEnumerable<Action<IHostBuilder>> AdditionalHostOptions => _additionalHostOptions.AsEnumerable();
+
+        /// <summary>
+        /// Adds an additional configuration option on the to-be-created <see cref="IHostBuilder"/>.
+        /// </summary>
+        /// <param name="additionalHostOption">The action that configures the additional option.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="additionalHostOption"/> is <c>null</c>.</exception>
+        public void Configure(Action<IHostBuilder> additionalHostOption)
+        {
+            Guard.NotNull(additionalHostOption, nameof(additionalHostOption), "Requires an custom action that will add the additional hosting option");
+            _additionalHostOptions.Add(additionalHostOption);
+        }
     }
     
     /// <summary>
@@ -68,7 +88,34 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             var worker = new Worker(host, memberName);
             
             // Don't let the host block but continue while the host is starting.
-            Task.Run(() => worker._host.StartAsync());
+            worker._host.StartAsync().GetAwaiter().GetResult();
+            return worker;
+        }
+        
+        /// <summary>
+        /// Spawns a new test worker configurable with <paramref name="options"/>.
+        /// </summary>
+        /// <param name="options">The configurable options to influence the content of the test worker.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> or <paramref name="logger"/> is <c>null</c>.</exception>
+        public static async Task<Worker> StartNewAsync(WorkerOptions options, [CallerMemberName] string memberName = null)
+        {
+            Guard.NotNull(options, nameof(options), "Requires a options instance that influence the test worker implementation");
+            
+            Console.WriteLine("Start '{0}' integration test", memberName);
+            IHost host = Host.CreateDefaultBuilder()
+                             .ConfigureLogging(logging => logging.ClearProviders())
+                             .ConfigureAppConfiguration(config => config.AddInMemoryCollection(options.Configuration))
+                             .ConfigureServices(services =>
+                             {
+                                 foreach (ServiceDescriptor service in options.Services)
+                                 {
+                                     services.Add(service);
+                                 }
+                             })
+                             .Build();
+            
+            var worker = new Worker(host, memberName);
+            await worker._host.StartAsync();
             return worker;
         }
 

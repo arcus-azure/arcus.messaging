@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
@@ -10,16 +11,25 @@ using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.ServiceBus;
 using Arcus.Observability.Telemetry.Core;
+using Arcus.Security.Core;
+using Arcus.Security.Providers.AzureKeyVault;
 using Arcus.Security.Providers.AzureKeyVault.Authentication;
+using Arcus.Security.Providers.AzureKeyVault.Configuration;
 using Arcus.Testing.Logging;
 using Microsoft.Azure.ApplicationInsights.Query;
 using Microsoft.Azure.ApplicationInsights.Query.Models;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Azure.ServiceBus;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polly;
+using Serilog;
+using Serilog.Configuration;
+using Serilog.Events;
 using Xunit;
 using Xunit.Abstractions;
 using RetryPolicy = Polly.Retry.RetryPolicy;
@@ -29,7 +39,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     [Trait("Category", "Integration")]
     public class ServiceBusMessagePumpTests
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessagePumpTests"/> class.
@@ -647,15 +657,26 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var config = TestConfig.Create();
             ApplicationInsightsConfig applicationInsightsConfig = config.GetApplicationInsightsConfig();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
-            var commandArguments = new[]
+           
+            var options = new WorkerOptions();
+            options.Services.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
+            options.Configure(host => host.UseSerilog((context, currentConfig) =>
             {
-                CommandArgument.CreateSecret("APPLICATIONINSIGHTS_INSTRUMENTATIONKEY", applicationInsightsConfig.InstrumentationKey),
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString)
-            };
-
+                currentConfig
+                    .MinimumLevel.Debug()
+                    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                    .Enrich.FromLogContext()
+                    .Enrich.WithVersion()
+                    .Enrich.WithComponentName("Service Bus Queue Worker")
+                    .WriteTo.Console()
+                    .WriteTo.File("log.txt")
+                    .WriteTo.AzureApplicationInsights(applicationInsightsConfig.InstrumentationKey);
+            }));
+            
             Message orderMessage = OrderGenerator.Generate().AsServiceBusMessage(operationId, transactionId);
 
-            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueTrackCorrelationOnExceptionProgram>(config, _logger, commandArguments))
+            await using (var worker = await Worker.StartNewAsync(options))
             {
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
@@ -699,18 +720,26 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
             await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, freshConnectionString);
 
-            var commandArguments = new[]
+            var options = new WorkerOptions();
+            options.Services.AddSingleton<ISecretProvider>(serviceProvider =>
             {
-                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
-                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_VAULTURI", keyRotationConfig.KeyVault.VaultUri), 
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME", keyRotationConfig.KeyVault.SecretName),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING", keyRotationConfig.KeyVault.SecretNewVersionCreated.ConnectionString), 
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTID", keyRotationConfig.ServicePrincipal.ClientId), 
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTSECRET", keyRotationConfig.ServicePrincipal.ClientSecret), 
-            };
-
-            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueKeyVaultProgram>(config, _logger, commandArguments))
+                return new KeyVaultSecretProvider(
+                    new ServicePrincipalAuthentication(keyRotationConfig.ServicePrincipal.ClientId, keyRotationConfig.ServicePrincipal.ClientSecret),
+                    new KeyVaultConfiguration(keyRotationConfig.KeyVault.VaultUri));
+            });
+            options.Services.AddTransient(svc =>
+            {
+                string eventGridTopic = config.GetTestInfraEventGridTopicUri();
+                string eventGridKey = config.GetTestInfraEventGridAuthKey();
+                return EventGridPublisherBuilder
+                       .ForTopic(eventGridTopic)
+                       .UsingAuthenticationKey(eventGridKey)
+                       .Build();
+            });
+            options.Services.AddServiceBusQueueMessagePump(keyRotationConfig.KeyVault.SecretName, opt=> opt.AutoComplete = true)
+                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+            
+            await using (var worker = await Worker.StartNewAsync(options))
             {
                 string newSecondaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.SecondaryKey);
                 await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, newSecondaryConnectionString);
@@ -731,31 +760,42 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            KeyRotationConfig keyRotationConfig = config.GetKeyRotationConfig();
-            _logger.LogInformation("Using Service Principal [ClientID: '{0}']", keyRotationConfig.ServicePrincipal.ClientId);
+            KeyRotationConfig rotationConfig = config.GetKeyRotationConfig();
+            _logger.LogInformation("Using Service Principal [ClientID: '{0}']", rotationConfig.ServicePrincipal.ClientId);
 
-            var client = new ServiceBusConfiguration(keyRotationConfig, _logger);
+            var client = new ServiceBusConfiguration(rotationConfig, _logger);
             string freshConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.PrimaryKey);
 
-            ServicePrincipalAuthentication authentication = keyRotationConfig.ServicePrincipal.CreateAuthentication();
+            ServicePrincipalAuthentication authentication = rotationConfig.ServicePrincipal.CreateAuthentication();
             IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
-            await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, freshConnectionString);
+            await SetConnectionStringInKeyVaultAsync(keyVaultClient, rotationConfig, freshConnectionString);
 
-            var commandArguments = new[]
+            var options = new WorkerOptions();
+            options.Configuration.Add("ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING", rotationConfig.KeyVault.SecretNewVersionCreated.ConnectionString);
+            options.Configure(host => host.ConfigureSecretStore((configuration, stores) =>
             {
-                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
-                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_VAULTURI", keyRotationConfig.KeyVault.VaultUri),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME", keyRotationConfig.KeyVault.SecretName),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTID", keyRotationConfig.ServicePrincipal.ClientId),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTSECRET", keyRotationConfig.ServicePrincipal.ClientSecret),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING", keyRotationConfig.KeyVault.SecretNewVersionCreated.ConnectionString)
-            };
+                stores.AddAzureKeyVaultWithServicePrincipal(rotationConfig.KeyVault.VaultUri, rotationConfig.ServicePrincipal.ClientId, rotationConfig.ServicePrincipal.ClientSecret)
+                      .AddConfiguration(configuration);
+            }));
+            AddEventGridPublisherToOptions(options, config);
 
-            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueSecretNewVersionReAuthenticateProgram>(config, _logger, commandArguments))
+            string jobId = Guid.NewGuid().ToString();
+            options.Services.AddServiceBusQueueMessagePump(rotationConfig.KeyVault.SecretName, opt => 
+            {
+                opt.JobId = jobId;
+                // Unrealistic big maximum exception count so that we're certain that the message pump gets restarted based on the notification and not the unauthorized exception.
+                opt.MaximumUnauthorizedExceptionsBeforeRestart = 1000;
+            }).WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
+                jobId: jobId,
+                subscriptionNamePrefix: "TestSub",
+                serviceBusTopicConnectionStringSecretKey: "ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING",
+                messagePumpConnectionStringKey: rotationConfig.KeyVault.SecretName)
+            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+
+            await using (var worker = await Worker.StartNewAsync(options))
             {
                 string newSecondaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.SecondaryKey);
-                await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, newSecondaryConnectionString);
+                await SetConnectionStringInKeyVaultAsync(keyVaultClient, rotationConfig, newSecondaryConnectionString);
 
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
@@ -766,6 +806,19 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     await service.SimulateMessageProcessingAsync(newPrimaryConnectionString);
                 }
             }
+        }
+
+        private static void AddEventGridPublisherToOptions(WorkerOptions options, TestConfig config)
+        {
+            options.Services.AddTransient(svc =>
+            {
+                string eventGridTopic = config.GetTestInfraEventGridTopicUri();
+                string eventGridKey = config.GetTestInfraEventGridAuthKey();
+                return EventGridPublisherBuilder
+                       .ForTopic(eventGridTopic)
+                       .UsingAuthenticationKey(eventGridKey)
+                       .Build();
+            });
         }
 
         private static async Task SetConnectionStringInKeyVaultAsync(IKeyVaultClient keyVaultClient, KeyRotationConfig keyRotationConfig, string rotatedConnectionString)
