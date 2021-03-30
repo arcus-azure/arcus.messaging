@@ -17,6 +17,9 @@ namespace Arcus.Messaging.Tests.Integration.Health
     [Trait("Category", "Integration")]
     public class TcpHealthListenerTests
     {
+        private const string HealthPortConfigurationName = "ARCUS_HEALTH_PORT";
+        private const int TcpPort = 5050;
+
         private readonly ILogger _logger;
 
         public TcpHealthListenerTests(ITestOutputHelper outputWriter)
@@ -28,17 +31,15 @@ namespace Arcus.Messaging.Tests.Integration.Health
         public async Task TcpHealthProbe_AcceptsTcpConnection_WhenHealthCheckIsHealthy()
         {
             // Arrange
-            const string healthPortConfigurationName = "ARCUS_HEALTH_PORT";
-            const int tcpPort = 5050;
-            var service = new TcpHealthService(tcpPort, _logger);
+            var service = new TcpHealthService(TcpPort, _logger);
             var options = new WorkerOptions();
-            options.Configuration.Add(healthPortConfigurationName, tcpPort.ToString());
-            options.Services.AddTcpHealthProbes(healthPortConfigurationName, 
+            options.Configuration.Add(HealthPortConfigurationName, TcpPort.ToString());
+            options.Services.AddTcpHealthProbes(HealthPortConfigurationName, 
                 configureHealthChecks: builder => builder.AddCheck("healhty", () => HealthCheckResult.Healthy()),
                 configureTcpListenerOptions: opt => opt.RejectTcpConnectionWhenUnhealthy = true);
             
             // Act
-            await using (var worker = Worker.StartNew(options))
+            await using (var worker = await Worker.StartNewAsync(options))
             {
                 // Assert
                 HealthReport afterReport = await RetryAssert<SocketException, HealthReport>(
@@ -52,18 +53,16 @@ namespace Arcus.Messaging.Tests.Integration.Health
         public async Task TcpHealthProbe_RejectsTcpConnection_WhenHealthCheckIsUnhealthy()
         {
             // Arrange
-            const string healthPortConfigurationName = "ARCUS_HEALTH_PORT";
-            const int tcpPort = 5050;
-            var service = new TcpHealthService(tcpPort, _logger);
+            var service = new TcpHealthService(TcpPort, _logger);
             var options = new WorkerOptions();
-            options.Configuration.Add(healthPortConfigurationName, tcpPort.ToString());
-            options.Services.AddTcpHealthProbes(healthPortConfigurationName, 
+            options.Configuration.Add(HealthPortConfigurationName, TcpPort.ToString());
+            options.Services.AddTcpHealthProbes(HealthPortConfigurationName, 
                 configureHealthChecks: builder => builder.AddCheck("unhealhty", () => HealthCheckResult.Unhealthy()),
                 configureTcpListenerOptions: opt => opt.RejectTcpConnectionWhenUnhealthy = true,
                 configureHealthCheckPublisherOptions: opt => opt.Delay = TimeSpan.Zero);
             
             // Act
-            await using (var worker = Worker.StartNew(options))
+            await using (var worker = await Worker.StartNewAsync(options))
             {
                 // Assert
                 await RetryAssert<ThrowsException, SocketException>(
