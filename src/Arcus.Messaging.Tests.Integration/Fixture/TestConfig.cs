@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Integration.MessagePump;
 using GuardNet;
@@ -76,62 +75,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 default:
                     throw new ArgumentOutOfRangeException(nameof(entity), entity, "Unknown Service Bus entity");
             }
-        }
-
-        /// <summary>
-        /// Gets the Application Insights configuration from the application configuration.
-        /// </summary>
-        /// <exception cref="ArgumentException">Thrown when one of the Application Insights configuration values is blank.</exception>
-        public ApplicationInsightsConfig GetApplicationInsightsConfig()
-        {
-            var instrumentationKey = _config.GetValue<string>("Arcus:ApplicationInsights:InstrumentationKey");
-            var applicationId = _config.GetValue<string>("Arcus:ApplicationInsights:ApplicationId");
-            var apiKey = _config.GetValue<string>("Arcus:ApplicationInsights:ApiKey");
-
-            return new ApplicationInsightsConfig(instrumentationKey, applicationId, apiKey);
-        }
-
-        /// <summary>
-        /// Gets the project directory where the fixtures are located.
-        /// </summary>
-        public DirectoryInfo GetIntegrationTestProjectDirectory()
-        {
-            return PathCombineWithSourcesDirectory(typeof(TestConfig).Assembly.GetName().Name);
-        }
-
-        /// <summary>
-        /// Gets the project directory where the empty Service Bus worker project is located.
-        /// </summary>
-        public DirectoryInfo GetEmptyServiceBusWorkerProjectDirectory()
-        {
-            return PathCombineWithSourcesDirectory("Arcus.Messaging.Tests.Workers.ServiceBus");
-        }
-
-        private DirectoryInfo PathCombineWithSourcesDirectory(string subPath)
-        {
-            DirectoryInfo sourcesDirectory = GetBuildSourcesDirectory();
-
-            string path = Path.Combine(sourcesDirectory.FullName, "src", subPath);
-            if (!Directory.Exists(path))
-            {
-                throw new DirectoryNotFoundException(
-                    $"Cannot find sub-directory in build sources directory at: {path}");
-            }
-
-            return new DirectoryInfo(path);
-        }
-
-        private DirectoryInfo GetBuildSourcesDirectory()
-        {
-            const string buildSourcesDirectory = "Build.SourcesDirectory";
-
-            string sourcesDirectory = _config.GetValue<string>(buildSourcesDirectory);
-            Guard.NotNull(sourcesDirectory, nameof(sourcesDirectory), $"No build sources directory configured with the key: {buildSourcesDirectory}");
-            Guard.For<ArgumentException>(
-                () => !Directory.Exists(sourcesDirectory),
-                $"No directory exists at {Path.GetFullPath(sourcesDirectory)}");
-
-            return new DirectoryInfo(sourcesDirectory);
         }
 
         /// <summary>
