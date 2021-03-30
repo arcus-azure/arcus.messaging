@@ -10,7 +10,7 @@ layout: default
 The features are available on NuGet:
 
 ```shell
-PM > Install-Package Arcus.Messaging.Abstractions -Version 0.6.0
+PM > Install-Package Arcus.Messaging.* -Version 0.6.0
 ```
 
 # Features
