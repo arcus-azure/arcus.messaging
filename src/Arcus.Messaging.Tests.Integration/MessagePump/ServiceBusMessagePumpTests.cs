@@ -1,25 +1,38 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
+using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.ServiceBus;
-using Arcus.Messaging.Tests.Workers.ServiceBus;
+using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
+using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Observability.Telemetry.Core;
+using Arcus.Security.Core;
+using Arcus.Security.Providers.AzureKeyVault;
 using Arcus.Security.Providers.AzureKeyVault.Authentication;
+using Arcus.Security.Providers.AzureKeyVault.Configuration;
 using Arcus.Testing.Logging;
 using Microsoft.Azure.ApplicationInsights.Query;
 using Microsoft.Azure.ApplicationInsights.Query.Models;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Azure.ServiceBus;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polly;
+using Serilog;
+using Serilog.Configuration;
+using Serilog.Events;
 using Xunit;
 using Xunit.Abstractions;
 using RetryPolicy = Polly.Retry.RetryPolicy;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
@@ -36,41 +49,257 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             _logger = new XunitTestLogger(outputWriter);
         }
 
-        [Theory]
-        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueProgram))]
-        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueContextTypeSelectionProgram))]
-        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueContextAndBodyFilterSelectionProgram))]
-        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicProgram))]
-        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicContextPredicateSelectionProgram))]
-        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicBodyPredicateSelectionProgram))]
-        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueCompleteProgram))]
-        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicFallbackCompleteProgram))]
-        [InlineData(ServiceBusEntity.Topic, typeof(ServiceBusTopicWithOrderBatchProgram))]
-        [InlineData(ServiceBusEntity.Queue, typeof(ServiceBusQueueWithContextAndBodyFilterAndBodySerializerProgram))]
-        public async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(ServiceBusEntity entity, Type programType)
+        [Fact]
+        public async Task ServiceBusQueueMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
-            _logger.LogTrace("Start test '{MethodName}({EntityType}, {ProgramType})'", nameof(ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed), entity, programType.Name);
-            
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(entity);
-            var commandArguments = new[]
-            {
-                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
-                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
-            };
-
-            using (var project = await WorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
-            {
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
-                {
-                    // Act / Assert
-                    await service.SimulateMessageProcessingAsync(connectionString);
-                }
-            }
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
             
-            _logger.LogTrace("Stop test '{MethodName}({EntityType}, {ProgramType})'", nameof(ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed), entity, programType.Name);
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+        
+        [Fact]
+        public async Task ServiceBusTopicMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusTopicMessagePump(
+                        "Test-Receive-All-Topic-Only", 
+                        configuration => connectionString, 
+                        opt => opt.AutoComplete = true)
+                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+            
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+        
+        [Fact]
+        public async Task ServiceBusTopicMessagePumpWithCustomComplete_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusTopicMessagePump(
+                       "Test-Receive-All-Topic-Only", 
+                       configuration => connectionString, 
+                       opt => opt.AutoComplete = false)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusCompleteMessageHandler, Order>();
+            
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+        
+        [Fact]
+        public async Task ServiceBusTopicMessagePumpWithCustomCompleteOnFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(
+                       configuration => connectionString, 
+                       opt => opt.AutoComplete = false)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                   .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
+            
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+        
+        [Fact]
+        public async Task ServiceBusQueueMessagePumpWithCustomCompleteOnFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(
+                        configuration => connectionString, 
+                        opt => opt.AutoComplete = false)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                   .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
+            
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+        
+        [Fact]
+        public async Task ServiceBusQueueMessagePumpWithBatchedMessages_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, options => options.AutoComplete = true)
+                    .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(messageBodySerializerImplementationFactory: serviceProvider =>
+                    {
+                        var logger = serviceProvider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
+                        return new OrderBatchMessageBodySerializer(logger);
+                    });
+            
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+
+        [Fact]
+        public async Task ServiceBusQueueMessagePumpWithContextTypeFiltering_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+        
+        [Fact]
+        public async Task ServiceBusQueueMessagePumpWithContextAndBodyFiltering_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.ContainsKey("NotExisting"), body => false)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>(
+                        context => context.Properties["Topic"].ToString() == "Orders", 
+                        body => body.Id != null);
+
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+        
+        [Fact]
+        public async Task ServiceBusTopicMessagePumpWithContextFiltering_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => connectionString, opt => opt.AutoComplete = true)
+                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext context) => false)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Customers")
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Orders");
+
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+        
+        [Fact]
+        public async Task ServiceBusTopicMessagePumpWithBodyFiltering_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => connectionString, opt => opt.AutoComplete = true)
+                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order body) => false)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>((Customer body) => body is null)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>((Order body) => body.Id != null);
+
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+        
+        [Fact]
+        public async Task ServiceBusQueueMessagePumpWithContextAndBodyFilteringWithSerializer_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(messageContextFilter: context => false)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(messageBodyFilter: message => false)
+                   .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(
+                       messageContextFilter: context => context != null,
+                       messageBodySerializerImplementationFactory: serviceProvider =>
+                       {
+                           var logger = serviceProvider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
+                           return new OrderBatchMessageBodySerializer(logger);
+                       },
+                       messageBodyFilter: message => message.Orders.Length == 1);
+
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
+            }
         }
 
         [Fact]
@@ -79,22 +308,20 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var config = TestConfig.Create();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .AddServiceBusTopicMessagePump(
+                       "Test-Receive-All-Topic-And-Queue", 
+                       configuration => config.GetServiceBusConnectionString(ServiceBusEntity.Topic), 
+                       opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
             
-            var commandArguments = new[]
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
             {
-                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
-                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_QUEUE", connectionString),
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING_WITH_TOPIC", config.GetServiceBusConnectionString(ServiceBusEntity.Topic)),
-            };
-
-            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueAndTopicProgram>(config, _logger, commandArguments))
-            {
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
-                {
-                    // Act / Assert
-                    await service.SimulateMessageProcessingAsync(connectionString);
-                }
+                // Act / Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
 
@@ -104,21 +331,17 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var config = TestConfig.Create();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
-
-            var commandArguments = new[]
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, options => options.AutoComplete = true)
+                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
+                   .WithFallbackMessageHandler<OrdersFallbackMessageHandler>();
+            
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
             {
-                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
-                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
-            };
-
-            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueWithFallbackProgram>(config, _logger, commandArguments))
-            {
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
-                {
-                    // Act / Assert
-                    await service.SimulateMessageProcessingAsync(connectionString);
-                }
+                // Act / Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
 
@@ -128,118 +351,227 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var config = TestConfig.Create();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, options => options.AutoComplete = true)
+                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
+                   .WithServiceBusFallbackMessageHandler<OrdersServiceBusFallbackMessageHandler>();
 
-            var commandArguments = new[]
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
             {
-                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
-                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
-            };
-
-            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueWithServiceBusFallbackProgram>(config, _logger, commandArguments))
-            {
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
-                {
-                    // Act / Assert
-                    await service.SimulateMessageProcessingAsync(connectionString);
-                }
+                // Act / Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
 
-        [Theory]
-        [InlineData(typeof(ServiceBusQueueWithServiceBusDeadLetterProgram))]
-        [InlineData(typeof(ServiceBusQueueWithServiceBusDeadLetterFallbackProgram))]
-        [InlineData(typeof(ServiceBusQueueContextPredicateSelectionWithDeadLetterProgram))]
-        public async Task ServiceBusMessagePumpWithServiceBusDeadLetter_PublishServiceBusMessage_MessageSuccessfullyProcessed(Type programType)
+        [Fact]
+        public async Task ServiceBusQueueMessagePumpWithServiceBusDeadLetter_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
             var config = TestConfig.Create();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
-            var commandArguments = new[]
-            {
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString),
-            };
-
+            var options = new WorkerOptions();
+            options.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = false)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusDeadLetterMessageHandler, Order>();
+            
             Order order = OrderGenerator.Generate();
 
-            using (var project = await WorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
             {
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
-                {
-                    // Act
-                    await service.SendMessageToServiceBusAsync(connectionString, order.AsServiceBusMessage());
+                // Act
+                await service.SendMessageToServiceBusAsync(connectionString, order.AsServiceBusMessage());
 
-                    // Assert
-                    await service.AssertDeadLetterMessageAsync(connectionString);
-                }
+                // Assert
+                await service.AssertDeadLetterMessageAsync(connectionString);
             }
         }
 
-        [Theory]
-        [InlineData(typeof(ServiceBusTopicWithServiceBusAbandonProgram))]
-        [InlineData(typeof(ServiceBusTopicWithServiceBusAbandonFallbackProgram))]
-        [InlineData(typeof(ServiceBusTopicContextPredicateSelectionWithServiceBusAbandonProgram))]
-        public async Task ServiceBusMessagePumpWithServiceBusAbandon_PublishServiceBusMessage_MessageSuccessfullyProcessed(Type programType)
+        [Fact]
+        public async Task ServiceBusQueueMessagePumpWithServiceBusDeadLetterOnFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var options = new WorkerOptions();
+            options.AddServiceBusQueueMessagePump(
+                        configuration => connectionString, 
+                        options => options.AutoComplete = false)
+                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                    .WithServiceBusFallbackMessageHandler<OrdersAzureServiceBusDeadLetterFallbackMessageHandler>();
+            
+            Order order = OrderGenerator.Generate();
+
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Act
+                await service.SendMessageToServiceBusAsync(connectionString, order.AsServiceBusMessage());
+
+                // Assert
+                await service.AssertDeadLetterMessageAsync(connectionString);
+            }
+        }
+
+        [Fact]
+        public async Task ServiceBusQueueMessagePumpWithServiceBusDeadLetterAfterContextPredicate_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            var options = new WorkerOptions();
+            options.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = false)
+                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext context) => false)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties["Topic"].ToString() == "Customers")
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusDeadLetterMessageHandler, Order>(context => context.Properties["Topic"].ToString() == "Orders");
+
+            Order order = OrderGenerator.Generate();
+
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Act
+                await service.SendMessageToServiceBusAsync(connectionString, order.AsServiceBusMessage());
+
+                // Assert
+                await service.AssertDeadLetterMessageAsync(connectionString);
+            }
+        }
+
+        [Fact]
+        public async Task ServiceBusTopicMessagePumpWithServiceBusAbandon_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
             var config = TestConfig.Create();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
-            var commandArguments = new[]
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only",
+                       configuration => connectionString,
+                       opt => opt.AutoComplete = false)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>();
+            
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
             {
-                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
-                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString)
-            };
+                // Act
+                await service.SimulateMessageProcessingAsync(connectionString);
+            } 
+        }
 
-            using (var project = await WorkerProject.StartNewWithAsync(programType, config, _logger, commandArguments))
+        [Fact]
+        public async Task ServiceBusTopicMessagePumpWithServiceBusAbandonOnFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusTopicMessagePump(
+                       "Test-Receive-All-Topic-Only", 
+                       configuration => connectionString, 
+                       opt => opt.AutoComplete = false)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                   .WithServiceBusFallbackMessageHandler<OrdersAzureServiceBusAbandonFallbackMessageHandler>();
+            
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
             {
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
-                {
-                    // Act
-                    await service.SimulateMessageProcessingAsync(connectionString);
-                }
-            }
+                // Act
+                await service.SimulateMessageProcessingAsync(connectionString);
+            } 
+        }
+
+        [Fact]
+        public async Task ServiceBusTopicMessagePumpWithServiceBusAbandonAfterContextPredicate_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusTopicMessagePump(
+                       "Test-Receive-All-Topic-Only", 
+                       configuration => connectionString, 
+                       options => options.AutoComplete = false)
+                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>((AzureServiceBusMessageContext context) => true);
+            
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Act
+                await service.SimulateMessageProcessingAsync(connectionString);
+            } 
         }
 
         [Fact]
         public async Task ServiceBusMessagePump_FailureDuringMessageHandling_TracksCorrelationInApplicationInsights()
         {
             // Arrange
-            string operationId = $"operation-{Guid.NewGuid()}", transactionId = $"transaction-{Guid.NewGuid()}";
-
             var config = TestConfig.Create();
             ApplicationInsightsConfig applicationInsightsConfig = config.GetApplicationInsightsConfig();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
-            var commandArguments = new[]
+           
+            var options = new WorkerOptions();
+            options.Configure(host => host.UseSerilog((context, currentConfig) =>
             {
-                CommandArgument.CreateSecret("APPLICATIONINSIGHTS_INSTRUMENTATIONKEY", applicationInsightsConfig.InstrumentationKey),
-                CommandArgument.CreateSecret("ARCUS_SERVICEBUS_CONNECTIONSTRING", connectionString)
-            };
-
-            using var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueTrackCorrelationOnExceptionProgram>(config, _logger, commandArguments);
-            await using var service = await TestMessagePumpService.StartNewAsync(config, _logger);
+                currentConfig
+                    .MinimumLevel.Debug()
+                    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                    .Enrich.FromLogContext()
+                    .Enrich.WithVersion()
+                    .Enrich.WithComponentName("Service Bus Queue Worker")
+                    .WriteTo.Console()
+                    .WriteTo.AzureApplicationInsights(applicationInsightsConfig.InstrumentationKey);
+            }));
+            options.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
+            
+            string operationId = $"operation-{Guid.NewGuid()}", transactionId = $"transaction-{Guid.NewGuid()}";
             Message orderMessage = OrderGenerator.Generate().AsServiceBusMessage(operationId, transactionId);
-                    
-            // Act
-            await service.SendMessageToServiceBusAsync(connectionString, orderMessage);
 
-            // Assert
+            await using (var worker = await Worker.StartNewAsync(options))
+            {
+                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+                {
+                    // Act
+                    await service.SendMessageToServiceBusAsync(connectionString, orderMessage);
+                }
+            
+                // Assert
+                await AssertTrackedSabotageExceptionContainsCorrelationAsync(applicationInsightsConfig, transactionId, operationId);
+            }
+        }
+
+        private async Task AssertTrackedSabotageExceptionContainsCorrelationAsync(
+            ApplicationInsightsConfig applicationInsightsConfig,
+            string transactionId,
+            string operationId)
+        {
             using (ApplicationInsightsDataClient client = CreateApplicationInsightsClient(applicationInsightsConfig.ApiKey))
             {
                 await RetryAssertUntilTelemetryShouldBeAvailableAsync(async () =>
-                {
-                    const string onlyLastHourFilter = "timestamp gt now() sub duration'PT1H'";
-                    EventsResults<EventsExceptionResult> results = 
-                        await client.Events.GetExceptionEventsAsync(applicationInsightsConfig.ApplicationId, filter: onlyLastHourFilter);
-
-                    Assert.Contains(results.Value, result =>
                     {
-                        result.CustomDimensions.TryGetValue(ContextProperties.Correlation.TransactionId, out string actualTransactionId);
-                        result.CustomDimensions.TryGetValue(ContextProperties.Correlation.OperationId, out string actualOperationId);
+                        const string onlyLastHourFilter = "timestamp gt now() sub duration'PT1H'";
+                        EventsResults<EventsExceptionResult> results =
+                            await client.Events.GetExceptionEventsAsync(applicationInsightsConfig.ApplicationId,
+                                filter: onlyLastHourFilter);
 
-                        return transactionId == actualTransactionId && operationId == actualOperationId && operationId == result.Operation.Id;
-                    });
-                }, timeout: TimeSpan.FromMinutes(7));
+                        Assert.Contains(results.Value,
+                            result =>
+                            {
+                                result.CustomDimensions.TryGetValue(ContextProperties.Correlation.TransactionId,
+                                    out string actualTransactionId);
+                                result.CustomDimensions.TryGetValue(ContextProperties.Correlation.OperationId,
+                                    out string actualOperationId);
+
+                                return transactionId == actualTransactionId && operationId == actualOperationId &&
+                                       operationId == result.Operation.Id;
+                            });
+                    },
+                    timeout: TimeSpan.FromMinutes(7));
             }
         }
 
@@ -258,18 +590,19 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
             await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, freshConnectionString);
 
-            var commandArguments = new[]
-            {
-                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
-                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_VAULTURI", keyRotationConfig.KeyVault.VaultUri), 
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME", keyRotationConfig.KeyVault.SecretName),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING", keyRotationConfig.KeyVault.SecretNewVersionCreated.ConnectionString), 
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTID", keyRotationConfig.ServicePrincipal.ClientId), 
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTSECRET", keyRotationConfig.ServicePrincipal.ClientSecret), 
-            };
-
-            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueKeyVaultProgram>(config, _logger, commandArguments))
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddSingleton<ISecretProvider>(serviceProvider =>
+                   {
+                       return new KeyVaultSecretProvider(
+                           new ServicePrincipalAuthentication(keyRotationConfig.ServicePrincipal.ClientId,
+                               keyRotationConfig.ServicePrincipal.ClientSecret),
+                           new KeyVaultConfiguration(keyRotationConfig.KeyVault.VaultUri));
+                   })
+                   .AddServiceBusQueueMessagePump(keyRotationConfig.KeyVault.SecretName, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+            
+            await using (var worker = await Worker.StartNewAsync(options))
             {
                 string newSecondaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.SecondaryKey);
                 await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, newSecondaryConnectionString);
@@ -290,31 +623,44 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            KeyRotationConfig keyRotationConfig = config.GetKeyRotationConfig();
-            _logger.LogInformation("Using Service Principal [ClientID: '{0}']", keyRotationConfig.ServicePrincipal.ClientId);
+            KeyRotationConfig rotationConfig = config.GetKeyRotationConfig();
+            _logger.LogInformation("Using Service Principal [ClientID: '{0}']", rotationConfig.ServicePrincipal.ClientId);
 
-            var client = new ServiceBusConfiguration(keyRotationConfig, _logger);
+            var client = new ServiceBusConfiguration(rotationConfig, _logger);
             string freshConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.PrimaryKey);
 
-            ServicePrincipalAuthentication authentication = keyRotationConfig.ServicePrincipal.CreateAuthentication();
-            IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
-            await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, freshConnectionString);
+            IKeyVaultClient keyVaultClient = await CreateKeyVaultClientAsync(rotationConfig);
+            await SetConnectionStringInKeyVaultAsync(keyVaultClient, rotationConfig, freshConnectionString);
 
-            var commandArguments = new[]
+            string jobId = Guid.NewGuid().ToString();
+            const string connectionStringSecretKey = "ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING";
+
+            var options = new WorkerOptions();
+            options.Configuration.Add(connectionStringSecretKey, rotationConfig.KeyVault.SecretNewVersionCreated.ConnectionString);
+            options.AddEventGridPublisher(config);
+            options.Configure(host => host.ConfigureSecretStore((configuration, stores) =>
             {
-                CommandArgument.CreateSecret("EVENTGRID_TOPIC_URI", config.GetTestInfraEventGridTopicUri()),
-                CommandArgument.CreateSecret("EVENTGRID_AUTH_KEY", config.GetTestInfraEventGridAuthKey()),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_VAULTURI", keyRotationConfig.KeyVault.VaultUri),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_CONNECTIONSTRINGSECRETNAME", keyRotationConfig.KeyVault.SecretName),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTID", keyRotationConfig.ServicePrincipal.ClientId),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SERVICEPRINCIPAL_CLIENTSECRET", keyRotationConfig.ServicePrincipal.ClientSecret),
-                CommandArgument.CreateSecret("ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING", keyRotationConfig.KeyVault.SecretNewVersionCreated.ConnectionString)
-            };
+                stores.AddAzureKeyVaultWithServicePrincipal(
+                          rotationConfig.KeyVault.VaultUri,
+                          rotationConfig.ServicePrincipal.ClientId,
+                          rotationConfig.ServicePrincipal.ClientSecret)
+                      .AddConfiguration(configuration);
+            })).AddServiceBusQueueMessagePump(rotationConfig.KeyVault.SecretName, opt => 
+            {
+                opt.JobId = jobId;
+                // Unrealistic big maximum exception count so that we're certain that the message pump gets restarted based on the notification and not the unauthorized exception.
+                opt.MaximumUnauthorizedExceptionsBeforeRestart = 1000;
+            }).WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
+                jobId: jobId,
+                subscriptionNamePrefix: "TestSub",
+                serviceBusTopicConnectionStringSecretKey: connectionStringSecretKey,
+                messagePumpConnectionStringKey: rotationConfig.KeyVault.SecretName)
+            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
-            using (var project = await WorkerProject.StartNewWithAsync<ServiceBusQueueSecretNewVersionReAuthenticateProgram>(config, _logger, commandArguments))
+            await using (var worker = await Worker.StartNewAsync(options))
             {
                 string newSecondaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.SecondaryKey);
-                await SetConnectionStringInKeyVaultAsync(keyVaultClient, keyRotationConfig, newSecondaryConnectionString);
+                await SetConnectionStringInKeyVaultAsync(keyVaultClient, rotationConfig, newSecondaryConnectionString);
 
                 await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
                 {
@@ -325,6 +671,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     await service.SimulateMessageProcessingAsync(newPrimaryConnectionString);
                 }
             }
+        }
+
+        private static async Task<IKeyVaultClient> CreateKeyVaultClientAsync(KeyRotationConfig rotationConfig)
+        {
+            ServicePrincipalAuthentication authentication = rotationConfig.ServicePrincipal.CreateAuthentication();
+            IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
+            
+            return keyVaultClient;
         }
 
         private static async Task SetConnectionStringInKeyVaultAsync(IKeyVaultClient keyVaultClient, KeyRotationConfig keyRotationConfig, string rotatedConnectionString)
@@ -351,7 +705,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                           _logger.LogError(exception, "Failed to contact Azure Application Insights. Reason: {Message}", exception.Message);
                           return true;
                       })
-                      .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(1));
+                      .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(3));
 
             await Policy.TimeoutAsync(timeout)
                         .WrapAsync(retryPolicy)
