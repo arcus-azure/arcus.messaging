@@ -52,6 +52,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="hostBuilder"/> is <c>null</c>.</exception>
         internal void ApplyOptions(IHostBuilder hostBuilder)
         {
+            Guard.NotNull(hostBuilder, nameof(hostBuilder), "Requires a host builder instance to apply the worker options to");
+            
             hostBuilder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(Configuration))
                        .ConfigureServices(services =>
                        {

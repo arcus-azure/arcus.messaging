@@ -31,9 +31,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             Guard.NotNull(options, nameof(options), "Requires a options instance that influence the test worker implementation");
             
             Console.WriteLine("Start '{0}' integration test", memberName);
-            IHostBuilder hostBuilder =
-                Host.CreateDefaultBuilder();
             
+            IHostBuilder hostBuilder = Host.CreateDefaultBuilder();
             options.ApplyOptions(hostBuilder);
             IHost host = hostBuilder.Build();
             

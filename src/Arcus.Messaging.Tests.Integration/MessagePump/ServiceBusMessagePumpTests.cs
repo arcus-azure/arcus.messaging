@@ -524,7 +524,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     .Enrich.WithVersion()
                     .Enrich.WithComponentName("Service Bus Queue Worker")
                     .WriteTo.Console()
-                    .WriteTo.File("log.txt")
                     .WriteTo.AzureApplicationInsights(applicationInsightsConfig.InstrumentationKey);
             }));
             options.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
