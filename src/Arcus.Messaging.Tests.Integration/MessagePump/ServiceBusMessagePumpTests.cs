@@ -16,7 +16,6 @@ using Arcus.Security.Providers.AzureKeyVault.Authentication;
 using Arcus.Security.Providers.AzureKeyVault.Configuration;
 using Arcus.Testing.Logging;
 using Microsoft.Azure.ApplicationInsights.Query;
-using Microsoft.Azure.ApplicationInsights.Query.Models;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Azure.ServiceBus;
@@ -511,9 +510,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            ApplicationInsightsConfig applicationInsightsConfig = config.GetApplicationInsightsConfig();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
-           
+
+            var spySink = new InMemoryLogSink();
             var options = new WorkerOptions();
             options.Configure(host => host.UseSerilog((context, currentConfig) =>
             {
@@ -523,8 +522,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     .Enrich.FromLogContext()
                     .Enrich.WithVersion()
                     .Enrich.WithComponentName("Service Bus Queue Worker")
-                    .WriteTo.Console()
-                    .WriteTo.AzureApplicationInsights(applicationInsightsConfig.InstrumentationKey);
+                    .WriteTo.Sink(spySink);
             }));
             options.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
@@ -541,37 +539,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 }
             
                 // Assert
-                await AssertTrackedSabotageExceptionContainsCorrelationAsync(applicationInsightsConfig, transactionId, operationId);
-            }
-        }
-
-        private async Task AssertTrackedSabotageExceptionContainsCorrelationAsync(
-            ApplicationInsightsConfig applicationInsightsConfig,
-            string transactionId,
-            string operationId)
-        {
-            using (ApplicationInsightsDataClient client = CreateApplicationInsightsClient(applicationInsightsConfig.ApiKey))
-            {
-                await RetryAssertUntilTelemetryShouldBeAvailableAsync(async () =>
-                    {
-                        const string onlyLastHourFilter = "timestamp gt now() sub duration'PT1H'";
-                        EventsResults<EventsExceptionResult> results =
-                            await client.Events.GetExceptionEventsAsync(applicationInsightsConfig.ApplicationId,
-                                filter: onlyLastHourFilter);
-
-                        Assert.Contains(results.Value,
-                            result =>
-                            {
-                                result.CustomDimensions.TryGetValue(ContextProperties.Correlation.TransactionId,
-                                    out string actualTransactionId);
-                                result.CustomDimensions.TryGetValue(ContextProperties.Correlation.OperationId,
-                                    out string actualOperationId);
-
-                                return transactionId == actualTransactionId && operationId == actualOperationId &&
-                                       operationId == result.Operation.Id;
-                            });
-                    },
-                    timeout: TimeSpan.FromMinutes(7));
+                RetryAssertUntilTelemetryShouldBeAvailable(() =>
+                {
+                    Assert.Contains(spySink.CurrentLogEmits,
+                        log => log.Exception?.InnerException?.Message.Contains("Sabotage") == true &&
+                               log.ContainsProperty(ContextProperties.Correlation.OperationId, operationId) &&
+                               log.ContainsProperty(ContextProperties.Correlation.TransactionId, transactionId));
+                },
+                timeout: TimeSpan.FromMinutes(1));
             }
         }
 
@@ -697,19 +672,19 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             return client;
         }
 
-        private async Task RetryAssertUntilTelemetryShouldBeAvailableAsync(Func<Task> assertion, TimeSpan timeout)
+        private void RetryAssertUntilTelemetryShouldBeAvailable(System.Action assertion, TimeSpan timeout)
         {
             RetryPolicy retryPolicy =
                 Policy.Handle<Exception>(exception =>
                       {
-                          _logger.LogError(exception, "Failed to contact Azure Application Insights. Reason: {Message}", exception.Message);
+                          _logger.LogError(exception, "Failed assertion. Reason: {Message}", exception.Message);
                           return true;
                       })
-                      .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(3));
+                      .WaitAndRetryForever(index => TimeSpan.FromSeconds(3));
 
-            await Policy.TimeoutAsync(timeout)
-                        .WrapAsync(retryPolicy)
-                        .ExecuteAsync(assertion);
+            Policy.Timeout(timeout)
+                  .Wrap(retryPolicy)
+                  .Execute(assertion);
         }
     }
 }
