@@ -37,7 +37,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         public AzureServiceBusMessagePumpSettings(
             string entityName,
             string subscriptionName,
-            ServiceBusEntity serviceBusEntity,
+            ServiceBusEntityType serviceBusEntity,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
             AzureServiceBusMessagePumpConfiguration options, 
@@ -48,7 +48,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
                 $"Requires an function that determines the connection string from either either an {nameof(IConfiguration)} or {nameof(ISecretProvider)} instance");
             Guard.NotNull(options, nameof(options), "Requires message pump options that influence the behavior of the message pump");
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to get additional registered services during the lifetime of the message pump");
-
+            Guard.For<ArgumentException>(
+                () => !Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity), 
+                $"Azure Service Bus entity '{serviceBusEntity}' is not defined in the '{nameof(ServiceBusEntityType)}' enumeration");
+            Guard.For<ArgumentOutOfRangeException>(
+                () => serviceBusEntity is ServiceBusEntityType.Unknown, "Azure Service Bus entity type 'Unknown' is not supported here");
+            
             _serviceProvider = serviceProvider;
             _getConnectionStringFromConfigurationFunc = getConnectionStringFromConfigurationFunc;
             _getConnectionStringFromSecretFunc = getConnectionStringFromSecretFunc;
@@ -74,7 +79,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         ///     Entity of the Service Bus.
         /// </summary>
-        public ServiceBusEntity ServiceBusEntity { get; }
+        public ServiceBusEntityType ServiceBusEntity { get; }
 
         /// <summary>
         ///     Options that influence the behavior of the message pump

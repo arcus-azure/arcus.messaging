@@ -53,7 +53,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
@@ -73,7 +73,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Topic);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusTopicMessagePump(
@@ -96,7 +96,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Topic);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusTopicMessagePump(
@@ -119,7 +119,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(
@@ -142,7 +142,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(
@@ -165,7 +165,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(configuration => connectionString, options => options.AutoComplete = true)
@@ -189,7 +189,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
@@ -210,7 +210,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
@@ -233,7 +233,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Topic);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => connectionString, opt => opt.AutoComplete = true)
@@ -255,7 +255,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Topic);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => connectionString, opt => opt.AutoComplete = true)
@@ -277,7 +277,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
@@ -306,13 +306,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
                    .AddServiceBusTopicMessagePump(
                        "Test-Receive-All-Topic-And-Queue", 
-                       configuration => config.GetServiceBusConnectionString(ServiceBusEntity.Topic), 
+                       configuration => config.GetServiceBusConnectionString(ServiceBusEntityType.Topic), 
                        opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
             
@@ -329,7 +329,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(configuration => connectionString, options => options.AutoComplete = true)
@@ -349,7 +349,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(configuration => connectionString, options => options.AutoComplete = true)
@@ -369,7 +369,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = false)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusDeadLetterMessageHandler, Order>();
@@ -392,7 +392,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddServiceBusQueueMessagePump(
                         configuration => connectionString, 
@@ -418,7 +418,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = false)
                    .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext context) => false)
@@ -443,7 +443,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Topic);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only",
@@ -464,7 +464,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Topic);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusTopicMessagePump(
@@ -487,7 +487,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Topic);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Topic);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusTopicMessagePump(
@@ -510,7 +510,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var config = TestConfig.Create();
-            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntity.Queue);
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
 
             var spySink = new InMemoryLogSink();
             var options = new WorkerOptions();

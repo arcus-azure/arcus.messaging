@@ -201,7 +201,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName,
                 subscriptionName: null,
-                ServiceBusEntity.Queue,
+                ServiceBusEntityType.Queue,
                 configureQueueMessagePump: configureQueueMessagePump,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc);
@@ -629,7 +629,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName,
                 subscriptionName,
-                ServiceBusEntity.Topic,
+                ServiceBusEntityType.Topic,
                 configureTopicMessagePump: configureTopicMessagePump,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc);
@@ -639,7 +639,7 @@ namespace Microsoft.Extensions.DependencyInjection
             IServiceCollection services,
             string entityName,
             string subscriptionName,
-            ServiceBusEntity serviceBusEntity,
+            ServiceBusEntityType serviceBusEntity,
             Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null,
             Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
@@ -670,19 +670,19 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         private static AzureServiceBusMessagePumpConfiguration DetermineAzureServiceBusMessagePumpOptions(
-            ServiceBusEntity serviceBusEntity,
+            ServiceBusEntityType serviceBusEntity,
             Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump,
             Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump)
         {
             switch (serviceBusEntity)
             {
-                case ServiceBusEntity.Queue:
+                case ServiceBusEntityType.Queue:
                     var queueMessagePumpOptions = AzureServiceBusQueueMessagePumpOptions.Default;
                     configureQueueMessagePump?.Invoke(queueMessagePumpOptions);
 
                     return new AzureServiceBusMessagePumpConfiguration(queueMessagePumpOptions);
                 
-                case ServiceBusEntity.Topic:
+                case ServiceBusEntityType.Topic:
                     var topicMessagePumpOptions = AzureServiceBusTopicMessagePumpOptions.Default;
                     configureTopicMessagePump?.Invoke(topicMessagePumpOptions);
                 

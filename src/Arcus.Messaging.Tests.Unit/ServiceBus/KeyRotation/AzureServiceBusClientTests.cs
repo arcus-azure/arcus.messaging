@@ -5,6 +5,7 @@ using Arcus.Messaging.Pumps.ServiceBus.KeyRotation;
 using Bogus;
 using Microsoft.Azure.Management.ServiceBus;
 using Microsoft.Azure.Management.ServiceBus.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Rest.Azure;
 using Moq;
@@ -18,7 +19,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         [Fact]
         public void CreateClient_WithoutAuthentication_Throws()
         {
-            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
+            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntityType.Topic, "entity name", "authorization rule name");
             Assert.ThrowsAny<ArgumentException>(
                 () => new AzureServiceBusClient(authentication: null, @namespace: location, logger: NullLogger.Instance));
         }
@@ -33,17 +34,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         [Fact]
         public void CreateClient_WithoutLogger_Throws()
         {
-            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
+            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntityType.Topic, "entity name", "authorization rule name");
             Assert.ThrowsAny<ArgumentException>(
                 () => new AzureServiceBusClient(Mock.Of<IAzureServiceBusManagementAuthentication>(), location, logger: null));
         }
 
         [Theory]
-        [InlineData(ServiceBusEntity.Topic, KeyType.PrimaryKey)]
-        [InlineData(ServiceBusEntity.Topic, KeyType.SecondaryKey)]
-        [InlineData(ServiceBusEntity.Queue, KeyType.PrimaryKey)]
-        [InlineData(ServiceBusEntity.Queue, KeyType.SecondaryKey)]
-        public async Task RotateConnectionStringKey_WithSpecifiedEntity_RotatesKeyForEntity(ServiceBusEntity entity, KeyType keyType)
+        [InlineData(ServiceBusEntityType.Topic, KeyType.PrimaryKey)]
+        [InlineData(ServiceBusEntityType.Topic, KeyType.SecondaryKey)]
+        [InlineData(ServiceBusEntityType.Queue, KeyType.PrimaryKey)]
+        [InlineData(ServiceBusEntityType.Queue, KeyType.SecondaryKey)]
+        public async Task RotateConnectionStringKey_WithSpecifiedEntity_RotatesKeyForEntity(ServiceBusEntityType entity, KeyType keyType)
         {
             // Arrange
             var generator = new Faker();
@@ -76,8 +77,8 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
             // Assert
             Assert.Equal(primaryConnectionString == connectionString, KeyType.PrimaryKey == keyType);
             Assert.Equal(secondaryConnectionString == connectionString, KeyType.SecondaryKey == keyType);
-            Assert.Equal(stubTopics.Invocations.Count == 1 && stubQueues.Invocations.Count == 0, ServiceBusEntity.Topic == entity);
-            Assert.Equal(stubTopics.Invocations.Count == 0 && stubQueues.Invocations.Count == 1, ServiceBusEntity.Queue == entity);
+            Assert.Equal(stubTopics.Invocations.Count == 1 && stubQueues.Invocations.Count == 0, ServiceBusEntityType.Topic == entity);
+            Assert.Equal(stubTopics.Invocations.Count == 0 && stubQueues.Invocations.Count == 1, ServiceBusEntityType.Queue == entity);
         }
 
         private static Mock<IAzureServiceBusManagementAuthentication> CreateStubAuthentication(ITopicsOperations topicsOperations, IQueuesOperations queuesOperations)

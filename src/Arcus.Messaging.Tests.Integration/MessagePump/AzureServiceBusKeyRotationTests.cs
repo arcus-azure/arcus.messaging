@@ -35,7 +35,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var config = TestConfig.Create();
             KeyRotationConfig keyRotationConfig = config.GetKeyRotationConfig();
             _logger.LogInformation("Using Service Principal [ClientID: '{ClientId}']", keyRotationConfig.ServicePrincipal.ClientId);
-            const ServiceBusEntity entity = ServiceBusEntity.Topic;
+            const ServiceBusEntityType entity = ServiceBusEntityType.Topic;
             
             var keyVaultAuthentication = new ServicePrincipalAuthentication(
                 keyRotationConfig.ServicePrincipal.ClientId,
@@ -71,7 +71,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private AzureServiceBusClient CreateAzureServiceBusClient(
             KeyRotationConfig keyRotationConfig,
             ISecretProvider secretProvider,
-            ServiceBusEntity entity)
+            ServiceBusEntityType entity)
         {
             var serviceBusAuthentication = new DefaultAzureServiceBusManagementAuthentication(
                 keyRotationConfig.ServicePrincipal.ClientId,

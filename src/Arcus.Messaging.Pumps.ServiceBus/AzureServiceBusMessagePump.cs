@@ -117,7 +117,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus Queue options");
             Guard.For<NotSupportedException>(
-                () => Settings.ServiceBusEntity is ServiceBusEntity.Topic, 
+                () => Settings.ServiceBusEntity is ServiceBusEntityType.Topic, 
                 "Requires the message pump to be configured for Azure Service Bus Queue to reconfigure these options, use the Topic overload instead");
 
             var options = new AzureServiceBusQueueMessagePumpOptions
@@ -143,7 +143,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus Topics options");
             Guard.For<NotSupportedException>(
-                () => Settings.ServiceBusEntity is ServiceBusEntity.Queue,
+                () => Settings.ServiceBusEntity is ServiceBusEntityType.Queue,
                 "Requires a message pump to be configured for Azure Service Bus Topic to reconfigure these options, use the Queue overload instead");
 
             var options = new AzureServiceBusTopicMessagePumpOptions
@@ -166,7 +166,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
         public override async Task StartAsync(CancellationToken cancellationToken)
         {
-            if (Settings.ServiceBusEntity == ServiceBusEntity.Topic
+            if (Settings.ServiceBusEntity == ServiceBusEntityType.Topic
                 && Settings.Options.TopicSubscription.HasFlag(TopicSubscription.CreateOnStart))
             {
                 await CreateTopicSubscriptionAsync(cancellationToken);
@@ -481,7 +481,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            if (Settings.ServiceBusEntity == ServiceBusEntity.Topic
+            if (Settings.ServiceBusEntity == ServiceBusEntityType.Topic
                 && Settings.Options.TopicSubscription.HasFlag(TopicSubscription.DeleteOnStop))
             {
                 await DeleteTopicSubscriptionAsync(cancellationToken);
