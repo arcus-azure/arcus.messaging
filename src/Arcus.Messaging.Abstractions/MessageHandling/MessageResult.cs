@@ -1,7 +1,7 @@
 ﻿using System;
 using GuardNet;
 
-namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
+namespace Arcus.Messaging.Abstractions.MessageHandling
 {
     /// <summary>
     /// Represents a type that's the result of a successful or faulted message deserialization of an <see cref="IMessageBodySerializer"/> instance.

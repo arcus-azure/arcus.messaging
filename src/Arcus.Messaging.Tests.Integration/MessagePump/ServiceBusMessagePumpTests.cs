@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions;
+using Arcus.Messaging.ServiceBus.Abstractions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;

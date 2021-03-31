@@ -1,12 +1,12 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 
 namespace Arcus.Messaging.Tests.Unit.Fixture
 {
     /// <summary>
-    /// Test <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation to stub out any generic messages and contexts.
+    /// Test <see cref="IMessageHandler{TMessage}"/> implementation to stub out any generic messages and contexts.
     /// </summary>
     /// <typeparam name="TMessage">The type of the message to handle.</typeparam>
     /// <typeparam name="TMessageContext">The type of the context to handle.</typeparam>

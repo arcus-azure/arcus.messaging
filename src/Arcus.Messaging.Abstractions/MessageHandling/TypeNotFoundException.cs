@@ -1,25 +1,25 @@
 ﻿using System;
 
-namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
+namespace Arcus.Messaging.Abstractions.MessageHandling 
 {
     /// <summary>
-    /// Exception thrown when a specific value of a type cannot be found during reflected selection.
+    /// Exception thrown when a specific type cannot be found during reflected selection.
     /// </summary>
     [Serializable]
-    public class ValueMissingException : Exception
+    public class TypeNotFoundException : Exception
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="TypeNotFoundException"/> class.
         /// </summary>
-        public ValueMissingException()
+        public TypeNotFoundException()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ValueMissingException"/> class.
+        /// Initializes a new instance of the <see cref="TypeNotFoundException"/> class.
         /// </summary>
         /// <param name="message">The message that describes the exception.</param>
-        public ValueMissingException(string message) : base(message)
+        public TypeNotFoundException(string message) : base(message)
         {
         }
 
@@ -28,7 +28,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// </summary>
         /// <param name="message">The message that describes the exception.</param>
         /// <param name="innerException">The exception that is the cause of the current exception.</param>
-        public ValueMissingException(string message, Exception innerException) : base(message, innerException)
+        public TypeNotFoundException(string message, Exception innerException) : base(message, innerException)
         {
         }
     }

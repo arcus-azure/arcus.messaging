@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions;
+using Arcus.Messaging.ServiceBus.Abstractions;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

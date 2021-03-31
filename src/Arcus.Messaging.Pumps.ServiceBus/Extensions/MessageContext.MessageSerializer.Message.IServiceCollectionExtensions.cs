@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.ServiceBus.Abstractions;
+using Arcus.Messaging.ServiceBus.Abstractions.MessageHandling;
 using GuardNet;
 
 // ReSharper disable once CheckNamespace

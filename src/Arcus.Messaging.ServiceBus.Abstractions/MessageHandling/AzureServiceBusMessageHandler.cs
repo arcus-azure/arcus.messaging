@@ -6,7 +6,7 @@ using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Extensions.Logging;
 
-namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
+namespace Arcus.Messaging.ServiceBus.Abstractions.MessageHandling
 {
     /// <summary>
     /// Represents a <see cref="IAzureServiceBusMessageHandler{TMessage}"/> template to control the Azure Service Bus message operations during the handling of the deserialized message.

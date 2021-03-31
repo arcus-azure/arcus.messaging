@@ -1,8 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
+using Arcus.Messaging.ServiceBus.Abstractions;
+using Arcus.Messaging.ServiceBus.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Microsoft.Extensions.Logging;
 

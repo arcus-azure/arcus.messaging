@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using GuardNet;
 using Microsoft.Extensions.Logging;
 

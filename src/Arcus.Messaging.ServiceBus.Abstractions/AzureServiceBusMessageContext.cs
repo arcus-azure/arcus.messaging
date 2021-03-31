@@ -4,7 +4,7 @@ using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 
-namespace Arcus.Messaging.Pumps.ServiceBus
+namespace Arcus.Messaging.ServiceBus.Abstractions
 {
     /// <summary>
     ///     Contextual information concerning an Azure Service Bus message
