@@ -4,7 +4,7 @@ using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Arcus.Messaging.ServiceBus.Abstractions.MessageHandling
+namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
     /// <summary>
     /// Represents the default template when handling Azure Service Bus messages and controlling how the message is being handled by Azure Service Bus.

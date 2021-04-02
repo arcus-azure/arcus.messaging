@@ -31,7 +31,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Core"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Pumps.ServiceBus.KeyRotation", "Arcus.Messaging.Pumps.ServiceBus.KeyRotation\Arcus.Messaging.Pumps.ServiceBus.KeyRotation.csproj", "{7C69C563-B8EB-47FE-AADB-BB8354C0ED3D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Messaging.ServiceBus.Abstractions", "Arcus.Messaging.ServiceBus.Abstractions\Arcus.Messaging.ServiceBus.Abstractions.csproj", "{864C12DF-DE3D-421F-8687-EC3918FFB8BE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Abstractions.ServiceBus", "Arcus.Messaging.Abstractions.ServiceBus\Arcus.Messaging.Abstractions.ServiceBus.csproj", "{864C12DF-DE3D-421F-8687-EC3918FFB8BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

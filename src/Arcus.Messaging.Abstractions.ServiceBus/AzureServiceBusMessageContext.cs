@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 
-namespace Arcus.Messaging.ServiceBus.Abstractions
+namespace Arcus.Messaging.Abstractions.ServiceBus
 {
     /// <summary>
     ///     Contextual information concerning an Azure Service Bus message

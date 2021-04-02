@@ -1,9 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using Microsoft.Azure.ServiceBus;
 
-namespace Arcus.Messaging.ServiceBus.Abstractions.MessageHandling
+namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
     /// <summary>
     /// Fallback version of the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> to have a safety net when no handlers are found could process the message.

@@ -1,8 +1,8 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.ServiceBus.Abstractions;
-using Arcus.Messaging.ServiceBus.Abstractions.MessageHandling;
 using GuardNet;
 
 // ReSharper disable once CheckNamespace

@@ -2,8 +2,8 @@
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.ServiceBus.Abstractions;
-using Arcus.Messaging.ServiceBus.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Microsoft.Azure.ServiceBus;
 
 namespace Arcus.Messaging.Tests.Unit.Fixture

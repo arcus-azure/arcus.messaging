@@ -1,7 +1,7 @@
 ﻿using Arcus.Messaging.Abstractions.MessageHandling;
 using Microsoft.Azure.ServiceBus;
 
-namespace Arcus.Messaging.ServiceBus.Abstractions.MessageHandling
+namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
     /// <summary>
     /// Represents a handler for a specific <see cref="Message"/> in a <see cref="AzureServiceBusMessageContext"/>
