@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
+namespace Arcus.Messaging.Abstractions.MessageHandling
 {
     /// <summary>
     /// Represents an specific <see cref="IMessageHandler{TMessage,TMessageContext}"/> registration that requires more metadata information than only the instance itself.

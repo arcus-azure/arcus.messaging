@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Bogus;
 
 namespace Arcus.Messaging.Tests.Unit.Fixture
 {
     /// <summary>
-    /// Test <see cref="MessageContext"/> implementation as indication to handle specific contexts in the <see cref="IMessageHandler{TMessage, TMessageContext}"/>.
+    /// Test <see cref="MessageContext"/> implementation as indication to handle specific contexts in the <see cref="IMessageHandler{TMessage}"/>.
     /// </summary>
     [DebuggerStepThrough]
     public class TestMessageContext : MessageContext

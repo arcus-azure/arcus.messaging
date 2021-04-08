@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
+namespace Arcus.Messaging.Abstractions.MessageHandling
 {
     /// <summary>
     /// Represents a handler that provides a deserialization strategy for the incoming message during the message processing of the <see cref="MessagePump"/>.

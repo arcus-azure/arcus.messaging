@@ -1,8 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 
-namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
+namespace Arcus.Messaging.Abstractions.MessageHandling
 {
     /// <summary>
     /// Represents a handler for a specific <typeparamref name="TMessage"/> in a <typeparamref name="TMessageContext"/>

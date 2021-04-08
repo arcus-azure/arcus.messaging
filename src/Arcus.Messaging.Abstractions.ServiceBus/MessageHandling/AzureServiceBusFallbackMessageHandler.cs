@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 
-namespace Arcus.Messaging.Pumps.ServiceBus.MessageHandling
+namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
     /// <summary>
     /// Represents a <see cref="IAzureServiceBusFallbackMessageHandler"/> template to control the Azure Service Bus message operations during the fallback handling of the message.

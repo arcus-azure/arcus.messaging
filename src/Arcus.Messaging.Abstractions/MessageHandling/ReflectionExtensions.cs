@@ -2,7 +2,7 @@
 using System.Reflection;
 using GuardNet;
 
-namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling 
+namespace Arcus.Messaging.Abstractions.MessageHandling 
 {
     /// <summary>
     /// Extensions on any object instance to provide a more stable approach when accessing types in a reflected manner.

@@ -4,7 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.BackgroundJobs.KeyVault.Events;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using CloudNative.CloudEvents;
 using GuardNet;
 using Microsoft.Extensions.Logging;
@@ -14,7 +16,7 @@ using Microsoft.Rest.Azure;
 namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
 {
     /// <summary>
-    /// Represents an <see cref="IMessageHandler{TMessage, TMessageContext}"/> that processes <see cref="CloudEvent"/>s representing <see cref="SecretNewVersionCreated"/> events
+    /// Represents an <see cref="IMessageHandler{TMessage,TMessageContext}"/> that processes <see cref="CloudEvent"/>s representing <see cref="SecretNewVersionCreated"/> events
     /// that will eventually result in restarting an <see cref="AzureServiceBusMessagePump"/> instance.
     /// </summary>
     public class ReAuthenticateOnRotatedCredentialsMessageHandler : IAzureServiceBusMessageHandler<CloudEvent>

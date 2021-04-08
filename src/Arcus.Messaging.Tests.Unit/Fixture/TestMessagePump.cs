@@ -2,8 +2,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -23,7 +23,7 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
         /// <summary>
         /// Initializes a new instance of the <see cref="TestMessagePump"/> class.
         /// </summary>
-        /// <param name="serviceProvider">The test provider to subtract the <see cref="IMessageHandler{TMessage, TMessageContext}"/> implementations from.</param>
+        /// <param name="serviceProvider">The test provider to subtract the <see cref="IMessageHandler{TMessage}"/> implementations from.</param>
         public TestMessagePump(IServiceProvider serviceProvider)
             : this(new ConfigurationBuilder().Build(), serviceProvider, NullLogger.Instance)
         {

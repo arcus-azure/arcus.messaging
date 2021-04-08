@@ -6,12 +6,11 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
+namespace Arcus.Messaging.Abstractions.MessageHandling
 {
     /// <summary>
     /// Represents an abstracted form of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation to handle with different type of generic message and message context types.
@@ -42,12 +41,12 @@ namespace Arcus.Messaging.Pumps.Abstractions.MessageHandling
         /// <summary>
         /// Gets the type of the message that this abstracted message handler can process.
         /// </summary>
-        internal Type MessageType { get; }
+        public Type MessageType { get; }
 
         /// <summary>
         /// Gets the type of the message context that this abstracted message handler can process.
         /// </summary>
-        internal Type MessageContextType { get; }
+        public Type MessageContextType { get; }
 
         /// <summary>
         /// Subtract all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementations from the given <paramref name="serviceProvider"/>.
