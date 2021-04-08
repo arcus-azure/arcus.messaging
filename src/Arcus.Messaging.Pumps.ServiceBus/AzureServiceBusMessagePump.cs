@@ -39,29 +39,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private MessageReceiver _messageReceiver;
         private int _unauthorizedExceptionCount = 0;
 
-        // TODO: remove 'old' workings after the background jobs package is updated with the new messaging package.
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump" /> class.
-        /// </summary>
-        public AzureServiceBusMessagePump(
-            AzureServiceBusMessagePumpSettings settings,
-            IConfiguration configuration, 
-            IServiceProvider serviceProvider, 
-            ILogger<AzureServiceBusMessagePump> logger)
-            : base(configuration, serviceProvider, logger)
-        {
-            Guard.NotNull(settings, nameof(settings), "Requires a set of settings to correctly configure the message pump");
-            Guard.NotNull(configuration, nameof(configuration), "Requires a configuration instance to retrieve application-specific information");
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to retrieve the registered message handlers");
-            
-            Settings = settings;
-            JobId = Settings.Options.JobId;
-            SubscriptionName = Settings.SubscriptionName;
-
-            _fallbackMessageHandler = serviceProvider.GetService<IAzureServiceBusFallbackMessageHandler>();
-            _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
-            _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
-        }
         
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump"/> class.
@@ -90,6 +67,35 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             SubscriptionName = Settings.SubscriptionName;
 
             _messageRouter = messageRouter;
+            _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
+            _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
+        }
+
+        // TODO: remove 'old' workings after the background jobs package is updated with the new messaging package.
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump" /> class.
+        /// </summary>
+        /// <param name="settings">Settings to configure the message pump</param>
+        /// <param name="configuration">Configuration of the application</param>
+        /// <param name="serviceProvider">Collection of services that are configured</param>
+        /// <param name="logger">Logger to write telemetry to</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="settings"/>, <paramref name="configuration"/>, <paramref name="serviceProvider"/>, <paramref name="messageRouter"/> is <c>null</c>.</exception>
+        public AzureServiceBusMessagePump(
+            AzureServiceBusMessagePumpSettings settings,
+            IConfiguration configuration, 
+            IServiceProvider serviceProvider, 
+            ILogger<AzureServiceBusMessagePump> logger)
+            : base(configuration, serviceProvider, logger)
+        {
+            Guard.NotNull(settings, nameof(settings), "Requires a set of settings to correctly configure the message pump");
+            Guard.NotNull(configuration, nameof(configuration), "Requires a configuration instance to retrieve application-specific information");
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to retrieve the registered message handlers");
+            
+            Settings = settings;
+            JobId = Settings.Options.JobId;
+            SubscriptionName = Settings.SubscriptionName;
+
+            _fallbackMessageHandler = serviceProvider.GetService<IAzureServiceBusFallbackMessageHandler>();
             _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
             _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
         }

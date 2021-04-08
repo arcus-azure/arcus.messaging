@@ -130,7 +130,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 throw new InvalidOperationException(
                     $"Message pump cannot correctly process the message in the '{typeof(TMessageContext).Name}' "
                     + "because none of the registered 'IMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context. "
-                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
+                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump or message router to register a message handler");
             }
         }
 
@@ -147,7 +147,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 throw new InvalidOperationException(
                     $"Message pump cannot correctly process the message in the '{typeof(TMessageContext).Name}' "
                     + "because no 'IMessageHandler<,>' was registered in the dependency injection container. "
-                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
+                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump or message router to register a message handler");
             }
 
             foreach (MessageHandler handler in handlers)
@@ -289,6 +289,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <returns>
         ///     [true] if the <paramref name="message"/> conforms the <see cref="IMessageHandler{TMessage,TMessageContext}"/>'s contract; otherwise [false].
         /// </returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="messageType"/> is blank.</exception>
         protected virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object? result)
         {
             Guard.NotNullOrWhitespace(message, nameof(message), "Can't parse a blank raw message against a message handler's contract");
@@ -303,6 +304,9 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             EventHandler<ErrorEventArgs> eventHandler = (sender, args) =>
             {
                 success = false;
+                Logger.LogTrace(args.ErrorContext.Error, "Incoming message failed to be JSON deserialized to message type '{MessageType}' at {Path}",
+                    messageType.Name, args.ErrorContext.Path);
+                
                 args.ErrorContext.Handled = true;
             };
             jsonSerializer.Error += eventHandler;
@@ -327,7 +331,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 jsonSerializer.Error -= eventHandler;
             }
             
-            Logger.LogTrace("Incoming message failed to be JSON deserialized to message type '{MessageType}'", messageType.Name);
             result = null;
             return false;
         }

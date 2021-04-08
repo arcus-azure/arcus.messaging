@@ -37,7 +37,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger logger)
+        protected AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger logger)
             : base(serviceProvider, logger ?? NullLogger<AzureServiceBusMessageRouter>.Instance)
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
@@ -149,7 +149,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                         $"Azure Service Bus message pump cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' " 
                         + "because no 'IAzureServiceBusMessageHandler<>' was registered in the dependency injection container. "
                         + $"Make sure you call the correct 'WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} "
-                        + "during the registration of the Azure Service Bus message pump to register a message handler");
+                        + "during the registration of the Azure Service Bus message pump or message router to register a message handler");
                 }
 
                 Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
@@ -172,7 +172,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                         $"Message pump cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' "
                         + "because none of the registered 'IAzureServiceBusMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context; "
                         + $"and no '{nameof(IFallbackMessageHandler)}' or '{nameof(IAzureServiceBusFallbackMessageHandler)}' was registered to fall back to."
-                        + $"Make sure you call the correct '.WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} during the registration of the message pump to register a message handler");
+                        + $"Make sure you call the correct '.WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} during the registration of the message pump or message router to register a message handler");
                 }
 
                 await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
@@ -204,16 +204,18 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             object messageHandlerInstance = messageHandler.GetMessageHandlerInstance();
             Type messageHandlerType = messageHandlerInstance.GetType();
 
-            Logger.LogTrace("Start pre-processing message handler '{MessageHandlerType}'...", messageHandlerType.Name);
-
-            if (messageReceiver != null && messageHandlerInstance is AzureServiceBusMessageHandlerTemplate template)
+            if (messageHandlerInstance is AzureServiceBusMessageHandlerTemplate template)
             {
-                template.SetLockToken(messageContext.SystemProperties.LockToken);
-                template.SetMessageReceiver(messageReceiver);
-            }
-            else
-            {
-                Logger.LogTrace("Nothing to pre-process for message handler type '{MessageHandlerType}'", messageHandlerType.Name);
+                if (messageReceiver is null)
+                {
+                    Logger.LogWarning("Message handler '{MessageHandlerType}' uses specific Azure Service Bus operations, but is not able to be configured during message routing because the message router didn't receive a Azure Service Bus message receiver; use other '{RouteMessageOverload}' method overload",
+                        messageHandlerType.Name, nameof(RouteMessageAsync));
+                }
+                else
+                {
+                    template.SetLockToken(messageContext.SystemProperties.LockToken);
+                    template.SetMessageReceiver(messageReceiver);
+                }
             }
         }
 
@@ -243,9 +245,17 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             
             if (HasAzureServiceBusFallbackHandler)
             {
-                if (messageReceiver != null && _fallbackMessageHandler.Value is AzureServiceBusMessageHandlerTemplate template)
+                if (_fallbackMessageHandler.Value is AzureServiceBusMessageHandlerTemplate template)
                 {
-                    template.SetMessageReceiver(messageReceiver);
+                    if (messageReceiver is null)
+                    {
+                        Logger.LogWarning("Fallback message handler '{MessageHandlerType}' uses specific Azure Service Bus operations, but is unable to be configured during message routing because the message router didn't receive a Azure Service Bus message receiver; use other '{RouteMessageAsync}' method overload",
+                            _fallbackMessageHandler.Value.GetType().Name, nameof(RouteMessageAsync));
+                    }
+                    else
+                    {
+                        template.SetMessageReceiver(messageReceiver);
+                    }
                 }
 
                 string fallbackMessageHandlerTypeName = _fallbackMessageHandler.Value.GetType().Name;
