@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Abstractions.ServiceBus;
 using Microsoft.Azure.ServiceBus;
 
 namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Stubs
@@ -23,6 +23,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Stubs
 
             var context = new AzureServiceBusMessageContext(
                 $"message-id-{Guid.NewGuid()}", 
+                $"job-id-{Guid.NewGuid()}",
                 systemProperties, 
                 new Dictionary<string, object>());
 

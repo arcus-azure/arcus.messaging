@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Microsoft.Extensions.DependencyInjection;

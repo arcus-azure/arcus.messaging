@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Testing.Logging;
 using Bogus;
@@ -371,10 +371,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>();
 
             IServiceProvider serviceProvider = services.BuildServiceProvider();
-            var pump = new TestMessagePump(serviceProvider);
+            var router = new TestMessageRouter(serviceProvider, _logger);
 
             // Act
-            await pump.ProcessMessageAsync(messageJson, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(messageJson, context, correlationInfo, CancellationToken.None);
 
             // Assert
             Assert.True(spyHandler1.IsProcessed);
@@ -393,7 +393,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             services.WithMessageHandler<StubTestMessageHandler<Purchase, MessageContext>, Purchase>(provider => spyHandler);
 
             IServiceProvider serviceProvider = services.BuildServiceProvider();
-            var pump = new TestMessagePump(serviceProvider);
+            var router = new TestMessageRouter(serviceProvider, _logger);
 
             var purchase = new Purchase
             {
@@ -405,7 +405,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             // Act
-            await pump.ProcessMessageAsync(purchaseJson, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(purchaseJson, context, correlationInfo, CancellationToken.None);
 
             // Assert
             Assert.True(spyHandler.IsProcessed);

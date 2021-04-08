@@ -13,7 +13,7 @@ redirect_from:
 The features are available on NuGet:
 
 ```shell
-PM > Install-Package Arcus.Messaging.* -Version 0.5.0
+PM > Install-Package Arcus.Messaging.Abstractions
 ```
 
 # Features
@@ -26,6 +26,7 @@ PM > Install-Package Arcus.Messaging.* -Version 0.5.0
 
 ## Older versions
 
+- [v0.5](v0.5.0)
 - [v0.4](v0.4.0)
 - [v0.3](v0.3.0)
 - [v0.2](v0.2.0)

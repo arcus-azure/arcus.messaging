@@ -1,5 +1,6 @@
 ﻿using System;
 using GuardNet;
+using Microsoft.Azure.ServiceBus;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
@@ -8,6 +9,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// </summary>
     public class AzureServiceBusMessagePumpConfiguration
     {
+        private int _maximumUnauthorizedExceptionsBeforeRestart;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpConfiguration"/> class.
         /// </summary>
@@ -23,20 +26,24 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         public AzureServiceBusMessagePumpConfiguration(AzureServiceBusTopicMessagePumpOptions options) 
             : this((AzureServiceBusMessagePumpOptions) options)
         {
-            Guard.NotNull(options, nameof(options));
+            Guard.NotNull(options, nameof(options), "Requires an Azure Service Bus options for Topics");
 
             TopicSubscription = options.TopicSubscription;
         }
 
-        private AzureServiceBusMessagePumpConfiguration(AzureServiceBusMessagePumpOptions options)
+        internal AzureServiceBusMessagePumpConfiguration(AzureServiceBusMessagePumpOptions options)
         {
             Guard.NotNull(options, nameof(options));
+            Guard.NotNull(options.Correlation, nameof(options), "Requires correlation options to configure the Azure Service Bus configuration for the message pump");
+            
+            _maximumUnauthorizedExceptionsBeforeRestart = options.MaximumUnauthorizedExceptionsBeforeRestart;
 
             MaxConcurrentCalls = options.MaxConcurrentCalls;
             AutoComplete = options.AutoComplete;
             EmitSecurityEvents = options.EmitSecurityEvents;
             JobId = options.JobId;
             KeyRotationTimeout = options.KeyRotationTimeout;
+            Correlation = options.Correlation;
         }
 
         /// <summary>
@@ -74,5 +81,25 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the timeout when the message pump tries to restart and re-authenticate during key rotation.
         /// </summary>
         internal TimeSpan KeyRotationTimeout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the fallback when the Azure Key Vault notification doesn't get delivered correctly,
+        /// how many times should the message pump run into an <see cref="UnauthorizedException"/> before restarting.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than zero.</exception>
+        public int MaximumUnauthorizedExceptionsBeforeRestart
+        {
+            get => _maximumUnauthorizedExceptionsBeforeRestart;
+            set
+            {
+                Guard.NotLessThan(value, 0, nameof(value), "Requires an unauthorized exceptions count that's greater than zero");
+                _maximumUnauthorizedExceptionsBeforeRestart = value;
+            }
+        }
+      
+        /// <summary>
+        /// Gets or sets the options to control the correlation information during the receiving of Azure Service Bus messages.
+        /// </summary>
+        internal AzureServiceBusCorrelationOptions Correlation { get; }
     }
 }

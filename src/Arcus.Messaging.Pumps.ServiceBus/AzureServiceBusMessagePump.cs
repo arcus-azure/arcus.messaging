@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
-using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
 using Arcus.Observability.Correlation;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
@@ -33,6 +32,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         
         private bool _isHostShuttingDown;
         private MessageReceiver _messageReceiver;
+        private int _unauthorizedExceptionCount = 0;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump"/> class.
@@ -68,12 +68,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Gets the settings configuring the message pump.
         /// </summary>
-        protected AzureServiceBusMessagePumpSettings Settings { get; }
+        public AzureServiceBusMessagePumpSettings Settings { get; }
 
         /// <summary>
         ///     Service Bus namespace that contains the entity
         /// </summary>
-        protected string Namespace { get; private set; }
+        public string Namespace { get; private set; }
 
         /// <summary>
         /// Gets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
@@ -89,6 +89,81 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// Gets the Azure Service Bus message receiver that this message pump uses.
         /// </summary>
         internal MessageReceiver MessageReceiver => _messageReceiver;
+
+        /// <summary>
+        /// Reconfigure the Azure Service Bus options on this message pump.
+        /// </summary>
+        /// <param name="reconfigure">The function to reconfigure the Azure Service Bus options.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
+        public void ReconfigureOptions(Action<AzureServiceBusMessagePumpOptions> reconfigure)
+        {
+            Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus options");
+
+            var options = new AzureServiceBusMessagePumpOptions
+            {
+                AutoComplete = Settings.Options.AutoComplete,
+                JobId = Settings.Options.JobId,
+                KeyRotationTimeout = Settings.Options.KeyRotationTimeout,
+                MaxConcurrentCalls = Settings.Options.MaxConcurrentCalls,
+                MaximumUnauthorizedExceptionsBeforeRestart = Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart
+            };
+
+            reconfigure(options);
+            Settings.Options = new AzureServiceBusMessagePumpConfiguration(options);
+        }
+
+        /// <summary>
+        /// Reconfigure the Azure Service Bus Queue options on this message pump.
+        /// </summary>
+        /// <param name="reconfigure">The function to reconfigure the Azure Service Bus Queue options.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
+        /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Queues.</exception>
+        public void ReconfigureQueueOptions(Action<AzureServiceBusQueueMessagePumpOptions> reconfigure)
+        {
+            Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus Queue options");
+            Guard.For<NotSupportedException>(
+                () => Settings.ServiceBusEntity is ServiceBusEntity.Topic, 
+                "Requires the message pump to be configured for Azure Service Bus Queue to reconfigure these options, use the Topic overload instead");
+
+            var options = new AzureServiceBusQueueMessagePumpOptions
+            {
+                AutoComplete = Settings.Options.AutoComplete,
+                JobId = Settings.Options.JobId,
+                KeyRotationTimeout = Settings.Options.KeyRotationTimeout,
+                MaxConcurrentCalls = Settings.Options.MaxConcurrentCalls,
+                MaximumUnauthorizedExceptionsBeforeRestart = Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart
+            };
+
+            reconfigure(options);
+            Settings.Options = new AzureServiceBusMessagePumpConfiguration(options);
+        }
+
+        /// <summary>
+        /// Reconfigure the Azure Service Bus Topic options on this message pump.
+        /// </summary>
+        /// <param name="reconfigure">The function to reconfigure the Azure Service Bus Topic options.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
+        /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Topics.</exception>
+        public void ReconfigureTopicOptions(Action<AzureServiceBusTopicMessagePumpOptions> reconfigure)
+        {
+            Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus Topics options");
+            Guard.For<NotSupportedException>(
+                () => Settings.ServiceBusEntity is ServiceBusEntity.Queue,
+                "Requires a message pump to be configured for Azure Service Bus Topic to reconfigure these options, use the Queue overload instead");
+
+            var options = new AzureServiceBusTopicMessagePumpOptions
+            {
+                AutoComplete = Settings.Options.AutoComplete,
+                JobId = Settings.Options.JobId,
+                MaxConcurrentCalls = Settings.Options.MaxConcurrentCalls,
+                KeyRotationTimeout = Settings.Options.KeyRotationTimeout,
+                MaximumUnauthorizedExceptionsBeforeRestart = Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart,
+                TopicSubscription = Settings.Options.TopicSubscription
+            };
+
+            reconfigure(options);
+            Settings.Options = new AzureServiceBusMessagePumpConfiguration(options);
+        }
 
         /// <summary>
         /// Triggered when the application host is ready to start the service.
@@ -160,7 +235,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             catch (Exception exception)
             {
-                Logger.LogCritical(exception, "Unexpected failure occured during processing of messages");
+                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages");
                 await HandleReceiveExceptionAsync(exception);
             }
             finally
@@ -173,14 +248,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             _messageReceiver = await CreateMessageReceiverAsync(Settings);
 
-            Logger.LogInformation(
-                "Starting message pump {MessagePumpId} on entity path '{EntityPath}' in namespace '{Namespace}'",
-                Id,
-                EntityPath,
-                Namespace);
-
+            Logger.LogTrace("Starting message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", JobId, EntityPath, Namespace);
             _messageReceiver.RegisterMessageHandler(HandleMessageAsync, _messageHandlerOptions);
-            Logger.LogInformation("Message pump {MessagePumpId} started", Id);
+            Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", JobId, EntityPath, Namespace);
         }
 
         private async Task CloseMessageReceiverAsync()
@@ -192,13 +262,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                Logger.LogInformation("Closing message pump {MessagePumpId}",  Id);
+                Logger.LogTrace("Closing message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'",  JobId, EntityPath, Namespace);
                 await _messageReceiver.CloseAsync();
-                Logger.LogInformation("Message pump {MessagePumpId} closed : {Time}",  Id, DateTimeOffset.UtcNow);
+                Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}",  JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
             }
             catch (Exception exception)
             {
-                Logger.LogWarning(exception, "Cannot correctly close the message pump {MessagePumpId}",  Id);
+                Logger.LogWarning(exception, "Cannot correctly close the message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'",  JobId, EntityPath, Namespace);
             }
         }
 
@@ -295,7 +365,20 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 }
                 finally
                 {
-                    await ReAuthenticateMessageReceiverAsync(exceptionReceivedEventArgs.Exception);
+                    if (exceptionReceivedEventArgs.Exception is UnauthorizedException)
+                    {
+                        if (Interlocked.Increment(ref _unauthorizedExceptionCount) >= Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart)
+                        {
+                            Logger.LogWarning("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
+                            await RestartAsync();
+                        }
+                        else
+                        {
+                            Logger.LogWarning(
+                                "Unable to connect anymore to Azure Service Bus ({CurrentCount}/{MaxCount})", 
+                                _unauthorizedExceptionCount, Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart);
+                        }
+                    }
                 }
             });
 
@@ -315,17 +398,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             return messageHandlerOptions;
         }
 
-        private async Task ReAuthenticateMessageReceiverAsync(Exception exception)
+        /// <summary>
+        /// Restart core functionality of the message pump.
+        /// </summary>
+        public async Task RestartAsync()
         {
-            if (exception is UnauthorizedException)
-            {
-                Logger.LogWarning("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
-                
-                Logger.LogTrace("Restarting Azure Service Bus...");
-                await CloseMessageReceiverAsync();
-                await OpenNewMessageReceiverAsync();
-                Logger.LogInformation("Azure Service Bus restarted!");
-            }
+            Interlocked.Exchange(ref _unauthorizedExceptionCount, 0);
+
+            Logger.LogTrace("Restarting Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' ...", JobId, EntityPath, Namespace);
+            await CloseMessageReceiverAsync();
+            await OpenNewMessageReceiverAsync();
+            Logger.LogInformation("Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' restarted!", JobId, EntityPath, Namespace);
         }
 
         private async Task<MessageReceiver> CreateMessageReceiverAsync(AzureServiceBusMessagePumpSettings messagePumpSettings)
@@ -474,9 +557,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus message pump '{JobId}'", message.MessageId, JobId);
             }
 
-            var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
-            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+            var messageContext = new AzureServiceBusMessageContext(message.MessageId, JobId, message.SystemProperties, message.UserProperties);
 
+            string transactionIdPropertyName = Settings.Options.Correlation?.TransactionIdPropertyName ?? PropertyNames.TransactionId;
+            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo(transactionIdPropertyName);
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
             {
                 var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();

@@ -29,7 +29,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Unit"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Core", "Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj", "{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Messaging.Tests.Workers.ServiceBus", "Arcus.Messaging.Tests.Workers.ServiceBus\Arcus.Messaging.Tests.Workers.ServiceBus.csproj", "{4F854A40-B7DB-4630-A701-4F599F1041B0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Pumps.ServiceBus.KeyRotation", "Arcus.Messaging.Pumps.ServiceBus.KeyRotation\Arcus.Messaging.Pumps.ServiceBus.KeyRotation.csproj", "{7C69C563-B8EB-47FE-AADB-BB8354C0ED3D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Abstractions.ServiceBus", "Arcus.Messaging.Abstractions.ServiceBus\Arcus.Messaging.Abstractions.ServiceBus.csproj", "{864C12DF-DE3D-421F-8687-EC3918FFB8BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,10 +87,14 @@ Global
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4F854A40-B7DB-4630-A701-4F599F1041B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4F854A40-B7DB-4630-A701-4F599F1041B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4F854A40-B7DB-4630-A701-4F599F1041B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4F854A40-B7DB-4630-A701-4F599F1041B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C69C563-B8EB-47FE-AADB-BB8354C0ED3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C69C563-B8EB-47FE-AADB-BB8354C0ED3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C69C563-B8EB-47FE-AADB-BB8354C0ED3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C69C563-B8EB-47FE-AADB-BB8354C0ED3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -101,7 +107,6 @@ Global
 		{0BAF4A9C-8F6B-4CF9-B654-95629C2B38DF} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
 		{9EED9AD7-B69D-45D5-870F-D4F63A1C3495} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
-		{4F854A40-B7DB-4630-A701-4F599F1041B0} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {066FD85A-3DDE-4615-B550-BF67ACCDAA51}

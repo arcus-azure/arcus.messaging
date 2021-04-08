@@ -12,7 +12,7 @@
     <PackageLicenseUrl>https://github.com/arcus-azure/arcus.messaging/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/arcus-azure/arcus.messaging</PackageProjectUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png</PackageIconUrl>
-    <RepositoryUrl>>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
+    <RepositoryUrl>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>Azure;Messaging;ServiceBus</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.Pumps.Abstractions\Arcus.Messaging.Pumps.Abstractions.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.Abstractions.ServiceBus\Arcus.Messaging.Abstractions.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.ServiceBus.Core\Arcus.Messaging.ServiceBus.Core.csproj" />
   </ItemGroup>
 

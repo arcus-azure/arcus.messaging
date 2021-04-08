@@ -10,10 +10,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         ///     Gets the default settings.
         /// </summary>
-        public static AzureServiceBusQueueMessagePumpOptions Default => new AzureServiceBusQueueMessagePumpOptions
-        {
-            AutoComplete = true,
-            JobId = Guid.NewGuid().ToString(),
-        };
+        public static AzureServiceBusQueueMessagePumpOptions Default => new AzureServiceBusQueueMessagePumpOptions();
     }
 }

@@ -1,5 +1,5 @@
 ﻿using System;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Unit.Fixture

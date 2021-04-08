@@ -62,6 +62,24 @@ public class Startup
 
                 // Configure how the health report should be serialized.
                 options.HealthReportSerializer = new MyHealthReportSerializer();
+
+                // Configure how the health report status should affect the TCP probe's availability.
+                // When set to `true`, unhealthy health reports will result in rejecting of TCP client connection attempts.
+                // When set to `false` (default), TCP client connection attempts will be accepted but the returned health report will have a uhealthy health status.
+                options.RejectTcpConnectionWhenUnhealthy = true;
+            },
+            configureHealthCheckPublisherOptions: options =>
+            {
+                // Configures additional options regarding how fast or slow changes in the health report should affect the TCP probe's availability.
+                // When the RejectTcpConnectionWhenUnhealthy is set to `true`.
+
+                // The initial delay after the application starts with monitoring the health report changes.
+                options.Delay = TimeSpan.Zero;
+
+                // The interval in which the health report is monitored for changes.
+                options.Period = TimeSpan.FromSeconds(5);
+
+                // See https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.diagnostics.healthchecks.healthcheckpublisheroptions?view=dotnet-plat-ext-5.0 for more information.
             });
     }
 }

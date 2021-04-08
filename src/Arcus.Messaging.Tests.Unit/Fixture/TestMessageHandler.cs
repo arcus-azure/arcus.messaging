@@ -1,12 +1,12 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 
 namespace Arcus.Messaging.Tests.Unit.Fixture
 {
     /// <summary>
-    /// Test <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation with the <see cref="TestMessage"/> and a specific <see cref="TestMessageContext"/>.
+    /// Test <see cref="IMessageHandler{TMessage}"/> implementation with the <see cref="TestMessage"/> and a specific <see cref="TestMessageContext"/>.
     /// </summary>
     public class TestMessageHandler : IMessageHandler<TestMessage, TestMessageContext>
     {

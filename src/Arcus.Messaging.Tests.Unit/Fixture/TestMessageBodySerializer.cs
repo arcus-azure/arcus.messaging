@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using GuardNet;
 using Xunit;
 

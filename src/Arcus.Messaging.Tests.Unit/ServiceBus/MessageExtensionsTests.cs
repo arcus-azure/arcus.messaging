@@ -116,7 +116,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         }
 
         [Fact]
-        public void GetMessageCorrelationInfo_WithCorrelationId_ReturnsCorrelationInfoWithEmptyTransactionId()
+        public void GetMessageCorrelationInfo_WithCorrelationId_ReturnsCorrelationInfoWithNonEmptyTransactionId()
         {
             // Arrange
             string expectedOperationId = $"operation-{Guid.NewGuid()}";
@@ -129,25 +129,23 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.NotNull(correlationInfo);
             Assert.NotEmpty(correlationInfo.CycleId);
             Assert.Equal(expectedOperationId, correlationInfo.OperationId);
-            Assert.Empty(correlationInfo.TransactionId);
+            Assert.NotEmpty(correlationInfo.TransactionId);
         }
 
         [Fact]
         public void GetTransactionId_WithoutTransactionIdAsUserProperty_ReturnsEmptyString()
         {
             // Arrange
-            string expectedTransactionId = string.Empty;
             var message = new Message
             {
                 UserProperties = {  }
             };
 
             // Act
-            var transactionId = message.GetTransactionId();
+            string transactionId = message.GetTransactionId();
 
             // Assert
-            Assert.NotNull(transactionId);
-            Assert.Equal(expectedTransactionId, transactionId);
+            Assert.Null(transactionId);
         }
 
         [Fact]
