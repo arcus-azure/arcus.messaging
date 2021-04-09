@@ -87,7 +87,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         }
 
         private async Task<AccessKeys> RegenerateAzureServiceBusKeysAsync(
-            ServiceBusEntity entity,
+            ServiceBusEntityType entity,
             string entityName,
             KeyType keyType,
             IServiceBusManagementClient client)
@@ -95,9 +95,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             var parameters = new RegenerateAccessKeyParameters(keyType);
             return entity switch
             {
-                ServiceBusEntity.Queue => await client.Queues.RegenerateKeysAsync(
+                ServiceBusEntityType.Queue => await client.Queues.RegenerateKeysAsync(
                     Namespace.ResourceGroup, Namespace.Namespace, entityName, Namespace.AuthorizationRuleName, parameters),
-                ServiceBusEntity.Topic => await client.Topics.RegenerateKeysAsync(
+                ServiceBusEntityType.Topic => await client.Topics.RegenerateKeysAsync(
                     Namespace.ResourceGroup, Namespace.Namespace, entityName, Namespace.AuthorizationRuleName, parameters),
                 _ => throw new ArgumentOutOfRangeException(nameof(entity), entity, "Unknown entity type")
             };

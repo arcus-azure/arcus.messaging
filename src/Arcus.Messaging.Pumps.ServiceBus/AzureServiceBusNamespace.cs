@@ -1,5 +1,6 @@
 ﻿using System;
 using GuardNet;
+using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.ServiceBus
 {
@@ -23,7 +24,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         public AzureServiceBusNamespace(
             string resourceGroup,
             string @namespace,
-            ServiceBusEntity entity, 
+            ServiceBusEntityType entity, 
             string entityName,
             string authorizationRuleName)
         {
@@ -32,9 +33,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Guard.NotNullOrWhitespace(entityName, nameof(entityName));
             Guard.NotNullOrWhitespace(authorizationRuleName, nameof(authorizationRuleName));
             Guard.For<ArgumentException>(
-                () => !Enum.IsDefined(typeof(ServiceBusEntity), entity), 
-                $"Azure Service Bus entity '{entity}' is not defined in the '{nameof(ServiceBusEntity)}' enumeration");
-
+                () => !Enum.IsDefined(typeof(ServiceBusEntityType), entity), 
+                $"Azure Service Bus entity '{entity}' is not defined in the '{nameof(ServiceBusEntityType)}' enumeration");
+            Guard.For<ArgumentOutOfRangeException>(
+                () => entity is ServiceBusEntityType.Unknown, "Azure Service Bus entity type 'Unknown' is not supported here");
+            
             ResourceGroup = resourceGroup;
             Namespace = @namespace;
             Entity = entity;
@@ -55,7 +58,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Gets the entity type of the Azure Service Bus resource.
         /// </summary>
-        public ServiceBusEntity Entity { get; }
+        public ServiceBusEntityType Entity { get; }
         
         /// <summary>
         /// Gets the entity name of the Azure Service Bus resource.

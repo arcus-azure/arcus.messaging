@@ -11,6 +11,7 @@ using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.KeyVault.Models;
 using Microsoft.Azure.Management.ServiceBus;
 using Microsoft.Azure.Management.ServiceBus.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Rest.Azure;
 using Moq;
@@ -37,7 +38,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         [Fact]
         public void CreateRotation_WithoutAuthentication_Throws()
         {
-            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
+            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntityType.Topic, "entity name", "authorization rule name");
             var client = new AzureServiceBusClient(Mock.Of<IAzureServiceBusManagementAuthentication>(), location, NullLogger.Instance);
             Assert.ThrowsAny<ArgumentException>(
                 () => new AzureServiceBusKeyRotation(
@@ -50,7 +51,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         [Fact]
         public void CreateRotation_WithoutConfiguration_Throws()
         {
-            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
+            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntityType.Topic, "entity name", "authorization rule name");
             var client = new AzureServiceBusClient(Mock.Of<IAzureServiceBusManagementAuthentication>(), location, NullLogger.Instance);
             Assert.ThrowsAny<ArgumentException>(
                 () => new AzureServiceBusKeyRotation(
@@ -63,7 +64,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         [Fact]
         public void CreateRotation_WithoutLogger_Throws()
         {
-            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntity.Topic, "entity name", "authorization rule name");
+            var location = new AzureServiceBusNamespace("resource group", "namespace", ServiceBusEntityType.Topic, "entity name", "authorization rule name");
             var client = new AzureServiceBusClient(Mock.Of<IAzureServiceBusManagementAuthentication>(), location, NullLogger.Instance);
             Assert.ThrowsAny<ArgumentException>(
                 () => new AzureServiceBusKeyRotation(
@@ -74,9 +75,9 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         }
 
         [Theory]
-        [InlineData(ServiceBusEntity.Topic)]
-        [InlineData(ServiceBusEntity.Queue)]
-        public async Task RotateServiceBusSecret_WithValidArguments_RotatesPrimarySecondaryAlternately(ServiceBusEntity entity)
+        [InlineData(ServiceBusEntityType.Topic)]
+        [InlineData(ServiceBusEntityType.Queue)]
+        public async Task RotateServiceBusSecret_WithValidArguments_RotatesPrimarySecondaryAlternately(ServiceBusEntityType entity)
         {
             // Arrange
             string vaultUrl = BogusGenerator.Internet.UrlWithPath(protocol: "https");
@@ -114,7 +115,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
                invocation => AssertInvocationKeyRotation(invocation, KeyType.SecondaryKey));
         }
 
-        private static AzureServiceBusNamespace GenerateAzureServiceBusLocation(ServiceBusEntity entity)
+        private static AzureServiceBusNamespace GenerateAzureServiceBusLocation(ServiceBusEntityType entity)
         {
             var location = new AzureServiceBusNamespace(
                 resourceGroup: BogusGenerator.Random.Word(),
@@ -178,19 +179,25 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         }
 
         private static IEnumerable<IInvocation> DetermineRelevantInvocations(
-            ServiceBusEntity entity,
+            ServiceBusEntityType entity,
             IEnumerable<IInvocation> topicInvocations,
             IEnumerable<IInvocation> queueInvocations)
         {
-            return entity == ServiceBusEntity.Topic ? topicInvocations : queueInvocations;
+            return entity switch
+            {
+                ServiceBusEntityType.Topic => topicInvocations,
+                ServiceBusEntityType.Queue => queueInvocations,
+                ServiceBusEntityType.Unknown => throw new ArgumentOutOfRangeException(nameof(entity), "Don't support 'Unknown' Azure Service Bus entity type here"),
+                _ => throw new ArgumentOutOfRangeException(nameof(entity), entity, "Azure Service Bus entity type should either be 'Topic' or 'Queue'")
+            };
         }
 
         private static IEnumerable<IInvocation> DetermineNonRelevantInvocations(
-            ServiceBusEntity entity,
+            ServiceBusEntityType entity,
             IEnumerable<IInvocation> topicInvocations,
             IEnumerable<IInvocation> queueInvocations)
         {
-            return entity == ServiceBusEntity.Topic ? queueInvocations : topicInvocations;
+            return entity == ServiceBusEntityType.Topic ? queueInvocations : topicInvocations;
         }
 
         private static void AssertInvocationKeyRotation(IInvocation invocation, KeyType keyType)

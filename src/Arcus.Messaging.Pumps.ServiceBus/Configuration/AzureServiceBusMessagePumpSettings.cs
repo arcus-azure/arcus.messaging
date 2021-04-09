@@ -34,10 +34,50 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="getConnectionStringFromConfigurationFunc"/> nor the <paramref name="getConnectionStringFromSecretFunc"/> is available.
         /// </exception>
+        [Obsolete("Use the other constructor overload with the build-in '" + nameof(ServiceBusEntityType) + "' enumeration")]
         public AzureServiceBusMessagePumpSettings(
             string entityName,
             string subscriptionName,
             ServiceBusEntity serviceBusEntity,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
+            AzureServiceBusMessagePumpConfiguration options, 
+            IServiceProvider serviceProvider)
+            : this(entityName, subscriptionName, ConvertToServiceBusEntityType(serviceBusEntity), getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, options, serviceProvider)
+        {
+        }
+
+#pragma warning disable 618
+        private static ServiceBusEntityType ConvertToServiceBusEntityType(ServiceBusEntity serviceBusEntity)
+        {
+            switch (serviceBusEntity)
+            {
+                case ServiceBus.ServiceBusEntity.Queue: return ServiceBusEntityType.Queue;
+                case ServiceBus.ServiceBusEntity.Topic: return ServiceBusEntityType.Topic;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(serviceBusEntity), serviceBusEntity, "Unknown Azure Service Bus entity");
+            }
+        }
+#pragma warning restore 618
+        
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="AzureServiceBusMessagePumpSettings"/> class.
+        /// </summary>
+        /// <param name="entityName">The name of the entity to process.</param>
+        /// <param name="subscriptionName">The name of the subscription to process.</param>
+        /// <param name="serviceBusEntity">The entity type of the Azure Service Bus.</param>
+        /// <param name="getConnectionStringFromConfigurationFunc">The function to look up the connection string from the configuration.</param>
+        /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store.</param>
+        /// <param name="options">The options that influence the behavior of the <see cref="AzureServiceBusMessagePump"/>.</param>
+        /// <param name="serviceProvider">The collection of services to use during the lifetime of the <see cref="AzureServiceBusMessagePump"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> or <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="getConnectionStringFromConfigurationFunc"/> nor the <paramref name="getConnectionStringFromSecretFunc"/> is available.
+        /// </exception>
+        public AzureServiceBusMessagePumpSettings(
+            string entityName,
+            string subscriptionName,
+            ServiceBusEntityType serviceBusEntity,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
             AzureServiceBusMessagePumpConfiguration options, 
@@ -48,7 +88,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
                 $"Requires an function that determines the connection string from either either an {nameof(IConfiguration)} or {nameof(ISecretProvider)} instance");
             Guard.NotNull(options, nameof(options), "Requires message pump options that influence the behavior of the message pump");
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to get additional registered services during the lifetime of the message pump");
-
+            Guard.For<ArgumentException>(
+                () => !Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity), 
+                $"Azure Service Bus entity '{serviceBusEntity}' is not defined in the '{nameof(ServiceBusEntityType)}' enumeration");
+            Guard.For<ArgumentOutOfRangeException>(
+                () => serviceBusEntity is ServiceBusEntityType.Unknown, "Azure Service Bus entity type 'Unknown' is not supported here");
+            
             _serviceProvider = serviceProvider;
             _getConnectionStringFromConfigurationFunc = getConnectionStringFromConfigurationFunc;
             _getConnectionStringFromSecretFunc = getConnectionStringFromSecretFunc;
@@ -74,7 +119,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         ///     Entity of the Service Bus.
         /// </summary>
-        public ServiceBusEntity ServiceBusEntity { get; }
+        public ServiceBusEntityType ServiceBusEntity { get; }
 
         /// <summary>
         ///     Options that influence the behavior of the message pump

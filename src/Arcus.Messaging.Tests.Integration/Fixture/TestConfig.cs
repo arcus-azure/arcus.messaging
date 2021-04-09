@@ -4,6 +4,7 @@ using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Integration.MessagePump;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
@@ -66,12 +67,12 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// Gets the Service Bus connection string based on the given <paramref name="entity"/>.
         /// </summary>
         /// <param name="entity">The type of the Service Bus entity.</param>
-        public string GetServiceBusConnectionString(ServiceBusEntity entity)
+        public string GetServiceBusConnectionString(ServiceBusEntityType entity)
         {
             switch (entity)
             {
-                case ServiceBusEntity.Queue: return _config["Arcus:ServiceBus:SelfContained:ConnectionStringWithQueue"];
-                case ServiceBusEntity.Topic: return _config["Arcus:ServiceBus:SelfContained:ConnectionStringWithTopic"];
+                case ServiceBusEntityType.Queue: return _config["Arcus:ServiceBus:SelfContained:ConnectionStringWithQueue"];
+                case ServiceBusEntityType.Topic: return _config["Arcus:ServiceBus:SelfContained:ConnectionStringWithTopic"];
                 default:
                     throw new ArgumentOutOfRangeException(nameof(entity), entity, "Unknown Service Bus entity");
             }
