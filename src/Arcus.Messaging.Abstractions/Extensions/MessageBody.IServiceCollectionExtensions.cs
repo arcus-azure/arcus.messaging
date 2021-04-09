@@ -14,24 +14,24 @@ namespace Microsoft.Extensions.DependencyInjection
     public static partial class IServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an <see cref="MessagePump"/> implementation.
+        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages.
         /// resources.
         /// </summary>
         /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
         /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
-        /// <param name="services">The collection of services to use in the application.</param>
+        /// <param name="collection">The collection of collection to use in the application.</param>
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
-        public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage>(
-            this IServiceCollection services,
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
+        public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
+            this MessageHandlerCollection collection,
             Func<TMessage, bool> messageBodyFilter)
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
+            Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
 
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageBodyFilter);
+            return collection.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageBodyFilter);
         }
 
         /// <summary>
@@ -41,45 +41,45 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
         /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
         /// <typeparam name="TMessageContext">The type of the context in which the message handler will process the message.</typeparam>
-        /// <param name="services">The collection of services to use in the application.</param>
+        /// <param name="collection">The collection of collection to use in the application.</param>
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
-        public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-            this IServiceCollection services,
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
+        public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+            this MessageHandlerCollection collection,
             Func<TMessage, bool> messageBodyFilter)
             where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
+            Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
 
-            return services.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+            return collection.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
                 messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
         /// <summary>
-        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an <see cref="MessagePump"/> implementation.
+        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages.
         /// resources.
         /// </summary>
         /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
         /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
-        /// <param name="services">The collection of services to use in the application.</param>
+        /// <param name="collection">The collection of collection to use in the application.</param>
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
         /// <param name="implementationFactory">The function that creates the service.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/>, <paramref name="messageBodyFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage>(
-            this IServiceCollection services,
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/>, <paramref name="messageBodyFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
+            this MessageHandlerCollection collection,
             Func<TMessage, bool> messageBodyFilter,
             Func<IServiceProvider, TMessageHandler> implementationFactory)
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
+            Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
+            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent collection");
 
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageBodyFilter, implementationFactory);
+            return collection.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageBodyFilter, implementationFactory);
         }
 
         /// <summary>
@@ -89,29 +89,31 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
         /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
         /// <typeparam name="TMessageContext">The type of the context in which the message handler will process the message.</typeparam>
-        /// <param name="services">The collection of services to use in the application.</param>
+        /// <param name="collection">The collection of collection to use in the application.</param>
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
         /// <param name="implementationFactory">The function that creates the message handler.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/>, <paramref name="messageBodyFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-            this IServiceCollection services,
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/>, <paramref name="messageBodyFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+            this MessageHandlerCollection collection,
             Func<TMessage, bool> messageBodyFilter,
             Func<IServiceProvider, TMessageHandler> implementationFactory)
             where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
+            Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
+            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent collection");
 
-            return services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
+            collection.Services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
                 serviceProvider => new MessageHandlerRegistration<TMessage, TMessageContext>(
                     messageContextFilter: null,
                     messageBodySerializer: null,
                     messageBodyFilter: messageBodyFilter,
                     messageHandlerImplementation: implementationFactory(serviceProvider),
                     logger: serviceProvider.GetService<ILogger<MessageHandlerRegistration<TMessage, TMessageContext>>>()));
+
+            return collection;
         }
     }
 }

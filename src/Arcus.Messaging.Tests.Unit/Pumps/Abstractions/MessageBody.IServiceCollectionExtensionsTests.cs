@@ -16,7 +16,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerDefaultContext_WithMessageBodyFilter_UsesFilter(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             var message = new TestMessage();
             
             // Act
@@ -27,7 +27,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             });
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = services.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             MessageHandler handler = Assert.Single(handlers);
             Assert.NotNull(handler);
@@ -39,7 +39,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerDefaultContext_WithoutMessageBodyFilter_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(messageBodyFilter: null));
@@ -51,7 +51,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerCustomContext_WithMessageBodyFilter_UsesFilter(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             var message = new TestMessage();
             
             // Act
@@ -62,7 +62,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             });
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = services.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             MessageHandler handler = Assert.Single(handlers);
             Assert.NotNull(handler);
@@ -74,7 +74,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerCustomContext_WithoutMessageBodyFilter_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(messageBodyFilter: null));
@@ -86,7 +86,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerDefaultContext_WithMessageBodyFilterWithImplementationFactory_UsesFilter(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             var expectedHandler = new DefaultTestMessageHandler();
             var message = new TestMessage();
             
@@ -98,7 +98,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             }, implementationFactory: serviceProvider => expectedHandler);
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = services.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             MessageHandler handler = Assert.Single(handlers);
             Assert.NotNull(handler);
@@ -111,7 +111,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerDefaultContext_WithoutMessageBodyFilterWithImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(
@@ -122,7 +122,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerDefaultContext_WithMessageBodyFilterWithoutImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(
@@ -135,7 +135,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerCustomContext_WithMessageBodyFilterWithImplementationFactory_UsesFilter(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             var expectedHandler = new TestMessageHandler();
             var message = new TestMessage();
             
@@ -147,7 +147,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             }, implementationFactory: serviceProvider => expectedHandler);
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = services.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             MessageHandler handler = Assert.Single(handlers);
             Assert.NotNull(handler);
@@ -160,7 +160,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerCustomContext_WithoutMessageBodyFilterWithImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
@@ -171,7 +171,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerCustomContext_WithMessageBodyFilterWithoutImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(

@@ -36,9 +36,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public async Task CustomMessageHandlerConstructor_WithDefaultContext_SubtractsRegistration()
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>();
-            IServiceProvider serviceProvider = services.BuildServiceProvider();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>();
+            IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -57,10 +57,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public async Task CustomMessageHandlerFactory_WithDefaultContext_SubtractsRegistration()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
             var spyHandler = new DefaultTestMessageHandler();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(provider => spyHandler);
-            IServiceProvider serviceProvider = services.BuildServiceProvider();
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(provider => spyHandler);
+            IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -80,9 +80,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public async Task CustomMessageHandlerConstructor_WithCustomContext_SubtractsRegistration()
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>();
-            IServiceProvider serviceProvider = services.BuildServiceProvider();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
+            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>();
+            IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -103,9 +103,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void CustomMessageHandlerConstructor_WithDefaultContextFilter_SubtractsRegistration(bool matchesContext)
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>((MessageContext messageContext) => matchesContext);
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>((MessageContext messageContext) => matchesContext);
+            ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -124,9 +124,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void CustomMessageHandlerConstructor_WithDefaultMessageBodyFilter_SubtractsRegistration(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>((TestMessage messageBody) => matches);
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>((TestMessage messageBody) => matches);
+            ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -143,9 +143,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void CustomMessageHandlerConstructor_WithMessageBodyFilter_SubtractsRegistration(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>((TestMessage message) => matches);
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
+            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>((TestMessage message) => matches);
+            ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -162,9 +162,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void CustomMessageHandlerConstructor_WithContextFilter_SubtractsRegistration(bool matchesContext)
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>((TestMessageContext messageContext) => matchesContext);
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
+            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>((TestMessageContext messageContext) => matchesContext);
+            ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -183,9 +183,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void CustomMessageHandlerConstructor_WithContextFilterObsolete_SubtractsRegistration(bool matchesContext)
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>((TestMessageContext messageContext) => matchesContext);
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
+            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>((TestMessageContext messageContext) => matchesContext);
+            ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -204,12 +204,12 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void CustomMessageHandlerFactory_WithDefaultContextFilter_SubtractsRegistration(bool matchesContext)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
             var spyHandler = new DefaultTestMessageHandler();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(
                 (MessageContext messageContext) => matchesContext,
                 provider => spyHandler);
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
+            ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -228,12 +228,12 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void CustomMessageHandlerFactory_WithDefaultContextFilterObsolete_SubtractsRegistration(bool matchesContext)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
             var spyHandler = new DefaultTestMessageHandler();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(
                 (MessageContext messageContext) => matchesContext,
                 provider => spyHandler);
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
+            ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -252,9 +252,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             // Arrange
             var spyHandler = new TestMessageHandler();
 
-            var services = new ServiceCollection();
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(provider => spyHandler);
-            IServiceProvider serviceProvider = services.BuildServiceProvider();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
+            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(provider => spyHandler);
+            IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -276,12 +276,12 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void CustomMessageHandlerFactory_WithContextFilter_SubtractsRegistration(bool matchesContext)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
             var spyHandler = new TestMessageHandler();
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
+            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
                 (TestMessageContext messageContext) => matchesContext,
                 provider => spyHandler);
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
+            ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -302,13 +302,13 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void CustomMessageHandlerFactory_WithMessageBodyAndContextFilter_SubtractsRegistration(bool matchesBody, bool matchesContext)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new MessageHandlerCollection(new ServiceCollection());
             var spyHandler = new TestMessageHandler();
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
+            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
                 (TestMessageContext messageContext) => matchesContext,
                 (TestMessage messageBody) => matchesBody,
                 provider => spyHandler);
-            ServiceProvider serviceProvider = services.BuildServiceProvider();
+            ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -335,10 +335,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
                 ServiceDescriptor.Singleton<IMessageHandler<TestMessage, TestMessageContext>, TestMessageHandler>(), 
             };
 
-            var services = new ServiceCollection();
-            Assert.All(descriptors, descriptor => services.Insert(descriptors.IndexOf(descriptor), descriptor));
+            var collection = new MessageHandlerCollection(new ServiceCollection());
+            Assert.All(descriptors, descriptor => collection.Services.Insert(descriptors.IndexOf(descriptor), descriptor));
 
-            IServiceProvider serviceProvider = services.BuildServiceProvider();
+            IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
             
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
@@ -359,17 +359,17 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             var spyHandler1 = new TestMessageHandler();
             var spyHandler2 = new TestMessageHandler();
 
-            var services = new ServiceCollection();
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
+            var collection = new MessageHandlerCollection(new ServiceCollection());
+            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
                 messageContextFilter: ctx => ctx.MessageId == "some other ID",
                 implementationFactory: provider => spyHandler2);
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
+            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
                 messageContextFilter: ctx => ctx.MessageId == messageId,
                 implementationFactory: provider => spyHandler1);
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>();
+            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>();
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>();
 
-            IServiceProvider serviceProvider = services.BuildServiceProvider();
+            IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
             var pump = new TestMessagePump(serviceProvider);
 
             // Act
@@ -386,12 +386,12 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             // Arrange
             var spyHandler = new StubTestMessageHandler<Purchase, MessageContext>();
 
-            var services = new ServiceCollection();
-            services.WithMessageHandler<StubTestMessageHandler<Order, MessageContext>, Order>();
-            services.WithMessageHandler<StubTestMessageHandler<Purchase, TestMessageContext>, Purchase, TestMessageContext>();
-            services.WithMessageHandler<StubTestMessageHandler<Purchase, MessageContext>, Purchase>(provider => spyHandler);
+            var collection = new MessageHandlerCollection(new ServiceCollection());
+            collection.WithMessageHandler<StubTestMessageHandler<Order, MessageContext>, Order>();
+            collection.WithMessageHandler<StubTestMessageHandler<Purchase, TestMessageContext>, Purchase, TestMessageContext>();
+            collection.WithMessageHandler<StubTestMessageHandler<Purchase, MessageContext>, Purchase>(provider => spyHandler);
 
-            IServiceProvider serviceProvider = services.BuildServiceProvider();
+            IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
             var pump = new TestMessagePump(serviceProvider);
 
             var purchase = new Purchase

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions;
 using CloudNative.CloudEvents;
 using Microsoft.Extensions.Configuration;
@@ -18,11 +19,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         public void AddAutoRestart_WithoutJobId_Fails(string jobId)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
             
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
+                () => collection.WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
                     jobId,
                     "subscription-prefix",
                     "service bus topic connection string secret key",
@@ -34,11 +35,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         public void WithAutoRestart_WithoutSubscriptionPrefix_Fails(string subscriptionPrefix)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
             
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
+                () => collection.WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
                     "job ID",
                     subscriptionPrefix,
                     "service bus topic connection string secret key",
@@ -51,11 +52,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
             string serviceBusTopicConnectionStringSecretKey)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
             
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
+                () => collection.WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
                     "job ID",
                     "subscription-prefix",
                     serviceBusTopicConnectionStringSecretKey,
@@ -67,11 +68,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         public void WithAutoRestart_WithoutMessagePumpConnectionStringKey_Fails(string messagePumpConnectionStringKey)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
             
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
+                () => collection.WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
                     "job ID",
                     "subscription-prefix",
                     "service bus topic connection string secret key",
@@ -82,19 +83,19 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         public void WithAutoRestart_WithoutRelatedMessagePump_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
-            services.AddSingleton<IConfiguration>(new ConfigurationRoot(new List<IConfigurationProvider>()));
-            services.AddLogging();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
+            collection.Services.AddSingleton<IConfiguration>(new ConfigurationRoot(new List<IConfigurationProvider>()));
+            collection.Services.AddLogging();
             
             // Act
-            services.WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
+            collection.WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
                 "job ID",
                 "subscription-prefix",
                 "service bus topic connection string secret key",
                 "message pump connection string key");
             
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = collection.Services.BuildServiceProvider();
             var exception = Assert.ThrowsAny<InvalidOperationException>(() =>
                 provider.GetRequiredService<IMessageHandler<CloudEvent, AzureServiceBusMessageContext>>());
             Assert.Contains("Cannot register re-authentication", exception.Message);

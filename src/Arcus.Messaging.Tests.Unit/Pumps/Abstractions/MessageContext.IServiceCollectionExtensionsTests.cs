@@ -17,7 +17,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerWithDefaultContext_WithMessageContextFilter_UsesFilter(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             var expectedContext = new MessageContext("message-id", new Dictionary<string, object>());
 
             // Act
@@ -28,7 +28,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             });
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = services.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             MessageHandler handler = Assert.Single(handlers);
             Assert.NotNull(handler);
@@ -40,7 +40,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerWithDefaultContext_WithoutMessageContextFilter_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
@@ -53,7 +53,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerWithDefaultContext_WithMessageContextFilterWithImplementationFactory_UsesFilter(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             var expectedHandler = new DefaultTestMessageHandler();
             var expectedContext = new MessageContext("message-id", new Dictionary<string, object>());
 
@@ -65,7 +65,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             }, implementationFactory: serviceProvider => expectedHandler);
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = services.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             MessageHandler handler = Assert.Single(handlers);
             Assert.NotNull(handler);
@@ -78,7 +78,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerWithDefaultContext_WithoutMessageContextFilterWithImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
@@ -90,7 +90,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerWithDefaultContext_WithMessageContextFilterWithoutImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
@@ -104,7 +104,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerWithCustomContext_WithMessageContextFilter_UsesFilter(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             var expectedContext = TestMessageContext.Generate();
 
             // Act
@@ -115,7 +115,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             });
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = services.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             MessageHandler handler = Assert.Single(handlers);
             Assert.NotNull(handler);
@@ -127,7 +127,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerWithCustomContext_WithoutMessageContextFilter_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
@@ -140,7 +140,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerWithCustomContext_WithMessageContextFilterWithImplementationFactory_UsesFilter(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
             var expectedHandler = new TestMessageHandler();
             var expectedContext = TestMessageContext.Generate();
 
@@ -152,7 +152,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             }, implementationFactory: serviceProvider => expectedHandler);
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = services.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             MessageHandler handler = Assert.Single(handlers);
             Assert.NotNull(handler);
@@ -165,7 +165,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         public void WithMessageHandlerWithCustomContext_WithMessageContextFilterWithoutImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new MessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
