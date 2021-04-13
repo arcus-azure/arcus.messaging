@@ -71,7 +71,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             {
                 var serviceType = (Type) descriptor.GetRequiredPropertyValue("ServiceType");
                 if (serviceType.Name == typeof(IMessageHandler<,>).Name 
-                    && serviceType.Namespace == typeof(IMessageHandler<>).Namespace)
+                    && serviceType.Namespace == typeof(IMessageHandler<>).Namespace
+                    && messageHandlers.All(handler => handler._serviceType != serviceType))
                 {
                     IEnumerable<object> services = serviceProvider.GetServices(serviceType);
                     foreach (object service in services)
@@ -233,11 +234,19 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                         {
                             if (result.IsSuccess)
                             {
-                                _logger.LogTrace("Custom {MessageBodySerializerType} message deserialization was successful", nameof(IMessageBodySerializer));
-                                return result;
+                                Type deserializedMessageType = result.DeserializedMessage.GetType();
+                                if (deserializedMessageType == MessageType
+                                    || deserializedMessageType.IsSubclassOf(MessageType))
+                                {
+                                    return result;
+                                }
+
+                                _logger.LogTrace("Incoming message '{DeserializedMessageType}' was successfully custom deserialized but can't be processed by message handler because the handler expects message type '{MessageHandlerMessageType}'; fallback to default deserialization", deserializedMessageType.Name, MessageType.Name);
+                                return MessageResult.Failure("Custom message deserialization failed because it didn't match the expected message handler's message type");
                             }
 
                             _logger.LogTrace("Custom {MessageBodySerializerType} message deserialization failed: {ErrorMessage} {Exception}", nameof(IMessageBodySerializer), result.ErrorMessage, result.Exception);
+                            return MessageResult.Failure("Custom message deserialization failed due to an exception");
                         }
                     }
 
@@ -284,7 +293,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Type messageType = message.GetType();
             _logger.LogTrace("Start processing '{MessageType}' message in message handler '{MessageHandlerType}'...", messageType, messageHandlerType.Name);
 
-            const string methodName = "ProcessMessageAsync";
+            const string methodName = nameof(IMessageHandler<object, MessageContext>.ProcessMessageAsync);
             try
             {
                 var processMessageAsync =

@@ -28,7 +28,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// </summary>
     public class AzureServiceBusMessagePump : MessagePump
     {
+        // TODO: remove 'old' workings after the background jobs package is updated with the new messaging package.
         private readonly IAzureServiceBusFallbackMessageHandler _fallbackMessageHandler;
+        
+        private readonly IAzureServiceBusMessageRouter _messageRouter;
         private readonly MessageHandlerOptions _messageHandlerOptions;
         private readonly IDisposable _loggingScope;
         
@@ -36,21 +39,58 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private MessageReceiver _messageReceiver;
         private int _unauthorizedExceptionCount = 0;
 
+        
         /// <summary>
-        ///     Constructor
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump"/> class.
+        /// </summary>
+        /// <param name="settings">Settings to configure the message pump</param>
+        /// <param name="configuration">Configuration of the application</param>
+        /// <param name="serviceProvider">Collection of services that are configured</param>
+        /// <param name="messageRouter">The router to route incoming Azure Service Bus messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.</param>
+        /// <param name="logger">Logger to write telemetry to</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="settings"/>, <paramref name="configuration"/>, <paramref name="serviceProvider"/>, <paramref name="messageRouter"/> is <c>null</c>.</exception>
+        public AzureServiceBusMessagePump(
+            AzureServiceBusMessagePumpSettings settings,
+            IConfiguration configuration, 
+            IServiceProvider serviceProvider, 
+            IAzureServiceBusMessageRouter messageRouter,
+            ILogger<AzureServiceBusMessagePump> logger)
+            : base(configuration, serviceProvider, logger)
+        {
+            Guard.NotNull(settings, nameof(settings), "Requires a set of settings to correctly configure the message pump");
+            Guard.NotNull(configuration, nameof(configuration), "Requires a configuration instance to retrieve application-specific information");
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to retrieve the registered message handlers");
+            Guard.NotNull(messageRouter, nameof(messageRouter), "Requires a message router to route incoming Azure Service Bus messages through registered message handlers");
+            
+            Settings = settings;
+            JobId = Settings.Options.JobId;
+            SubscriptionName = Settings.SubscriptionName;
+
+            _messageRouter = messageRouter;
+            _messageHandlerOptions = DetermineMessageHandlerOptions(Settings);
+            _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
+        }
+
+        // TODO: remove 'old' workings after the background jobs package is updated with the new messaging package.
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump" /> class.
         /// </summary>
         /// <param name="settings">Settings to configure the message pump</param>
         /// <param name="configuration">Configuration of the application</param>
         /// <param name="serviceProvider">Collection of services that are configured</param>
         /// <param name="logger">Logger to write telemetry to</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="settings"/>, <paramref name="configuration"/>, <paramref name="serviceProvider"/>, <paramref name="messageRouter"/> is <c>null</c>.</exception>
+        [Obsolete("This constructor is marked to be removed, use the other constructor with the Azure Service Bus router '" + nameof(IAzureServiceBusMessageRouter) + "'")]
         public AzureServiceBusMessagePump(
-            AzureServiceBusMessagePumpSettings settings, 
+            AzureServiceBusMessagePumpSettings settings,
             IConfiguration configuration, 
             IServiceProvider serviceProvider, 
             ILogger<AzureServiceBusMessagePump> logger)
             : base(configuration, serviceProvider, logger)
         {
             Guard.NotNull(settings, nameof(settings), "Requires a set of settings to correctly configure the message pump");
+            Guard.NotNull(configuration, nameof(configuration), "Requires a configuration instance to retrieve application-specific information");
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to retrieve the registered message handlers");
             
             Settings = settings;
             JobId = Settings.Options.JobId;
@@ -536,13 +576,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             if (message is null)
             {
-                Logger.LogWarning("Received message was null, skipping");
+                Logger.LogWarning("Received message on Azure Service Bus message pump '{JobId}' was null, skipping", JobId);
                 return;
             }
 
             if (_isHostShuttingDown)
             {
-                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the host is shutting down",  message.MessageId);
+                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure Service Bus message pump '{JobId}' is shutting down",  message.MessageId, JobId);
                 await AbandonMessageAsync(message.SystemProperties.LockToken);
 
                 return;
@@ -550,8 +590,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (String.IsNullOrEmpty(message.CorrelationId))
             {
-                Logger.LogTrace("No operation ID was found on the message");
+                Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus message pump '{JobId}'", message.MessageId, JobId);
             }
+
+            var messageContext = new AzureServiceBusMessageContext(message.MessageId, JobId, message.SystemProperties, message.UserProperties);
 
             string transactionIdPropertyName = Settings.Options.Correlation?.TransactionIdPropertyName ?? PropertyNames.TransactionId;
             MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo(transactionIdPropertyName);
@@ -560,22 +602,39 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();
                 if (correlationInfoAccessor is null)
                 {
-                    Logger.LogTrace("No message correlation configured");
-                    await ProcessMessageWithFallbackAsync(message, cancellationToken, correlationInfo);
+                    Logger.LogTrace("No message correlation configured in Azure Service Bus message pump '{JobId}' while processing message '{MessageId}'", JobId, message.MessageId);
+                    if (_messageRouter is null)
+                    {
+                        // TODO: remove 'old' workings after the background jobs package is updated with the new messaging package.
+                        await ProcessMessageWithFallbackAsync(message, cancellationToken, correlationInfo);
+                    }
+                    else
+                    {
+                        await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                    }
                 }
                 else
                 {
                     correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
                     using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
                     {
-                        await ProcessMessageWithFallbackAsync(message, cancellationToken, correlationInfo);
+                        if (_messageRouter is null)
+                        {
+                            // TODO: remove 'old' workings after the background jobs package is updated with the new messaging package.
+                            await ProcessMessageWithFallbackAsync(message, cancellationToken, correlationInfo);
+                        }
+                        else
+                        {
+                            await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationInfo, cancellationToken); 
+                        }
                     }
                 }
             }
         }
-
+        
+        // TODO: remove 'old' workings after the background jobs package is updated with the new messaging package.
         /// <summary>
-        /// Pre-process the message by setting the necessary values the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.
+        /// Pre-process the message by setting the necessary values the <see cref="IMessageHandler{TMessage}"/> implementation.
         /// </summary>
         /// <param name="messageHandler">The message handler to be used to process the message.</param>
         /// <param name="messageContext">The message context of the message that will be handled.</param>
@@ -632,7 +691,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 throw;
             }
         }
-
+        
         private async Task ProcessMessageWithPotentialFallbackAsync(
             Message message,
             string messageBody,

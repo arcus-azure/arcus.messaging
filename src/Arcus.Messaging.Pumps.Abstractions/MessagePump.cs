@@ -21,7 +21,6 @@ namespace Arcus.Messaging.Pumps.Abstractions
     /// </summary>
     public abstract class MessagePump : BackgroundService
     {
-        private readonly Lazy<IEnumerable<MessageHandler>> _messageHandlers;
         private readonly IFallbackMessageHandler _fallbackMessageHandler;
 
         /// <summary>
@@ -76,20 +75,19 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Configuration = configuration;
             ServiceProvider = serviceProvider;
 
-            _messageHandlers = new Lazy<IEnumerable<MessageHandler>>(() => MessageHandler.SubtractFrom(ServiceProvider, logger));
             _fallbackMessageHandler = serviceProvider.GetService<IFallbackMessageHandler>();
         }
 
         /// <summary>
-        ///     Handles an exception that occured during the receiving of a message
+        ///     Handles an exception that occurred during the receiving of a message
         /// </summary>
-        /// <param name="receiveException">Exception that occured</param>
+        /// <param name="receiveException">Exception that occurred</param>
         protected virtual Task HandleReceiveExceptionAsync(Exception receiveException)
         {
             Logger.LogCritical(receiveException, "Unable to process message from {EntityPath} with client {ClientId}", EntityPath, ClientId);
             return Task.CompletedTask;
         }
-
+        
         /// <summary>
         /// Pre-process the message by setting the necessary values the <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.
         /// </summary>
@@ -100,7 +98,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         {
             return Task.CompletedTask;
         }
-
+        
         /// <summary>
         ///     Handle a new message that was received
         /// </summary>

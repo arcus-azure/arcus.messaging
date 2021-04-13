@@ -11,6 +11,7 @@ using Arcus.Testing.Logging;
 using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
 using Xunit;
@@ -370,10 +371,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>();
 
             IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
-            var pump = new TestMessagePump(serviceProvider);
+            var router = new TestMessageRouter(serviceProvider, _logger);
 
             // Act
-            await pump.ProcessMessageAsync(messageJson, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(messageJson, context, correlationInfo, CancellationToken.None);
 
             // Assert
             Assert.True(spyHandler1.IsProcessed);
@@ -392,7 +393,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             collection.WithMessageHandler<StubTestMessageHandler<Purchase, MessageContext>, Purchase>(provider => spyHandler);
 
             IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
-            var pump = new TestMessagePump(serviceProvider);
+            var router = new TestMessageRouter(serviceProvider, _logger);
 
             var purchase = new Purchase
             {
@@ -404,10 +405,29 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             // Act
-            await pump.ProcessMessageAsync(purchaseJson, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(purchaseJson, context, correlationInfo, CancellationToken.None);
 
             // Assert
             Assert.True(spyHandler.IsProcessed);
+        }
+        
+        [Fact]
+        public void WithMultipleMessageHandlers_WithSameMessageType_RegistersBoth()
+        {
+            // Arrange
+            var services = new MessageHandlerCollection(new ServiceCollection());
+            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(message => message.TestProperty == "Some value");
+            
+            // Act
+            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(message => message.TestProperty == "Some other value");
+            
+            // Assert
+            IServiceProvider provider = services.Services.BuildServiceProvider();
+            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
+            Assert.Collection(
+                handlers,
+                handler => Assert.True(handler.CanProcessMessageBasedOnMessage(new TestMessage { TestProperty = "Some value" })),
+                handler => Assert.True(handler.CanProcessMessageBasedOnMessage(new TestMessage { TestProperty = "Some other value" })));
         }
     }
 }
