@@ -20,6 +20,8 @@ PM > Install-Package Arcus.Messaging.Abstractions
 - Support for exposing TCP health probes to periodically check liveness/readiness of the host ([docs](features/tcp-health-probe))
 - Customize message pumps ([docs](features/message-pumps/customization))
     - Fallback message handlers
+- Using message pumps with Azure Functions
+    - Azure Service Bus ([docs](features/message-pumps/service-bus-azure-functions))
 
 ## Older versions
 

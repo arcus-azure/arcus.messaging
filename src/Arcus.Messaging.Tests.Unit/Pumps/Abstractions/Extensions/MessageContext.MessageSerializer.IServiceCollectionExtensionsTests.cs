@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
@@ -10,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using ArgumentException = System.ArgumentException;
 
-namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
+namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions.Extensions
 {
     public class MessageContextMessageSerializerIServiceCollectionExtensionsTests
     {

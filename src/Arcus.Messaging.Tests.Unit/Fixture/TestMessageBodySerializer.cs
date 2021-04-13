@@ -11,7 +11,7 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
     public class TestMessageBodySerializer : IMessageBodySerializer
     {
         private readonly string _expectedExpectedBody;
-        private readonly TestMessage _message;
+        private readonly object _message;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TestMessageBodySerializer"/> class.
@@ -30,7 +30,7 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
         /// <summary>
         /// Initializes a new instance of the <see cref="TestMessageBodySerializer"/> class.
         /// </summary>
-        public TestMessageBodySerializer(string expectedBody, TestMessage message)
+        public TestMessageBodySerializer(string expectedBody, object message)
         {
             Guard.NotNull(message, nameof(message), "Requires a test message to be used as result of the message deserialization");
 

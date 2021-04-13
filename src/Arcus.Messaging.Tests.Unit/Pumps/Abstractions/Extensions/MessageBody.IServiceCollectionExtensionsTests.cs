@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
+namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions.Extensions
 {
     public class MessageBodyIServiceCollectionExtensionsTests
     {

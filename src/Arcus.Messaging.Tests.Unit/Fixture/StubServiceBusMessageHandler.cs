@@ -7,9 +7,10 @@ using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 namespace Arcus.Messaging.Tests.Unit.Fixture
 {
     /// <summary>
-    /// Test <see cref="IAzureServiceBusMessageHandler{TMessage}"/> implementation processing the <see cref="TestMessage"/>.
+    /// Test <see cref="IAzureServiceBusMessageHandler{TMessage}"/> implementation to stub out any generic messages.
     /// </summary>
-    public class TestServiceBusMessageHandler : IAzureServiceBusMessageHandler<TestMessage>
+    /// <typeparam name="TMessage">The type of the message to handle.</typeparam>
+    public class StubServiceBusMessageHandler<TMessage> : IAzureServiceBusMessageHandler<TMessage>
     {
         /// <summary>
         /// Gets the flag indicating whether or not this message handler was being used to process a message.
@@ -27,7 +28,7 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
         public Task ProcessMessageAsync(
-            TestMessage message,
+            TMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)

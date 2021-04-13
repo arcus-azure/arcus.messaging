@@ -5,8 +5,8 @@ layout: default
 
 # Customize message pumps
 
-While the message processing is handled by the `IMessageHandler<>` implementations, the message pump controls in what format the message is received.
-We allow several customizations while implementing your own message pump.
+While the message processing is handled by the `IMessageHandler<>` implementations, the message router controls in what format the message is received.
+We allow several customizations while using a built-in or implementing your own message router.
 
 - [Filter messages based on message context](#filter-messages-based-on-message-context)
 - [Control custom deserialization](#control-custom-deserialization)
@@ -56,10 +56,23 @@ public class Startup
 
 ## Control custom deserialization
 
-### Extending the message pump
+### Extending the message router
 
-When inheriting from an `...MessagePump` type, there's a way to control how the incoming raw message is being deserialized.
-Based on the message type of the registered message handlers, the pump determines if the incoming message can be deserialized to that type.
+By default, when using the `.AddMessageRouting`, an new `IMessageRouter` instance is registered that contains the basic message routing/handling for incoming messages.
+
+If you want to control the message routing or provide additional functionality, you can do this by implementing your own message router. Next to that, you can also inherit from our built-in message router and override the necessary methods of your choosing.
+
+Here's how you normally would register the message router:
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    // Registers `IMessageRouter`.
+    services.AddMessageRouting();
+}
+```
+
+Alternatively, you can implement your own.
 
 ```csharp
 using System;
@@ -68,13 +81,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-public class OrderMessagePump : MessagePump
+public class OrderMessageRouter : MessageRouter
 {
-    public OrderMessagePump(
-        IConfiguration configuration, 
+    public OrderMessageRouter(
         IServiceProvider serviceProvider, 
-        ILogger<OrderMessagePump> logger)
-        : base(configuration, serviceProvider, logger)
+        ILogger<OrderMessageRouter> logger)
+        : base(serviceProvider, logger)
     {
     }
 
@@ -94,10 +106,29 @@ public class OrderMessagePump : MessagePump
 }
 ```
 
+> Note that our built-in `MessageRouter` implements `IMessageRouter` which you can use within your application.
+
+When inheriting from the `MessageRouter` type, we've controlled how the incoming raw message is being deserialized.
+
+Based on the message type of the registered message handlers, the router determines if the incoming message can be deserialized to that type or not.
+
+This custom message router can be registered using the following code. The custom router will then be registered as an `IMessageRouter` instance.
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddMessageRouting(serviceProvider =>
+    {
+        var logger = serviceProvider.GetService<ILogger<OrderMessageRouter>>();
+        return new OrderMessageRouter(serviceProvider, logger);
+    });
+}
+```
+
 ### Bring your own deserialization
 
 You can also choose to extend the built-in message deserialization with additional deserializer to meet your needs. 
-This allows you to easily deserialize into different message formats or reuse existing (de)serialization capabilities that you already have without altering your message pump. 
+This allows you to easily deserialize into different message formats or reuse existing (de)serialization capabilities that you already have without altering the message router. 
 
 You start by implemeting an `IMessageBodySerializer`. The following example shows how an expected type can be transformed to something else. 
 The result type (in this case `OrderBatch`) will be then be used to check if there is an `IMessageHandler` registered with that message type.
@@ -189,7 +220,7 @@ public class Startup
 
 ## Fallback message handling
 
-When receiving a message on the message pump and none of the registered `IMessageHandler`'s can correctly process the message, the message pump normally throws and logs an exception.
+When receiving a message on the message pump and none of the registered `IMessageHandler`'s can correctly process the message, the message router normally throws and logs an exception.
 
 It could also happen in a scenario that's to be expected that some received messages will not be processed correctly (or you don't want them to).
 

@@ -83,6 +83,7 @@ Other topics:
 - [Customized configuration](#customized-configuration)
 - [Fallback message handling](#fallback-message-handling)
 - [Influence handling of Service Bus message in a message handler](#influence-handling-of-Service-Bus-message-in-message-handler)
+- [Alternative Service Bus message routing](#alternative-Service-Bus-message-routing)
 - [Correlation](#correlation)
 - [Automatic Azure Key Vault credentials rotation](#automatic-azure-key-vault-credentials-rotation)
 
@@ -356,6 +357,54 @@ public class Startup
     }
 }
 ```
+
+## Alternative Service Bus message routing
+
+By default, when registering the Azure Service Bus message pump a built-in message router is registered to handle the routing throughout the previously registered message handlers.
+
+This router is registered with the `IAzureServiceBusMessageRouter` interface (which implements the more general `IMessageRouter` for non-specific Service Bus messages).
+
+When you want for some reason alter the message routing or provide additional functionality, you can register your own router which the Azure Service Bus message pump will use instead.
+
+The following example shows you how a custom router is used for additional tracking. Note that the `AzureServiceBusMessageRouter` implements the `IAzureServiceBusMessageRouter` so we can override the necessary implemenetations.
+
+```csharp
+public class TrackedAzureServiceBusMessageRouter : AzureServiceBusMessageRouter
+{
+    public TrackedAzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger<AzureServiceBusMessageRouter> logger)
+        : base(serviceProvider, logger)
+    {
+    }
+
+    public override Task ProcessMessageAsync(
+        Message message,
+        AzureServiceBusMessageContext messageContext,
+        MessageCorrelationInfo correlationInfo,
+        CancellationToken cancellationToken)
+    {
+        Logger.LogTrace("Start routing incoming message...");
+        base.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+        Logger.LogTrace("Done routing incoming message!");
+    }
+}
+```
+
+This custom message router can be registered with the following extension:
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddServiceBusMessageRouting(serviceProvider =>
+    {
+        var logger = serviceProvider.GetService<ILogger<TrackedAzureServiceBusMessageRouter>>();
+        return new TrackedAzureServiceBusMessageRouter(serviceProvider, logger);
+    });
+
+    services.AddServiceBusQueueMessagePump(...);
+}
+```
+
+> Note that your own router should be registered **before** you register the Azure Message Pump otherwise it cannot be overriden.
 
 ## Correlation
 

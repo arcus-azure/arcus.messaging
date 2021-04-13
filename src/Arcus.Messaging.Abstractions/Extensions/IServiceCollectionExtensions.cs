@@ -2,6 +2,7 @@
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using GuardNet;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -13,6 +14,41 @@ namespace Microsoft.Extensions.DependencyInjection
     public static partial class IServiceCollectionExtensions
     {
         /// <summary>
+        /// Adds a <see cref="MessageRouter"/> implementation to route the incoming messages through registered <see cref="IMessageHandler{TMessage}"/> instances.
+        /// </summary>
+        /// <param name="services">The collection of services to add the router to.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        public static IServiceCollection AddMessageRouting(this IServiceCollection services)
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message routing");
+
+            services.AddSingleton<IMessageRouter>(serviceProvider =>
+            {
+                var logger = serviceProvider.GetService<ILogger<MessageRouter>>();
+                return new MessageRouter(serviceProvider, logger);
+            });
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a <see cref="MessageRouter"/> implementation to route the incoming messages through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.
+        /// </summary>
+        /// <typeparam name="TMessageRouter">The type of the <see cref="IMessageRouter"/> implementation.</typeparam>
+        /// <param name="services">The collection of services to add the router to.</param>
+        /// <param name="implementationFactory">The function to create the <see cref="MessageRouter"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        public static IServiceCollection AddMessageRouting<TMessageRouter>(
+            this IServiceCollection services,
+            Func<IServiceProvider, TMessageRouter> implementationFactory)
+            where TMessageRouter : IMessageRouter
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message routing");
+            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message router");
+
+            return services.AddSingleton<IMessageRouter>(serviceProvider => implementationFactory(serviceProvider));
+        }
+
+        /// <summary>
         /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an <see cref="MessagePump"/> implementation.
         /// resources.
         /// </summary>
@@ -20,7 +56,8 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
         /// <param name="services">The collection of services to use in the application.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
-        public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage>(this IServiceCollection services)
+        public static IServiceCollection WithMessageHandler<TMessageHandler, TMessage>(
+            this IServiceCollection services)
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
