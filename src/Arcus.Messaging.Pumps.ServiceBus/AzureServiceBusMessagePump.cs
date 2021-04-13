@@ -39,7 +39,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private MessageReceiver _messageReceiver;
         private int _unauthorizedExceptionCount = 0;
 
-        
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump"/> class.
         /// </summary>

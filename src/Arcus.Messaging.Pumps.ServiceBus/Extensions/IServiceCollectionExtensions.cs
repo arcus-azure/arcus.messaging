@@ -204,8 +204,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc);
 
-            return collection
-;
+            return collection;
         }
 
         /// <summary>
