@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Stubs;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
 {
-    public class MessageContextIServiceCollectionExtensionsTests
+    public partial class ServiceBusMessageHandlerCollectionExtensionsTests
     {
         [Theory]
         [InlineData(false)]
@@ -19,12 +18,12 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithServiceBusMessageHandler_WithMessageContextFilter_UsesFilter(bool matchesContext)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
             var expectedContext = AzureServiceBusMessageContextFactory.Generate();
             var expectedHandler = new TestServiceBusMessageHandler();
 
             // Act
-            services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                 messageContextFilter: context =>
                 {
                     Assert.Same(expectedContext, context);
@@ -32,7 +31,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
                 });
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = collection.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             Assert.NotNull(handlers);
             MessageHandler handler = Assert.Single(handlers);
@@ -45,11 +44,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithServiceBusMessageHandler_WithMessageContextFilter_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageContextFilter: null));
         }
 
@@ -59,12 +58,12 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithServiceBusMessageHandler_WithMessageContextFilterWithImplementationFactory_UsesFilter(bool matchesContext)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
             var expectedContext = AzureServiceBusMessageContextFactory.Generate();
             var expectedHandler = new TestServiceBusMessageHandler();
 
             // Act
-            services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                 messageContextFilter: context =>
                 {
                     Assert.Same(expectedContext, context);
@@ -73,7 +72,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
                 implementationFactory: serviceProvider => expectedHandler);
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = collection.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             Assert.NotNull(handlers);
             MessageHandler handler = Assert.Single(handlers);
@@ -86,11 +85,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithServiceBusMessageHandler_WithoutMessageContextFilterWithImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageContextFilter: null,
                     implementationFactory: serviceProvider => new TestServiceBusMessageHandler()));
         }
@@ -99,11 +98,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithServiceBusMessageHandler_WithMessageContextFilterWithoutImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageContextFilter: context => true,
                     implementationFactory: null));
         }

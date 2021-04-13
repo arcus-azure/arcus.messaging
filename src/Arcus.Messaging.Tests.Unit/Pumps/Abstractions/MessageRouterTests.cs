@@ -22,11 +22,12 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new MessageHandlerCollection(services);
             var spyHandler = new StubTestMessageHandler<TestMessage, TestMessageContext>();
             
             var ignoredDefaultHandler = new DefaultTestMessageHandler();
             var ignoredHandler = new TestMessageHandler();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
                     .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
                     .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
@@ -52,11 +53,12 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new MessageHandlerCollection(services);
             var spyHandler = new StubTestMessageHandler<TestMessage, TestMessageContext>();
             
             var ignoredDefaultHandler = new DefaultTestMessageHandler();
             var ignoredHandler = new TestMessageHandler();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
                     .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
                     .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
@@ -82,12 +84,13 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new MessageHandlerCollection(services);
             var spyHandler = new StubTestMessageHandler<TestMessage, TestMessageContext>();
             var ignoredSameTypeHandler = new StubTestMessageHandler<TestMessage, TestMessageContext>();
             
             var ignoredDefaultHandler = new DefaultTestMessageHandler();
             var ignoredHandler = new TestMessageHandler();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
                     .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(
                         messageContextFilter: ctx => false, implementationFactory: serviceProvider => ignoredSameTypeHandler)
                     .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
@@ -116,12 +119,13 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new MessageHandlerCollection(services);
             var spyHandler = new StubTestMessageHandler<TestMessage, TestMessageContext>();
             var ignoredSameTypeHandler = new StubTestMessageHandler<TestMessage, TestMessageContext>();
             
             var ignoredDefaultHandler = new DefaultTestMessageHandler();
             var ignoredHandler = new TestMessageHandler();
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
                     .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(
                         messageBodyFilter: body => false, implementationFactory: serviceProvider => ignoredSameTypeHandler)
                     .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
@@ -150,6 +154,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new MessageHandlerCollection(services);
             var spyHandler = new StubTestMessageHandler<TestMessage, TestMessageContext>();
             var ignoredSameTypeHandler = new StubTestMessageHandler<TestMessage, TestMessageContext>();
             var ignoredWrongDeserializedTypeHandler = new StubTestMessageHandler<Order, TestMessageContext>();
@@ -160,7 +165,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, expectedMessage);
 
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
                     .WithMessageHandler<StubTestMessageHandler<Order, TestMessageContext>, Order, TestMessageContext>(
                         messageBodySerializer: new TestMessageBodySerializer(expectedBody, new Customer()),
                         implementationFactory: serviceProvider => ignoredWrongDeserializedTypeHandler)

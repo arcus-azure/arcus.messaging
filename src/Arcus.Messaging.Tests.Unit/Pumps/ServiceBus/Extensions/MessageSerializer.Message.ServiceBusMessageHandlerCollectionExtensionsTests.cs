@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -9,7 +10,7 @@ using Xunit;
 
 namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
 {
-    public class MessageSerializer
+    public partial class ServiceBusMessageHandlerCollectionExtensionsTests
     {
         [Theory]
         [InlineData(false)]
@@ -17,13 +18,13 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public async Task WithMessageHandler_WithMessageBodySerializerWithMessageBodyFilter_UsesSerializer(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
             var expectedBody = $"test-message-body-{Guid.NewGuid()}";
             var expectedMessage = new TestMessage();
             var serializer = new TestMessageBodySerializer(expectedBody, expectedMessage);
 
             // Act
-            services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                 messageBodySerializer: serializer,
                 messageBodyFilter: body =>
                 {
@@ -32,7 +33,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
                 });
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = collection.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             Assert.NotNull(handlers);
             MessageHandler handler = Assert.Single(handlers);
@@ -48,11 +49,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithMessageHandler_WithoutMessageBodySerializerWithMessageBodyFilter_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageBodySerializer: null,
                     messageBodyFilter: body => true));
         }
@@ -61,11 +62,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithMessageHandler_WithMessageBodySerializerWithoutMessageBodyFilter_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageBodySerializer: new TestMessageBodySerializer(),
                     messageBodyFilter: null));
         }
@@ -76,13 +77,13 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public async Task WithMessageHandler_WithMessageBodySerializerImplementationFactoryWithMessageBodyFilter_UsesSerializer(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
             var expectedBody = $"test-message-body-{Guid.NewGuid()}";
             var expectedMessage = new TestMessage();
             var serializer = new TestMessageBodySerializer(expectedBody, expectedMessage);
 
             // Act
-            services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                 messageBodySerializerImplementationFactory: serviceProvider => serializer,
                 messageBodyFilter: body =>
                 {
@@ -91,7 +92,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
                 });
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = collection.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             Assert.NotNull(handlers);
             MessageHandler handler = Assert.Single(handlers);
@@ -107,11 +108,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithMessageHandler_WithoutMessageBodySerializerImplementationFactoryWithMessageBodyFilter_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageBodySerializerImplementationFactory: null,
                     messageBodyFilter: body => true));
         }
@@ -120,11 +121,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithMessageHandler_WithMessageBodySerializerImplementationFactoryWithoutMessageBodyFilter_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageBodySerializerImplementationFactory: serviceProvider =>  new TestMessageBodySerializer(),
                     messageBodyFilter: null));
         }
@@ -135,14 +136,14 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public async Task WithMessageHandler_WithMessageBodySerializerWithMessageBodyFilterWithMessageHandlerImplementationFactory_UsesSerializer(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
             var expectedBody = $"test-message-body-{Guid.NewGuid()}";
             var expectedMessage = new TestMessage();
             var serializer = new TestMessageBodySerializer(expectedBody, expectedMessage);
             var expectedHandler = new TestServiceBusMessageHandler();
 
             // Act
-            services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                 messageBodySerializer: serializer,
                 messageBodyFilter: body =>
                 {
@@ -152,7 +153,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
                 implementationFactory: serviceProvider => expectedHandler);
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = collection.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             Assert.NotNull(handlers);
             MessageHandler handler = Assert.Single(handlers);
@@ -169,11 +170,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithMessageHandler_WithoutMessageBodySerializerWithMessageBodyFilterWithMessageHandlerImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageBodySerializer: null,
                     messageBodyFilter: body => true,
                     implementationFactory: serviceProvider => new TestServiceBusMessageHandler()));
@@ -183,11 +184,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithMessageHandler_WithMessageBodySerializerWithoutMessageBodyFilterWithMessageHandlerImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageBodySerializer: new TestMessageBodySerializer(),
                     messageBodyFilter: null,
                     implementationFactory: serviceProvider => new TestServiceBusMessageHandler()));
@@ -197,11 +198,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithMessageHandler_WithMessageBodySerializerWithMessageBodyFilterWithoutMessageHandlerImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageBodySerializer: new TestMessageBodySerializer(),
                     messageBodyFilter: body => true,
                     implementationFactory: null));
@@ -213,14 +214,14 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public async Task WithMessageHandler_WithMessageBodySerializerImplementationFactoryWithMessageBodyFilterWithMessageHandlerImplementationFactory_UsesSerializer(bool matches)
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
             var expectedBody = $"test-message-body-{Guid.NewGuid()}";
             var expectedMessage = new TestMessage();
             var serializer = new TestMessageBodySerializer(expectedBody, expectedMessage);
             var expectedHandler = new TestServiceBusMessageHandler();
 
             // Act
-            services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                 messageBodySerializerImplementationFactory: serviceProvider => serializer,
                 messageBodyFilter: body =>
                 {
@@ -230,7 +231,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
                 messageHandlerImplementationFactory: serviceProvider => expectedHandler);
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = collection.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
             Assert.NotNull(handlers);
             MessageHandler handler = Assert.Single(handlers);
@@ -247,11 +248,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithMessageHandler_WithoutMessageBodySerializerImplementationFactoryWithMessageBodyFilterWithMessageHandlerImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageBodySerializerImplementationFactory: null,
                     messageBodyFilter: body => true,
                     messageHandlerImplementationFactory: serviceProvider => new TestServiceBusMessageHandler()));
@@ -261,11 +262,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithMessageHandler_WithMessageBodySerializerImplementationFactoryWithoutMessageBodyFilterWithMessageHandlerImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageBodySerializerImplementationFactory: serviceProvider => new TestMessageBodySerializer(),
                     messageBodyFilter: null,
                     messageHandlerImplementationFactory: serviceProvider => new TestServiceBusMessageHandler()));
@@ -275,11 +276,11 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
         public void WithMessageHandler_WithMessageBodySerializerImplementationFactoryWithMessageBodyFilterWithoutMessageHandlerImplementationFactory_Fails()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageBodySerializerImplementationFactory: serviceProvider => new TestMessageBodySerializer(),
                     messageBodyFilter: body => true,
                     messageHandlerImplementationFactory: null));

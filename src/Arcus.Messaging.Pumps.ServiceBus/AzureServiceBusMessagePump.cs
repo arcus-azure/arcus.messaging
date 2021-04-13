@@ -39,7 +39,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private MessageReceiver _messageReceiver;
         private int _unauthorizedExceptionCount = 0;
 
-        
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump"/> class.
         /// </summary>
@@ -80,6 +79,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="serviceProvider">Collection of services that are configured</param>
         /// <param name="logger">Logger to write telemetry to</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="settings"/>, <paramref name="configuration"/>, <paramref name="serviceProvider"/>, <paramref name="messageRouter"/> is <c>null</c>.</exception>
+        [Obsolete("This constructor is marked to be removed, use the other constructor with the Azure Service Bus router '" + nameof(IAzureServiceBusMessageRouter) + "'")]
         public AzureServiceBusMessagePump(
             AzureServiceBusMessagePumpSettings settings,
             IConfiguration configuration, 

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Linq;
 using Arcus.BackgroundJobs.KeyVault.Events;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using CloudNative.CloudEvents;
 using GuardNet;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -29,8 +29,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
         ///     Thrown when the <paramref name="services"/> or the searched for <see cref="AzureServiceBusMessagePump"/> based on the given <paramref name="jobId"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionNamePrefix"/> or <paramref name="serviceBusTopicConnectionStringSecretKey"/> is blank.</exception>
-        public static IServiceCollection WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
-            this IServiceCollection services,
+        public static ServiceBusMessageHandlerCollection WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
+            this ServiceBusMessageHandlerCollection services,
             string jobId,
             string subscriptionNamePrefix,
             string serviceBusTopicConnectionStringSecretKey,
@@ -42,7 +42,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
             Guard.NotNullOrWhitespace(serviceBusTopicConnectionStringSecretKey, nameof(serviceBusTopicConnectionStringSecretKey), "Requires a non-blank secret key that points to a Azure Service Bus Topic");
             Guard.NotNullOrWhitespace(messagePumpConnectionStringKey, nameof(messagePumpConnectionStringKey), "Requires a non-blank secret key that points to the credentials that holds the connection string of the target message pump");
 
-            services.AddCloudEventBackgroundJob(subscriptionNamePrefix, serviceBusTopicConnectionStringSecretKey);
+            services.Services.AddCloudEventBackgroundJob(subscriptionNamePrefix, serviceBusTopicConnectionStringSecretKey);
             services.WithServiceBusMessageHandler<ReAuthenticateOnRotatedCredentialsMessageHandler, CloudEvent>(
                 messageBodyFilter: cloudEvent => cloudEvent?.GetPayload<SecretNewVersionCreated>() != null,
                 implementationFactory: serviceProvider =>

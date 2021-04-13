@@ -234,9 +234,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => connectionString, opt => opt.AutoComplete = true)
-                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext context) => false)
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Customers")
-                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Orders");
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Orders")
+                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext context) => false);
 
             // Act
             await using (var worker = await Worker.StartNewAsync(options))
@@ -256,9 +256,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => connectionString, opt => opt.AutoComplete = true)
-                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order body) => false)
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>((Customer body) => body is null)
-                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>((Order body) => body.Id != null);
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>((Order body) => body.Id != null)
+                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order body) => false);
 
             // Act
             await using (var worker = await Worker.StartNewAsync(options))
@@ -306,8 +306,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
-                   .AddServiceBusTopicMessagePump(
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true);
+            options.AddServiceBusTopicMessagePump(
                        "Test-Receive-All-Topic-And-Queue", 
                        configuration => config.GetServiceBusConnectionString(ServiceBusEntityType.Topic), 
                        opt => opt.AutoComplete = true)
@@ -418,9 +418,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = false)
-                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext context) => false)
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties["Topic"].ToString() == "Customers")
-                   .WithServiceBusMessageHandler<OrdersAzureServiceBusDeadLetterMessageHandler, Order>(context => context.Properties["Topic"].ToString() == "Orders");
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusDeadLetterMessageHandler, Order>(context => context.Properties["Topic"].ToString() == "Orders")
+                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext context) => false);
 
             Order order = OrderGenerator.Generate();
 

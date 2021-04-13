@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Unit.Fixture;
@@ -26,13 +27,13 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddLogging();
 
             // Act
-            IServiceCollection result = 
+            ServiceBusMessageHandlerCollection result = 
                 services.AddServiceBusTopicMessagePump(
                     "topic name", "subscription name", "secret name", options => options.AutoComplete = true);
             
             // Assert
             Assert.NotNull(result);
-            ServiceProvider provider = result.BuildServiceProvider();
+            ServiceProvider provider = result.Services.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
             Assert.IsType<AzureServiceBusMessagePump>(messagePump);
@@ -52,14 +53,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddLogging();
 
             // Act
-            IServiceCollection result = 
+            ServiceBusMessageHandlerCollection result = 
                 services.AddServiceBusTopicMessagePump(
                     "topic name", "subscription name", "secret name", configureMessagePump: options => options.AutoComplete = true);
 
             // Assert
             // Assert
             Assert.NotNull(result);
-            ServiceProvider provider = result.BuildServiceProvider();
+            ServiceProvider provider = result.Services.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
             Assert.IsType<AzureServiceBusMessagePump>(messagePump);
@@ -79,13 +80,13 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddLogging();
 
             // Act
-            IServiceCollection result =
+            ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusQueueMessagePump(
                     "queue name", "secret name", configureMessagePump: options => options.AutoComplete = true);
 
             // Assert
             Assert.NotNull(result);
-            ServiceProvider provider = result.BuildServiceProvider();
+            ServiceProvider provider = result.Services.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
             Assert.IsType<AzureServiceBusMessagePump>(messagePump);
@@ -111,12 +112,12 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddLogging();
 
             // Act
-            IServiceCollection result =
+            ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusQueueMessagePump("secret name", configureMessagePump: options => options.AutoComplete = true);
 
             // Assert
             Assert.NotNull(result);
-            ServiceProvider provider = result.BuildServiceProvider();
+            ServiceProvider provider = result.Services.BuildServiceProvider();
 
             var messagePump = provider.GetService<IHostedService>();
             Assert.IsType<AzureServiceBusMessagePump>(messagePump);
@@ -135,22 +136,22 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusMessageHandler_WithoutContextFilter_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(messageBodyFilter: null));
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(messageBodyFilter: null));
         }
 
         [Fact]
         public void WithServiceBusMessageHandler_WithBodyFilterWithoutContextFilter_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageContextFilter: null,
                     messageBodyFilter: body => true));
         }
@@ -159,11 +160,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusMessageHandler_WithoutBodyFilterWithContextFilter_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     messageBodyFilter: null,
                     messageContextFilter: context => true));
         }
@@ -172,11 +173,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusMessageHandler_WithoutImplementationFactory_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: null));
         }
 
@@ -184,11 +185,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusMessageHandler_WithoutImplementationFactoryWithContextFilter_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: null,
                     messageContextFilter: context => true));
         }
@@ -197,11 +198,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusMessageHandler_WithImplementationFactoryWithoutContextFilter_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: serviceProvider => new TestServiceBusMessageHandler(), 
                     messageContextFilter: null));
         }
@@ -210,11 +211,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusMessageHandler_WithoutImplementationFactoryWithBodyFilter_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: null,
                     messageBodyFilter: body => true));
         }
@@ -223,11 +224,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusMessageHandler_WithImplementationFactoryWithoutBodyFilter_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: serviceProvider => new TestServiceBusMessageHandler(), 
                     messageBodyFilter: null));
         }
@@ -236,11 +237,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusMessageHandler_WithoutImplementationFactoryWithContextFilterWithBodyFilter_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: null,
                     messageContextFilter: context => true,
                     messageBodyFilter: body => true));
@@ -250,11 +251,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusMessageHandler_WithImplementationFactoryWithoutContextFilterWithBodyFilter_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: servivceProvider => new TestServiceBusMessageHandler(), 
                     messageContextFilter: null,
                     messageBodyFilter: body => true));
@@ -264,11 +265,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusMessageHandler_WithImplementationFactoryWithContextFilterWithoutBodyFilter_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: serviceProvider => new TestServiceBusMessageHandler(), 
                     messageContextFilter: context => true,
                     messageBodyFilter: null));
@@ -278,13 +279,13 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusFallbackMessageHandler_WithValidType_RegistersInterface()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act
-            services.WithServiceBusFallbackMessageHandler<PassThruServiceBusFallbackMessageHandler>();
+            collection.WithServiceBusFallbackMessageHandler<PassThruServiceBusFallbackMessageHandler>();
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = collection.Services.BuildServiceProvider();
             var messageHandler = provider.GetRequiredService<IAzureServiceBusFallbackMessageHandler>();
 
             Assert.IsType<PassThruServiceBusFallbackMessageHandler>(messageHandler);
@@ -294,14 +295,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusFallbackMessageHandler_WithValidImplementationFunction_RegistersInterface()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
             var expected = new PassThruServiceBusFallbackMessageHandler();
 
             // Act
-            services.WithServiceBusFallbackMessageHandler(serviceProvider => expected);
+            collection.WithServiceBusFallbackMessageHandler(serviceProvider => expected);
 
             // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
+            IServiceProvider provider = collection.Services.BuildServiceProvider();
             var actual = provider.GetRequiredService<IAzureServiceBusFallbackMessageHandler>();
 
             Assert.Same(expected, actual);
@@ -311,21 +312,21 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void WithServiceBusFallbackMessageHandlerType_WithoutServices_Throws()
         {
             Assert.ThrowsAny<ArgumentException>(
-                () => ((IServiceCollection)null).WithServiceBusFallbackMessageHandler<PassThruServiceBusFallbackMessageHandler>());
+                () => ((ServiceBusMessageHandlerCollection) null).WithServiceBusFallbackMessageHandler<PassThruServiceBusFallbackMessageHandler>());
         }
 
         [Fact]
         public void WithServiceBusFallbackMessageHandlerImplementationFunction_WithoutServices_Throws()
         {
             Assert.ThrowsAny<ArgumentException>(
-                () => ((IServiceCollection)null).WithServiceBusFallbackMessageHandler(serviceProvider => new PassThruServiceBusFallbackMessageHandler()));
+                () => ((ServiceBusMessageHandlerCollection) null).WithServiceBusFallbackMessageHandler(serviceProvider => new PassThruServiceBusFallbackMessageHandler()));
         }
 
         [Fact]
         public void WithServiceBusFallbackMessageHandlerImplementationFunction_WithoutImplementationFunction_Throws()
         {
             // Arrange
-            var services = new ServiceCollection();
+            var services = new ServiceBusMessageHandlerCollection(new ServiceCollection());
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(

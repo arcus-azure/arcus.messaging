@@ -26,9 +26,10 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(services);
             var ignoredHandler = new TestServiceBusMessageHandler();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
-            services.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(serviceProvider => spyHandler)
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(serviceProvider => spyHandler)
                     .WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(serviceProvider => ignoredHandler);
 
             // Act
@@ -53,9 +54,10 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(services);
             var ignoredHandler = new StubServiceBusMessageHandler<Order>();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
-            services.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                         messageContextFilter: ctx => true, implementationFactory: serviceProvider => spyHandler)
                     .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                         messageContextFilter: ctx => false, implementationFactory: serviceProvider => ignoredHandler);
@@ -82,9 +84,10 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(services);
             var ignoredHandler = new StubServiceBusMessageHandler<Order>();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
-            services.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                         messageBodyFilter: body => true, implementationFactory: serviceProvider => spyHandler)
                     .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                         messageBodyFilter: body => false, implementationFactory: serviceProvider => ignoredHandler);
@@ -111,9 +114,10 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(services);
             var ignoredHandler = new StubServiceBusMessageHandler<Order>();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
-            services.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: serviceProvider => spyHandler)
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: serviceProvider => spyHandler)
                     .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodyFilter: body => true, implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
@@ -138,13 +142,14 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(services);
             var ignoredHandler = new StubServiceBusMessageHandler<TestMessage>();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
 
             var expectedMessage = new TestMessage { TestProperty = "Some value" };
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, OrderGenerator.Generate());
-            services.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodySerializer: serializer, implementationFactory: serviceProvider => spyHandler)
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodySerializer: serializer, implementationFactory: serviceProvider => spyHandler)
                     .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
@@ -168,13 +173,14 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(services);
             var ignoredHandler = new StubServiceBusMessageHandler<TestMessage>();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
 
             var expectedMessage = new TestMessage { TestProperty = "Some value" };
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, new SubOrder());
-            services.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodySerializer: serializer, implementationFactory: serviceProvider => spyHandler)
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodySerializer: serializer, implementationFactory: serviceProvider => spyHandler)
                     .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
@@ -198,6 +204,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
         {
             // Arrange
             var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(services);
             var ignoredHandler1 = new StubServiceBusMessageHandler<TestMessage>();
             var ignoredHandler2 = new StubServiceBusMessageHandler<TestMessage>();
             var ignoredHandler3 = new StubServiceBusMessageHandler<Order>();
@@ -208,7 +215,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, OrderGenerator.Generate());
             
-            services
+            collection
                 .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                         messageContextFilter: ctx => ctx != null,
                         messageBodyFilter: body => body != null,
@@ -248,7 +255,8 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
         {
             // Arrange
             var services = new ServiceCollection();
-            services.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>();
+            var collection = new ServiceBusMessageHandlerCollection(services);
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>();
             
             // Act
             services.AddServiceBusMessageRouting(serviceProvider =>
