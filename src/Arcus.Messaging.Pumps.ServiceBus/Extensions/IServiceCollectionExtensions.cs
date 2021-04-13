@@ -7,6 +7,8 @@ using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Security.Core;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace

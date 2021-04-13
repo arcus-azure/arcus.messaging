@@ -28,8 +28,8 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             var ignoredDefaultHandler = new DefaultTestMessageHandler();
             var ignoredHandler = new TestMessageHandler();
             collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
-                      .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
-                      .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
+                    .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
+                    .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
             // Act
             services.AddMessageRouting();
@@ -59,8 +59,8 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             var ignoredDefaultHandler = new DefaultTestMessageHandler();
             var ignoredHandler = new TestMessageHandler();
             collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
-                      .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
-                      .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
+                    .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
+                    .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
             // Act
             services.AddMessageRouting(serviceProvider => new TestMessageRouter(serviceProvider, NullLogger.Instance));
@@ -91,10 +91,10 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             var ignoredDefaultHandler = new DefaultTestMessageHandler();
             var ignoredHandler = new TestMessageHandler();
             collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
-                      .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(
-                          messageContextFilter: ctx => false, implementationFactory: serviceProvider => ignoredSameTypeHandler)
-                      .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
-                      .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
+                    .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(
+                        messageContextFilter: ctx => false, implementationFactory: serviceProvider => ignoredSameTypeHandler)
+                    .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
+                    .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
             // Act
             services.AddMessageRouting();
@@ -126,10 +126,10 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             var ignoredDefaultHandler = new DefaultTestMessageHandler();
             var ignoredHandler = new TestMessageHandler();
             collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
-                      .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(
-                          messageBodyFilter: body => false, implementationFactory: serviceProvider => ignoredSameTypeHandler)
-                      .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
-                      .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
+                    .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(
+                        messageBodyFilter: body => false, implementationFactory: serviceProvider => ignoredSameTypeHandler)
+                    .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
+                    .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
             // Act
             services.AddMessageRouting();
@@ -166,15 +166,15 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions
             var serializer = new TestMessageBodySerializer(expectedBody, expectedMessage);
 
             collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
-                      .WithMessageHandler<StubTestMessageHandler<Order, TestMessageContext>, Order, TestMessageContext>(
-                          messageBodySerializer: new TestMessageBodySerializer(expectedBody, new Customer()),
-                          implementationFactory: serviceProvider => ignoredWrongDeserializedTypeHandler)
-                      .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(
-                          messageContextFilter: ctx => false, implementationFactory: serviceProvider => ignoredSameTypeHandler)
-                      .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(
-                          messageBodySerializer: serializer, 
-                          implementationFactory: serviceProvider => spyHandler)
-                      .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
+                    .WithMessageHandler<StubTestMessageHandler<Order, TestMessageContext>, Order, TestMessageContext>(
+                        messageBodySerializer: new TestMessageBodySerializer(expectedBody, new Customer()),
+                        implementationFactory: serviceProvider => ignoredWrongDeserializedTypeHandler)
+                    .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(
+                        messageContextFilter: ctx => false, implementationFactory: serviceProvider => ignoredSameTypeHandler)
+                    .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(
+                        messageBodySerializer: serializer, 
+                        implementationFactory: serviceProvider => spyHandler)
+                    .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
             // Act
             services.AddMessageRouting();

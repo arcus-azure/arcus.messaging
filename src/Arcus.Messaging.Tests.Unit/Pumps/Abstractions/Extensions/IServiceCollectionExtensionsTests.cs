@@ -10,6 +10,39 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions.Extensions
     public class IServiceCollectionExtensionsTests
     {
         [Fact]
+        public void WithMessageHandlerDefaultContext_WithoutImplementationFactory_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(implementationFactory: null));
+        }
+
+        [Fact]
+        public void WithMessageHandlerCustomContext_WithoutImplementationFactory_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(implementationFactory: null));
+        }
+
+        [Fact]
+        public void WithFallbackMessageHandler_WithoutImplementationFactory_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithFallbackMessageHandler<PassThruFallbackMessageHandler>(createImplementation: null));
+        }
+
+        [Fact]
         public void WithMessageRouting_WithAutoCreation_RegistersMessageRouter()
         {
             // Arrange

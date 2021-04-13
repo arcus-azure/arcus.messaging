@@ -30,7 +30,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var ignoredHandler = new TestServiceBusMessageHandler();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(serviceProvider => spyHandler)
-                      .WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(serviceProvider => ignoredHandler);
+                    .WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(serviceProvider => ignoredHandler);
 
             // Act
             services.AddServiceBusMessageRouting();
@@ -59,7 +59,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var spyHandler = new StubServiceBusMessageHandler<Order>();
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                         messageContextFilter: ctx => true, implementationFactory: serviceProvider => spyHandler)
-                      .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
+                    .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                         messageContextFilter: ctx => false, implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
@@ -89,7 +89,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var spyHandler = new StubServiceBusMessageHandler<Order>();
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                         messageBodyFilter: body => true, implementationFactory: serviceProvider => spyHandler)
-                      .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
+                    .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                         messageBodyFilter: body => false, implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
@@ -118,7 +118,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var ignoredHandler = new StubServiceBusMessageHandler<Order>();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: serviceProvider => spyHandler)
-                      .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodyFilter: body => true, implementationFactory: serviceProvider => ignoredHandler);
+                    .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodyFilter: body => true, implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
             services.AddServiceBusMessageRouting();
@@ -150,7 +150,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, OrderGenerator.Generate());
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodySerializer: serializer, implementationFactory: serviceProvider => spyHandler)
-                      .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: serviceProvider => ignoredHandler);
+                    .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
             services.AddServiceBusMessageRouting();
@@ -181,7 +181,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, new SubOrder());
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodySerializer: serializer, implementationFactory: serviceProvider => spyHandler)
-                      .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: serviceProvider => ignoredHandler);
+                    .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
             services.AddServiceBusMessageRouting();

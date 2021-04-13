@@ -17,6 +17,23 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <param name="services">The collection of services to add the router to.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        public static IServiceCollection AddMessageRouting(this IServiceCollection services)
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message routing");
+
+            services.AddSingleton<IMessageRouter>(serviceProvider =>
+            {
+                var logger = serviceProvider.GetService<ILogger<MessageRouter>>();
+                return new MessageRouter(serviceProvider, logger);
+            });
+            return services;
+        }
+
+        /// <summary>
+        /// Adds a <see cref="MessageRouter"/> implementation to route the incoming messages through registered <see cref="IMessageHandler{TMessage}"/> instances.
+        /// </summary>
+        /// <param name="services">The collection of services to add the router to.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         public static MessageHandlerCollection AddMessageRouting(this IServiceCollection services)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the message routing");
