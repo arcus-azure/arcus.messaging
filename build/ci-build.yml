@@ -96,6 +96,8 @@ stages:
         value: '42063'
       - name: 'Arcus.Health.Port.Topic'
         value: '42064'
+      - name: 'Arcus.AzureFunctions.Queue.Port'
+        value: '42065'
     jobs:
       - job: DockerIntegrationTests
         displayName: 'Run Docker integration tests'
@@ -129,6 +131,7 @@ stages:
               containerName: '$(Images.AzureFunction.ServiceBus.Queue)'
               imageName: '$(Images.AzureFunction.ServiceBus.Queue)'
               imageTag: '$(Build.BuildId)'
+              port: '$(Arcus.AzureFunctions.Queue.Port)'
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'

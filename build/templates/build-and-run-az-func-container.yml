@@ -3,6 +3,7 @@ parameters:
   projectName: ''
   imageName: ''
   imageTag: ''
+  port: ''
 
 steps:
 - bash: |
@@ -20,6 +21,10 @@ steps:
     fi
     if [ -z "$BUILD_VERSION" ]; then
       echo "##vso[task.logissue type=error;]Missing template parameter \"imageTag\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+    if [ -z "$PORT" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"port\""
       echo "##vso[task.complete result=Failed;]"
     fi
   env:
@@ -53,7 +58,7 @@ steps:
     command: 'Run an image'
     imageName: '${{ parameters.imageName }}:${{ parameters.imageTag }}'
     containerName: '${{ parameters.containerName }}'
-    ports: '${{ parameters.healthPort }}:${{ parameters.healthPort }}'
+    ports: '${{ parameters.port }}:${{ parameters.port }}'
     envVars: |
       EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
       EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)

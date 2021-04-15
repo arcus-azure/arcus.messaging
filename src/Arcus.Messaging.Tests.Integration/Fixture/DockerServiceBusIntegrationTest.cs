@@ -1,15 +1,24 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using Arcus.EventGrid;
+using Arcus.EventGrid.Contracts;
 using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
+using Arcus.Messaging.Tests.Core.Messages.v1;
+using GuardNet;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
+    /// <summary>
+    /// Represents the general setup an teardown of an integration test, using an external running Docker container to interact with.
+    /// </summary>
     [Trait("Category", "Docker")]
     public abstract class DockerServiceBusIntegrationTest : IntegrationTest, IAsyncLifetime
     {
@@ -18,11 +27,11 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <summary>
         /// Initializes a new instance of the <see cref="DockerServiceBusIntegrationTest" /> class.
         /// </summary>
+        /// <param name="outputWriter">The logger instance to write diagnostic messages during the interaction with Azure Service Bus instances.</param>
         protected DockerServiceBusIntegrationTest(ITestOutputHelper outputWriter) : base(outputWriter)
         {
-            
         }
-        
+
         /// <summary>
         /// Called immediately after the class has been created, before it is used.
         /// </summary>
@@ -35,8 +44,18 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             _serviceBusEventConsumerHost = await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, Logger);
         }
 
+        /// <summary>
+        /// Sends an <see cref="Order"/> message to an Azure Service Bus instance, located at the given <paramref name="connectionString"/>. 
+        /// </summary>
+        /// <param name="message">The Service Bus message representation of an <see cref="Order"/>.</param>
+        /// <param name="connectionString">The connection string where the <paramref name="message"/> should be send to.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionString"/> is blank.</exception>
         public async Task SenderOrderToServiceBusAsync(Message message, string connectionString)
         {
+            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus message representation of an 'Order' to send it to an Azure Service Bus instance");
+            Guard.NotNullOrWhitespace(connectionString, nameof(connectionString), "Requires an Azure Service Bus connection string to send the 'Order' message to");
+            
             MessageSender sender = CreateServiceBusSender(connectionString);
             await sender.SendAsync(message);
         }
@@ -49,14 +68,27 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             return messageSender;
         }
 
+        /// <summary>
+        /// Receives the previously send <see cref="Order"/> message as an published event on Azure Event Grid.
+        /// </summary>
+        /// <param name="operationId">The operation ID to identity the correct published <see cref="Order"/>.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="operationId"/> is blank.</exception>
+        /// <exception cref="XunitException">
+        ///     Thrown when the received <see cref="Order"/> message event doesn't conform with the expected structure of an published <see cref="Order"/> event.
+        /// </exception>
         public OrderCreatedEventData ReceiveOrderFromEventGrid(string operationId)
         {
+            Guard.NotNullOrWhitespace(operationId, nameof(operationId), "Requires an operation ID to uniquely identity the published 'Order' message");
+            
             string receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);
             Assert.NotEmpty(receivedEvent);
-            var deserializedEventGridMessage = EventParser.Parse(receivedEvent);
+
+            EventBatch<Event> deserializedEventGridMessage = EventParser.Parse(receivedEvent);
             Assert.NotNull(deserializedEventGridMessage);
-            var orderCreatedEvent = Assert.Single(deserializedEventGridMessage.Events);
+            
+            Event orderCreatedEvent = Assert.Single(deserializedEventGridMessage.Events);
             Assert.NotNull(orderCreatedEvent);
+            
             var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
             Assert.NotNull(orderCreatedEventData);
             
