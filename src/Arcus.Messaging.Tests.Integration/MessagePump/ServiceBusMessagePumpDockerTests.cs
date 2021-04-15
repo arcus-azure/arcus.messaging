@@ -2,21 +2,18 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
-using Arcus.EventGrid.Parsers;
-using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
-using Microsoft.Azure.EventGrid.Models;
+using Arcus.Messaging.Tests.Core.Messages.v1;
+using Arcus.Messaging.Tests.Integration.Fixture;
 using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Core;
-using Microsoft.Extensions.Configuration;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     [Trait("Category", "Docker")]
-    public class ServiceBusMessagePumpDockerTests : IntegrationTest, IAsyncLifetime
+    public class ServiceBusMessagePumpDockerTests : DockerServiceBusIntegrationTest
     {
         private const string QueueConnectionStringKey = "Arcus:ServiceBus:Docker:ConnectionStringWithQueue";
         private const string TopicConnectionStringKey = "Arcus:ServiceBus:Docker:ConnectionStringWithTopic";
@@ -34,10 +31,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
         }
 
-        private ServiceBusEventConsumerHost _serviceBusEventConsumerHost;
-
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ServiceBusMessagePumpDockerTests" /> class.
+        /// Initializes a new instance of the <see cref="ServiceBusMessagePumpDockerTests" /> class.
         /// </summary>
         public ServiceBusMessagePumpDockerTests(ITestOutputHelper testOutput) : base(testOutput)
         {
@@ -57,57 +52,27 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(messageEncoding, TopicConnectionStringKey);
         }
 
-        private async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding, string connectionStringKey)
+        private async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding, string connectionString)
         {
             // Arrange
             var operationId = Guid.NewGuid().ToString();
             var transactionId = Guid.NewGuid().ToString();
-            var messageSender = CreateServiceBusSender(connectionStringKey);
-
-            var order = OrderGenerator.Generate();
-            var orderMessage = order.AsServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
-
+            
+            Order order = OrderGenerator.Generate();
+            Message orderMessage = order.AsServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
+            
             // Act
-            await messageSender.SendAsync(orderMessage);
-
+            await SenderOrderToServiceBusAsync(orderMessage, connectionString);
+            
             // Assert
-            var receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);
-            Assert.NotEmpty(receivedEvent);
-            var deserializedEventGridMessage = EventParser.Parse(receivedEvent);
-            Assert.NotNull(deserializedEventGridMessage);
-            var orderCreatedEvent = Assert.Single(deserializedEventGridMessage.Events);
-            Assert.NotNull(orderCreatedEvent);
-            var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
-            Assert.NotNull(orderCreatedEventData);
-            Assert.NotNull(orderCreatedEventData.CorrelationInfo);
-            Assert.Equal(order.Id, orderCreatedEventData.Id);
-            Assert.Equal(order.Amount, orderCreatedEventData.Amount);
-            Assert.Equal(order.ArticleNumber, orderCreatedEventData.ArticleNumber);
-            Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
-            Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
-            Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
-        }
-
-        private MessageSender CreateServiceBusSender(string connectionStringKey)
-        {
-            var connectionString = Configuration.GetValue<string>(connectionStringKey);
-            var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
-            var messageSender = new MessageSender(serviceBusConnectionStringBuilder);
-            return messageSender;
-        }
-
-        public async Task InitializeAsync()
-        {
-            var connectionString = Configuration.GetValue<string>("Arcus:Infra:ServiceBus:ConnectionString");
-            var topicName = Configuration.GetValue<string>("Arcus:Infra:ServiceBus:TopicName");
-
-            var serviceBusEventConsumerHostOptions = new ServiceBusEventConsumerHostOptions(topicName, connectionString);
-            _serviceBusEventConsumerHost = await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, Logger);
-        }
-
-        public async Task DisposeAsync()
-        {
-            await _serviceBusEventConsumerHost.StopAsync();
+            OrderCreatedEventData orderEventData = ReceiveOrderFromEventGrid(operationId);
+            Assert.NotNull(orderEventData.CorrelationInfo);
+            Assert.Equal(order.Id, orderEventData.Id);
+            Assert.Equal(order.Amount, orderEventData.Amount);
+            Assert.Equal(order.ArticleNumber, orderEventData.ArticleNumber);
+            Assert.Equal(transactionId, orderEventData.CorrelationInfo.TransactionId);
+            Assert.Equal(operationId, orderEventData.CorrelationInfo.OperationId);
+            Assert.NotEmpty(orderEventData.CorrelationInfo.CycleId);
         }
     }
 }

@@ -1,0 +1,59 @@
+parameters:
+  containerName: ''
+  projectName: ''
+  imageName: ''
+  imageTag: ''
+
+steps:
+- bash: |
+    if [ -z "$IMAGE_NAME" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"imageName\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+    if [ -z "$IMAGE_NAME" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"projectName\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+    if [ -z "$CONTAINER_NAME" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"containerName\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+    if [ -z "$BUILD_VERSION" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"imageTag\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
+  env:
+    CONTAINER_NAME: ${{ parameters.containerName }}
+    PROJECT_NAME: ${{ parameters.projectName }}
+    IMAGE_NAME: ${{ parameters.imageName }}
+    BUILD_VERSION: ${{ parameters.imageTag }}
+  displayName: Check for required parameters in YAML template
+- task: qetza.replacetokens.replacetokens-task.replacetokens@3
+  displayName: 'Replace integration test tokens in local.settings.json'
+  inputs:
+    rootDirectory: 'src/${{ parameters.projectName }}/'
+    targetFiles: 'local.settings.json'
+    encoding: 'auto'
+    verbosity: 'detailed'
+    writeBOM: true
+    actionOnMissing: 'fail'
+    keepToken: false
+    tokenPrefix: '#{'
+    tokenSuffix: '}#'
+- task: Docker@1
+  displayName: 'Build Docker image ''${{ parameters.imageName }}'' for ''${{ parameters.projectName }}'''
+  inputs:
+    dockerFile: src/${{ parameters.projectName }}/Dockerfile
+    imageName: '${{ parameters.imageName }}:${{ parameters.imageTag }}'
+    useDefaultContext: false
+    buildContext: src
+- task: Docker@1
+  displayName: 'Run ''${{ parameters.imageName }}'' Docker image'
+  inputs:
+    command: 'Run an image'
+    imageName: '${{ parameters.imageName }}:${{ parameters.imageTag }}'
+    containerName: '${{ parameters.containerName }}'
+    ports: '${{ parameters.healthPort }}:${{ parameters.healthPort }}'
+    envVars: |
+      EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
+      EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)

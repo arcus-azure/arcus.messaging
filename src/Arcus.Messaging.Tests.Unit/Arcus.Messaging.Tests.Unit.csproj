@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Arcus.Messaging.AzureFunctions.ServiceBus\Arcus.Messaging.AzureFunctions.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus.KeyRotation\Arcus.Messaging.Pumps.ServiceBus.KeyRotation.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj" />
