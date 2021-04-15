@@ -12,22 +12,22 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus
 {
     public class Startup : FunctionsStartup
     {
-        public override void ConfigureAppConfiguration(IFunctionsConfigurationBuilder builder)
-        {
-            builder.ConfigurationBuilder.AddEnvironmentVariables();
-        }
-
         /// <summary>
         /// This method gets called by the runtime. Use this method to add services to the container.
         /// </summary>
         /// <param name="builder">The instance to build the registered services inside the functions app.</param>
         public override void Configure(IFunctionsHostBuilder builder)
         {
+            IConfiguration configuration =
+                new ConfigurationBuilder()
+                    .SetBasePath(builder.GetContext().ApplicationRootPath)
+                    .AddJsonFile("local.settings.json")
+                    .Build();
+            
             builder.Services.AddTransient(svc =>
             {
-                IConfiguration configuration = builder.GetContext().Configuration;
-                var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
-                var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
+                var eventGridTopic = configuration.GetValue<string>("Values:EventGridTopicEndpoint");
+                var eventGridKey = configuration.GetValue<string>("Values:EventGridAuthKey");
 
                 return EventGridPublisherBuilder
                     .ForTopic(eventGridTopic)

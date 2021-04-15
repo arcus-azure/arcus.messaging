@@ -3,6 +3,8 @@
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet",
-    "ServiceBusConnection": "#{Arcus.ServiceBus.Docker.NamespaceConnectionString}#"
+    "ServiceBusConnection": "#{Arcus.ServiceBus.Docker.NamespaceConnectionString}#",
+    "EventGridTopicEndpoint": "#{Arcus.TestInfra.EventGrid.Topic.Uri}#",
+    "EventGridAuthKey": "#{Arcus.TestInfra.EventGrid.Auth.Key}#"
   }
 }
