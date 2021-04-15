@@ -132,7 +132,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
         private static IEnumerable<Type> GetServiceRegistrationTypesFromWebJobs(IServiceProvider serviceProvider, ILogger logger)
         {
-            object container = serviceProvider.GetFieldValue("_container");
+            object container = serviceProvider.GetType().GetField("_container", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(serviceProvider);
             if (container is null)
             {
                 logger.LogTrace("No message handling registrations using the Web Jobs/Azure Function package, expected if you're within SDK worker");
