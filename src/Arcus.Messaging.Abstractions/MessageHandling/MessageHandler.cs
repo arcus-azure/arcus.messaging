@@ -144,7 +144,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             var serviceTypes = new Collection<Type>();
             foreach (object descriptor in descriptors)
             {
-                var serviceType = descriptor.GetRequiredFieldValue<Type>("ServiceType");
+                var serviceType = descriptor.GetRequiredFieldValue<Type>("ServiceType", BindingFlags.Public | BindingFlags.Instance);
                 serviceTypes.Add(serviceType);
             }
 
