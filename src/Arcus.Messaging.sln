@@ -35,7 +35,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Abstraction
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.AzureFunctions.ServiceBus", "Arcus.Messaging.AzureFunctions.ServiceBus\Arcus.Messaging.AzureFunctions.ServiceBus.csproj", "{7386C41A-6F27-42B7-BBC1-B6CB41200A68}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue", "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus\Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.csproj", "{903E1D94-3157-47BB-9642-8B92755AB8B5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue", "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue\Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.csproj", "{903E1D94-3157-47BB-9642-8B92755AB8B5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
