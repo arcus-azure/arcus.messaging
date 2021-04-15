@@ -60,6 +60,3 @@ steps:
     imageName: '${{ parameters.imageName }}:${{ parameters.imageTag }}'
     containerName: '${{ parameters.containerName }}'
     ports: '${{ parameters.port }}:${{ parameters.port }}'
-    envVars: |
-      EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
-      EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
