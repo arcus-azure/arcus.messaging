@@ -25,7 +25,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus
         {
             builder.Services.AddTransient(svc =>
             {
-                var configuration = svc.GetRequiredService<IConfiguration>();
+                IConfiguration configuration = builder.GetContext().Configuration;
                 var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
                 var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
 

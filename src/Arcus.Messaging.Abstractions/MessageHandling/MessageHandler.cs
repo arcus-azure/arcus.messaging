@@ -289,35 +289,40 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 _logger.LogTrace("Custom {MessageBodySerializerType} found on the registered message handler, start custom deserialization...", nameof(IMessageBodySerializer));
 
                 var serializer = _service.GetPropertyValue<IMessageBodySerializer>("Serializer", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (serializer != null)
+                if (serializer is null)
                 {
-                    Task<MessageResult> deserializeMessageAsync = serializer.DeserializeMessageAsync(message);
-                    if (deserializeMessageAsync != null)
-                    {
-                        MessageResult result = await deserializeMessageAsync;
-                        if (result != null)
-                        {
-                            if (result.IsSuccess)
-                            {
-                                Type deserializedMessageType = result.DeserializedMessage.GetType();
-                                if (deserializedMessageType == MessageType
-                                    || deserializedMessageType.IsSubclassOf(MessageType))
-                                {
-                                    return result;
-                                }
+                    _logger.LogTrace("No {MessageBodySerializerType} was found on the registered message handler, so no custom deserialization is available", nameof(IMessageBodySerializer));
+                    return MessageResult.Failure("No custom deserialization was found on the registered message handler");
+                }
 
-                                _logger.LogTrace("Incoming message '{DeserializedMessageType}' was successfully custom deserialized but can't be processed by message handler because the handler expects message type '{MessageHandlerMessageType}'; fallback to default deserialization", deserializedMessageType.Name, MessageType.Name);
-                                return MessageResult.Failure("Custom message deserialization failed because it didn't match the expected message handler's message type");
-                            }
-
-                            _logger.LogTrace("Custom {MessageBodySerializerType} message deserialization failed: {ErrorMessage} {Exception}", nameof(IMessageBodySerializer), result.ErrorMessage, result.Exception);
-                            return MessageResult.Failure("Custom message deserialization failed due to an exception");
-                        }
-                    }
-
+                Task<MessageResult> deserializeMessageAsync = serializer.DeserializeMessageAsync(message);
+                if (deserializeMessageAsync is null)
+                {
                     _logger.LogTrace("Invalid {MessageBodySerializerType} message deserialization was configured on the registered message handler, custom deserialization returned 'null'", nameof(IMessageBodySerializer));
                     return MessageResult.Failure("Invalid custom deserialization was configured on the registered message handler");
                 }
+
+                MessageResult result = await deserializeMessageAsync;
+                if (result is null)
+                {
+                    _logger.LogTrace("No {MessageBodySerializerType} was found on the registered message handler, so no custom deserialization is available", nameof(IMessageBodySerializer));
+                    return MessageResult.Failure("No custom deserialization was found on the registered message handler");
+                }
+
+                if (result.IsSuccess)
+                {
+                    Type deserializedMessageType = result.DeserializedMessage.GetType();
+                    if (deserializedMessageType == MessageType || deserializedMessageType.IsSubclassOf(MessageType))
+                    {
+                        return result;
+                    }
+
+                    _logger.LogTrace("Incoming message '{DeserializedMessageType}' was successfully custom deserialized but can't be processed by message handler because the handler expects message type '{MessageHandlerMessageType}'; fallback to default deserialization", deserializedMessageType.Name, MessageType.Name);
+                    return MessageResult.Failure("Custom message deserialization failed because it didn't match the expected message handler's message type");
+                }
+
+                _logger.LogTrace("Custom {MessageBodySerializerType} message deserialization failed: {ErrorMessage} {Exception}", nameof(IMessageBodySerializer), result.ErrorMessage, result.Exception);
+                return MessageResult.Failure("Custom message deserialization failed due to an exception");
             }
 
             _logger.LogTrace("No {MessageBodySerializerType} was found on the registered message handler, so no custom deserialization is available", nameof(IMessageBodySerializer));
