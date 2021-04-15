@@ -59,17 +59,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a collection of services to subtract the message handlers from");
             Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write trace messages during the lifetime of the message handlers");
 
-            object engine = 
-                serviceProvider.GetType().GetProperty("Engine")?.GetValue(serviceProvider) 
-                ?? serviceProvider.GetRequiredFieldValue("_engine");
-            
-            object callSiteFactory = engine.GetRequiredPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
-            var descriptors = callSiteFactory.GetRequiredFieldValue<IEnumerable>("_descriptors");
+            Type[] serviceTypes = GetServiceRegistrationTypes(serviceProvider, logger);
 
             var messageHandlers = new Collection<MessageHandler>();
-            foreach (object descriptor in descriptors)
+            foreach (Type serviceType in serviceTypes)
             {
-                var serviceType = (Type) descriptor.GetRequiredPropertyValue("ServiceType");
                 if (serviceType.Name == typeof(IMessageHandler<,>).Name 
                     && serviceType.Namespace == typeof(IMessageHandler<>).Namespace
                     && messageHandlers.All(handler => handler._serviceType != serviceType))
@@ -84,6 +78,77 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             return messageHandlers.AsEnumerable();
+        }
+
+        private static Type[] GetServiceRegistrationTypes(IServiceProvider serviceProvider, ILogger logger)
+        {
+            try
+            {
+                Type[] serviceTypes = 
+                    GetServiceRegistrationTypesFromMicrosoftExtensions(serviceProvider, logger)
+                        .Concat(GetServiceRegistrationTypesFromWebJobs(serviceProvider, logger))
+                        .ToArray();
+
+                if (serviceTypes.Length <= 0)
+                {
+                    logger.LogWarning("No message handlers registrations were found in the service provider");
+                }
+                
+                return serviceTypes;
+            }
+            catch (Exception exception) when (exception is TypeNotFoundException || exception is InvalidCastException)
+            {
+                const string message = "The registered message handlers cannot be retrieved from the service provider because the current version of the dependency injection package doesn't match the expected package used in the Arcus messaging";
+                logger.LogCritical(exception, message);
+                throw new NotSupportedException(message, exception);
+            }
+        }
+
+        private static IEnumerable<Type> GetServiceRegistrationTypesFromMicrosoftExtensions(IServiceProvider serviceProvider, ILogger logger)
+        {
+            object engine = 
+                serviceProvider.GetType().GetProperty("Engine")?.GetValue(serviceProvider) 
+                ?? serviceProvider.GetType().GetField("_engine", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(serviceProvider);
+
+            if (engine is null)
+            {
+                logger.LogTrace("No message handling registrations using the Microsoft.Extensions.* package, expected if you're within Web Jobs/Azure Functions");
+                return Enumerable.Empty<Type>();
+            }
+
+            object callSiteFactory = engine.GetRequiredPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
+            var descriptors = callSiteFactory.GetRequiredFieldValue<IEnumerable>("_descriptors");
+
+            var serviceTypes = new Collection<Type>();
+            foreach (object descriptor in descriptors)
+            {
+                var serviceType = descriptor.GetRequiredPropertyValue<Type>("ServiceType");
+                serviceTypes.Add(serviceType);
+            }
+
+            return serviceTypes;
+
+        }
+
+        private static IEnumerable<Type> GetServiceRegistrationTypesFromWebJobs(IServiceProvider serviceProvider, ILogger logger)
+        {
+            object container = serviceProvider.GetFieldValue("_container");
+            if (container is null)
+            {
+                logger.LogTrace("No message handling registrations using the Web Jobs/Azure Function package, expected if you're within SDK worker");
+                return Enumerable.Empty<Type>();
+            }
+            
+            var descriptors = (IEnumerable) container.InvokeMethod("GetServiceRegistrations", BindingFlags.Public | BindingFlags.Instance);
+
+            var serviceTypes = new Collection<Type>();
+            foreach (object descriptor in descriptors)
+            {
+                var serviceType = descriptor.GetRequiredFieldValue<Type>("ServiceType");
+                serviceTypes.Add(serviceType);
+            }
+
+            return serviceTypes;
         }
 
         /// <summary>
