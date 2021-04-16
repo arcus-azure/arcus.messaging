@@ -121,7 +121,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     [true] if the registered <typeparamref name="TMessageContext"/> predicate holds; [false] otherwise.
         /// </returns>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
-        /// <param name="messageContext">The context in which the incoming message is processed.</param>
         [Obsolete("Use the " + nameof(CanProcessMessageBasedOnContext) + " specific message context overload instead")]
         public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext)
             where TMessageContext : MessageContext
@@ -183,7 +182,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// Determines if the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> can process the incoming deserialized message based on the consumer-provided message predicate.
         /// </summary>
         /// <param name="message">The incoming deserialized message body.</param>
-        public bool CanProcessMessageBasedOnMessage(object? message)
+        public bool CanProcessMessageBasedOnMessage(object message)
         {
             if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
             {
