@@ -65,7 +65,7 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a <see cref="IMessageHandler{TMessage,TMessageContext}" /> implementation to process the messages from an <see cref="MessagePump"/> implementation.
+        /// Adds a <see cref="IMessageHandler{TMessage,TMessageContext}" /> implementation to process the messages from an Azure Service Bus.
         /// resources.
         /// </summary>
         /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>

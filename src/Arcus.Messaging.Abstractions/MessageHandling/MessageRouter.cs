@@ -226,7 +226,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 return result;
             }
 
-            if (TryDeserializeToMessageFormat(message, handlerMessageType, out object? deserializedByType) && deserializedByType != null)
+            if (TryDeserializeToMessageFormat(message, handlerMessageType, out object deserializedByType) && deserializedByType != null)
             {
                 return MessageResult.Success(deserializedByType);
             }
@@ -290,7 +290,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     [true] if the <paramref name="message"/> conforms the <see cref="IMessageHandler{TMessage,TMessageContext}"/>'s contract; otherwise [false].
         /// </returns>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="messageType"/> is blank.</exception>
-        protected virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object? result)
+        protected virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object result)
         {
             Guard.NotNullOrWhitespace(message, nameof(message), "Can't parse a blank raw message against a message handler's contract");
 
