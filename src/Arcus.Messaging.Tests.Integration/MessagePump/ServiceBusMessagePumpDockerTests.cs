@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
+    [Collection("Docker")]
     [Trait("Category", "Docker")]
     public class ServiceBusMessagePumpDockerTests : DockerServiceBusIntegrationTest
     {
