@@ -127,7 +127,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             return serviceTypes;
-
         }
 
         private static IEnumerable<Type> GetServiceRegistrationTypesFromWebJobs(IServiceProvider serviceProvider, ILogger logger)
