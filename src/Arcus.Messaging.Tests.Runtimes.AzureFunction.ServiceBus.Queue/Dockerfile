@@ -1,5 +1,5 @@
 FROM mcr.microsoft.com/azure-functions/dotnet:3.0 AS base
-WORKDIR /src
+WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
 WORKDIR /src
@@ -13,7 +13,6 @@ FROM build AS publish
 RUN dotnet publish "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.csproj" -c Release -o /app/publish
 
 FROM base AS final
-WORKDIR /home/site/wwwroot
+WORKDIR /app
 COPY --from=publish /app/publish .
-ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
-    AzureFunctionsJobHost__Logging__Console__IsEnabled=true
+ENTRYPOINT ["dotnet", "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.dll"]
