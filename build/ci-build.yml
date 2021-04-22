@@ -138,10 +138,22 @@ stages:
               projectName: '$(Project).Tests.Integration'
               category: 'Docker'
           - task: PowerShell@2
-            displayName: 'Get Docker container logs'
+            displayName: 'Get Docker container logs for Service Bus Queue worker project'
             inputs:
               targetType: 'inline'
               script: 'docker logs $(Images.ServiceBus.Queue)'
+            condition: failed()
+          - task: PowerShell@2
+            displayName: 'Get Docker container logs for Service Bus Topic worker project'
+            inputs:
+              targetType: 'inline'
+              script: 'docker logs $(Images.ServiceBus.Topic)'
+            condition: failed()
+          - task: PowerShell@2
+            displayName: 'Get Docker container logs for Azure Functions Service Bus Queue project'
+            inputs:
+              targetType: 'inline'
+              script: 'docker logs $(Images.AzureFunction.ServiceBus.Queue)'
             condition: failed()
 
   - stage: SelfContainingIntegrationTests
