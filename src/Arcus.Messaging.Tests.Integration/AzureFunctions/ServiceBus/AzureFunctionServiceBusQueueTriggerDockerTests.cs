@@ -10,6 +10,7 @@ using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.AzureFunctions.ServiceBus
 {
+    [Collection("Docker")]
     [Trait("Category", "Docker")]
     public class AzureFunctionServiceBusQueueTriggerDockerTests : DockerServiceBusIntegrationTest
     {
