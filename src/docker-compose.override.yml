@@ -17,3 +17,6 @@ services:
       - EVENTGRID_AUTH_KEY=<Event Grid Auth Key>
     ports:
       - '42064:5001'
+  arcus.messaging.tests.runtimes.azurefunction.servicebus.queue:
+    ports:
+      - '42065:5001'
