@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Messaging.ServiceBus;
 using GuardNet;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
@@ -32,7 +32,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// </param>
         /// <param name="cancellationToken">The cancellation token to cancel the processing.</param>
         public abstract Task ProcessMessageAsync(
-            Message message,
+            ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken);
@@ -41,11 +41,21 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// Completes the Azure Service Bus message on Azure.
         /// </summary>
         /// <param name="message">The Azure Service Bus message to be completed.</param>
-        protected async Task CompleteAsync(Message message)
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
+        protected async Task CompleteAsync(ServiceBusReceivedMessage message)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be completed");
 
-            await MessageReceiver.CompleteAsync(message.SystemProperties.LockToken);
+            if (EventArgs is null)
+            {
+                throw new InvalidOperationException(
+                    "Cannot complete the Azure Service Bus message because the message handler running Azure Service Bus-specific operations was not yet initialized correctly");
+            }
+            
+            Logger.LogTrace("Completing message '{MessageId}'...", message.MessageId);
+            await EventArgs.CompleteMessageAsync(message, EventArgs.CancellationToken);
+            Logger.LogTrace("Message '{MessageId}' is completed!", message.MessageId);
         }
 
         /// <summary>
@@ -55,18 +65,19 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="newMessageProperties">The properties to modify on the message during the dead lettering of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        protected async Task DeadLetterAsync(Message message, IDictionary<string, object> newMessageProperties = null)
+        protected async Task DeadLetterAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be dead lettered");
 
-            if (MessageReceiver is null)
+            if (EventArgs is null)
             {
-                throw new InvalidOperationException($"Cannot DeadLetter the message '{message.MessageId}' because the message receiver was not yet initialized yet");
+                throw new InvalidOperationException(
+                    "Cannot dead-letter the Azure Service Bus message because the message handler running Azure Service Bus-specific operations was not yet initialized correctly");
             }
 
-            Logger.LogTrace("Dead-lettering message '{MessageId}' using lock token '{LockToken}'...", message.MessageId, message.SystemProperties.LockToken);
-            await MessageReceiver.DeadLetterAsync(message.SystemProperties.LockToken, newMessageProperties);
-            Logger.LogTrace("Message '{MessageId}' was dead-lettered using lock token '{LockToken}'!", message.MessageId, message.SystemProperties.LockToken);
+            Logger.LogTrace("Dead-lettering message '{MessageId}'...", message.MessageId);
+            await EventArgs.DeadLetterMessageAsync(message, newMessageProperties, EventArgs.CancellationToken);
+            Logger.LogTrace("Message '{MessageId}' is dead-lettered!", message.MessageId);
         }
 
         /// <summary>
@@ -78,19 +89,20 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="deadLetterReason"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        protected async Task DeadLetterAsync(Message message, string deadLetterReason, string deadLetterErrorDescription = null)
+        protected async Task DeadLetterAsync(ServiceBusReceivedMessage message, string deadLetterReason, string deadLetterErrorDescription = null)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be dead lettered");
             Guard.NotNullOrWhitespace(deadLetterReason, nameof(deadLetterReason), "Requires a non-blank dead letter reason for the message");
 
-            if (MessageReceiver is null)
+            if (EventArgs is null)
             {
-                throw new InvalidOperationException($"Cannot DeadLetter the message '{message.MessageId}' because the message receiver was not yet initialized yet");
+                throw new InvalidOperationException(
+                    "Cannot dead-letter the Azure Service Bus message because the message handler running Azure Service Bus-specific operations was not yet initialized correctly");
             }
 
-            Logger.LogTrace("Dead-lettering message '{MessageId}' using lock token '{LockToken}' because '{Reason}'...", message.MessageId, message.SystemProperties.LockToken, deadLetterReason);
-            await MessageReceiver.DeadLetterAsync(message.SystemProperties.LockToken, deadLetterReason, deadLetterErrorDescription);
-            Logger.LogTrace("Message '{MessageId}' was dead-lettered using lock token '{LockToken}' because '{Reason}'!", message.MessageId, message.SystemProperties.LockToken, deadLetterReason);
+            Logger.LogTrace("Dead-lettering message '{MessageId}' because '{Reason}'...", message.MessageId, deadLetterReason);
+            await EventArgs.DeadLetterMessageAsync(message, deadLetterReason, deadLetterErrorDescription, EventArgs.CancellationToken);
+            Logger.LogTrace("Message '{MessageId}' is dead-lettered because '{Reason}'!", message.MessageId,  deadLetterReason);
         }
 
         /// <summary>
@@ -100,18 +112,19 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="newMessageProperties">The properties to modify on the message during the abandoning of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        protected async Task AbandonAsync(Message message, IDictionary<string, object> newMessageProperties = null)
+        protected async Task AbandonAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be abandoned");
 
-            if (MessageReceiver is null)
+            if (EventArgs is null)
             {
-                throw new InvalidOperationException($"Cannot Abandon the message '{message.MessageId}' because the message receiver was not yet initialized yet");
+                throw new InvalidOperationException(
+                    "Cannot abandon the Azure Service Bus message because the message handler running Azure Service Bus-specific operations was not yet initialized correctly");
             }
 
-            Logger.LogTrace("Abandoning message '{MessageId}' using lock token '{LockToken}'...", message.MessageId, message.SystemProperties.LockToken);
-            await MessageReceiver.AbandonAsync(message.SystemProperties.LockToken, newMessageProperties);
-            Logger.LogTrace("Message '{MessageId}' was abandoned using '{LockToken}'!", message.MessageId, message.SystemProperties.LockToken);
+            Logger.LogTrace("Abandoning message '{MessageId}'...", message.MessageId);
+            await EventArgs.AbandonMessageAsync(message, newMessageProperties, EventArgs.CancellationToken);
+            Logger.LogTrace("Message '{MessageId}' is abandoned!", message.MessageId);
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
@@ -15,6 +14,7 @@ using Arcus.Security.Providers.AzureKeyVault;
 using Arcus.Security.Providers.AzureKeyVault.Authentication;
 using Arcus.Security.Providers.AzureKeyVault.Configuration;
 using Arcus.Testing.Logging;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.ApplicationInsights.Query;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
@@ -55,7 +55,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
-            
+
             // Act
             await using (var worker = await Worker.StartNewAsync(options))
             await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
@@ -525,7 +525,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
             
             string operationId = $"operation-{Guid.NewGuid()}", transactionId = $"transaction-{Guid.NewGuid()}";
-            Message orderMessage = OrderGenerator.Generate().AsServiceBusMessage(operationId, transactionId);
+            ServiceBusMessage orderMessage = OrderGenerator.Generate().AsServiceBusMessage(operationId, transactionId);
 
             await using (var worker = await Worker.StartNewAsync(options))
             {

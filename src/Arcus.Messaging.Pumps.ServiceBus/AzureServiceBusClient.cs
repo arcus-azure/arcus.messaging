@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Arcus.Messaging.Pumps.ServiceBus.KeyRotation;
 using GuardNet;
 using Microsoft.Azure.Management.ServiceBus;
 using Microsoft.Azure.Management.ServiceBus.Models;

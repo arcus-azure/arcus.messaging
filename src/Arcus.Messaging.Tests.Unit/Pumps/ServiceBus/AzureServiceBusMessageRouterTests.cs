@@ -5,12 +5,11 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Stubs;
-using Microsoft.Azure.ServiceBus;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
@@ -42,7 +41,8 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             Order order = OrderGenerator.Generate();
-            Message message = order.AsServiceBusMessage();
+            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage();
+
             await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
@@ -72,7 +72,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             Order order = OrderGenerator.Generate();
-            Message message = order.AsServiceBusMessage();
+            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage();
             await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
@@ -102,7 +102,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             Order order = OrderGenerator.Generate();
-            Message message = order.AsServiceBusMessage();
+            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage();
             await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
@@ -130,7 +130,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             Order order = OrderGenerator.Generate();
-            Message message = order.AsServiceBusMessage();
+            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage();
             await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
@@ -161,7 +161,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
-            Message message = expectedMessage.AsServiceBusMessage();
+            ServiceBusReceivedMessage message = expectedMessage.AsServiceBusReceivedMessage();
             await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
@@ -192,7 +192,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
-            Message message = expectedMessage.AsServiceBusMessage();
+            ServiceBusReceivedMessage message = expectedMessage.AsServiceBusReceivedMessage();
             await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);
@@ -241,7 +241,7 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus
             var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
 
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
-            Message message = expectedMessage.AsServiceBusMessage();
+            ServiceBusReceivedMessage message = expectedMessage.AsServiceBusReceivedMessage();
             await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
 
             Assert.True(spyHandler.IsProcessed);

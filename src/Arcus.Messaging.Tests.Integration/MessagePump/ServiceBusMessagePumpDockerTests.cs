@@ -6,9 +6,8 @@ using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
-using Microsoft.Azure.EventGrid.Models;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 using Xunit.Abstractions;
@@ -62,13 +61,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var operationId = Guid.NewGuid().ToString();
             var transactionId = Guid.NewGuid().ToString();
-            var messageSender = CreateServiceBusSender(connectionStringKey);
+            ServiceBusSender messageSender = await CreateServiceBusSenderAsync(connectionStringKey);
 
             var order = OrderGenerator.Generate();
             var orderMessage = order.AsServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
 
             // Act
-            await messageSender.SendAsync(orderMessage);
+            await messageSender.SendMessageAsync(orderMessage);
 
             // Assert
             var receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);
@@ -88,12 +87,20 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
         }
 
-        private MessageSender CreateServiceBusSender(string connectionStringKey)
+        private async Task<ServiceBusSender> CreateServiceBusSenderAsync(string connectionStringKey)
         {
             var connectionString = Configuration.GetValue<string>(connectionStringKey);
-            var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
-            var messageSender = new MessageSender(serviceBusConnectionStringBuilder);
-            return messageSender;
+            ServiceBusConnectionStringProperties serviceBusConnectionString = ServiceBusConnectionStringProperties.Parse(connectionString);
+
+            var client = new ServiceBusClient(connectionString);
+            try
+            {
+                return client.CreateSender(serviceBusConnectionString.EntityPath);
+            }
+            finally
+            {
+                await client.DisposeAsync();
+            }
         }
 
         public async Task InitializeAsync()

@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Arcus.Testing.Logging;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,11 +29,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         public IDictionary<string, string> Configuration { get; } = new Dictionary<string, string>();
 
         /// <summary>
-        /// Gets or sets the flag indicating whether or not the logging of the <see cref="Worker"/> should be included in the test output.
-        /// </summary>
-        public bool ActivateLogging { get; set; } = false;
-        
-        /// <summary>
         /// Adds an additional configuration option on the to-be-created <see cref="IHostBuilder"/>.
         /// </summary>
         /// <param name="additionalHostOption">The action that configures the additional option.</param>
@@ -42,6 +38,27 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             Guard.NotNull(additionalHostOption, nameof(additionalHostOption), "Requires an custom action that will add the additional hosting option");
             _additionalHostOptions.Add(additionalHostOption);
 
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a <paramref name="logger"/> to the test worker instance to write diagnostic trace messages to the test output.
+        /// </summary>
+        /// <param name="logger">The test logger to write the diagnostic trace messages to.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="logger"/> is <c>null</c>.</exception>
+        public WorkerOptions ConfigureLogging(ILogger logger)
+        {
+            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write diagnostic trace messages to the test output");
+
+            _additionalHostOptions.Add(hostBuilder =>
+            {
+                hostBuilder.ConfigureLogging(logging =>
+                {
+                    logging.AddProvider(new CustomLoggerProvider(logger))
+                           .SetMinimumLevel(LogLevel.Trace);
+                });
+            });
+            
             return this;
         }
 
@@ -66,11 +83,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             foreach (Action<IHostBuilder> additionalHostOption in _additionalHostOptions)
             {
                 additionalHostOption(hostBuilder);
-            }
-
-            if (ActivateLogging)
-            {
-                hostBuilder.ConfigureLogging(logging => logging.ClearProviders());
             }
         }
 
