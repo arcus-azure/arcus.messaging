@@ -356,7 +356,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             string rawConnectionString = await messagePumpSettings.GetConnectionStringAsync();
             ServiceBusConnectionStringProperties serviceBusConnectionString = ServiceBusConnectionStringProperties.Parse(rawConnectionString);
 
-            await using (var client = new ServiceBusClient(rawConnectionString))
+            var client = new ServiceBusClient(rawConnectionString);
             {
                 ServiceBusProcessor processor;
                 if (string.IsNullOrWhiteSpace(serviceBusConnectionString.EntityPath))
