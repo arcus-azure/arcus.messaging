@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/azure-functions/dotnet:3.0 AS base
 WORKDIR /home/site/wwwroot
 EXPOSE 80
 
-FROM mcr.microsoft.com/dotnet/sdk:3.1.401 AS build
+FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
 WORKDIR /src
 COPY ["Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue/Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.csproj", "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue/"]
 COPY ["Arcus.Messaging.Tests.Workers/Arcus.Messaging.Tests.Workers.csproj", "Arcus.Messaging.Tests.Workers/"]
