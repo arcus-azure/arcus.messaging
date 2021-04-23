@@ -61,45 +61,34 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var operationId = Guid.NewGuid().ToString();
             var transactionId = Guid.NewGuid().ToString();
-            ServiceBusSender messageSender = await CreateServiceBusSenderAsync(connectionStringKey);
-
-            var order = OrderGenerator.Generate();
-            var orderMessage = order.AsServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
-
-            // Act
-            await messageSender.SendMessageAsync(orderMessage);
-
-            // Assert
-            var receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);
-            Assert.NotEmpty(receivedEvent);
-            var deserializedEventGridMessage = EventParser.Parse(receivedEvent);
-            Assert.NotNull(deserializedEventGridMessage);
-            var orderCreatedEvent = Assert.Single(deserializedEventGridMessage.Events);
-            Assert.NotNull(orderCreatedEvent);
-            var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
-            Assert.NotNull(orderCreatedEventData);
-            Assert.NotNull(orderCreatedEventData.CorrelationInfo);
-            Assert.Equal(order.Id, orderCreatedEventData.Id);
-            Assert.Equal(order.Amount, orderCreatedEventData.Amount);
-            Assert.Equal(order.ArticleNumber, orderCreatedEventData.ArticleNumber);
-            Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
-            Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
-            Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
-        }
-
-        private async Task<ServiceBusSender> CreateServiceBusSenderAsync(string connectionStringKey)
-        {
             var connectionString = Configuration.GetValue<string>(connectionStringKey);
             ServiceBusConnectionStringProperties serviceBusConnectionString = ServiceBusConnectionStringProperties.Parse(connectionString);
 
-            var client = new ServiceBusClient(connectionString);
-            try
+            await using (var client = new ServiceBusClient(connectionString))
+            await using (ServiceBusSender messageSender = client.CreateSender(serviceBusConnectionString.EntityPath))
             {
-                return client.CreateSender(serviceBusConnectionString.EntityPath);
-            }
-            finally
-            {
-                await client.DisposeAsync();
+                var order = OrderGenerator.Generate();
+                var orderMessage = order.AsServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
+
+                // Act
+                await messageSender.SendMessageAsync(orderMessage);
+            
+                // Assert
+                var receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);
+                Assert.NotEmpty(receivedEvent);
+                var deserializedEventGridMessage = EventParser.Parse(receivedEvent);
+                Assert.NotNull(deserializedEventGridMessage);
+                var orderCreatedEvent = Assert.Single(deserializedEventGridMessage.Events);
+                Assert.NotNull(orderCreatedEvent);
+                var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
+                Assert.NotNull(orderCreatedEventData);
+                Assert.NotNull(orderCreatedEventData.CorrelationInfo);
+                Assert.Equal(order.Id, orderCreatedEventData.Id);
+                Assert.Equal(order.Amount, orderCreatedEventData.Amount);
+                Assert.Equal(order.ArticleNumber, orderCreatedEventData.ArticleNumber);
+                Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
+                Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
+                Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
             }
         }
 

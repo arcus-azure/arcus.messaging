@@ -1,5 +1,4 @@
-﻿using System;
-using Arcus.Messaging.Abstractions.ServiceBus;
+﻿using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Azure.Messaging.ServiceBus;

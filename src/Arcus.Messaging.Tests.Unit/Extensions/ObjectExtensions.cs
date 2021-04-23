@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Text;
 using Azure.Core.Amqp;
+using Bogus;
 using GuardNet;
 using Newtonsoft.Json;
 
@@ -13,6 +14,8 @@ namespace Azure.Messaging.ServiceBus
     /// </summary>
     public static class ObjectExtensions
     {
+        private static readonly Faker BogusGenerator = new Faker();
+
         /// <summary>
         /// Creates an <see cref="ServiceBusReceivedMessage"/> based on the given <paramref name="messageBody"/>.
         /// </summary>
@@ -32,6 +35,7 @@ namespace Azure.Messaging.ServiceBus
             string serializedMessageBody = JsonConvert.SerializeObject(messageBody);
             byte[] rawMessage = Encoding.UTF8.GetBytes(serializedMessageBody);
             var amqp = new AmqpAnnotatedMessage(new AmqpMessageBody(new[] {new ReadOnlyMemory<byte>(rawMessage)}));
+            amqp.Header.DeliveryCount = BogusGenerator.Random.UInt();
             
             if (operationId is null)
             {

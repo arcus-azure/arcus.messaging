@@ -394,7 +394,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
 
             return client.CreateProcessor(entityName, subscriptionName, _messageProcessorOptions);
-
         }
 
         /// <summary>
