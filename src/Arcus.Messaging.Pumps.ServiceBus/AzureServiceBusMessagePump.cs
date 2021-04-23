@@ -213,7 +213,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             string serviceBusConnectionString = await GetServiceBusConnectionStringAsync();
             var serviceBusClient = new ServiceBusAdministrationClient(serviceBusConnectionString);
             var serviceBusConnectionProperties = ServiceBusConnectionStringProperties.Parse(serviceBusConnectionString);
-            
+
             try
             {
                 bool subscriptionExists = await serviceBusClient.SubscriptionExistsAsync(serviceBusConnectionProperties.EntityPath, SubscriptionName, cancellationToken);
@@ -232,7 +232,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     var ruleDescription = new CreateRuleOptions("Accept-All", new TrueRuleFilter());
                     await serviceBusClient.CreateSubscriptionAsync(subscriptionDescription, ruleDescription, cancellationToken)
                                           .ConfigureAwait(continueOnCapturedContext: false);
-                   
+
                     Logger.LogTrace("Subscription '{SubscriptionName}' created on topic '{TopicPath}'", SubscriptionName, serviceBusConnectionProperties.EntityPath);
                 }
             }
@@ -264,7 +264,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private async Task OpenNewMessageReceiverAsync()
         {
             _messageProcessor = await CreateMessageProcessorAsync(Settings);
-            
+
             Logger.LogTrace("Starting message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", JobId, EntityPath, Namespace);
             _messageProcessor.ProcessErrorAsync += ProcessErrorAsync;
             _messageProcessor.ProcessMessageAsync += ProcessMessageAsync;
@@ -284,11 +284,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("Closing message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'",  JobId, EntityPath, Namespace);
                 _messageProcessor.ProcessMessageAsync -= ProcessMessageAsync;
                 _messageProcessor.ProcessErrorAsync -= ProcessErrorAsync;
-                
+
                 await _messageProcessor.StopProcessingAsync();
                 await _messageProcessor.CloseAsync();
                 Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}",  JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
             }
+            catch (TaskCanceledException) 
+            {
+                // Ignore.
+            } 
             catch (Exception exception)
             {
                 Logger.LogWarning(exception, "Cannot correctly close the message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'",  JobId, EntityPath, Namespace);

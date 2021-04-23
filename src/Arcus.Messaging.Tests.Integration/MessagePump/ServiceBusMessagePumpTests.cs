@@ -77,7 +77,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                         "Test-Receive-All-Topic-Only", 
                         configuration => connectionString, 
                         opt => opt.AutoComplete = true)
-                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
             
             // Act
             await using (var worker = await Worker.StartNewAsync(options))

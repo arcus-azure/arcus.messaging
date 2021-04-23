@@ -79,6 +79,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                                services.Add(service);
                            }
                        });
+
+            hostBuilder.ConfigureLogging(logging => logging.ClearProviders());
             
             foreach (Action<IHostBuilder> additionalHostOption in _additionalHostOptions)
             {
