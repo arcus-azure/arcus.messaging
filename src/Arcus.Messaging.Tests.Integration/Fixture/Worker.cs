@@ -47,16 +47,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
-            try
-            {
-                Console.WriteLine("Stop '{0}' integration test", _testName);
-                await _host.StopAsync();
-                _host.Dispose();
-            }
-            catch (TaskCanceledException)
-            {
-                Console.Write("Cancelled host for '{0}' integration test", _testName);
-            }
+            await _host.StopAsync();
+            _host.Dispose();
         }
     }
 }

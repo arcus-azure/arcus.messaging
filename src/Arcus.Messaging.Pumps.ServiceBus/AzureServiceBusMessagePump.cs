@@ -295,7 +295,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             } 
             catch (Exception exception)
             {
-                Logger.LogWarning(exception, "Cannot correctly close the message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'",  JobId, EntityPath, Namespace);
+                Logger.LogWarning(exception, "Cannot correctly close the message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}': {Message}",  JobId, EntityPath, Namespace, exception.Message);
             }
         }
 
