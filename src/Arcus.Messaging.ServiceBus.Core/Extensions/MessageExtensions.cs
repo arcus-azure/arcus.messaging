@@ -111,7 +111,7 @@ namespace Microsoft.Azure.ServiceBus
         /// </summary>	
         /// <param name="message">The received message.</param>
         /// <returns>
-        ///     The correlation transaction ID for message if an application property could be found with the key <paramref name="transactionIdPropertyName"/>; <c>null</c> otherwise.
+        ///     The correlation transaction ID for message if an application property could be found with the key <see cref="PropertyNames.TransactionId"/>; <c>null</c> otherwise.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         public static string GetTransactionId(this ServiceBusReceivedMessage message)

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -170,8 +169,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(ServiceProvider, Logger);
-            if (!handlers.Any() && _fallbackMessageHandler is null)
+            MessageHandler[] handlers = MessageHandler.SubtractFrom(ServiceProvider, Logger).ToArray();
+            if (handlers.Length <= 0 && _fallbackMessageHandler is null)
             {
                 throw new InvalidOperationException(
                     $"Message pump cannot correctly process the message in the '{typeof(TMessageContext)}' "
@@ -239,7 +238,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
                 return result;
             }
 
-            if (TryDeserializeToMessageFormat(message, messageType, out object? deserializedByType) && deserializedByType != null)
+            if (SafeguardTryDeserializeToMessageFormat(message, messageType, out object deserializedByType) && deserializedByType != null)
             {
                 return MessageResult.Success(deserializedByType);
             }
@@ -247,7 +246,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             return MessageResult.Failure($"Incoming message cannot be deserialized to type '{messageType.Name}' because it is not in the correct format");
         }
 
-        private bool SafeguardTryDeserializeToMessageFormat(string message, Type messageType, out object? result)
+        private bool SafeguardTryDeserializeToMessageFormat(string message, Type messageType, out object result)
         {
             try
             {
@@ -302,7 +301,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <returns>
         ///     [true] if the <paramref name="message"/> conforms the <see cref="IMessageHandler{TMessage,TMessageContext}"/>'s contract; otherwise [false].
         /// </returns>
-        public virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object? result)
+        protected virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object result)
         {
             Guard.NotNullOrWhitespace(message, nameof(message), "Can't parse a blank raw message against a message handler's contract");
 

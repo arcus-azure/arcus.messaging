@@ -282,10 +282,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             try
             {
                 Logger.LogTrace("Closing message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'",  JobId, EntityPath, Namespace);
+                await _messageProcessor.StopProcessingAsync();
                 _messageProcessor.ProcessMessageAsync -= ProcessMessageAsync;
                 _messageProcessor.ProcessErrorAsync -= ProcessErrorAsync;
-
-                await _messageProcessor.StopProcessingAsync();
                 await _messageProcessor.CloseAsync();
                 Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}",  JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
             }
