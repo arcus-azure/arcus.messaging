@@ -307,11 +307,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 messageHandlerOptions.AutoCompleteMessages = messagePumpSettings.Options.AutoComplete;
                 messageHandlerOptions.MaxConcurrentCalls = messagePumpSettings.Options.MaxConcurrentCalls ?? messageHandlerOptions.MaxConcurrentCalls;
 
-                Logger.LogInformation("Message pump options were configured instead of Azure Service Bus defaults");
+                Logger.LogTrace("Message pump options were configured instead of Azure Service Bus defaults");
             }
             else
             {
-                Logger.LogWarning("No message pump options were configured, using Azure Service Bus defaults instead");
+                Logger.LogTrace("No message pump options were configured, using Azure Service Bus defaults instead");
             }
 
             return messageHandlerOptions;
@@ -329,7 +329,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 {
                     if (Interlocked.Increment(ref _unauthorizedExceptionCount) >= Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart)
                     {
-                        Logger.LogWarning("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
+                        Logger.LogTrace("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
                         await RestartAsync();
                     }
                     else
