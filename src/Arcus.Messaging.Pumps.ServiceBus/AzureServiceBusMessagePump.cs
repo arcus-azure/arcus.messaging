@@ -319,6 +319,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private async Task ProcessErrorAsync(ProcessErrorEventArgs args)
         {
+            if (args?.Exception is null)
+            {
+                Logger.LogWarning("Thrown exception on Azure Service Bus message pump '{JobId}' was null, skipping", JobId);
+                return;
+            }
+            
             try
             {
                 await HandleReceiveExceptionAsync(args.Exception);
