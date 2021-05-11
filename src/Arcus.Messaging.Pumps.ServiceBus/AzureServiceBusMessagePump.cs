@@ -454,7 +454,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private async Task ProcessMessageAsync(ProcessMessageEventArgs args)
         {
-            ServiceBusReceivedMessage message = args.Message;
+            ServiceBusReceivedMessage message = args?.Message;
             if (message is null)
             {
                 Logger.LogWarning("Received message on Azure Service Bus message pump '{JobId}' was null, skipping", JobId);
@@ -468,7 +468,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
-            if (String.IsNullOrEmpty(args.Message.CorrelationId))
+            if (String.IsNullOrEmpty(message.CorrelationId))
             {
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus message pump '{JobId}'", message.MessageId, JobId);
             }
