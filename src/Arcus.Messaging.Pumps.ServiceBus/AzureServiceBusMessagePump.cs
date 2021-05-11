@@ -380,8 +380,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
                 Namespace = serviceBusConnectionString.Endpoint?.Host;
 
-                // TODO: show that we don't support plugins just yet
-                //ConfigurePlugins();
+                /* TODO: we can't support Azure Service Bus plug-ins yet because the new Azure SDK doesn't yet support this:
+                         https://github.com/arcus-azure/arcus.messaging/issues/176 */
 
                 RegisterClientInformation(JobId, serviceBusConnectionString.EntityPath);
 
