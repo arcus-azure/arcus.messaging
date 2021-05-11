@@ -4,7 +4,7 @@ using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using Microsoft.Azure.ServiceBus;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
@@ -34,7 +34,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         /// </param>
         /// <param name="cancellationToken">The cancellation token to cancel the processing.</param>
         public override async Task ProcessMessageAsync(
-            Message message,
+            ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)

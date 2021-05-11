@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.ServiceBus;
+using Azure.Messaging.ServiceBus;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
@@ -20,7 +20,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// </param>
         /// <param name="cancellationToken">The cancellation token to cancel the processing.</param>
         Task ProcessMessageAsync(
-            Message message,
+            ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken);

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using GuardNet;
-using Microsoft.Azure.ServiceBus;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus
 {
@@ -22,9 +22,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         public AzureServiceBusMessageContext(
             string messageId, 
             string jobId,
-            Message.SystemPropertiesCollection systemProperties,
-            IDictionary<string, object> properties)
-            : base(messageId, properties)
+            AzureServiceBusSystemProperties systemProperties,
+            IReadOnlyDictionary<string, object> properties)
+            : base(messageId, properties.ToDictionary(item => item.Key, item => item.Value))
         {
             Guard.NotNullOrWhitespace(messageId, nameof(messageId), "Requires an ID to identify the message");
             Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires an job ID that is not blank to identify the message pump");
@@ -40,7 +40,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <summary>
         ///     Gets the contextual properties provided on the message provided by the Azure Service Bus runtime
         /// </summary>
-        public Message.SystemPropertiesCollection SystemProperties { get; }
+        public AzureServiceBusSystemProperties SystemProperties { get; }
 
         /// <summary>
         ///     Gets the token used to lock an individual message for processing

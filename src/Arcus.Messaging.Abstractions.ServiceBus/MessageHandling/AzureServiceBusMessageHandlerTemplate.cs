@@ -1,6 +1,6 @@
 ﻿using System;
+using Azure.Messaging.ServiceBus;
 using GuardNet;
-using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -21,44 +21,25 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         }
 
         /// <summary>
-        /// Gets the Azure Service Bus message lock token of the  message that is currently being handled.
+        /// Gets the current event args of the received Azure Service Bus message to run message-specific operations.
         /// </summary>
-        internal string LockToken { get; private set; }
-
-        /// <summary>
-        /// Gets the specific message receiver to control Azure Service Bus specific operations.
-        /// </summary>
-        internal MessageReceiver MessageReceiver { get; private set; }
-
+        internal ProcessMessageEventArgs EventArgs { get; private set; }
+        
         /// <summary>
         /// Gets the logger to write diagnostic messages during the handling of the message.
         /// </summary>
         protected ILogger Logger { get; }
 
         /// <summary>
-        /// Sets the message receiver to the message handler template.
+        /// Sets the <see cref="ProcessMessageEventArgs"/> instance of the currently received Azure Service Bus message on the message handler template
+        /// to prepare to run message-specific operations.
         /// </summary>
-        /// <param name="messageReceiver">The message receiver to handle Azure Service Bus message-specific operations.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageReceiver"/> is <c>null</c>.</exception>
-        internal void SetMessageReceiver(MessageReceiver messageReceiver)
+        /// <param name="args">The received event args to process the Azure Service Bus message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="args"/> is <c>null</c>.</exception>
+        internal void SetProcessMessageEventArgs(ProcessMessageEventArgs args)
         {
-            Guard.NotNull(messageReceiver, nameof(messageReceiver), "Requires a message receiver to run Azure Service Bus message-specific operations");
-            
-            Logger.LogTrace("Setting message receiver on message handler");
-            MessageReceiver = messageReceiver;
-        }
-
-        /// <summary>
-        /// Sets the message lock token on the message handler template.
-        /// </summary>
-        /// <param name="lockToken">The message lock token to handle Azure Service Bus message-specific operations.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="lockToken"/> is blank.</exception>
-        internal void SetLockToken(string lockToken)
-        {
-            Guard.NotNullOrWhitespace(lockToken, nameof(lockToken), "Requires a non-blank lock token to run Azure Service Bus message-specific operations");
-
-            Logger.LogTrace("Setting message on the message lock token");
-            LockToken = lockToken;
+            Guard.NotNull(args, nameof(args), "Requires a messaging event args instance to run Azure Service Bus message-specific operations during the message handling");
+            EventArgs = args;
         }
     }
 }

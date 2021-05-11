@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Tests.Core.Generators;
+using Arcus.Messaging.Tests.Core.Messages.v1;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.ServiceBus;
 using Xunit;
 
@@ -14,13 +17,10 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         {
             // Arrange
             const string key = "uri-key";
-            var serviceBusMessage = new Message
-            {
-                UserProperties = { [key] = new Uri("http://localhost") }
-            };
+            ServiceBusReceivedMessage message = CreateMessage(key, new Uri("http://localhost"));
 
             // Act
-            var uri = serviceBusMessage.GetUserProperty<Uri>(key);
+            var uri = message.GetApplicationProperty<Uri>(key);
 
             // Assert
             Assert.NotNull(uri);
@@ -30,11 +30,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void GetUserProperty_WithNonExistingKey_ThrowsKeyNotFound()
         {
             // Arrange
-            var serviceBusMessage = new Message();
+            ServiceBusReceivedMessage serviceBusMessage = CreateMessage();
 
             // Act / Assert
             Assert.Throws<KeyNotFoundException>(
-                () => serviceBusMessage.GetUserProperty<Uri>("non-existing-key"));
+                () => serviceBusMessage.GetApplicationProperty<Uri>("non-existing-key"));
         }
 
         [Fact]
@@ -42,27 +42,20 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         {
             // Arrange
             const string key = "uri-key";
-            var serviceBusMessage = new Message
-            {
-                UserProperties = { [key] = TimeSpan.Zero }
-            };
+            ServiceBusReceivedMessage serviceBusMessage = CreateMessage(key, TimeSpan.Zero);
 
             // Act / Assert
             Assert.Throws<InvalidCastException>(
-                () => serviceBusMessage.GetUserProperty<Uri>(key));
+                () => serviceBusMessage.GetApplicationProperty<Uri>(key));
         }
 
         [Fact]
         public void GetMessageCorrelationInfo_WithCorrelationIdAndTransactionIdAsUserProperties_ReturnsCorrelationInfo()
         {
             // Arrange
-            string expectedOperationId = $"operation-{Guid.NewGuid()}";
-            string expectedTransactionId = $"transaction-{Guid.NewGuid()}";
-            var message = new Message
-            {
-                CorrelationId = expectedOperationId,
-                UserProperties = { [PropertyNames.TransactionId] = expectedTransactionId }
-            };
+            var expectedOperationId = $"operation-{Guid.NewGuid()}";
+            var expectedTransactionId = $"transaction-{Guid.NewGuid()}";
+            ServiceBusReceivedMessage message = CreateMessage(PropertyNames.TransactionId, expectedTransactionId, expectedOperationId);
             
             // Act
             MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
@@ -78,11 +71,8 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void GetMessageCorrelationInfo_WithTransactionIdAsUserProperty_ReturnsCorrelationInfoWithGeneratedOperationId()
         {
             // Arrange
-            string expectedTransactionId = $"transaction-{Guid.NewGuid()}";
-            var message = new Message
-            {
-                UserProperties = { [PropertyNames.TransactionId] = expectedTransactionId }
-            };
+            var expectedTransactionId = $"transaction-{Guid.NewGuid()}";
+            ServiceBusReceivedMessage message = CreateMessage(PropertyNames.TransactionId, expectedTransactionId);
 
             // Act
             MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
@@ -98,12 +88,9 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void GetMessageCorrelationInfo_WithTransactionIdInCustomUserProperty_ReturnsCorrelationInfoWithGeneratedOperationId()
         {
             // Arrange
-            string expectedTransactionId = $"transaction-{Guid.NewGuid()}";
+            var expectedTransactionId = $"transaction-{Guid.NewGuid()}";
             const string transactionIdPropertyName = "Correlation-Transaction-Id";
-            var message = new Message
-            {
-                UserProperties = { [transactionIdPropertyName] = expectedTransactionId }
-            };
+            ServiceBusReceivedMessage message = CreateMessage(transactionIdPropertyName, expectedTransactionId);
 
             // Act
             MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo(transactionIdPropertyName: transactionIdPropertyName);
@@ -119,8 +106,8 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void GetMessageCorrelationInfo_WithCorrelationId_ReturnsCorrelationInfoWithNonEmptyTransactionId()
         {
             // Arrange
-            string expectedOperationId = $"operation-{Guid.NewGuid()}";
-            var message = new Message { CorrelationId = expectedOperationId };
+            var expectedOperationId = $"operation-{Guid.NewGuid()}";
+            ServiceBusReceivedMessage message = CreateMessage(correlationId: expectedOperationId);
 
             // Act
             MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
@@ -136,10 +123,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void GetTransactionId_WithoutTransactionIdAsUserProperty_ReturnsEmptyString()
         {
             // Arrange
-            var message = new Message
-            {
-                UserProperties = {  }
-            };
+            ServiceBusReceivedMessage message = CreateMessage(key: null, value: null);
 
             // Act
             string transactionId = message.GetTransactionId();
@@ -152,14 +136,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void GetTransactionId_WithTransactionIdAsUserProperty_ReturnsCorrectTransactionId()
         {
             // Arrange
-            string expectedTransactionId = $"transaction-{Guid.NewGuid()}";
-            var message = new Message
-            {
-                UserProperties = { [PropertyNames.TransactionId] = expectedTransactionId }
-            };
+            var expectedTransactionId = $"transaction-{Guid.NewGuid()}";
+            ServiceBusReceivedMessage message = CreateMessage(PropertyNames.TransactionId, expectedTransactionId);
 
             // Act
-            var transactionId = message.GetTransactionId();
+            string transactionId = message.GetTransactionId();
 
             // Assert
             Assert.NotNull(transactionId);
@@ -170,19 +151,24 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void GetTransactionId_WithTransactionIdInCustomUserProperty_ReturnsCorrectTransactionId()
         {
             // Arrange
-            string expectedTransactionId = $"transaction-{Guid.NewGuid()}";
+            var expectedTransactionId = $"transaction-{Guid.NewGuid()}";
             const string transactionIdPropertyName = "Correlation-Transaction-Id";
-            var message = new Message
-            {
-                UserProperties = { [transactionIdPropertyName] = expectedTransactionId }
-            };
+            ServiceBusReceivedMessage message = CreateMessage(transactionIdPropertyName, expectedTransactionId);
 
             // Act
-            var transactionId = message.GetTransactionId(transactionIdPropertyName: transactionIdPropertyName);
+            string transactionId = message.GetTransactionId(transactionIdPropertyName: transactionIdPropertyName);
 
             // Assert
             Assert.NotNull(transactionId);
             Assert.Equal(expectedTransactionId, transactionId);
+        }
+
+        private static ServiceBusReceivedMessage CreateMessage(string key = null, object value = null, string correlationId = null)
+        {
+            Order order = OrderGenerator.Generate();
+            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage(key, value, correlationId);
+
+            return message;
         }
     }
 }

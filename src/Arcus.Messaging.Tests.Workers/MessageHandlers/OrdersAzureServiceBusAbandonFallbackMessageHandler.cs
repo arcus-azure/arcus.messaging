@@ -9,9 +9,9 @@ using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Azure.Messaging.ServiceBus;
 using CloudNative.CloudEvents;
 using GuardNet;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -40,12 +40,12 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
         public override async Task ProcessMessageAsync(
-            Message message,
+            ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext azureMessageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            if (message.SystemProperties.DeliveryCount <= 1)
+            if (azureMessageContext.SystemProperties.DeliveryCount <= 1)
             {
                 Logger.LogTrace("Abandoning message '{MessageId}'...", message.MessageId);
                 await AbandonAsync(message);

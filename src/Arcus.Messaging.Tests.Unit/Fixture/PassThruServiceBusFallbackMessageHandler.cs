@@ -4,7 +4,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using Microsoft.Azure.ServiceBus;
+using Azure.Messaging.ServiceBus;
 
 namespace Arcus.Messaging.Tests.Unit.Fixture
 {
@@ -24,7 +24,7 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
         /// </param>
         /// <param name="cancellationToken">Cancellation token</param>
         public Task ProcessMessageAsync(
-            Message message,
+            ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
