@@ -114,6 +114,9 @@ We can now inject the message router in our Azure Function and process all messa
 This will determine what the matching message handler is and process it accordingly:
 
 ```csharp
+using Arcus.Messaging.Abstractions.ServiceBus;
+using Azure.Messaging.ServiceBus;
+
 public class MessageProcessingFunction
 {
     private readonly IAzureServiceBusMessageRouter _messageRouter;
@@ -125,7 +128,7 @@ public class MessageProcessingFunction
 
     [FunctionName("message-processor")]
     public void Run(
-        [ServiceBusTrigger("%TopicName%", "%SubscriptionName%", Connection = "ServiceBusConnectionString")] Message message, 
+        [ServiceBusTrigger("%TopicName%", "%SubscriptionName%", Connection = "ServiceBusConnectionString")] ServiceBusReceivedMessage message, 
         ILogger log,
         CancellationToken cancellationToken)
     {

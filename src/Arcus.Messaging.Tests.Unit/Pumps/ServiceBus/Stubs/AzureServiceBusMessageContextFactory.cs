@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Reflection;
 using Arcus.Messaging.Abstractions.ServiceBus;
-using Microsoft.Azure.ServiceBus;
+using Azure.Core.Amqp;
+using Azure.Messaging.ServiceBus;
+using Bogus;
 
 namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Stubs
 {
@@ -11,16 +13,25 @@ namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Stubs
     /// </summary>
     public static class AzureServiceBusMessageContextFactory
     {
+        private static readonly Faker BogusGenerator = new Faker();
+        
         /// <summary>
         /// Generates a valid <see cref="AzureServiceBusMessageContext"/> instance.
         /// </summary>
         public static AzureServiceBusMessageContext Generate()
         {
-            var systemProperties = new Message.SystemPropertiesCollection();
-            systemProperties.GetType()
-                .GetProperty(nameof(systemProperties.SequenceNumber))
-                ?.SetValue(systemProperties, 1, BindingFlags.Instance | BindingFlags.NonPublic, null, null, null);
-
+            var amqp = new AmqpAnnotatedMessage(new AmqpMessageBody(new ReadOnlyMemory<byte>[0]));
+            amqp.Header.DeliveryCount = BogusGenerator.Random.UInt();
+            
+            var message = (ServiceBusReceivedMessage) Activator.CreateInstance(typeof(ServiceBusReceivedMessage),
+                BindingFlags.NonPublic | BindingFlags.Instance,
+                args: new object[] { amqp },
+                binder: null,
+                culture: null,
+                activationAttributes: null);
+            
+            AzureServiceBusSystemProperties systemProperties = message.GetSystemProperties();
+            
             var context = new AzureServiceBusMessageContext(
                 $"message-id-{Guid.NewGuid()}", 
                 $"job-id-{Guid.NewGuid()}",

@@ -4,7 +4,7 @@ using Arcus.Observability.Correlation;
 namespace Arcus.Messaging.Abstractions
 {
     /// <summary>
-    ///     Information concerning correlation of telemetry & processes with main focus on messaging scenarios
+    ///     Information concerning correlation of telemetry &amp; processes with main focus on messaging scenarios
     /// </summary>
     public class MessageCorrelationInfo : CorrelationInfo
     {

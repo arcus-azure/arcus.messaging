@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus.KeyRotation;
 using Bogus;
 using Microsoft.Azure.Management.ServiceBus;
 using Microsoft.Azure.Management.ServiceBus.Models;
@@ -83,7 +83,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
 
         private static Mock<IAzureServiceBusManagementAuthentication> CreateStubAuthentication(ITopicsOperations topicsOperations, IQueuesOperations queuesOperations)
         {
-            var stubManagementClient = new Mock<IServiceBusManagementClient>();
+            var stubManagementClient = new Mock<ServiceBusManagementClient>(new HttpClient(), true);
             stubManagementClient.Setup(c => c.Topics).Returns(topicsOperations);
             stubManagementClient.Setup(c => c.Queues).Returns(queuesOperations);
 

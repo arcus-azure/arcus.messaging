@@ -48,8 +48,16 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         public async ValueTask DisposeAsync()
         {
             Console.WriteLine("Stop '{0}' integration test", _testName);
-            await _host.StopAsync();
-            _host.Dispose();
+
+            try
+            {
+                await _host.StopAsync();
+                _host.Dispose();
+            }
+            catch (OperationCanceledException)
+            {
+                // Ignore.
+            }
         }
     }
 }

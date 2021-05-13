@@ -5,7 +5,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 {
     /// <summary>
     /// Represents a handler for a specific <typeparamref name="TMessage"/> in a <typeparamref name="TMessageContext"/>
-    /// during the processing of the <see cref="MessagePump"/>.
+    /// during the processing of the message pump or router.
     /// </summary>
     public interface IMessageHandler<in TMessage, in TMessageContext> where TMessageContext : MessageContext
     {
@@ -28,7 +28,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
     /// <summary>
     /// Represents a handler for a specific <typeparamref name="TMessage"/> in a <see cref="MessageContext"/>
-    /// during the processing of the <see cref="MessagePump"/>.
+    /// during the processing of the message pump or router.
     /// </summary>
     public interface IMessageHandler<in TMessage> : IMessageHandler<TMessage, MessageContext>
     {

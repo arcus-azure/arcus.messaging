@@ -1,4 +1,4 @@
----
+﻿---
 title: "Azure Service Bus Message Pump"
 layout: default
 ---
@@ -86,6 +86,8 @@ Other topics:
 - [Alternative Service Bus message routing](#alternative-Service-Bus-message-routing)
 - [Correlation](#correlation)
 - [Automatic Azure Key Vault credentials rotation](#automatic-azure-key-vault-credentials-rotation)
+
+> ⚠ The new Azure SDK doesn't yet support Azure Service Bus plugins. See this [migration guid](https://github.com/Azure/azure-sdk-for-net/blob/master/sdk/servicebus/Azure.Messaging.ServiceBus/MigrationGuide.md#known-gaps-from-previous-library) for more info on this topic.
 
 ## Configuration
 
@@ -326,7 +328,7 @@ Example:
 ```csharp
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
-using Microsoft.Azure.ServiceBus;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 
 public class DeadLetterFallbackMessageHandler : AzureServiceBusFallbackMessageHandler
@@ -336,7 +338,7 @@ public class DeadLetterFallbackMessageHandler : AzureServiceBusFallbackMessageHa
     {
     }
 
-    public override async Task ProcessMessageAsync(Message message, AzureServiceBusMessageContext context, ...)
+    public override async Task ProcessMessageAsync(ServiceBusReceivedMessage message, AzureServiceBusMessageContext context, ...)
     {
         Logger.LogInformation("Message is not handled by any message handler, will dead letter");
         await DeadLetterAsync(message);
@@ -377,7 +379,7 @@ public class TrackedAzureServiceBusMessageRouter : AzureServiceBusMessageRouter
     }
 
     public override Task ProcessMessageAsync(
-        Message message,
+        ServiceBusReceivedMessage message,
         AzureServiceBusMessageContext messageContext,
         MessageCorrelationInfo correlationInfo,
         CancellationToken cancellationToken)
@@ -412,9 +414,9 @@ To retrieve the correlation information of Azure Service Bus messages, we provid
 
 ```csharp
 using Arcus.Messaging.Abstractions;
-using Microsoft.Azure.ServiceBus;
+using Azure.Messaging.ServiceBus;
 
-Message message = ...
+ServiceBusReceivedMessage message = ...
 MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
 
 // Unique identifier that indicates an attempt to process a given message.

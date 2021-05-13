@@ -1,7 +1,5 @@
 ﻿using System;
-using Arcus.Messaging.Abstractions;
 using GuardNet;
-using Microsoft.Azure.ServiceBus;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
 {
@@ -75,7 +73,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 
         /// <summary>
         /// Gets or sets the fallback when the Azure Key Vault notification doesn't get delivered correctly,
-        /// how many times should the message pump run into an <see cref="UnauthorizedException"/> before restarting.
+        /// how many times should the message pump run into an <see cref="UnauthorizedAccessException"/> before restarting.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than zero.</exception>
         public int MaximumUnauthorizedExceptionsBeforeRestart

@@ -3,10 +3,9 @@
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
     /// <summary>
-    /// Represents a handler that provides a deserialization strategy for the incoming message during the message processing of the <see cref="MessagePump"/>.
+    /// Represents a handler that provides a deserialization strategy for the incoming message during the message processing of message pump or router.
     /// </summary>
     /// <seealso cref="IMessageHandler{TMessage,TMessageContext}"/>
-    /// <seealso cref="MessagePump"/>
     public interface IMessageBodySerializer
     {
         /// <summary>
