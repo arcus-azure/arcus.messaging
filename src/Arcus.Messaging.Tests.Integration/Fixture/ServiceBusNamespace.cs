@@ -62,7 +62,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// Gets the namespace in which the Azure Service Bus is categorized.
         /// </summary>
         public string Namespace { get; }
-
+        
         /// <summary>
         /// Gets the name of the Queue in the Azure Service Bus namespace.
         /// </summary>

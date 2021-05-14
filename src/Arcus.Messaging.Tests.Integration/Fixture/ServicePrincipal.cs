@@ -14,12 +14,22 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         /// <param name="clientId">The ID of the client application.</param>
         /// <param name="clientSecret">The secret of the client application.</param>
+        public ServicePrincipal(string clientId, string clientSecret) : this(clientId, clientSecret, clientSecret)
+        {
+            Guard.NotNullOrWhitespace(clientId, nameof(clientId));
+            Guard.NotNullOrWhitespace(clientSecret, nameof(clientSecret));
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServicePrincipal"/> class.
+        /// </summary>
+        /// <param name="clientId">The ID of the client application.</param>
+        /// <param name="clientSecret">The secret of the client application.</param>
         /// <param name="clientSecretKey">The key to the secret of the client application.</param>
         public ServicePrincipal(string clientId, string clientSecret, string clientSecretKey)
         {
             Guard.NotNullOrWhitespace(clientId, nameof(clientId));
             Guard.NotNullOrWhitespace(clientSecret, nameof(clientSecret));
-            Guard.NotNullOrWhitespace(clientSecretKey, nameof(clientSecretKey));
 
             ClientId = clientId;
             ClientSecret = clientSecret;
