@@ -8,7 +8,6 @@ using Azure.Messaging.ServiceBus;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Microsoft.Azure.ServiceBus;
-using Microsoft.Extensions.Configuration;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -55,54 +54,27 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(messageEncoding, TopicConnectionStringKey);
         }
 
-        private async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding, string connectionString)
+        private async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding, string connectionStringKey)
         {
             // Arrange
             var operationId = Guid.NewGuid().ToString();
             var transactionId = Guid.NewGuid().ToString();
-            var connectionString = Configuration.GetValue<string>(connectionStringKey);
-            ServiceBusConnectionStringProperties serviceBusConnectionString = ServiceBusConnectionStringProperties.Parse(connectionString);
+            Order order = OrderGenerator.Generate();
+            ServiceBusMessage orderMessage = order.AsServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
 
-            await using (var client = new ServiceBusClient(connectionString))
-            await using (ServiceBusSender messageSender = client.CreateSender(serviceBusConnectionString.EntityPath))
-            {
-                var order = OrderGenerator.Generate();
-                var orderMessage = order.AsServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
+            // Act
+            await SenderOrderToServiceBusAsync(orderMessage, connectionStringKey);
 
-                // Act
-                await messageSender.SendMessageAsync(orderMessage);
-            
-                // Assert
-                var receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);
-                Assert.NotEmpty(receivedEvent);
-                var deserializedEventGridMessage = EventParser.Parse(receivedEvent);
-                Assert.NotNull(deserializedEventGridMessage);
-                var orderCreatedEvent = Assert.Single(deserializedEventGridMessage.Events);
-                Assert.NotNull(orderCreatedEvent);
-                var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
-                Assert.NotNull(orderCreatedEventData);
-                Assert.NotNull(orderCreatedEventData.CorrelationInfo);
-                Assert.Equal(order.Id, orderCreatedEventData.Id);
-                Assert.Equal(order.Amount, orderCreatedEventData.Amount);
-                Assert.Equal(order.ArticleNumber, orderCreatedEventData.ArticleNumber);
-                Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
-                Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
-                Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
-            }
-        }
-
-        public async Task InitializeAsync()
-        {
-            var connectionString = Configuration.GetValue<string>("Arcus:Infra:ServiceBus:ConnectionString");
-            var topicName = Configuration.GetValue<string>("Arcus:Infra:ServiceBus:TopicName");
-
-            var serviceBusEventConsumerHostOptions = new ServiceBusEventConsumerHostOptions(topicName, connectionString);
-            _serviceBusEventConsumerHost = await ServiceBusEventConsumerHost.StartAsync(serviceBusEventConsumerHostOptions, Logger);
-        }
-
-        public async Task DisposeAsync()
-        {
-            await _serviceBusEventConsumerHost.StopAsync();
+            // Assert
+            OrderCreatedEventData orderCreatedEventData = ReceiveOrderFromEventGrid(operationId);
+            Assert.NotNull(orderCreatedEventData);
+            Assert.NotNull(orderCreatedEventData.CorrelationInfo);
+            Assert.Equal(order.Id, orderCreatedEventData.Id);
+            Assert.Equal(order.Amount, orderCreatedEventData.Amount);
+            Assert.Equal(order.ArticleNumber, orderCreatedEventData.ArticleNumber);
+            Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
+            Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
+            Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
         }
     }
 }

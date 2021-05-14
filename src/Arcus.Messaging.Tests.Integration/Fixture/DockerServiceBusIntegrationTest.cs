@@ -6,9 +6,8 @@ using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Azure.Messaging.ServiceBus;
 using GuardNet;
-using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 using Xunit.Abstractions;
@@ -48,24 +47,22 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// Sends an <see cref="Order"/> message to an Azure Service Bus instance, located at the given <paramref name="connectionString"/>. 
         /// </summary>
         /// <param name="message">The Service Bus message representation of an <see cref="Order"/>.</param>
-        /// <param name="connectionString">The connection string where the <paramref name="message"/> should be send to.</param>
+        /// <param name="connectionStringKey">The connection string key where the <paramref name="message"/> should be send to.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionString"/> is blank.</exception>
-        public async Task SenderOrderToServiceBusAsync(Message message, string connectionString)
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringKey"/> is blank.</exception>
+        public async Task SenderOrderToServiceBusAsync(ServiceBusMessage message, string connectionStringKey)
         {
             Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus message representation of an 'Order' to send it to an Azure Service Bus instance");
-            Guard.NotNullOrWhitespace(connectionString, nameof(connectionString), "Requires an Azure Service Bus connection string to send the 'Order' message to");
+            Guard.NotNullOrWhitespace(connectionStringKey, nameof(connectionStringKey), "Requires an Azure Service Bus connection string to send the 'Order' message to");
             
-            MessageSender sender = CreateServiceBusSender(connectionString);
-            await sender.SendAsync(message);
-        }
-        
-        private MessageSender CreateServiceBusSender(string connectionStringKey)
-        {
             var connectionString = Configuration.GetValue<string>(connectionStringKey);
-            var serviceBusConnectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
-            var messageSender = new MessageSender(serviceBusConnectionStringBuilder);
-            return messageSender;
+            ServiceBusConnectionStringProperties serviceBusConnectionString = ServiceBusConnectionStringProperties.Parse(connectionString);
+
+            await using (var client = new ServiceBusClient(connectionString))
+            await using (ServiceBusSender messageSender = client.CreateSender(serviceBusConnectionString.EntityPath))
+            {
+                await messageSender.SendMessageAsync(message);
+            }
         }
 
         /// <summary>
