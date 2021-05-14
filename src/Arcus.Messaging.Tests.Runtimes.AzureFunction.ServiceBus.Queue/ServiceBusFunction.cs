@@ -9,7 +9,7 @@ using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 
-namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus
+namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue
 {
     public class ServiceBusFunction
     {
