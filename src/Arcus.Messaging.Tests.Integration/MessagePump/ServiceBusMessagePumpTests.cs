@@ -32,6 +32,7 @@ using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
+    [Collection("Integration")]
     [Trait("Category", "Integration")]
     public class ServiceBusMessagePumpTests
     {
