@@ -171,7 +171,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
         }
         
-        [Fact]
+        [Fact(Skip = "skip for now")]
         public async Task ServiceBusQueueMessagePumpUsingManagedIdentity_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
