@@ -493,7 +493,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: topicName,
                 subscriptionName: subscriptionName,
                 fullyQualifiedNamespace: fullyQualifiedNamespace,
-                tokenCredential: new ChainedTokenCredential(new ManagedIdentityCredential(clientId), new EnvironmentCredential()),
+                tokenCredential: new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId }),
                 configureTopicMessagePump: configureMessagePump);
 
             return collection;
@@ -746,7 +746,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: topicName,
                 subscriptionPrefix: subscriptionPrefix,
                 fullyQualifiedNamespace: fullyQualifiedNamespace,
-                tokenCredential: new ChainedTokenCredential(new ManagedIdentityCredential(clientId), new EnvironmentCredential()),
+                tokenCredential: new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId }),
                 configureTopicMessagePump: configureMessagePump);
 
             return collection;
