@@ -201,7 +201,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="queueName">The name of the Azure Service Bus Queue to process.</param>
         /// <param name="fullyQualifiedNamespace">The fully qualified Service Bus namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
         /// <param name="clientId">
-        ///     The client id to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
+        ///     The client ID to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
         ///     <see href="https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm" />.
         /// </param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
@@ -467,7 +467,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="subscriptionName">The name of the Azure Service Bus Topic subscription to process.</param>
         /// <param name="fullyQualifiedNamespace">The fully qualified Service Bus namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
         /// <param name="clientId">
-        ///     The client id to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
+        ///     The client ID to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
         ///     <see href="https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm" />.
         /// </param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
@@ -723,6 +723,10 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />.
         /// </param>
         /// <param name="fullyQualifiedNamespace">The fully qualified Service Bus namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
+        /// <param name="clientId">
+        ///     The client ID to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
+        ///     <see href="https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm" />.
+        /// </param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">
