@@ -141,16 +141,25 @@ public class Startup
             "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
         // Specify the name of the Service Bus Topic, and provide a name for the Topic subscription:
-        services.AddServiceBusMessageTopicPump<OrdersMessageHandler>(
+        services.AddServiceBusMessageTopicMessagePump<OrdersMessageHandler>(
             "My-Service-Bus-Topic-Name",
             "My-Service-Bus-Topic-Subscription-Name",
             "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
         // Specify a topic subscription prefix instead of a name to separate topic message pumps.
-        services.AddServiceBusTopicPumpWithPrefix(
+        services.AddServiceBusTopicMessagePumpWithPrefix(
             "My-Service-Bus-Topic-Name"
             "My-Service-Bus-Subscription-Prefix",
             "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
+
+        // Uses managed identity to authenticate with the Service Bus Topic:
+        services.AddServiceBusTopicMessagePumpUsingManagedIdentity(
+            topicName: properties.EntityPath,
+            subscriptionName: "Receive-All", 
+            fullyQualifiedNamespace: "<your-namespace>.servicebus.windows.net"
+            // The optional client id to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
+            // https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm
+            clientId: "<your-client-id>");
 
         services.AddServiceBusTopicMessagePump(
             "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
@@ -200,9 +209,18 @@ public class Startup
                 options.JobId = Guid.NewGuid().ToString();
             });
 
-        // Multiple message handlers can be added to the servies, based on the message type (ex. 'Order', 'Customer'...), 
+        // Uses managed identity to authenticate with the Service Bus Topic:
+        services.AddServiceBusQueueMessagePumpUsingManagedIdentity(
+            queueName: "orders",
+            fullyQualifiedNamespace: "<your-namespace>.servicebus.windows.net"
+            // The optional client id to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
+            // https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm
+            clientId: "<your-client-id>");
+
+        // Multiple message handlers can be added to the services, based on the message type (ex. 'Order', 'Customer'...), 
         // the correct message handler will be selected.
-        services.WithServiceBusMessageHandler<OrdersMessageHandler, Order>()
+        services.AddServiceBusQueueMessagePump(...)
+                .WithServiceBusMessageHandler<OrdersMessageHandler, Order>()
                 .WithMessageHandler<CustomerMessageHandler, Customer>();
     }
 }
@@ -251,7 +269,8 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithServiceBusFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+        services.AddServiceBusQueueMessagePump(...)
+                .WithServiceBusFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
     }
 }
 ```
@@ -308,7 +327,8 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithServiceBusMessageHandler<AbandonUnknownOrderMessageHandler, Order>();
+        services.AddServiceBusQueueMessagePump(...)
+                .WithServiceBusMessageHandler<AbandonUnknownOrderMessageHandler, Order>();
     }
 }
 ```
@@ -355,7 +375,8 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithServiceBusFallbackMessageHandler<DeadLetterFallbackMessageHandler>();
+        services.AddServiceBusQueueMessagePump(...)
+                .WithServiceBusFallbackMessageHandler<DeadLetterFallbackMessageHandler>();
     }
 }
 ```
