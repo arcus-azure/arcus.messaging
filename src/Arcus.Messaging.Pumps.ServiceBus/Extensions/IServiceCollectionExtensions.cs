@@ -222,7 +222,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName: queueName,
                 fullyQualifiedNamespace: fullyQualifiedNamespace,
-                tokenCredential: new ChainedTokenCredential(new ManagedIdentityCredential(clientId), new EnvironmentCredential()),
+                tokenCredential: new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId }),
                 configureQueueMessagePump: configureMessagePump);
 
             return collection;
