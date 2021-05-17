@@ -99,7 +99,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             ServicePrincipal servicePrincipal = config.GetServiceBusServicePrincipal();
             string tenantId = config.GetTenantId();
-            
+
             using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureTenantId, tenantId))
             using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientId, servicePrincipal.ClientId))
             using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientSecret, servicePrincipal.ClientSecret))
@@ -171,7 +171,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
         }
         
-        [Fact(Skip = "skip for now")]
+        [Fact]
         public async Task ServiceBusQueueMessagePumpUsingManagedIdentity_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
