@@ -335,33 +335,33 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ServiceBusConnectionStringProperties serviceBusConnectionString = ServiceBusConnectionStringProperties.Parse(rawConnectionString);
 
             var client = new ServiceBusClient(rawConnectionString);
-            
-            ServiceBusProcessor processor;
-            if (string.IsNullOrWhiteSpace(serviceBusConnectionString.EntityPath))
             {
-                // Connection string doesn't include the entity so we're using the message pump settings
-                if (string.IsNullOrWhiteSpace(messagePumpSettings.EntityName))
+                ServiceBusProcessor processor;
+                if (string.IsNullOrWhiteSpace(serviceBusConnectionString.EntityPath))
                 {
-                    throw new ArgumentException(
-                        "No entity name was specified while the connection string is scoped to the namespace");
+                    // Connection string doesn't include the entity so we're using the message pump settings
+                    if (string.IsNullOrWhiteSpace(messagePumpSettings.EntityName))
+                    {
+                        throw new ArgumentException("No entity name was specified while the connection string is scoped to the namespace");
+                    }
+
+                    processor = CreateProcessor(client, messagePumpSettings.EntityName, SubscriptionName);
+                }
+                else
+                {
+                    // Connection string includes the entity so we're using that instead of the message pump settings
+                    processor = CreateProcessor(client, serviceBusConnectionString.EntityPath, SubscriptionName);
                 }
 
-                processor = CreateProcessor(client, messagePumpSettings.EntityName, SubscriptionName);
+                Namespace = serviceBusConnectionString.Endpoint?.Host;
+
+                /* TODO: we can't support Azure Service Bus plug-ins yet because the new Azure SDK doesn't yet support this:
+                         https://github.com/arcus-azure/arcus.messaging/issues/176 */
+
+                RegisterClientInformation(JobId, serviceBusConnectionString.EntityPath);
+
+                return processor;
             }
-            else
-            {
-                // Connection string includes the entity so we're using that instead of the message pump settings
-                processor = CreateProcessor(client, serviceBusConnectionString.EntityPath, SubscriptionName);
-            }
-
-            Namespace = serviceBusConnectionString.Endpoint?.Host;
-
-            /* TODO: we can't support Azure Service Bus plug-ins yet because the new Azure SDK doesn't yet support this:
-                     https://github.com/arcus-azure/arcus.messaging/issues/176 */
-
-            RegisterClientInformation(JobId, serviceBusConnectionString.EntityPath);
-
-            return processor;
         }
 
         private ServiceBusProcessor CreateProcessor(ServiceBusClient client, string entityName, string subscriptionName)
