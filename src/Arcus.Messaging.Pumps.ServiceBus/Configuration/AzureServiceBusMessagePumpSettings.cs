@@ -14,6 +14,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// <summary>
     ///     Settings for an Azure Service Bus message pump
     /// </summary>
+    /// TODO: can be renamed when the background jobs package is updated with the new messaging package.
     public class AzureServiceBusMessagePumpSettings
     {
         private readonly Func<ISecretProvider, Task<string>> _getConnectionStringFromSecretFunc;
@@ -34,6 +35,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="getConnectionStringFromConfigurationFunc"/> nor the <paramref name="getConnectionStringFromSecretFunc"/> is available.
         /// </exception>
+        /// TODO: remove 'old' workings after the background jobs package is updated with the new messaging package.
         [Obsolete("Use the other constructor overload with the build-in '" + nameof(ServiceBusEntityType) + "' enumeration")]
         public AzureServiceBusMessagePumpSettings(
             string entityName,
@@ -43,7 +45,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
             AzureServiceBusMessagePumpConfiguration options, 
             IServiceProvider serviceProvider)
-            : this(entityName, subscriptionName, ConvertToServiceBusEntityType(serviceBusEntity), getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, options, serviceProvider)
+            : this(
+                entityName, 
+                subscriptionName,
+                ConvertToServiceBusEntityType(serviceBusEntity), 
+                getConnectionStringFromConfigurationFunc, 
+                getConnectionStringFromSecretFunc, 
+                ConvertToAzureServiceBusMessagePumpOptions(options), 
+                serviceProvider)
         {
         }
 
@@ -59,6 +68,25 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             }
         }
 #pragma warning restore 618
+
+        private static AzureServiceBusMessagePumpOptions ConvertToAzureServiceBusMessagePumpOptions(
+            AzureServiceBusMessagePumpConfiguration config)
+        {
+            return new AzureServiceBusMessagePumpOptions
+            {
+                Correlation =
+                {
+                    TransactionIdPropertyName = config.Correlation.TransactionIdPropertyName
+                },
+                JobId = config.JobId,
+                MaxConcurrentCalls = config.MaxConcurrentCalls,
+                AutoComplete = config.AutoComplete,
+                KeyRotationTimeout = config.KeyRotationTimeout,
+                MaximumUnauthorizedExceptionsBeforeRestart = config.MaximumUnauthorizedExceptionsBeforeRestart,
+                EmitSecurityEvents = config.EmitSecurityEvents,
+                TopicSubscription = config.TopicSubscription
+            };
+        }
         
         /// <summary>
         ///     Initializes a new instance of the <see cref="AzureServiceBusMessagePumpSettings"/> class.
@@ -80,7 +108,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             ServiceBusEntityType serviceBusEntity,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            AzureServiceBusMessagePumpConfiguration options, 
+            AzureServiceBusMessagePumpOptions options, 
             IServiceProvider serviceProvider)
         {
             Guard.For<ArgumentException>(
@@ -124,7 +152,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         ///     Options that influence the behavior of the message pump
         /// </summary>
-        public AzureServiceBusMessagePumpConfiguration Options { get; internal set; }
+        public AzureServiceBusMessagePumpOptions Options { get; internal set; }
 
         /// <summary>
         ///     Gets the configured connection string

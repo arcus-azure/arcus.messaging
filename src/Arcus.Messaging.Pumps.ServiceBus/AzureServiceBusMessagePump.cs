@@ -127,17 +127,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus options");
 
-            var options = new AzureServiceBusMessagePumpOptions
-            {
-                AutoComplete = Settings.Options.AutoComplete,
-                JobId = Settings.Options.JobId,
-                KeyRotationTimeout = Settings.Options.KeyRotationTimeout,
-                MaxConcurrentCalls = Settings.Options.MaxConcurrentCalls,
-                MaximumUnauthorizedExceptionsBeforeRestart = Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart
-            };
-
-            reconfigure(options);
-            Settings.Options = new AzureServiceBusMessagePumpConfiguration(options);
+            reconfigure(Settings.Options);
         }
 
         /// <summary>
@@ -146,24 +136,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="reconfigure">The function to reconfigure the Azure Service Bus Queue options.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
         /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Queues.</exception>
-        public void ReconfigureQueueOptions(Action<AzureServiceBusQueueMessagePumpOptions> reconfigure)
+        public void ReconfigureQueueOptions(Action<IAzureServiceBusQueueMessagePumpOptions> reconfigure)
         {
             Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus Queue options");
             Guard.For<NotSupportedException>(
                 () => Settings.ServiceBusEntity is ServiceBusEntityType.Topic, 
                 "Requires the message pump to be configured for Azure Service Bus Queue to reconfigure these options, use the Topic overload instead");
 
-            var options = new AzureServiceBusQueueMessagePumpOptions
-            {
-                AutoComplete = Settings.Options.AutoComplete,
-                JobId = Settings.Options.JobId,
-                KeyRotationTimeout = Settings.Options.KeyRotationTimeout,
-                MaxConcurrentCalls = Settings.Options.MaxConcurrentCalls,
-                MaximumUnauthorizedExceptionsBeforeRestart = Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart
-            };
-
-            reconfigure(options);
-            Settings.Options = new AzureServiceBusMessagePumpConfiguration(options);
+            reconfigure(Settings.Options);
         }
 
         /// <summary>
@@ -172,25 +152,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="reconfigure">The function to reconfigure the Azure Service Bus Topic options.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
         /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Topics.</exception>
-        public void ReconfigureTopicOptions(Action<AzureServiceBusTopicMessagePumpOptions> reconfigure)
+        public void ReconfigureTopicOptions(Action<IAzureServiceBusTopicMessagePumpOptions> reconfigure)
         {
             Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus Topics options");
             Guard.For<NotSupportedException>(
                 () => Settings.ServiceBusEntity is ServiceBusEntityType.Queue,
                 "Requires a message pump to be configured for Azure Service Bus Topic to reconfigure these options, use the Queue overload instead");
 
-            var options = new AzureServiceBusTopicMessagePumpOptions
-            {
-                AutoComplete = Settings.Options.AutoComplete,
-                JobId = Settings.Options.JobId,
-                MaxConcurrentCalls = Settings.Options.MaxConcurrentCalls,
-                KeyRotationTimeout = Settings.Options.KeyRotationTimeout,
-                MaximumUnauthorizedExceptionsBeforeRestart = Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart,
-                TopicSubscription = Settings.Options.TopicSubscription
-            };
-
-            reconfigure(options);
-            Settings.Options = new AzureServiceBusMessagePumpConfiguration(options);
+            reconfigure(Settings.Options);
         }
 
         /// <summary>
@@ -366,33 +335,33 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ServiceBusConnectionStringProperties serviceBusConnectionString = ServiceBusConnectionStringProperties.Parse(rawConnectionString);
 
             var client = new ServiceBusClient(rawConnectionString);
+            
+            ServiceBusProcessor processor;
+            if (string.IsNullOrWhiteSpace(serviceBusConnectionString.EntityPath))
             {
-                ServiceBusProcessor processor;
-                if (string.IsNullOrWhiteSpace(serviceBusConnectionString.EntityPath))
+                // Connection string doesn't include the entity so we're using the message pump settings
+                if (string.IsNullOrWhiteSpace(messagePumpSettings.EntityName))
                 {
-                    // Connection string doesn't include the entity so we're using the message pump settings
-                    if (string.IsNullOrWhiteSpace(messagePumpSettings.EntityName))
-                    {
-                        throw new ArgumentException("No entity name was specified while the connection string is scoped to the namespace");
-                    }
-
-                    processor = CreateProcessor(client, messagePumpSettings.EntityName, SubscriptionName);
-                }
-                else
-                {
-                    // Connection string includes the entity so we're using that instead of the message pump settings
-                    processor = CreateProcessor(client, serviceBusConnectionString.EntityPath, SubscriptionName);
+                    throw new ArgumentException(
+                        "No entity name was specified while the connection string is scoped to the namespace");
                 }
 
-                Namespace = serviceBusConnectionString.Endpoint?.Host;
-
-                /* TODO: we can't support Azure Service Bus plug-ins yet because the new Azure SDK doesn't yet support this:
-                         https://github.com/arcus-azure/arcus.messaging/issues/176 */
-
-                RegisterClientInformation(JobId, serviceBusConnectionString.EntityPath);
-
-                return processor;
+                processor = CreateProcessor(client, messagePumpSettings.EntityName, SubscriptionName);
             }
+            else
+            {
+                // Connection string includes the entity so we're using that instead of the message pump settings
+                processor = CreateProcessor(client, serviceBusConnectionString.EntityPath, SubscriptionName);
+            }
+
+            Namespace = serviceBusConnectionString.Endpoint?.Host;
+
+            /* TODO: we can't support Azure Service Bus plug-ins yet because the new Azure SDK doesn't yet support this:
+                     https://github.com/arcus-azure/arcus.messaging/issues/176 */
+
+            RegisterClientInformation(JobId, serviceBusConnectionString.EntityPath);
+
+            return processor;
         }
 
         private ServiceBusProcessor CreateProcessor(ServiceBusClient client, string entityName, string subscriptionName)

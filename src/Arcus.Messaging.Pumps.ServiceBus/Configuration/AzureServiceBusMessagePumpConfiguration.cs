@@ -6,6 +6,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// <summary>
     ///     Options to configure how the Azure Service Bus message pump works
     /// </summary>
+    /// TODO: remove 'old' workings after the background jobs package is updated with the new messaging package.
+    [Obsolete("Will be removed in the future, please use the " + nameof(AzureServiceBusMessagePumpOptions) + " instead")]
     public class AzureServiceBusMessagePumpConfiguration
     {
         private int _maximumUnauthorizedExceptionsBeforeRestart;

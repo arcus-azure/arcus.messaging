@@ -6,7 +6,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// <summary>
     /// The general options that configures a <see cref="AzureServiceBusMessagePump"/> implementation.
     /// </summary>
-    public class AzureServiceBusMessagePumpOptions
+    public class AzureServiceBusMessagePumpOptions : IAzureServiceBusQueueMessagePumpOptions, IAzureServiceBusTopicMessagePumpOptions
     {
         private int? _maxConcurrentCalls;
         private string _jobId = Guid.NewGuid().ToString();
@@ -14,7 +14,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         private int _maximumUnauthorizedExceptionsBeforeRestart = 5;
 
         /// <summary>
-        ///     Maximum concurrent calls to process messages
+        /// <para>Gets or sets the value indicating whether or not a new Azure Service Bus Topic subscription has to be created when the <see cref="AzureServiceBusMessagePump"/> starts.</para>
+        /// <para>The subscription will be deleted afterwards when the message pump stops if the options <see cref="ServiceBus.TopicSubscription.DeleteOnStop"/> is selected.</para>
+        /// </summary>
+        /// <remarks>
+        ///     Provides capability to create and delete these subscriptions. This requires 'Manage' permissions on the Azure Service Bus Topic or namespace.
+        /// </remarks>
+        public TopicSubscription TopicSubscription { get; set; } = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
+        
+        /// <summary>
+        /// Gets or sets the maximum concurrent calls to process messages.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
         public int? MaxConcurrentCalls
@@ -32,10 +41,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         }
 
         /// <summary>
-        ///     Indication whether or not messages should be automatically marked as completed if no exceptions occured and
-        ///     processing has finished.
+        /// Gets or sets the indication whether or not messages should be automatically marked as completed if no exceptions occurred and processing has finished.
         /// </summary>
-        /// <remarks>When turned off, clients have to explicitly mark the messages as completed</remarks>
+        /// <remarks>When turned off, clients have to explicitly mark the messages as completed.</remarks>
         public bool AutoComplete { get; set; } = true;
 
         /// <summary>
@@ -90,5 +98,18 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets the options to control the correlation information upon the receiving of Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
         /// </summary>
         public AzureServiceBusCorrelationOptions Correlation { get; } = new AzureServiceBusCorrelationOptions();
+
+        /// <summary>
+        /// Gets the default consumer-configurable options for Azure Service Bus Queue message pumps.
+        /// </summary>
+        internal static AzureServiceBusMessagePumpOptions DefaultQueueOptions { get; } = new AzureServiceBusMessagePumpOptions
+        {
+            TopicSubscription = TopicSubscription.None
+        };
+
+        /// <summary>
+        /// Gets the default consumer-configurable options for Azure Service Bus Topic message pumps.
+        /// </summary>
+        internal static AzureServiceBusMessagePumpOptions DefaultTopicOptions { get; } = new AzureServiceBusMessagePumpOptions();
     }
 }
