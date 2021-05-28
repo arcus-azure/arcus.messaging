@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arcus.BackgroundJobs.KeyVault" Version="0.1.0" />
+    <PackageReference Include="Arcus.BackgroundJobs.KeyVault" Version="[0.1.0,1.0.0)" />
   </ItemGroup>
 
   <ItemGroup>
