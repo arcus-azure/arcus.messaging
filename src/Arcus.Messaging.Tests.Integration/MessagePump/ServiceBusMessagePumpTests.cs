@@ -109,7 +109,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        .AddServiceBusTopicMessagePumpUsingManagedIdentity(
                            topicName: properties.EntityPath,
                            subscriptionName: "Test-Receive-All-Topic-Only", 
-                           fullyQualifiedNamespace: properties.FullyQualifiedNamespace,
+                           serviceBusNamespace: properties.FullyQualifiedNamespace,
                            clientId: servicePrincipal.ClientId,
                            configureMessagePump: opt => opt.AutoComplete = true)
                        .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
@@ -190,7 +190,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        .ConfigureLogging(_logger)
                        .AddServiceBusQueueMessagePumpUsingManagedIdentity(
                            queueName: properties.EntityPath,
-                           fullyQualifiedNamespace: properties.FullyQualifiedNamespace,
+                           serviceBusNamespace: properties.FullyQualifiedNamespace,
                            clientId: servicePrincipal.ClientId,
                            configureMessagePump: opt => opt.AutoComplete = true)
                        .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();

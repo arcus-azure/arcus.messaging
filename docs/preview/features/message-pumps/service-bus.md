@@ -212,7 +212,7 @@ public class Startup
         // Uses managed identity to authenticate with the Service Bus Topic:
         services.AddServiceBusQueueMessagePumpUsingManagedIdentity(
             queueName: "orders",
-            fullyQualifiedNamespace: "<your-namespace>.servicebus.windows.net"
+            serviceBusNamespace: "<your-namespace>"
             // The optional client id to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
             // https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm
             clientId: "<your-client-id>");

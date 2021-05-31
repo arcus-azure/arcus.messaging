@@ -118,8 +118,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <param name="entityName">The name of the entity to process.</param>
         /// <param name="subscriptionName">The name of the subscription to process.</param>
         /// <param name="serviceBusEntity">The entity type of the Azure Service Bus.</param>
-        /// <param name="fullyQualifiedNamespace">
-        ///     The fully qualified Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        /// <param name="serviceBusNamespace">
+        ///     The Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
         /// </param>
         /// <param name="tokenCredential">The client credentials to authenticate with the Azure Service Bus.</param>
         /// <param name="options">The options that influence the behavior of the <see cref="AzureServiceBusMessagePump"/>.</param>
@@ -128,7 +128,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         ///     Thrown when the <paramref name="options"/>, <paramref name="serviceProvider"/>, or <paramref name="tokenCredential"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> is blank or the <paramref name="serviceBusEntity"/> is outside the bounds of the enumeration.
+        ///     Thrown when the <paramref name="serviceBusNamespace"/> is blank or the <paramref name="serviceBusEntity"/> is outside the bounds of the enumeration.
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the <paramref name="serviceBusEntity"/> represents the unsupported value <see cref="ServiceBusEntityType.Unknown"/>.
@@ -137,7 +137,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             string entityName,
             string subscriptionName,
             ServiceBusEntityType serviceBusEntity,
-            string fullyQualifiedNamespace,
+            string serviceBusNamespace,
             TokenCredential tokenCredential,
             AzureServiceBusMessagePumpConfiguration options,
             IServiceProvider serviceProvider)
@@ -146,7 +146,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to get additional registered services during the lifetime of the message pump");
             Guard.NotNull(tokenCredential, nameof(tokenCredential), "Requires a token credential instance to authenticate with the Azure Service Bus");
             Guard.NotNullOrWhitespace(entityName, nameof(entityName), "Requires a non-blank entity name for the Azure Service Bus when using the token credentials");
-            Guard.NotNullOrWhitespace(fullyQualifiedNamespace, nameof(fullyQualifiedNamespace), "Requires a non-blank fully qualified Azure Service Bus namespace when using the token credentials");
+            Guard.NotNullOrWhitespace(serviceBusNamespace, nameof(serviceBusNamespace), "Requires a non-blank fully qualified Azure Service Bus namespace when using the token credentials");
             Guard.For<ArgumentException>(() => !Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity), 
                 $"Azure Service Bus entity '{serviceBusEntity}' is not defined in the '{nameof(ServiceBusEntityType)}' enumeration");
             Guard.For<ArgumentOutOfRangeException>(() => serviceBusEntity is ServiceBusEntityType.Unknown, 
@@ -159,7 +159,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             SubscriptionName = subscriptionName;
             ServiceBusEntity = serviceBusEntity;
             Options = options;
-            FullyQualifiedNamespace = fullyQualifiedNamespace;
+            
+            if (serviceBusNamespace.EndsWith(".servicebus.windows.net"))
+            {
+                FullyQualifiedNamespace = serviceBusNamespace;
+            }
+            else
+            {
+                FullyQualifiedNamespace = serviceBusNamespace + ".servicebus.windows.net";
+            }
         }
 
         /// <summary>

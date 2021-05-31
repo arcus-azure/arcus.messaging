@@ -53,7 +53,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 entityName: expected,
                 subscriptionName: null,
                 serviceBusEntity: entityType,
-                fullyQualifiedNamespace: serviceBusNamespace,
+                serviceBusNamespace: serviceBusNamespace,
                 tokenCredential: credential,
                 options: options,
                 serviceProvider: serviceProvider);
@@ -100,7 +100,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 entityName: expected,
                 subscriptionName: null,
                 serviceBusEntity: entityType,
-                fullyQualifiedNamespace: serviceBusNamespace,
+                serviceBusNamespace: serviceBusNamespace,
                 tokenCredential: credential,
                 options: options,
                 serviceProvider: serviceProvider);
@@ -127,7 +127,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 entityName: null,
                 subscriptionName: null,
                 serviceBusEntity: entityType,
-                fullyQualifiedNamespace: serviceBusNamespace,
+                serviceBusNamespace: serviceBusNamespace,
                 tokenCredential: credential,
                 options: options,
                 serviceProvider: serviceProvider));
@@ -165,7 +165,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.ThrowsAny<ArgumentException>(() => new AzureServiceBusMessagePumpSettings(
                 entityName: null,
                 subscriptionName: null,
-                fullyQualifiedNamespace: serviceBusNamespace,
+                serviceBusNamespace: serviceBusNamespace,
                 serviceBusEntity: entityType,
                 tokenCredential: credential,
                 options: options,
@@ -204,7 +204,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.ThrowsAny<ArgumentException>(() => new AzureServiceBusMessagePumpSettings(
                 entityName: null,
                 subscriptionName: null,
-                fullyQualifiedNamespace: serviceBusNamespace,
+                serviceBusNamespace: serviceBusNamespace,
                 serviceBusEntity: entityType,
                 tokenCredential: credential,
                 options: null,
@@ -243,7 +243,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.ThrowsAny<ArgumentException>(() => new AzureServiceBusMessagePumpSettings(
                 entityName: null,
                 subscriptionName: null,
-                fullyQualifiedNamespace: serviceBusNamespace,
+                serviceBusNamespace: serviceBusNamespace,
                 serviceBusEntity: entityType,
                 tokenCredential: credential,
                 options: options,

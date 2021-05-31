@@ -199,29 +199,29 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="queueName">The name of the Azure Service Bus Queue to process.</param>
-        /// <param name="fullyQualifiedNamespace">The fully qualified Service Bus namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
+        /// <param name="serviceBusNamespace">The Service Bus namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
         /// <param name="clientId">
         ///     The client ID to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
         ///     <see href="https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm" />.
         /// </param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> or <paramref name="fullyQualifiedNamespace"/> is blank.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> or <paramref name="serviceBusNamespace"/> is blank.</exception>
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePumpUsingManagedIdentity(
             this IServiceCollection services,
             string queueName,
-            string fullyQualifiedNamespace,
+            string serviceBusNamespace,
             string clientId = null,
             Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(queueName, nameof(queueName), "Requires a non-blank name for the Azure Service Bus Queue");
-            Guard.NotNullOrWhitespace(fullyQualifiedNamespace, nameof(fullyQualifiedNamespace), "Requires a non-blank fully qualified namespace for the Azure Service Bus Queue");
+            Guard.NotNullOrWhitespace(serviceBusNamespace, nameof(serviceBusNamespace), "Requires a non-blank fully qualified namespace for the Azure Service Bus Queue");
             
             var collection = AddServiceBusQueueMessagePump(
                 services,
                 entityName: queueName,
-                fullyQualifiedNamespace: fullyQualifiedNamespace,
+                fullyQualifiedNamespace: serviceBusNamespace,
                 tokenCredential: new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId }),
                 configureQueueMessagePump: configureMessagePump);
 
@@ -244,7 +244,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName,
                 subscriptionName: null,
                 ServiceBusEntityType.Queue,
-                fullyQualifiedNamespace: fullyQualifiedNamespace,
+                serviceBusNamespace: fullyQualifiedNamespace,
                 configureQueueMessagePump: configureQueueMessagePump,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
@@ -465,7 +465,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="topicName">THe name of the Azure Service Bus Topic to process.</param>
         /// <param name="subscriptionName">The name of the Azure Service Bus Topic subscription to process.</param>
-        /// <param name="fullyQualifiedNamespace">The fully qualified Service Bus namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
+        /// <param name="serviceBusNamespace">The Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
         /// <param name="clientId">
         ///     The client ID to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
         ///     <see href="https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm" />.
@@ -473,26 +473,26 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="topicName"/>, the <paramref name="subscriptionName"/>, or the <paramref name="fullyQualifiedNamespace"/> is blank.
+        ///     Thrown when the <paramref name="topicName"/>, the <paramref name="subscriptionName"/>, or the <paramref name="serviceBusNamespace"/> is blank.
         /// </exception>
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpUsingManagedIdentity(
             this IServiceCollection services,
             string topicName,
             string subscriptionName,
-            string fullyQualifiedNamespace,
+            string serviceBusNamespace,
             string clientId = null,
             Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires a non-blank name for the Azure Service Bus Topic");
             Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName), "Requires a non-blank Azure Service Bus Topic subscription name");
-            Guard.NotNullOrWhitespace(fullyQualifiedNamespace, nameof(fullyQualifiedNamespace), "Requires a non-blank fully qualified namespace for the Azure Service Bus Topic");
+            Guard.NotNullOrWhitespace(serviceBusNamespace, nameof(serviceBusNamespace), "Requires a non-blank fully qualified namespace for the Azure Service Bus Topic");
             
             var collection = AddServiceBusTopicMessagePump(
                 services,
                 entityName: topicName,
                 subscriptionName: subscriptionName,
-                fullyQualifiedNamespace: fullyQualifiedNamespace,
+                serviceBusNamespace: serviceBusNamespace,
                 tokenCredential: new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId }),
                 configureTopicMessagePump: configureMessagePump);
 
@@ -722,7 +722,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="subscriptionPrefix">
         ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />.
         /// </param>
-        /// <param name="fullyQualifiedNamespace">The fully qualified Service Bus namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
+        /// <param name="serviceBusNamespace">The Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
         /// <param name="clientId">
         ///     The client ID to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
         ///     <see href="https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm" />.
@@ -730,26 +730,26 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="topicName"/>, or the <paramref name="subscriptionPrefix"/>, or the <paramref name="fullyQualifiedNamespace"/> is blank.
+        ///     Thrown when the <paramref name="topicName"/>, or the <paramref name="subscriptionPrefix"/>, or the <paramref name="serviceBusNamespace"/> is blank.
         /// </exception>
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpUsingManagedIdentityWithPrefix(
             this IServiceCollection services,
             string topicName,
             string subscriptionPrefix,
-            string fullyQualifiedNamespace,
+            string serviceBusNamespace,
             string clientId = null,
             Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires a non-blank name for the Azure Service Bus Topic");
             Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix), "Requires a prefix for the Azure Service Bus Topic subscription");
-            Guard.NotNullOrWhitespace(fullyQualifiedNamespace, nameof(fullyQualifiedNamespace), "Requires a non-blank fully qualified namespace for the Azure Service Bus Topic");
+            Guard.NotNullOrWhitespace(serviceBusNamespace, nameof(serviceBusNamespace), "Requires a non-blank fully qualified namespace for the Azure Service Bus Topic");
             
             var collection = AddServiceBusTopicMessagePumpWithPrefix(
                 services,
                 entityName: topicName,
                 subscriptionPrefix: subscriptionPrefix,
-                fullyQualifiedNamespace: fullyQualifiedNamespace,
+                serviceBusNamespace: serviceBusNamespace,
                 tokenCredential: new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId }),
                 configureTopicMessagePump: configureMessagePump);
 
@@ -760,7 +760,7 @@ namespace Microsoft.Extensions.DependencyInjection
             IServiceCollection services,
             string entityName,
             string subscriptionPrefix,
-            string fullyQualifiedNamespace = null,
+            string serviceBusNamespace = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
             TokenCredential tokenCredential = null,
@@ -773,7 +773,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName: entityName,
                 subscriptionName: subscriptionName,
-                fullyQualifiedNamespace: fullyQualifiedNamespace,
+                serviceBusNamespace: serviceBusNamespace,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
                 tokenCredential: tokenCredential,
@@ -786,7 +786,7 @@ namespace Microsoft.Extensions.DependencyInjection
             IServiceCollection services,
             string entityName,
             string subscriptionName = null,
-            string fullyQualifiedNamespace = null,
+            string serviceBusNamespace = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
             TokenCredential tokenCredential = null,
@@ -799,7 +799,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName,
                 subscriptionName,
                 ServiceBusEntityType.Topic,
-                fullyQualifiedNamespace: fullyQualifiedNamespace,
+                serviceBusNamespace: serviceBusNamespace,
                 configureTopicMessagePump: configureTopicMessagePump,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
@@ -813,7 +813,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string entityName,
             string subscriptionName,
             ServiceBusEntityType serviceBusEntity,
-            string fullyQualifiedNamespace = null,
+            string serviceBusNamespace = null,
             Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null,
             Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
@@ -839,7 +839,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 else
                 {
                     settings = new AzureServiceBusMessagePumpSettings(
-                        entityName, subscriptionName, serviceBusEntity, fullyQualifiedNamespace, tokenCredential, options, serviceProvider); 
+                        entityName, subscriptionName, serviceBusEntity, serviceBusNamespace, tokenCredential, options, serviceProvider); 
                 }
 
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
