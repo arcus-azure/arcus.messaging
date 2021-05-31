@@ -211,19 +211,23 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Determines the path based on the provided settings where the Azure Service Bus entity is located.
         /// </summary>
-        internal async Task<string> GetEntityPathAsync()
+        /// <exception cref="ArgumentException">Thrown when no entity path could be determined via the configured settings.</exception>
+        public async Task<string> GetEntityPathAsync()
         {
             if (_tokenCredential is null)
             {
                 string connectionString = await GetConnectionStringAsync();
-                var properties = ServiceBusConnectionStringProperties.Parse(connectionString);
+                string entityPath = DetermineEntityPath(connectionString);
 
-                return properties.EntityPath;
+                return entityPath;
             }
-
-            return EntityName;
+            else
+            {
+                string entityPath = DetermineEntityPath();
+                return entityPath;
+            }
         }
-        
+
         /// <summary>
         /// Creates an <see cref="ServiceBusProcessor"/> instance based on the provided settings.
         /// </summary>
@@ -232,37 +236,48 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             if (_tokenCredential is null)
             {
                 string rawConnectionString = await GetConnectionStringAsync();
-                ServiceBusConnectionStringProperties serviceBusConnectionString = ServiceBusConnectionStringProperties.Parse(rawConnectionString);
-
+                string entityPath = DetermineEntityPath(rawConnectionString);
+                
                 var client = new ServiceBusClient(rawConnectionString);
-                {
-                    ServiceBusProcessor processor;
-                    if (string.IsNullOrWhiteSpace(serviceBusConnectionString.EntityPath))
-                    {
-                        // Connection string doesn't include the entity so we're using the message pump settings
-                        if (string.IsNullOrWhiteSpace(EntityName))
-                        {
-                            throw new ArgumentException("No entity name was specified while the connection string is scoped to the namespace");
-                        }
-
-                        processor = CreateProcessor(client, EntityName, SubscriptionName);
-                    }
-                    else
-                    {
-                        // Connection string includes the entity so we're using that instead of the message pump settings
-                        processor = CreateProcessor(client, serviceBusConnectionString.EntityPath, SubscriptionName);
-                    }
-
-                    return processor;
-                }
+                return CreateProcessor(client, entityPath, SubscriptionName);
             }
             else
             {
                 var client = new ServiceBusClient(FullyQualifiedNamespace, _tokenCredential);
-                ServiceBusProcessor processor = CreateProcessor(client, EntityName, SubscriptionName);
+
+                string entityPath = DetermineEntityPath();
+                ServiceBusProcessor processor = CreateProcessor(client, entityPath, SubscriptionName);
 
                 return processor;
             }
+        }
+
+        private string DetermineEntityPath(string connectionString = null)
+        {
+            if (_tokenCredential is null && !string.IsNullOrWhiteSpace(connectionString))
+            {
+                var properties = ServiceBusConnectionStringProperties.Parse(connectionString);
+
+                if (string.IsNullOrWhiteSpace(properties.EntityPath))
+                {
+                    // Connection string doesn't include the entity so we're using the message pump settings
+                    if (string.IsNullOrWhiteSpace(EntityName))
+                    {
+                        throw new ArgumentException("No Azure Service Bus entity name was specified while the connection string is scoped to the namespace");
+                    }
+
+                    return EntityName;
+                }
+
+                return properties.EntityPath;
+            }
+
+            if (string.IsNullOrWhiteSpace(EntityName))
+            {
+                throw new ArgumentException("No Azure Service Bus entity name was specified while the managed identity authentication requires this");
+            }
+            
+            return EntityName;
         }
 
         private ServiceBusProcessor CreateProcessor(ServiceBusClient client, string entityName, string subscriptionName)
@@ -276,7 +291,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 
             return client.CreateProcessor(entityName, subscriptionName, options);
         }
-        
+
         private ServiceBusProcessorOptions DetermineMessageProcessorOptions()
         {
             var messageHandlerOptions = new ServiceBusProcessorOptions();

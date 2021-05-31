@@ -15,7 +15,6 @@ using Arcus.Security.Providers.AzureKeyVault.Authentication;
 using Arcus.Security.Providers.AzureKeyVault.Configuration;
 using Arcus.Testing.Logging;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Azure.ApplicationInsights.Query;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Azure.ServiceBus;
@@ -65,7 +64,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
-        
+
         [Fact]
         public async Task ServiceBusTopicMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
@@ -124,7 +123,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 }
             }
         }
-        
+
         [Fact]
         public async Task ServiceBusTopicMessagePumpWithCustomComplete_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
@@ -147,7 +146,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
-        
+
         [Fact]
         public async Task ServiceBusTopicMessagePumpWithCustomCompleteOnFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
@@ -170,7 +169,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
-        
+
         [Fact]
         public async Task ServiceBusQueueMessagePumpUsingManagedIdentity_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
@@ -205,7 +204,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 }
             }
         }
-        
+
         [Fact]
         public async Task ServiceBusQueueMessagePumpWithCustomCompleteOnFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
@@ -228,7 +227,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
-        
+
         [Fact]
         public async Task ServiceBusQueueMessagePumpWithBatchedMessages_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
@@ -273,7 +272,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
-        
+
         [Fact]
         public async Task ServiceBusQueueMessagePumpWithContextAndBodyFiltering_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
         {
@@ -296,7 +295,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
-        
+
         [Fact]
         public async Task ServiceBusTopicMessagePumpWithContextFiltering_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
         {
@@ -318,7 +317,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
-        
+
         [Fact]
         public async Task ServiceBusTopicMessagePumpWithBodyFiltering_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
         {
@@ -340,7 +339,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
-        
+
         [Fact]
         public async Task ServiceBusQueueMessagePumpWithContextAndBodyFilteringWithSerializer_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
         {
@@ -732,14 +731,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 vaultBaseUrl: keyRotationConfig.KeyVault.VaultUri,
                 secretName: keyRotationConfig.KeyVault.SecretName,
                 value: rotatedConnectionString);
-        }
-
-        private static ApplicationInsightsDataClient CreateApplicationInsightsClient(string instrumentationKey)
-        {
-            var clientCredentials = new ApiKeyClientCredentials(instrumentationKey);
-            var client = new ApplicationInsightsDataClient(clientCredentials);
-
-            return client;
         }
 
         private void RetryAssertUntilTelemetryShouldBeAvailable(System.Action assertion, TimeSpan timeout)
