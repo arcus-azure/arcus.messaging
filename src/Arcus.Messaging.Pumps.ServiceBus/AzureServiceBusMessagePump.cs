@@ -246,9 +246,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 await OpenNewMessageReceiverAsync();
                 await UntilCancelledAsync(stoppingToken);
             }
-            catch (TaskCanceledException)
+            catch (TaskCanceledException exception)
             {
-                // Ignore.
+                Logger.LogTrace(exception, "Azure Service Bus message pump '{JobId}' processing was cancelled", JobId);
             }
             catch (Exception exception)
             {
