@@ -396,7 +396,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </remarks>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
+        /// <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="secretName">
@@ -433,7 +433,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </remarks>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
+        /// <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
@@ -467,7 +467,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </remarks>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
+        /// <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>
@@ -499,7 +499,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
+        /// <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="secretName">
@@ -534,7 +534,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
+        /// <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store</param>
@@ -566,7 +566,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="topicName">Name of the topic to work with</param>
         /// <param name="subscriptionPrefix">
         /// Prefix of the subscription to process, concat with the
-        /// <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />
+        /// <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />
         /// </param>
         /// <param name="services">Collection of services to use in the application</param>
         /// <param name="getConnectionStringFromConfigurationFunc">Function to look up the connection string from the configuration</param>

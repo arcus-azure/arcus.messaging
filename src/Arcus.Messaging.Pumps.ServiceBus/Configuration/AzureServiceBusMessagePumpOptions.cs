@@ -1,5 +1,6 @@
 ﻿using System;
 using GuardNet;
+using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
 {
@@ -20,7 +21,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <remarks>
         ///     Provides capability to create and delete these subscriptions. This requires 'Manage' permissions on the Azure Service Bus Topic or namespace.
         /// </remarks>
-        public TopicSubscription TopicSubscription { get; set; } = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
+        public TopicSubscription? TopicSubscription { get; set; }
         
         /// <summary>
         /// Gets or sets the maximum concurrent calls to process messages.
@@ -102,14 +103,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets the default consumer-configurable options for Azure Service Bus Queue message pumps.
         /// </summary>
-        internal static AzureServiceBusMessagePumpOptions DefaultQueueOptions { get; } = new AzureServiceBusMessagePumpOptions
+        internal static AzureServiceBusMessagePumpOptions DefaultQueueOptions { get; } = new AzureServiceBusMessagePumpOptions()
         {
-            TopicSubscription = TopicSubscription.None
+            TopicSubscription = null
         };
 
         /// <summary>
         /// Gets the default consumer-configurable options for Azure Service Bus Topic message pumps.
         /// </summary>
-        internal static AzureServiceBusMessagePumpOptions DefaultTopicOptions { get; } = new AzureServiceBusMessagePumpOptions();
+        internal static AzureServiceBusMessagePumpOptions DefaultTopicOptions { get; } = new AzureServiceBusMessagePumpOptions()
+        {
+            TopicSubscription = ServiceBus.TopicSubscription.CreateOnStart | ServiceBus.TopicSubscription.DeleteOnStop
+        };
     }
 }
