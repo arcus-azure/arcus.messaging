@@ -1,6 +1,5 @@
 ﻿using System;
 using GuardNet;
-using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
 {
