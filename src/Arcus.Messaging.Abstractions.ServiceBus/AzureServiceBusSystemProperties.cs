@@ -20,6 +20,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             LockedUntil = message.LockedUntil;
             IsReceived = message.SequenceNumber > -1;
             SequenceNumber = message.SequenceNumber;
+            ContentType = message.ContentType;
         }
 
         /// <summary>
@@ -30,7 +31,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         public static AzureServiceBusSystemProperties CreateFrom(ServiceBusReceivedMessage message)
         {
             Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus received message to construct a set of Azure Service Bus system properties");
-            
+
             return new AzureServiceBusSystemProperties(message);
         }
 
@@ -52,7 +53,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         ///    or the message is explicitly abandoned by the receiver. This property is read-only.
         /// </remarks>
         public int DeliveryCount { get; }
-        
+
         /// <summary>
         /// Gets the unique number assigned to a message by Service Bus.
         /// </summary>
@@ -63,7 +64,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         ///     They roll over to 0 when the 48-64 bit range is exhausted. This property is read-only.
         /// </remarks>
         public long SequenceNumber { get; }
-        
+
         /// <summary>
         /// Specifies if the message has been obtained from the broker.
         /// </summary>
@@ -117,5 +118,14 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         ///     is incremented and the message is again available for retrieval. This property is read-only.
         /// </remarks>
         public DateTimeOffset LockedUntil { get; }
+
+        /// <summary>
+        /// Gets the content type descriptor.
+        /// </summary>
+        /// <remarks>
+        /// Optionally describes the payload of the message,
+        /// with a descriptor following the format of RFC2045, Section 5, for example "application/json".
+        /// </remarks>
+        public string ContentType { get; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Arcus.Security.Providers.AzureKeyVault.Authentication;
+﻿using System;
+using Arcus.Security.Providers.AzureKeyVault.Authentication;
 using GuardNet;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
@@ -14,12 +15,28 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         /// <param name="clientId">The ID of the client application.</param>
         /// <param name="clientSecret">The secret of the client application.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="clientId"/> or <paramref name="clientSecret"/> is blank.</exception>
+        public ServicePrincipal(string clientId, string clientSecret)
+        {
+            Guard.NotNullOrWhitespace(clientId, nameof(clientId), "Requires a non-blank Azure service principal client ID");
+            Guard.NotNullOrWhitespace(clientSecret, nameof(clientSecret), "Requires a non-blank Azure service principal client secret");
+
+            ClientId = clientId;
+            ClientSecret = clientSecret;
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServicePrincipal"/> class.
+        /// </summary>
+        /// <param name="clientId">The ID of the client application.</param>
+        /// <param name="clientSecret">The secret of the client application.</param>
         /// <param name="clientSecretKey">The key to the secret of the client application.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="clientId"/>, <paramref name="clientSecret"/> or <paramref name="clientSecretKey"/> is blank.</exception>
         public ServicePrincipal(string clientId, string clientSecret, string clientSecretKey)
         {
-            Guard.NotNullOrWhitespace(clientId, nameof(clientId));
-            Guard.NotNullOrWhitespace(clientSecret, nameof(clientSecret));
-            Guard.NotNullOrWhitespace(clientSecretKey, nameof(clientSecretKey));
+            Guard.NotNullOrWhitespace(clientId, nameof(clientId), "Requires a non-blank Azure service principal client ID");
+            Guard.NotNullOrWhitespace(clientSecret, nameof(clientSecret), "Requires a non-blank Azure service principal client secret");
+            Guard.NotNullOrWhitespace(clientSecretKey, nameof(clientSecretKey), "Requires a non-blank secret Azure Key Vault key where the Azure service principal client secret is located");
 
             ClientId = clientId;
             ClientSecret = clientSecret;

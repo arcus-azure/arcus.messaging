@@ -79,6 +79,31 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         }
 
         /// <summary>
+        /// Gets the service principal that can authenticate with the Azure Service Bus used in these integration tests.
+        /// </summary>
+        /// <returns></returns>
+        public ServicePrincipal GetServiceBusServicePrincipal()
+        {
+            var servicePrincipal = new ServicePrincipal(
+                clientId: _config.GetValue<string>("Arcus:ServiceBus:SelfContained:ServicePrincipal:ClientId"),
+                clientSecret: _config.GetValue<string>("Arcus:ServiceBus:SelfContained:ServicePrincipal:ClientSecret"));
+
+            return servicePrincipal;
+        }
+
+        /// <summary>
+        /// Gets the ID of the current tenant where the Azure resources used in these integration tests are located.
+        /// </summary>
+        public string GetTenantId()
+        {
+            const string tenantIdKey = "Arcus:ServiceBus:SelfContained:TenantId";
+            var tenantId = _config.GetValue<string>(tenantIdKey);
+            Guard.For<KeyNotFoundException>(() => tenantId is null, $"Requires a non-blank 'TenantId' at '{tenantIdKey}'");
+
+            return tenantId;
+        }
+
+        /// <summary>
         /// Gets all the configuration to run a complete key rotation integration test.
         /// </summary>
         public KeyRotationConfig GetKeyRotationConfig()
