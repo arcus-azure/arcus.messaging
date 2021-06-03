@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
@@ -660,69 +659,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     await service.SimulateMessageProcessingAsync(newPrimaryConnectionString);
                 }
             }
-        }
-
-        [Fact]
-        public async Task ServiceBusMessagePump_RotateServiceBusConnectionKeysOnSecretNewVersionNotification_MessagePumpRestartsThenMessageSuccessfullyProcessed()
-        {
-            // Arrange
-            var config = TestConfig.Create();
-            KeyRotationConfig rotationConfig = config.GetKeyRotationConfig();
-            _logger.LogInformation("Using Service Principal [ClientID: '{0}']", rotationConfig.ServicePrincipal.ClientId);
-
-            var client = new ServiceBusConfiguration(rotationConfig, _logger);
-            string freshConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.PrimaryKey);
-
-            IKeyVaultClient keyVaultClient = await CreateKeyVaultClientAsync(rotationConfig);
-            await SetConnectionStringInKeyVaultAsync(keyVaultClient, rotationConfig, freshConnectionString);
-
-            string jobId = Guid.NewGuid().ToString();
-            const string connectionStringSecretKey = "ARCUS_KEYVAULT_SECRETNEWVERSIONCREATED_CONNECTIONSTRING";
-
-            var options = new WorkerOptions();
-            options.Configuration.Add(connectionStringSecretKey, rotationConfig.KeyVault.SecretNewVersionCreated.ConnectionString);
-            options.AddEventGridPublisher(config);
-            options.Configure(host => host.ConfigureSecretStore((configuration, stores) =>
-            {
-                stores.AddAzureKeyVaultWithServicePrincipal(
-                          rotationConfig.KeyVault.VaultUri,
-                          rotationConfig.ServicePrincipal.ClientId,
-                          rotationConfig.ServicePrincipal.ClientSecret)
-                      .AddConfiguration(configuration);
-            })).AddServiceBusQueueMessagePump(rotationConfig.KeyVault.SecretName, opt => 
-            {
-                opt.JobId = jobId;
-                // Unrealistic big maximum exception count so that we're certain that the message pump gets restarted based on the notification and not the unauthorized exception.
-                opt.MaximumUnauthorizedExceptionsBeforeRestart = 1000;
-            }).WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
-                jobId: jobId,
-                subscriptionNamePrefix: "TestSub",
-                serviceBusTopicConnectionStringSecretKey: connectionStringSecretKey,
-                messagePumpConnectionStringKey: rotationConfig.KeyVault.SecretName)
-            .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
-
-            await using (var worker = await Worker.StartNewAsync(options))
-            {
-                string newSecondaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.SecondaryKey);
-                await SetConnectionStringInKeyVaultAsync(keyVaultClient, rotationConfig, newSecondaryConnectionString);
-
-                await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
-                {
-                    // Act
-                    string newPrimaryConnectionString = await client.RotateConnectionStringKeysForQueueAsync(KeyType.PrimaryKey);
-
-                    // Assert
-                    await service.SimulateMessageProcessingAsync(newPrimaryConnectionString);
-                }
-            }
-        }
-
-        private static async Task<IKeyVaultClient> CreateKeyVaultClientAsync(KeyRotationConfig rotationConfig)
-        {
-            ServicePrincipalAuthentication authentication = rotationConfig.ServicePrincipal.CreateAuthentication();
-            IKeyVaultClient keyVaultClient = await authentication.AuthenticateAsync();
-            
-            return keyVaultClient;
         }
 
         private static async Task SetConnectionStringInKeyVaultAsync(IKeyVaultClient keyVaultClient, KeyRotationConfig keyRotationConfig, string rotatedConnectionString)

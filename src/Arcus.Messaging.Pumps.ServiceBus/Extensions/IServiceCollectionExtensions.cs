@@ -33,7 +33,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNull(getConnectionStringFromSecretFunc, nameof(getConnectionStringFromSecretFunc), "Requires a function to retrieve the connection string scoped to the Azure Service Bus Queue to authenticate to authenticate with the queue");
@@ -60,7 +60,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNull(getConnectionStringFromConfigurationFunc, nameof(getConnectionStringFromConfigurationFunc), "Requires a function to retrieve the connection string scoped to the Azure Service Bus Queue to authenticate with the queue");
@@ -90,7 +90,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             string secretName,
-            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(secretName, nameof(secretName), "Requires a non-blank secret name to look up the connection string scoped to the Azure Service Bus Queue to authenticate with the queue");
@@ -119,7 +119,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string queueName,
             string secretName,
-            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(queueName, nameof(queueName), "Requires a non-blank name for the Azure Service Bus Queue");
@@ -149,7 +149,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string queueName,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(queueName, nameof(queueName), "Requires a non-blank name for the Azure Service Bus Queue");
@@ -179,7 +179,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string queueName,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(queueName, nameof(queueName), "Requires a non-blank name for the Azure Service Bus Queue");
@@ -212,7 +212,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string queueName,
             string serviceBusNamespace,
             string clientId = null,
-            Action<AzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(queueName, nameof(queueName), "Requires a non-blank name for the Azure Service Bus Queue");
@@ -235,7 +235,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
             TokenCredential tokenCredential = null,
-            Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null)
+            Action<IAzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
 
@@ -271,7 +271,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionName,
             string secretName,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Topic message pump");
             Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName), "Requires a non-blank Azure Service Bus Topic subscription name");
@@ -306,7 +306,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionName,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName), "Requires a non-blank Azure Service Bus Topic subscription name");
@@ -340,7 +340,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionName,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Topic message pump");
             Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName), "Requires a non-blank Azure Service Bus Topic subscription name");
@@ -376,7 +376,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionName,
             string secretName,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Topic message pump");
             Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires a non-blank Azure Service Bus Topic name");
@@ -408,7 +408,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionName,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Topic message pump");
             Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires a non-blank name for the Azure Service Bus Topic");
@@ -442,7 +442,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionName,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires a non-blank name for the Azure Service Bus Topic name");
@@ -481,7 +481,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string subscriptionName,
             string serviceBusNamespace,
             string clientId = null,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires a non-blank name for the Azure Service Bus Topic");
@@ -507,7 +507,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="subscriptionPrefix">
-        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />.
+        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />.
         /// </param>
         /// <param name="secretName">
         ///     The name of the secret to retrieve the connection string scoped to the Azure Service Bus Topic using your registered <see cref="ISecretProvider" /> implementation.
@@ -519,7 +519,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionPrefix,
             string secretName,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix), "Requires a non-blank prefix for the Azure Service Bus Topic subscription");
@@ -543,7 +543,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="subscriptionPrefix">
-        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />.
+        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />.
         /// </param>
         /// <param name="getConnectionStringFromSecretFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the secret store.</param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
@@ -553,7 +553,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionPrefix,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix), "Requires a non-blank prefix for the Azure Service Bus Topic subscription");
@@ -577,7 +577,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="subscriptionPrefix">
-        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />.
+        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />.
         /// </param>
         /// <param name="getConnectionStringFromConfigurationFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the configuration.</param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
@@ -589,7 +589,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string subscriptionPrefix,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Topic message pump");
             Guard.NotNullOrWhitespace(subscriptionPrefix, nameof(subscriptionPrefix), "Requires a non-blank prefix for the Azure Service Bus Topic subscription");
@@ -612,7 +612,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
         /// <param name="subscriptionPrefix">
-        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />.
+        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />.
         /// </param>
         /// <param name="secretName">
         ///     The name of the secret to retrieve the connection string scoped to the Azure Service Bus Topic using your registered <see cref="ISecretProvider" /> implementation.
@@ -627,7 +627,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionPrefix,
             string secretName,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Topic message pump");
             Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires a non-blank name for the Azure Service Bus Topic");
@@ -650,7 +650,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
         /// <param name="subscriptionPrefix">
-        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />.
+        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />.
         /// </param>
         /// <param name="getConnectionStringFromSecretFunc">The function to look up the connection string scoped to the Azure Service Bus Topic from the secret store.</param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
@@ -661,7 +661,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionPrefix,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires a non-blank name for the Azure Service Bus Topic");
@@ -684,7 +684,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
         /// <param name="subscriptionPrefix">
-        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />.
+        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />.
         /// </param>
         /// <param name="getConnectionStringFromConfigurationFunc">The function to look up the connection string scoped to the Azure Service Bus Topic from the configuration.</param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
@@ -697,7 +697,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionPrefix,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires a non-blank name for the Azure Service Bus Topic subscription");
@@ -720,7 +720,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
         /// <param name="subscriptionPrefix">
-        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="AzureServiceBusMessagePumpConfiguration.JobId" />.
+        ///     The prefix of the Azure Service Bus Topic subscription to process, concat with the <see cref="IAzureServiceBusTopicMessagePumpOptions.JobId" />.
         /// </param>
         /// <param name="serviceBusNamespace">The Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
         /// <param name="clientId">
@@ -738,7 +738,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string subscriptionPrefix,
             string serviceBusNamespace,
             string clientId = null,
-            Action<AzureServiceBusMessagePumpOptions> configureMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
             Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires a non-blank name for the Azure Service Bus Topic");
@@ -764,9 +764,9 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
             TokenCredential tokenCredential = null,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
         {
-            var messagePumpOptions = AzureServiceBusTopicMessagePumpOptions.Default;
+            var messagePumpOptions = AzureServiceBusMessagePumpOptions.DefaultTopicOptions;
             string subscriptionName = $"{subscriptionPrefix}-{messagePumpOptions.JobId}";
 
             ServiceBusMessageHandlerCollection collection = AddServiceBusTopicMessagePump(
@@ -790,7 +790,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
             TokenCredential tokenCredential = null,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
 
@@ -814,8 +814,8 @@ namespace Microsoft.Extensions.DependencyInjection
             string subscriptionName,
             ServiceBusEntityType serviceBusEntity,
             string serviceBusNamespace = null,
-            Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null,
+            Action<IAzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null,
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
             TokenCredential tokenCredential = null)
@@ -824,7 +824,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddCorrelation<MessageCorrelationInfo>();
 
-            AzureServiceBusMessagePumpConfiguration options = 
+            AzureServiceBusMessagePumpOptions options = 
                 DetermineAzureServiceBusMessagePumpOptions(serviceBusEntity, configureQueueMessagePump, configureTopicMessagePump);
 
             ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting();
@@ -851,24 +851,24 @@ namespace Microsoft.Extensions.DependencyInjection
             return collection;
         }
 
-        private static AzureServiceBusMessagePumpConfiguration DetermineAzureServiceBusMessagePumpOptions(
+        private static AzureServiceBusMessagePumpOptions DetermineAzureServiceBusMessagePumpOptions(
             ServiceBusEntityType serviceBusEntity,
-            Action<AzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump,
-            Action<AzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump)
+            Action<IAzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump,
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump)
         {
             switch (serviceBusEntity)
             {
                 case ServiceBusEntityType.Queue:
-                    var queueMessagePumpOptions = AzureServiceBusQueueMessagePumpOptions.Default;
+                    var queueMessagePumpOptions = AzureServiceBusMessagePumpOptions.DefaultQueueOptions;
                     configureQueueMessagePump?.Invoke(queueMessagePumpOptions);
 
-                    return new AzureServiceBusMessagePumpConfiguration(queueMessagePumpOptions);
+                    return queueMessagePumpOptions;
                 
                 case ServiceBusEntityType.Topic:
-                    var topicMessagePumpOptions = AzureServiceBusTopicMessagePumpOptions.Default;
+                    var topicMessagePumpOptions = AzureServiceBusMessagePumpOptions.DefaultTopicOptions;
                     configureTopicMessagePump?.Invoke(topicMessagePumpOptions);
-                
-                    return new AzureServiceBusMessagePumpConfiguration(topicMessagePumpOptions);
+
+                    return topicMessagePumpOptions;
                 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(serviceBusEntity), serviceBusEntity, "Unknown Azure Service Bus entity");

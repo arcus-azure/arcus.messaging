@@ -9,11 +9,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     public enum TopicSubscription
     {
         /// <summary>
-        /// Don't create any topic subscription during the lifecycle of the message pump.
-        /// </summary>
-        None = 0,
-
-        /// <summary>
         /// Creates a new topic subscription when the message pump starts.
         /// </summary>
         CreateOnStart = 1,
