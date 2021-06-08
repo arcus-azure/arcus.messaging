@@ -54,6 +54,12 @@ namespace Azure.Messaging.ServiceBus
                 $"Requires a '{connectionStringMethodName}' method on the '{nameof(ServiceBusConnectionStringProperties)}'");
 
             var connectionString = connectionStringMethod?.Invoke(properties, new object[0]) as string;
+            if (string.IsNullOrWhiteSpace(connectionStringMethodName))
+            {
+                throw new InvalidOperationException(
+                    "Could not determine the Azure Service Bus namespace-scoped connection string from the given connection string properties");
+            }
+            
             return connectionString;
         }
     }
