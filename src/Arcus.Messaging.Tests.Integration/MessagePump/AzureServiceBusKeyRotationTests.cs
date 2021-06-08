@@ -16,7 +16,7 @@ using Xunit.Abstractions;
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     [Collection("Integration")]
-    [Trait("Category", "Integration")]
+    [Trait(name: "Category", value: "Integration")]
     public class AzureServiceBusKeyRotationTests
     {
         private readonly ILogger _logger;

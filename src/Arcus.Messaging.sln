@@ -29,8 +29,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Unit"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Core", "Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj", "{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Pumps.ServiceBus.KeyRotation", "Arcus.Messaging.Pumps.ServiceBus.KeyRotation\Arcus.Messaging.Pumps.ServiceBus.KeyRotation.csproj", "{7C69C563-B8EB-47FE-AADB-BB8354C0ED3D}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Abstractions.ServiceBus", "Arcus.Messaging.Abstractions.ServiceBus\Arcus.Messaging.Abstractions.ServiceBus.csproj", "{864C12DF-DE3D-421F-8687-EC3918FFB8BE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.AzureFunctions.ServiceBus", "Arcus.Messaging.AzureFunctions.ServiceBus\Arcus.Messaging.AzureFunctions.ServiceBus.csproj", "{7386C41A-6F27-42B7-BBC1-B6CB41200A68}"
@@ -91,10 +89,6 @@ Global
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7C69C563-B8EB-47FE-AADB-BB8354C0ED3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7C69C563-B8EB-47FE-AADB-BB8354C0ED3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7C69C563-B8EB-47FE-AADB-BB8354C0ED3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7C69C563-B8EB-47FE-AADB-BB8354C0ED3D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Release|Any CPU.ActiveCfg = Release|Any CPU

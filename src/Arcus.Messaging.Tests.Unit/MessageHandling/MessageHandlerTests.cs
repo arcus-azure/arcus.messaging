@@ -16,6 +16,7 @@ using Moq;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
+#pragma warning disable 618
 
 namespace Arcus.Messaging.Tests.Unit.MessageHandling
 {

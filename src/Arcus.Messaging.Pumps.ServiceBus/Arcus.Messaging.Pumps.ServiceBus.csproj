@@ -17,10 +17,11 @@
     <PackageTags>Azure;Messaging;ServiceBus</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>NU5125;NU5048</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arcus.Security.Providers.AzureKeyVault" Version="1.3.0" />
+    <PackageReference Include="Arcus.Security.Providers.AzureKeyVault" Version="[1.3.0,2.0.0)" />
     <PackageReference Include="Azure.Identity" Version="1.0.0" />
     <PackageReference Include="Guard.NET" Version="1.2.0" />
     <PackageReference Include="Microsoft.Azure.Management.ServiceBus" Version="2.1.0" />
