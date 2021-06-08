@@ -101,12 +101,13 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         // Add Service Bus Queue message pump and use OrdersMessageHandler to process the messages
-        // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
+        // - ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
         services.AddServiceBusQueueMessagePump("ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
                 .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
         // Add Service Bus Topic message pump and use OrdersMessageHandler to process the messages on the 'My-Subscription-Name' subscription
-        // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
+        // - Topic subscriptions over 50 characters will be truncated
+        // - ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
         services.AddServiceBusTopicMessagePump("My-Subscription-Name", "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
                 .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
