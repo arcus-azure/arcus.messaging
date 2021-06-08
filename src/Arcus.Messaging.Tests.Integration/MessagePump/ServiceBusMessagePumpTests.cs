@@ -53,14 +53,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var config = TestConfig.Create();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
-            string[] connectionStringParts = connectionString.Split(';');
-            string namespaceConnectionString = String.Join(";", connectionStringParts.Take(3));
-            string entityPath = connectionStringParts[3].Split('=')[1];
-            
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .ConfigureLogging(_logger)
-                   .AddServiceBusQueueMessagePump(entityPath, configuration => namespaceConnectionString, opt => opt.AutoComplete = true)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
             // Act
