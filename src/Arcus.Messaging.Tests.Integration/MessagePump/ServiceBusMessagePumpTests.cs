@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Tests.Core.Generators;
@@ -45,7 +46,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Fact]
-        public async Task ServiceBusQueueMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        public async Task ServiceBusQueueMessagePumpWithEntityScopedConnectionString_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
             var config = TestConfig.Create();
@@ -65,7 +66,30 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Fact]
-        public async Task ServiceBusTopicMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed()
+        public async Task ServiceBusQueueMessagePumpWithNamespaceScopedConnectionString_PublishesServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string entityConnectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
+            var properties = ServiceBusConnectionStringProperties.Parse(entityConnectionString);
+            string namespaceConnectionString = properties.GetNamespaceConnectionString();
+
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(properties.EntityPath, configuration => namespaceConnectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+            
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(entityConnectionString);
+            }
+        }
+
+        [Fact]
+        public async Task ServiceBusTopicMessagePumpWithEntityScopedConnectionString_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
             var config = TestConfig.Create();
@@ -84,6 +108,33 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 // Assert
                 await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+
+        [Fact]
+        public async Task ServiceBusTopicMessagePumpWithNamespaceScopedConnectionString_PublishesServiceBusMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string topicConnectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Topic);
+            var properties = ServiceBusConnectionStringProperties.Parse(topicConnectionString);
+            string namespaceConnectionString = properties.GetNamespaceConnectionString();
+
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusTopicMessagePump(
+                       topicName: properties.EntityPath,
+                       subscriptionName: "Test-Receive-All-Topic-Only",
+                       getConnectionStringFromConfigurationFunc: configuration => namespaceConnectionString,
+                       configureMessagePump: opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(topicConnectionString);
             }
         }
 
