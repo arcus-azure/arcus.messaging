@@ -5,7 +5,6 @@ using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
-using Arcus.Messaging.Tests.Integration.Extensions;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
