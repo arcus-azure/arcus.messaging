@@ -126,12 +126,13 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.Equal(expected, systemProperties.EnqueuedTime);
         }
         
-        [Fact]
-        public void CreateProperties_FromMessage_AssignsLockTokenCorrectly()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("465924F2-D386-407F-826A-573144085682")]
+        public void CreateProperties_FromMessage_AssignsLockTokenCorrectly(string lockToken)
         {
             // Arrange
-            Guid? expected = Guid.NewGuid().OrNull(BogusGenerator);
-
+            Guid.TryParse(lockToken, out Guid expected);
             AmqpAnnotatedMessage amqpMessage = CreateAmqpMessage();
             ServiceBusReceivedMessage message = CreateServiceBusReceivedMessage(amqpMessage);
             SetLockToken(message, expected);
@@ -140,7 +141,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var systemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
             
             // Assert
-            Assert.Equal((expected ?? Guid.Empty).ToString(), systemProperties.LockToken);
+            Assert.Equal(expected, Guid.Parse(systemProperties.LockToken));
             Assert.Equal(expected != null, systemProperties.IsLockTokenSet);
         }
         

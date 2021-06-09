@@ -830,6 +830,13 @@ namespace Microsoft.Extensions.DependencyInjection
             ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting();
             services.AddHostedService(serviceProvider =>
             {
+                var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
+                if (subscriptionName != null && subscriptionName.Length > 50)
+                {
+                    logger.LogWarning("Azure Service Bus Topic subscription name was truncated to 50 characters");
+                    subscriptionName = subscriptionName.Substring(0, 50);
+                }
+                
                 AzureServiceBusMessagePumpSettings settings; 
                 if (tokenCredential is null)
                 {
@@ -844,7 +851,6 @@ namespace Microsoft.Extensions.DependencyInjection
 
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var router = serviceProvider.GetService<IAzureServiceBusMessageRouter>();
-                var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
                 return new AzureServiceBusMessagePump(settings, configuration, serviceProvider, router, logger);
             });
 
