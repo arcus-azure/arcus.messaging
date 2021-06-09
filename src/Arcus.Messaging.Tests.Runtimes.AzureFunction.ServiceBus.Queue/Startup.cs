@@ -1,7 +1,6 @@
 ﻿using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue;
-using Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
