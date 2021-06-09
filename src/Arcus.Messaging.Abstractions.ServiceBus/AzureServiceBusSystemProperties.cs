@@ -11,6 +11,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
     {
         private AzureServiceBusSystemProperties(ServiceBusReceivedMessage message)
         {
+            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus received message to construct a set of Azure Service Bus system properties");
+
             DeadLetterSource = message.DeadLetterSource;
             DeliveryCount = message.DeliveryCount;
             EnqueuedSequenceNumber = message.EnqueuedSequenceNumber;
@@ -122,6 +124,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <summary>
         /// Gets the content type descriptor.
         /// </summary>
+        /// <value>RFC2045 Content-Type descriptor.</value>
         /// <remarks>
         /// Optionally describes the payload of the message,
         /// with a descriptor following the format of RFC2045, Section 5, for example "application/json".
