@@ -9,23 +9,23 @@ using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 
-namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue
+namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.Functions
 {
-    public class ServiceBusFunction
+    public class OrderProcessingFunction
     {
         private readonly IAzureServiceBusMessageRouter _messageRouter;
         private readonly string _jobId;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ServiceBusFunction" /> class.
+        /// Initializes a new instance of the <see cref="OrderProcessingFunction" /> class.
         /// </summary>
-        public ServiceBusFunction(IAzureServiceBusMessageRouter messageRouter)
+        public OrderProcessingFunction(IAzureServiceBusMessageRouter messageRouter)
         {
             _messageRouter = messageRouter;
             _jobId = Guid.NewGuid().ToString();
         }
 
-        [FunctionName("order")]
+        [FunctionName("order-processing")]
         public async Task Run(
             [ServiceBusTrigger("docker-az-func-queue", Connection = "SERVICEBUS_CONNECTIONSTRING")] ServiceBusReceivedMessage message,
             ILogger log,
