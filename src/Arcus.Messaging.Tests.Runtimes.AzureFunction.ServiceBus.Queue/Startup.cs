@@ -21,7 +21,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue
             IConfiguration configuration = new ConfigurationBuilder()
                     .SetBasePath(builder.GetContext().ApplicationRootPath)
                     .AddEnvironmentVariables("ARCUS_")
-                    .AddJsonFile("local.settings.json", optional: false)
+                    .AddJsonFile("local.settings.json", optional: true)
                     .Build();
 
             builder.Services.AddTransient(svc =>
