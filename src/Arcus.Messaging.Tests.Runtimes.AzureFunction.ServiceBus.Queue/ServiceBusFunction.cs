@@ -27,7 +27,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue
 
         [FunctionName("order")]
         public async Task Run(
-            [ServiceBusTrigger("docker-az-func-queue", Connection = "ServiceBusConnection")] ServiceBusReceivedMessage message,
+            [ServiceBusTrigger("docker-az-func-queue", Connection = "SERVICEBUS_CONNECTIONSTRING")] ServiceBusReceivedMessage message,
             ILogger log,
             CancellationToken cancellationToken)
         {

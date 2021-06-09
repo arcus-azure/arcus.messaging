@@ -21,13 +21,14 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus
             IConfiguration configuration =
                 new ConfigurationBuilder()
                     .SetBasePath(builder.GetContext().ApplicationRootPath)
+                    .AddEnvironmentVariables("ARCUS_")
                     .AddJsonFile("local.settings.json")
                     .Build();
             
             builder.Services.AddTransient(svc =>
             {
-                var eventGridTopic = configuration.GetValue<string>("Values:EventGridTopicEndpoint");
-                var eventGridKey = configuration.GetValue<string>("Values:EventGridAuthKey");
+                var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
+                var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
 
                 return EventGridPublisherBuilder
                     .ForTopic(eventGridTopic)

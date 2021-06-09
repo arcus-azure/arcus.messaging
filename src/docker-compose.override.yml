@@ -7,16 +7,9 @@ services:
       - ARCUS_SERVICEBUS_CONNECTIONSTRING=<Connection String created on Queue>
       - EVENTGRID_TOPIC_URI=https://arcus-event-grid-dev-we-integration-tests.westeurope-1.eventgrid.azure.net/api/events
       - EVENTGRID_AUTH_KEY=<Event Grid Auth Key>
-    ports:
-      - '42063:5001'
   arcus.messaging.tests.workers.servicebus.topic:
     environment:
       - ARCUS_HEALTH_PORT=5001
       - ARCUS_SERVICEBUS_CONNECTIONSTRING=Endpoint=<Connection String created on Topic>
       - EVENTGRID_TOPIC_URI=https://arcus-event-grid-dev-we-integration-tests.westeurope-1.eventgrid.azure.net/api/events
       - EVENTGRID_AUTH_KEY=<Event Grid Auth Key>
-    ports:
-      - '42064:5001'
-  arcus.messaging.tests.runtimes.azurefunction.servicebus.queue:
-    ports:
-      - '42065:5001'

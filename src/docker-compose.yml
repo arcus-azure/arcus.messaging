@@ -11,8 +11,3 @@ services:
     build:
       context: .
       dockerfile: Arcus.Messaging.Tests.Workers.ServiceBus.Topic/Dockerfile
-  arcus.messaging.tests.runtimes.azurefunction.servicebus.queue:
-    image: arcusazure/arcus.messaging.tests.runtimes.azurefunction.servicebus.queue
-    build:
-      context: .
-      dockerfile: Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue/Dockerfile
