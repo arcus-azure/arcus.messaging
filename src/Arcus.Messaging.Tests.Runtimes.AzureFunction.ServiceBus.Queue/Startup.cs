@@ -2,6 +2,7 @@
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue;
 using Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.MessageHandlers;
+using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +22,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue
             IConfiguration configuration = new ConfigurationBuilder()
                     .SetBasePath(builder.GetContext().ApplicationRootPath)
                     .AddEnvironmentVariables("ARCUS_")
-                    .AddJsonFile("local.settings.json", optional: true)
+                    .AddJsonFile("local.settings.json", optional: false)
                     .Build();
 
             builder.Services.AddTransient(svc =>
@@ -36,7 +37,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue
             });
             
             builder.AddServiceBusMessageRouting()
-                   .WithServiceBusMessageHandler<DummyServiceBusMessageHandler, Order>();
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
         }
     }
 }
