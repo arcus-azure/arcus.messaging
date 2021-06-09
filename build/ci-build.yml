@@ -90,10 +90,14 @@ stages:
         value: 'workers-service-bus-queue'
       - name: 'Images.ServiceBus.Topic'
         value: 'workers-service-bus-topic'
+      - name: 'Images.AzureFunction.ServiceBus.Queue'
+        value: 'runtimes-az-func-service-bus-queue'
       - name: 'Arcus.Health.Port.Queue'
         value: '42063'
       - name: 'Arcus.Health.Port.Topic'
         value: '42064'
+      - name: 'Arcus.AzureFunctions.Queue.Port'
+        value: '42065'
     jobs:
       - job: DockerIntegrationTests
         displayName: 'Run Docker integration tests'
@@ -121,16 +125,35 @@ stages:
               imageTag: $(Build.BuildId)
               healthPort: $(Arcus.Health.Port.Topic)
               connectionString: '$(Arcus.ServiceBus.Docker.ConnectionStringWithTopic)'
+          - template: templates/build-and-run-az-func-container.yml
+            parameters:
+              projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue'
+              containerName: '$(Images.AzureFunction.ServiceBus.Queue)'
+              imageName: '$(Images.AzureFunction.ServiceBus.Queue)'
+              imageTag: '$(Build.BuildId)'
+              port: '$(Arcus.AzureFunctions.Queue.Port)'
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               projectName: '$(Project).Tests.Integration'
               category: 'Docker'
           - task: PowerShell@2
-            displayName: 'Get Docker container logs'
+            displayName: 'Get Docker container logs for Service Bus Queue worker project'
             inputs:
               targetType: 'inline'
               script: 'docker logs $(Images.ServiceBus.Queue)'
+            condition: failed()
+          - task: PowerShell@2
+            displayName: 'Get Docker container logs for Service Bus Topic worker project'
+            inputs:
+              targetType: 'inline'
+              script: 'docker logs $(Images.ServiceBus.Topic)'
+            condition: failed()
+          - task: PowerShell@2
+            displayName: 'Get Docker container logs for Azure Functions Service Bus Queue project'
+            inputs:
+              targetType: 'inline'
+              script: 'docker logs $(Images.AzureFunction.ServiceBus.Queue)'
             condition: failed()
 
   - stage: SelfContainingIntegrationTests
