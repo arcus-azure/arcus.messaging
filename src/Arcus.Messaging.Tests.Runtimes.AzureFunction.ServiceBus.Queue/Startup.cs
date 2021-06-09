@@ -18,23 +18,22 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue
         /// <param name="builder">The instance to build the registered services inside the functions app.</param>
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            //IConfiguration configuration =
-            //    new ConfigurationBuilder()
-            //        .SetBasePath(builder.GetContext().ApplicationRootPath)
-            //        .AddEnvironmentVariables("ARCUS_")
-            //        .AddJsonFile("local.settings.json")
-            //        .Build();
-            
-            //builder.Services.AddTransient(svc =>
-            //{
-            //    var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
-            //    var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
+            IConfiguration configuration = new ConfigurationBuilder()
+                    .SetBasePath(builder.GetContext().ApplicationRootPath)
+                    .AddEnvironmentVariables("ARCUS_")
+                    .AddJsonFile("local.settings.json", optional: true)
+                    .Build();
 
-            //    return EventGridPublisherBuilder
-            //        .ForTopic(eventGridTopic)
-            //        .UsingAuthenticationKey(eventGridKey)
-            //        .Build();
-            //});
+            builder.Services.AddTransient(svc =>
+            {
+                var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
+                var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
+
+                return EventGridPublisherBuilder
+                    .ForTopic(eventGridTopic)
+                    .UsingAuthenticationKey(eventGridKey)
+                    .Build();
+            });
             
             builder.AddServiceBusMessageRouting()
                    .WithServiceBusMessageHandler<DummyServiceBusMessageHandler, Order>();
