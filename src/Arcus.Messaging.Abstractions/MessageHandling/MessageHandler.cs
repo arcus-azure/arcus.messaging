@@ -285,7 +285,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
             {
                 _logger.LogTrace("Custom {MessageBodySerializerType} found on the registered message handler, start custom deserialization...", nameof(IMessageBodySerializer));
-
                 var serializer = _service.GetPropertyValue<IMessageBodySerializer>("Serializer", BindingFlags.NonPublic | BindingFlags.Instance);
                 if (serializer is null)
                 {
@@ -319,7 +318,15 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                     return MessageResult.Failure("Custom message deserialization failed because it didn't match the expected message handler's message type");
                 }
 
-                _logger.LogTrace("Custom {MessageBodySerializerType} message deserialization failed: {ErrorMessage} {Exception}", nameof(IMessageBodySerializer), result.ErrorMessage, result.Exception);
+                if (result.Exception != null)
+                {
+                    _logger.LogError(result.Exception, "Custom {MessageBodySerializerType} message deserialization failed: {ErrorMessage}", nameof(IMessageBodySerializer), result.ErrorMessage); 
+                }
+                else
+                {
+                    _logger.LogError("Custom {MessageBodySerializerType} message deserialization failed: {ErrorMessage}", nameof(IMessageBodySerializer), result.ErrorMessage); 
+                }
+                
                 return MessageResult.Failure("Custom message deserialization failed due to an exception");
             }
 
