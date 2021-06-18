@@ -11,10 +11,10 @@ using Arcus.Messaging.Tests.Integration.Fixture;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Polly;
+using Polly.Retry;
 using Xunit;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
@@ -139,34 +139,29 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         /// <param name="connectionString">The connection string to connect to the Azure Service Bus.</param>
         public async Task AssertDeadLetterMessageAsync(string connectionString)
         {
-            var connectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
-            connectionStringBuilder.EntityPath = EntityNameHelper.FormatDeadLetterPath(connectionStringBuilder.EntityPath);
-            var messageReceiver = new MessageReceiver(connectionStringBuilder, ReceiveMode.ReceiveAndDelete);
-
-            try
+            var properties = ServiceBusConnectionStringProperties.Parse(connectionString);
+            var options = new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter };
+            
+            await using (var client = new ServiceBusClient(connectionString))
+            await using (var receiver = client.CreateReceiver(properties.EntityPath, options))
             {
-                bool received = false;
-                messageReceiver.RegisterMessageHandler(
-                    async (message, ct) =>
-                    {
-                        received = true;
-                        _logger.LogInformation("Received dead lettered message in test suite");
-                        await messageReceiver.CompleteAsync(message.SystemProperties.LockToken);
-                    },
-                    new MessageHandlerOptions(exception =>
-                    {
-                        _logger.LogError(exception.Exception, "Failure during receiving dead lettered messages");
-                        return Task.CompletedTask;
-                    }));
+                RetryPolicy<ServiceBusReceivedMessage> retryPolicy =
+                    Policy.HandleResult<ServiceBusReceivedMessage>(result => result is null)
+                          .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(1));
 
-                Policy.Timeout(TimeSpan.FromMinutes(2))
-                      .Wrap(Policy.HandleResult<bool>(result => !result)
-                                  .WaitAndRetryForever(i => TimeSpan.FromSeconds(1)))
-                      .Execute(() => received);
-            }
-            finally
-            {
-                await messageReceiver.CloseAsync();
+                await Policy.TimeoutAsync(TimeSpan.FromMinutes(2))
+                            .WrapAsync(retryPolicy)
+                            .ExecuteAsync(async () =>
+                            {
+                                ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync();
+                                if (message != null)
+                                {
+                                    _logger.LogInformation("Received dead lettered message in test suite");
+                                    await receiver.CompleteMessageAsync(message);
+                                }
+
+                                return message;
+                            });
             }
         }
 
