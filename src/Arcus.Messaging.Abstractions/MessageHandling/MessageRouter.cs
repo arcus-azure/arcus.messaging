@@ -24,12 +24,23 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public MessageRouter(
-            IServiceProvider serviceProvider, 
-            ILogger<MessageRouter> logger)
-            : this(serviceProvider, (ILogger) logger)
+        public MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger<MessageRouter> logger)
+            : this(serviceProvider, options, (ILogger) logger)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options)
+            : this(serviceProvider, options, NullLogger.Instance)
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
         }
@@ -40,11 +51,48 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public MessageRouter(IServiceProvider serviceProvider, ILogger logger)
+        public MessageRouter(IServiceProvider serviceProvider, ILogger<MessageRouter> logger)
+            : this(serviceProvider, new MessageRouterOptions(), (ILogger) logger)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public MessageRouter(IServiceProvider serviceProvider)
+            : this(serviceProvider, new MessageRouterOptions(), NullLogger.Instance)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        protected MessageRouter(IServiceProvider serviceProvider, ILogger logger)
+            : this(serviceProvider, new MessageRouterOptions(), logger)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        protected MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger logger)
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
 
             ServiceProvider = serviceProvider;
+            Options = options ?? new MessageRouterOptions();
             Logger = logger ?? NullLogger<MessageRouter>.Instance;
 
             _fallbackMessageHandler = new Lazy<IFallbackMessageHandler>(() => serviceProvider.GetService<IFallbackMessageHandler>());
@@ -59,6 +107,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// Gets the instance that provides all the registered services in the current application.
         /// </summary>
         protected IServiceProvider ServiceProvider { get; }
+        
+        /// <summary>
+        /// Gets the consumer-configurable options to change the behavior of the router.
+        /// </summary>
+        protected MessageRouterOptions Options { get; }
         
         /// <summary>
         /// Gets the logger instance that writes diagnostic trace messages during the routing of the messages.
@@ -293,20 +346,14 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         protected virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object result)
         {
             Guard.NotNullOrWhitespace(message, nameof(message), "Can't parse a blank raw message against a message handler's contract");
-
             Logger.LogTrace("Try to JSON deserialize incoming message to message type '{MessageType}'...", messageType.Name);
 
             var success = true;
-            var jsonSerializer = new JsonSerializer
-            {
-                MissingMemberHandling = MissingMemberHandling.Error
-            };
+            JsonSerializer jsonSerializer = CreateJsonSerializer();
             EventHandler<ErrorEventArgs> eventHandler = (sender, args) =>
             {
                 success = false;
-                Logger.LogTrace(args.ErrorContext.Error, "Incoming message failed to be JSON deserialized to message type '{MessageType}' at {Path}",
-                    messageType.Name, args.ErrorContext.Path);
-                
+                Logger.LogTrace(args.ErrorContext.Error, "Incoming message failed to be JSON deserialized to message type '{MessageType}' at {Path}", messageType.Name, args.ErrorContext.Path);
                 args.ErrorContext.Handled = true;
             };
             jsonSerializer.Error += eventHandler;
@@ -333,6 +380,21 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             
             result = null;
             return false;
+        }
+
+        private JsonSerializer CreateJsonSerializer()
+        {
+            var jsonSerializer = new JsonSerializer();
+            if (Options.Deserialization.IgnoreMissingMembers)
+            {
+                jsonSerializer.MissingMemberHandling = MissingMemberHandling.Ignore;
+            }
+            else
+            {
+                jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
+            }
+
+            return jsonSerializer;
         }
     }
 }

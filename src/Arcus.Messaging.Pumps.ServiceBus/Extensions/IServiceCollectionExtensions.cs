@@ -827,7 +827,12 @@ namespace Microsoft.Extensions.DependencyInjection
             AzureServiceBusMessagePumpOptions options = 
                 DetermineAzureServiceBusMessagePumpOptions(serviceBusEntity, configureQueueMessagePump, configureTopicMessagePump);
 
-            ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting();
+            ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting(provider =>
+            {
+                var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
+                return new AzureServiceBusMessageRouter(provider, options.MessageRouterOptions, logger);
+            });
+            
             services.AddHostedService(serviceProvider =>
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();

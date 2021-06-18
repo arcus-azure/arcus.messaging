@@ -1,4 +1,6 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using GuardNet;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
@@ -98,6 +100,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets the options to control the correlation information upon the receiving of Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
         /// </summary>
         public AzureServiceBusCorrelationOptions Correlation { get; } = new AzureServiceBusCorrelationOptions();
+
+        /// <summary>
+        /// Gets the consumer-configurable options to change the deserialization behavior.
+        /// </summary>
+        public MessageDeserializationOptions Deserialization => MessageRouterOptions.Deserialization;
+
+        /// <summary>
+        /// Gets the consumer-configurable options to change the behavior of the message router.
+        /// </summary>
+        internal AzureServiceBusMessageRouterOptions MessageRouterOptions { get; } = new AzureServiceBusMessageRouterOptions();
 
         /// <summary>
         /// Gets the default consumer-configurable options for Azure Service Bus Queue message pumps.

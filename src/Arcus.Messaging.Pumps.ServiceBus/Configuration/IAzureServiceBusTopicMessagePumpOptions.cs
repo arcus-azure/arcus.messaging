@@ -1,4 +1,5 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions.MessageHandling;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
@@ -56,5 +57,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets the options to control the correlation information upon the receiving of Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
         /// </summary>
         AzureServiceBusCorrelationOptions Correlation { get; }
+        
+        /// <summary>
+        /// Gets the consumer-configurable options to change the deserialization behavior.
+        /// </summary>
+        MessageDeserializationOptions Deserialization { get; }
     }
 }

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
@@ -158,6 +159,27 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 // Assert
                 await service.SimulateMessageProcessingAsync(topicConnectionString);
+            }
+        }
+
+        [Fact]
+        public async Task ServiceBusQueueMessagePumpWithIgnoringMissingMembersDeserialization_PublishesServiceBusMessage_MessageGetsProcessedByDifferentMessageHandler()
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
+
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.Deserialization.IgnoreMissingMembers = true)
+                   .WithServiceBusMessageHandler<OrderV2AzureServiceBusMessageHandler, OrderV2>();
+
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString);
             }
         }
 

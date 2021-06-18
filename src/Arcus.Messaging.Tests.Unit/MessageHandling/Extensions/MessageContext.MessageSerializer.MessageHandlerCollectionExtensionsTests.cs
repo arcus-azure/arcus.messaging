@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using ArgumentException = System.ArgumentException;
 
-namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions.Extensions
+namespace Arcus.Messaging.Tests.Unit.MessageHandling.Extensions
 {
     public partial class MessageHandlerCollectionExtensionsTests
     {

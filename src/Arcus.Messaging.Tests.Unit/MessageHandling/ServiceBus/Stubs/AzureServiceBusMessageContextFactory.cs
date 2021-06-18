@@ -6,7 +6,7 @@ using Azure.Core.Amqp;
 using Azure.Messaging.ServiceBus;
 using Bogus;
 
-namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Stubs
+namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs
 {
     /// <summary>
     /// Test factory to generate valid <see cref="AzureServiceBusMessageContext"/> instances.
