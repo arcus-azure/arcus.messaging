@@ -385,7 +385,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         private JsonSerializer CreateJsonSerializer()
         {
             var jsonSerializer = new JsonSerializer();
-            if (Options.Deserialization.IgnoreMissingMembers)
+            if (Options.Deserialization.AdditionalMembers is AdditionalMemberHandling.Ignore)
             {
                 jsonSerializer.MissingMemberHandling = MissingMemberHandling.Ignore;
             }

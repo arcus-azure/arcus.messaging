@@ -196,9 +196,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         }
 
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task WithMessageRouting_WithIgnoreMissingMembers_GoesThroughDifferentMessageHandler(bool ignoreMissingMembers)
+        [InlineData(AdditionalMemberHandling.Ignore)]
+        [InlineData(AdditionalMemberHandling.Error)]
+        public async Task WithMessageRouting_WithIgnoreMissingMembers_GoesThroughDifferentMessageHandler(AdditionalMemberHandling additionalMemberHandling)
         {
             // Arrange
             var services = new ServiceCollection();
@@ -210,7 +210,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
                       .WithMessageHandler<OrderV2MessageHandler, OrderV2>(provider => messageHandlerV2);
             
             // Act
-            services.AddMessageRouting(options => options.Deserialization.IgnoreMissingMembers = ignoreMissingMembers);
+            services.AddMessageRouting(options => options.Deserialization.AdditionalMembers = additionalMemberHandling);
             
             // Assert
             IServiceProvider serviceProvider = services.BuildServiceProvider();
@@ -222,8 +222,8 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             string json = JsonConvert.SerializeObject(order);
 
             await router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None);
-            Assert.Equal(ignoreMissingMembers, messageHandlerV1.IsProcessed);
-            Assert.NotEqual(ignoreMissingMembers, messageHandlerV2.IsProcessed);
+            Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Ignore, messageHandlerV1.IsProcessed);
+            Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Error, messageHandlerV2.IsProcessed);
         }
         
         [Fact]

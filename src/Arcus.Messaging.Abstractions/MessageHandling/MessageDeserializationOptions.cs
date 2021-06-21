@@ -9,6 +9,6 @@
         /// Gets or sets the flag indicating whether or not the default JSON deserialization should ignore missing members
         /// when trying to match a incoming message with a message handler's message type.
         /// </summary>
-        public bool IgnoreMissingMembers { get; set; } = false;
+        public AdditionalMemberHandling AdditionalMembers { get; set; } = AdditionalMemberHandling.Error;
     }
 }

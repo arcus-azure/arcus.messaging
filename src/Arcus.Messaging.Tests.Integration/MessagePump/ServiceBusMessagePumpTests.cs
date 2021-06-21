@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
@@ -171,7 +172,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.Deserialization.IgnoreMissingMembers = true)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore)
                    .WithServiceBusMessageHandler<OrderV2AzureServiceBusMessageHandler, OrderV2>();
 
             // Act
@@ -559,10 +560,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddServiceBusQueueMessagePump(
-                        configuration => connectionString, 
-                        options => options.AutoComplete = false)
-                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
-                    .WithServiceBusFallbackMessageHandler<OrdersAzureServiceBusDeadLetterFallbackMessageHandler>();
+                       configuration => connectionString, 
+                       options => options.AutoComplete = false)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                   .WithServiceBusFallbackMessageHandler<OrdersAzureServiceBusDeadLetterFallbackMessageHandler>();
             
             Order order = OrderGenerator.Generate();
 

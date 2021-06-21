@@ -269,9 +269,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public async Task WithServiceBusRouting_IgnoreMissingMembers_ResultsInDifferentMessageHandler(bool ignoreMissingMembers)
+        [InlineData(AdditionalMemberHandling.Ignore)]
+        [InlineData(AdditionalMemberHandling.Error)]
+        public async Task WithServiceBusRouting_IgnoreMissingMembers_ResultsInDifferentMessageHandler(AdditionalMemberHandling additionalMemberHandling)
         {
             // Arrange
             var services = new ServiceCollection();
@@ -282,7 +282,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                       .WithServiceBusMessageHandler<OrderV2AzureServiceBusMessageHandler, OrderV2>(provider => messageHandlerV2);
             
             // Act
-            services.AddServiceBusMessageRouting(options => options.Deserialization.IgnoreMissingMembers = ignoreMissingMembers);
+            services.AddServiceBusMessageRouting(options => options.Deserialization.AdditionalMembers = additionalMemberHandling);
             
             // Assert
             IServiceProvider serviceProvider = services.BuildServiceProvider();
@@ -294,8 +294,8 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
             
-            Assert.NotEqual(ignoreMissingMembers, messageHandlerV2.IsProcessed);
-            Assert.Equal(ignoreMissingMembers, messageHandlerV1.IsProcessed);
+            Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Ignore, messageHandlerV2.IsProcessed);
+            Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Error, messageHandlerV1.IsProcessed);
         }
 
         [Fact]
