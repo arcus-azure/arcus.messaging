@@ -190,6 +190,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                                     _logger.LogInformation("Received dead lettered message in test suite");
                                     await receiver.CompleteMessageAsync(message);
                                 }
+                                else
+                                {
+                                    _logger.LogInformation("No dead lettered message received in test suite, retrying...");
+                                }
 
                                 return message;
                             });

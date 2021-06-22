@@ -254,7 +254,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .AddServiceBusQueueMessagePump(
                        configuration => connectionString, 
                        opt => opt.AutoComplete = false)
-                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                   .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
                    .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
             
             // Act
@@ -313,7 +313,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .AddServiceBusQueueMessagePump(
                         configuration => connectionString, 
                         opt => opt.AutoComplete = false)
-                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>((AzureServiceBusMessageContext context) => false)
                    .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
             
             // Act
@@ -333,7 +333,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, options => options.AutoComplete = true)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
                     .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(messageBodySerializerImplementationFactory: serviceProvider =>
                     {
                         var logger = serviceProvider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
@@ -358,7 +358,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                   .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
             // Act
@@ -498,7 +498,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, options => options.AutoComplete = true)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
                    .WithFallbackMessageHandler<OrdersFallbackMessageHandler>();
             
@@ -518,7 +518,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
             options.AddEventGridPublisher(config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, options => options.AutoComplete = true)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
                    .WithServiceBusFallbackMessageHandler<OrdersServiceBusFallbackMessageHandler>();
 
@@ -560,10 +560,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var config = TestConfig.Create();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(
+            options.ConfigureLogging(_logger)
+                   .AddServiceBusQueueMessagePump(
                        configuration => connectionString, 
-                       options => options.AutoComplete = false)
-                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                       opt => opt.AutoComplete = false)
+                   .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
                    .WithServiceBusFallbackMessageHandler<OrdersAzureServiceBusDeadLetterFallbackMessageHandler>();
             
             Order order = OrderGenerator.Generate();
@@ -637,7 +638,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        "Test-Receive-All-Topic-Only", 
                        configuration => connectionString, 
                        opt => opt.AutoComplete = false)
-                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
+                   .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
                    .WithServiceBusFallbackMessageHandler<OrdersAzureServiceBusAbandonFallbackMessageHandler>();
             
             await using (var worker = await Worker.StartNewAsync(options))
