@@ -388,12 +388,15 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             switch (Options.Deserialization?.AdditionalMembers)
             {
                 case AdditionalMemberHandling.Error:
+                    Logger.LogTrace("JSON deserialization uses 'Error' result when encountering additional members");
                     jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
                     break;
                 case AdditionalMemberHandling.Ignore:
+                    Logger.LogTrace("JSON deserialization uses 'Ignore' result when encountering additional members");
                     jsonSerializer.MissingMemberHandling = MissingMemberHandling.Ignore;
                     break;
                 default:
+                    Logger.LogTrace("JSON deserialization uses 'Error' result when encountering additional members");
                     jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
                     break;
             }
