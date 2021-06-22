@@ -77,8 +77,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         /// Simulate the message processing of the message pump using the Azure Service Bus.
         /// </summary>
         /// <param name="connectionString">The connection string used to send a Azure Service Bus message to the respectively running message pump.</param>
+        /// <param name="subscriptionName">The topic subscription name when the tested message pump receives messages from an Azure Service Bus Topic.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionString"/> is blank.</exception>
-        public async Task SimulateMessageProcessingAsync(string connectionString)
+        public async Task SimulateMessageProcessingAsync(string connectionString, string subscriptionName = null)
         {
             Guard.NotNullOrWhitespace(connectionString, nameof(connectionString));
 
@@ -113,6 +114,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
             Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
             Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
+
+            await ClearMessagesAsync(connectionString, subscriptionName);
         }
 
         /// <summary>
@@ -131,6 +134,34 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 await messageSender.SendMessageAsync(message);
             }
+        }
+
+        private static async Task ClearMessagesAsync(string connectionString, string subscriptionName = null)
+        {
+            await using (var client = new ServiceBusClient(connectionString))
+            await using (ServiceBusReceiver receiver = CreateServiceBusReceiver(client, connectionString, subscriptionName))
+            {
+                ServiceBusReceivedMessage message = await receiver.PeekMessageAsync();
+                while (message != null)
+                {
+                    await receiver.CompleteMessageAsync(message);
+                    message = await receiver.PeekMessageAsync();
+                }
+            }
+        }
+
+        private static ServiceBusReceiver CreateServiceBusReceiver(
+            ServiceBusClient client,
+            string connectionString,
+            string subscriptionName)
+        {
+            var properties = ServiceBusConnectionStringProperties.Parse(connectionString);
+            if (subscriptionName is null)
+            {
+                return client.CreateReceiver(properties.EntityPath);
+            }
+
+            return client.CreateReceiver(properties.EntityPath, subscriptionName);
         }
 
         /// <summary>
