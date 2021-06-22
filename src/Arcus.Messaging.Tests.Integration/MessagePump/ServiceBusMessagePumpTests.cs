@@ -250,11 +250,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var config = TestConfig.Create();
             string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
             var options = new WorkerOptions();
-            options.AddEventGridPublisher(config)
+            options.ConfigureLogging(_logger)
+                   .AddEventGridPublisher(config)
                    .AddServiceBusQueueMessagePump(
                        configuration => connectionString, 
                        opt => opt.AutoComplete = false)
-                   .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
+                   .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>((AzureServiceBusMessageContext context) => false)
                    .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
             
             // Act

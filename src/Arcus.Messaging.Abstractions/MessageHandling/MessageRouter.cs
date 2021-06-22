@@ -385,13 +385,17 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         private JsonSerializer CreateJsonSerializer()
         {
             var jsonSerializer = new JsonSerializer();
-            if (Options.Deserialization.AdditionalMembers is AdditionalMemberHandling.Ignore)
+            switch (Options.Deserialization?.AdditionalMembers)
             {
-                jsonSerializer.MissingMemberHandling = MissingMemberHandling.Ignore;
-            }
-            else
-            {
-                jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
+                case AdditionalMemberHandling.Error:
+                    jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
+                    break;
+                case AdditionalMemberHandling.Ignore:
+                    jsonSerializer.MissingMemberHandling = MissingMemberHandling.Ignore;
+                    break;
+                default:
+                    jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
+                    break;
             }
 
             return jsonSerializer;
