@@ -385,22 +385,28 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         private JsonSerializer CreateJsonSerializer()
         {
             var jsonSerializer = new JsonSerializer();
-            switch (Options.Deserialization?.AdditionalMembers)
+            
+            if (Options.Deserialization is null)
             {
-                case AdditionalMemberHandling.Error:
-                    Logger.LogTrace("JSON deserialization uses 'Error' result when encountering additional members");
-                    jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
-                    break;
-                case AdditionalMemberHandling.Ignore:
-                    Logger.LogTrace("JSON deserialization uses 'Ignore' result when encountering additional members");
-                    jsonSerializer.MissingMemberHandling = MissingMemberHandling.Ignore;
-                    break;
-                default:
-                    Logger.LogTrace("JSON deserialization uses 'Error' result when encountering additional members");
-                    jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
-                    break;
+                jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
+            }
+            else
+            {
+                switch (Options.Deserialization.AdditionalMembers)
+                {
+                    case AdditionalMemberHandling.Error:
+                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
+                        break;
+                    case AdditionalMemberHandling.Ignore:
+                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Ignore;
+                        break;
+                    default:
+                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
+                        break;
+                }
             }
 
+            Logger.LogTrace($"JSON deserialization uses '{jsonSerializer.MissingMemberHandling}' result when encountering additional members");
             return jsonSerializer;
         }
     }
