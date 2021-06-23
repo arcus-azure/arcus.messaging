@@ -48,7 +48,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             if (azureMessageContext.SystemProperties.DeliveryCount <= 1)
             {
                 Logger.LogTrace("Abandoning message '{MessageId}'...", message.MessageId);
-                await AbandonAsync(message);
+                await AbandonMessageAsync(message);
                 Logger.LogTrace("Abandoned message '{MessageId}'", message.MessageId);
             }
             else
