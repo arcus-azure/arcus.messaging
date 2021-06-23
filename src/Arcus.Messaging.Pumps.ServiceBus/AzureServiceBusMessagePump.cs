@@ -357,19 +357,32 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 if (correlationInfoAccessor is null)
                 {
                     Logger.LogTrace("No message correlation configured in Azure Service Bus message pump '{JobId}' while processing message '{MessageId}'", JobId, message.MessageId);
-                    await _messageRouter.RouteMessageAsync(receiver, args.Message, messageContext, correlationInfo, args.CancellationToken);
                 }
                 else
                 {
                     correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
-                    using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
+                }
+                
+                using (PushScopedCorrelationLogProperty(correlationInfoAccessor))
+                {
+                    await _messageRouter.RouteMessageAsync(args.Message, messageContext, correlationInfo, args.CancellationToken, options =>
                     {
-                        await _messageRouter.RouteMessageAsync(receiver, args.Message, messageContext, correlationInfo, args.CancellationToken);
-                    }
+                        options.ServiceBusReceiver = receiver;
+                    });
                 }
             }
         }
 
+        private static IDisposable PushScopedCorrelationLogProperty(ICorrelationInfoAccessor<MessageCorrelationInfo> correlationInfoAccessor)
+        {
+            if (correlationInfoAccessor is null)
+            {
+                return null;
+            }
+
+            return LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor));
+        }
+        
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
         {
             if (cancellationToken.IsCancellationRequested == false)
