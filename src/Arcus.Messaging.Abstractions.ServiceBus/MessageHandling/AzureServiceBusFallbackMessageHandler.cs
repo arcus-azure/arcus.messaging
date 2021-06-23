@@ -43,7 +43,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="message">The Azure Service Bus message to be completed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        protected async Task CompleteAsync(ServiceBusReceivedMessage message)
+        protected async Task CompleteMessageAsync(ServiceBusReceivedMessage message)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be completed");
 
@@ -65,7 +65,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="newMessageProperties">The properties to modify on the message during the dead lettering of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        protected async Task DeadLetterAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
+        protected async Task DeadLetterMessageAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be dead lettered");
 
@@ -89,7 +89,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="deadLetterReason"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        protected async Task DeadLetterAsync(ServiceBusReceivedMessage message, string deadLetterReason, string deadLetterErrorDescription = null)
+        protected async Task DeadLetterMessageAsync(ServiceBusReceivedMessage message, string deadLetterReason, string deadLetterErrorDescription = null)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be dead lettered");
             Guard.NotNullOrWhitespace(deadLetterReason, nameof(deadLetterReason), "Requires a non-blank dead letter reason for the message");
@@ -112,7 +112,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="newMessageProperties">The properties to modify on the message during the abandoning of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        protected async Task AbandonAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
+        protected async Task AbandonMessageAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be abandoned");
 

@@ -374,7 +374,7 @@ public class DeadLetterFallbackMessageHandler : AzureServiceBusFallbackMessageHa
     public override async Task ProcessMessageAsync(ServiceBusReceivedMessage message, AzureServiceBusMessageContext context, ...)
     {
         Logger.LogInformation("Message is not handled by any message handler, will dead letter");
-        await DeadLetterAsync(message);
+        await DeadLetterMessageAsync(message);
     }
 }
 ```

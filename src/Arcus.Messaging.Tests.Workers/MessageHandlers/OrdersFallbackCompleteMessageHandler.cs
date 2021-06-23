@@ -40,7 +40,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             CancellationToken cancellationToken)
         {
             await _fallbackMessageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-            await CompleteAsync(message);
+            await CompleteMessageAsync(message);
         }
     }
 }
