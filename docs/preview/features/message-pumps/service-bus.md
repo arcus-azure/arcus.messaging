@@ -185,6 +185,10 @@ public class Startup
                 // (default: Transaction-Id).
                 options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
 
+                // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
+                // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
+                options.Deserialization.AdditionalMembers = AdditionalMembersHandling.Ignore;
+
                 // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
                 // when the message pump starts/stops (default: CreateOnStart & DeleteOnStop).
                 options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
@@ -208,6 +212,14 @@ public class Startup
                 // The unique identifier for this background job to distinguish 
                 // this job instance in a multi-instance deployment (default: guid).
                 options.JobId = Guid.NewGuid().ToString();
+
+                // The name of the Azure Service Bus message property that has the transaction ID.
+                // (default: Transaction-Id).
+                options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
+
+                // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
+                // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
+                options.Deserialization.AdditionalMembers = AdditionalMembersHandling.Ignore;
             });
 
         // Uses managed identity to authenticate with the Service Bus Topic:

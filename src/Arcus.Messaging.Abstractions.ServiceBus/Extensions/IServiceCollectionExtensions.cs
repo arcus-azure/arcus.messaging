@@ -14,7 +14,8 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class IServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds an <see cref="IAzureServiceBusMessageRouter"/> implementation to route the incoming messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.
+        ///     Adds an <see cref="IAzureServiceBusMessageRouter"/> implementation
+        ///     to route the incoming messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.
         /// </summary>
         /// <param name="services">The collection of services to add the router to.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
@@ -22,15 +23,35 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
 
-            return services.AddServiceBusMessageRouting(serviceProvider =>
+            return AddServiceBusMessageRouting(services, configureOptions: null);
+        }
+
+        /// <summary>
+        ///     Adds an <see cref="IAzureServiceBusMessageRouter"/> implementation
+        ///     to route the incoming messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.
+        /// </summary>
+        /// <param name="services">The collection of services to add the router to.</param>
+        /// <param name="configureOptions">The function to configure the options that change the behavior of the router.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        public static ServiceBusMessageHandlerCollection AddServiceBusMessageRouting(
+            this IServiceCollection services,
+            Action<AzureServiceBusMessageRouterOptions> configureOptions)
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
+            
+            return AddServiceBusMessageRouting(services, serviceProvider =>
             {
+                var options = new AzureServiceBusMessageRouterOptions();
+                configureOptions?.Invoke(options);
                 var logger = serviceProvider.GetService<ILogger<AzureServiceBusMessageRouter>>();
-                return new AzureServiceBusMessageRouter(serviceProvider, logger);
+
+                return new AzureServiceBusMessageRouter(serviceProvider, options, logger);
             });
         }
 
         /// <summary>
-        /// Adds an <see cref="IAzureServiceBusMessageRouter"/> implementation to route the incoming messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.
+        ///     Adds an <see cref="IAzureServiceBusMessageRouter"/> implementation
+        ///     to route the incoming messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.
         /// </summary>
         /// <param name="services">The collection of services to add the router to.</param>
         /// <param name="implementationFactory">The function to create the <typeparamref name="TMessageRouter"/> implementation.</param>

@@ -3,7 +3,7 @@ using Arcus.Messaging.Tests.Unit.Fixture;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
+namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
 {
     public class IServiceCollectionExtensionsTests
     {

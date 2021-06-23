@@ -1,4 +1,6 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using GuardNet;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
@@ -100,9 +102,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         public AzureServiceBusCorrelationOptions Correlation { get; } = new AzureServiceBusCorrelationOptions();
 
         /// <summary>
+        /// Gets the consumer-configurable options to change the deserialization behavior.
+        /// </summary>
+        public MessageDeserializationOptions Deserialization => MessageRouterOptions.Deserialization;
+
+        /// <summary>
+        /// Gets the consumer-configurable options to change the behavior of the message router.
+        /// </summary>
+        internal AzureServiceBusMessageRouterOptions MessageRouterOptions { get; } = new AzureServiceBusMessageRouterOptions();
+
+        /// <summary>
         /// Gets the default consumer-configurable options for Azure Service Bus Queue message pumps.
         /// </summary>
-        internal static AzureServiceBusMessagePumpOptions DefaultQueueOptions { get; } = new AzureServiceBusMessagePumpOptions()
+        internal static AzureServiceBusMessagePumpOptions DefaultQueueOptions => new AzureServiceBusMessagePumpOptions()
         {
             TopicSubscription = null
         };
@@ -110,7 +122,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets the default consumer-configurable options for Azure Service Bus Topic message pumps.
         /// </summary>
-        internal static AzureServiceBusMessagePumpOptions DefaultTopicOptions { get; } = new AzureServiceBusMessagePumpOptions()
+        internal static AzureServiceBusMessagePumpOptions DefaultTopicOptions => new AzureServiceBusMessagePumpOptions()
         {
             TopicSubscription = ServiceBus.TopicSubscription.CreateOnStart | ServiceBus.TopicSubscription.DeleteOnStop
         };

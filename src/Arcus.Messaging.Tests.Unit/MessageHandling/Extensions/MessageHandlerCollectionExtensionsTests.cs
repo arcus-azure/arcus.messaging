@@ -4,7 +4,7 @@ using Arcus.Messaging.Tests.Unit.Fixture;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Arcus.Messaging.Tests.Unit.Pumps.Abstractions.Extensions
+namespace Arcus.Messaging.Tests.Unit.MessageHandling.Extensions
 {
     public partial class MessageHandlerCollectionExtensionsTests
     {

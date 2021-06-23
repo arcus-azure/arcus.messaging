@@ -11,10 +11,10 @@ using Arcus.Messaging.Tests.Integration.Fixture;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
 using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Polly;
+using Polly.Retry;
 using Xunit;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
@@ -77,8 +77,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         /// Simulate the message processing of the message pump using the Azure Service Bus.
         /// </summary>
         /// <param name="connectionString">The connection string used to send a Azure Service Bus message to the respectively running message pump.</param>
+        /// <param name="subscriptionName">The topic subscription name when the tested message pump receives messages from an Azure Service Bus Topic.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionString"/> is blank.</exception>
-        public async Task SimulateMessageProcessingAsync(string connectionString)
+        public async Task SimulateMessageProcessingAsync(string connectionString, string subscriptionName = null)
         {
             Guard.NotNullOrWhitespace(connectionString, nameof(connectionString));
 
@@ -113,6 +114,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
             Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
             Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
+
+            await ClearMessagesAsync(connectionString, subscriptionName);
         }
 
         /// <summary>
@@ -133,40 +136,67 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
         }
 
+        private static async Task ClearMessagesAsync(string connectionString, string subscriptionName = null)
+        {
+            await using (var client = new ServiceBusClient(connectionString))
+            await using (ServiceBusReceiver receiver = CreateServiceBusReceiver(client, connectionString, subscriptionName))
+            {
+                ServiceBusReceivedMessage message = await receiver.PeekMessageAsync();
+                while (message != null)
+                {
+                    await receiver.CompleteMessageAsync(message);
+                    message = await receiver.PeekMessageAsync();
+                }
+            }
+        }
+
+        private static ServiceBusReceiver CreateServiceBusReceiver(
+            ServiceBusClient client,
+            string connectionString,
+            string subscriptionName)
+        {
+            var properties = ServiceBusConnectionStringProperties.Parse(connectionString);
+            if (subscriptionName is null)
+            {
+                return client.CreateReceiver(properties.EntityPath);
+            }
+
+            return client.CreateReceiver(properties.EntityPath, subscriptionName);
+        }
+
         /// <summary>
         /// Tries receiving a single dead lettered message on the Azure Service Bus dead letter queue.
         /// </summary>
         /// <param name="connectionString">The connection string to connect to the Azure Service Bus.</param>
         public async Task AssertDeadLetterMessageAsync(string connectionString)
         {
-            var connectionStringBuilder = new ServiceBusConnectionStringBuilder(connectionString);
-            connectionStringBuilder.EntityPath = EntityNameHelper.FormatDeadLetterPath(connectionStringBuilder.EntityPath);
-            var messageReceiver = new MessageReceiver(connectionStringBuilder, ReceiveMode.ReceiveAndDelete);
-
-            try
+            var properties = ServiceBusConnectionStringProperties.Parse(connectionString);
+            var options = new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter };
+            
+            await using (var client = new ServiceBusClient(connectionString))
+            await using (var receiver = client.CreateReceiver(properties.EntityPath, options))
             {
-                bool received = false;
-                messageReceiver.RegisterMessageHandler(
-                    async (message, ct) =>
-                    {
-                        received = true;
-                        _logger.LogInformation("Received dead lettered message in test suite");
-                        await messageReceiver.CompleteAsync(message.SystemProperties.LockToken);
-                    },
-                    new MessageHandlerOptions(exception =>
-                    {
-                        _logger.LogError(exception.Exception, "Failure during receiving dead lettered messages");
-                        return Task.CompletedTask;
-                    }));
+                RetryPolicy<ServiceBusReceivedMessage> retryPolicy =
+                    Policy.HandleResult<ServiceBusReceivedMessage>(result => result is null)
+                          .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(1));
 
-                Policy.Timeout(TimeSpan.FromMinutes(2))
-                      .Wrap(Policy.HandleResult<bool>(result => !result)
-                                  .WaitAndRetryForever(i => TimeSpan.FromSeconds(1)))
-                      .Execute(() => received);
-            }
-            finally
-            {
-                await messageReceiver.CloseAsync();
+                await Policy.TimeoutAsync(TimeSpan.FromMinutes(2))
+                            .WrapAsync(retryPolicy)
+                            .ExecuteAsync(async () =>
+                            {
+                                ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync();
+                                if (message != null)
+                                {
+                                    _logger.LogInformation("Received dead lettered message in test suite");
+                                    await receiver.CompleteMessageAsync(message);
+                                }
+                                else
+                                {
+                                    _logger.LogInformation("No dead lettered message received in test suite, retrying...");
+                                }
+
+                                return message;
+                            });
             }
         }
 

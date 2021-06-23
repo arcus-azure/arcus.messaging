@@ -23,11 +23,25 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
         /// </summary>
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger<AzureServiceBusMessageRouter> logger)
-            : this(serviceProvider, (ILogger) logger)
+        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options, ILogger<AzureServiceBusMessageRouter> logger)
+            : this(serviceProvider, options, (ILogger) logger)
         {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options)
+            : this(serviceProvider, options, NullLogger.Instance)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
         }
         
         /// <summary>
@@ -36,14 +50,57 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger<AzureServiceBusMessageRouter> logger)
+            : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), (ILogger) logger)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider)
+            : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), NullLogger.Instance)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
         protected AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger logger)
-            : base(serviceProvider, logger ?? NullLogger<AzureServiceBusMessageRouter>.Instance)
+            : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), logger)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        protected AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options, ILogger logger)
+            : base(serviceProvider, options, logger ?? NullLogger<AzureServiceBusMessageRouter>.Instance)
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
 
             _fallbackMessageHandler = new Lazy<IAzureServiceBusFallbackMessageHandler>(() => serviceProvider.GetService<IAzureServiceBusFallbackMessageHandler>());
+
+            ServiceBusOptions = options;
         }
 
+        /// <summary>
+        /// Gets the consumer-configurable options to change the behavior of the Azure Service Bus router.
+        /// </summary>
+        protected AzureServiceBusMessageRouterOptions ServiceBusOptions { get; }
+        
         /// <summary>
         /// Gets the flag indicating whether or not the router has an registered <see cref="IAzureServiceBusFallbackMessageHandler"/> instance.
         /// </summary>
