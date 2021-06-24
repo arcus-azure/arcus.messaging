@@ -29,7 +29,7 @@ stages:
     jobs:
       - job: Compile
         pool:
-          vmImage: 'ubuntu-16.04'
+          vmImage: '$(Vm.Image)'
         steps:
           - template: build/build-solution.yml@templates
             parameters:
@@ -54,7 +54,7 @@ stages:
       - job: UnitTests
         displayName: 'Run unit tests'
         pool:
-          vmImage: 'ubuntu-16.04'
+          vmImage: '$(Vm.Image)'
         steps:
           - task: DownloadPipelineArtifact@2
             displayName: 'Download build artifacts'
@@ -83,7 +83,7 @@ stages:
       - job: DockerIntegrationTests
         displayName: 'Run Docker integration tests'
         pool:
-          vmImage: 'ubuntu-16.04'
+          vmImage: '$(Vm.Image)'
         steps:
           - task: DownloadPipelineArtifact@2
             displayName: 'Download build artifacts'
@@ -129,7 +129,7 @@ stages:
       - job: SelfContainingIntegrationTests
         displayName: 'Run self-containing integration tests'
         pool:
-          vmImage: 'ubuntu-16.04'
+          vmImage: '$(Vm.Image)'
         steps:
           - template: test/run-integration-tests.yml@templates
             parameters:
@@ -146,7 +146,7 @@ stages:
       - job: PushToNuGet
         displayName: 'Push to NuGet.org'
         pool:
-          vmImage: 'ubuntu-16.04'
+          vmImage: '$(Vm.Image)'
         steps:
           - task: DownloadPipelineArtifact@2
             displayName: 'Download build artifacts'
