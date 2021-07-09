@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netcoreapp3.1</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <PackageId>Arcus.Messaging.AzureFunctions.ServiceBus</PackageId>
+    <Authors>Arcus</Authors>
+    <Company>Arcus</Company>
+    <Product>Arcus.Messaging</Product>
+    <Description>Provides Azure Service Bus message handling/routing for Azure Functions.</Description>
+    <Copyright>Copyright (c) Arcus</Copyright>
+    <PackageLicenseUrl>https://github.com/arcus-azure/arcus.messaging/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/arcus-azure/arcus.messaging</PackageProjectUrl>
+    <PackageIconUrl>https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageTags>Azure;Messaging;ServiceBus;AzureFunctions</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
+  </ItemGroup>  
+
+  <ItemGroup>
+    <ProjectReference Include="..\Arcus.Messaging.Abstractions.ServiceBus\Arcus.Messaging.Abstractions.ServiceBus.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.Abstractions\Arcus.Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.ServiceBus.Core\Arcus.Messaging.ServiceBus.Core.csproj" />
+  </ItemGroup>
+
+</Project>

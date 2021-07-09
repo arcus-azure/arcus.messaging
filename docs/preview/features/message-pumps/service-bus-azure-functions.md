@@ -83,22 +83,7 @@ public class OrderServiceBusMessageHandler : IAzureServiceBusMessageHandler<Orde
 }
 ```
 
-Now that we have created our message handlers, we can declare when we should use them:
-
-```csharp
-[assembly: FunctionsStartup(typeof(Startup))]
-namespace MessageProcessing
-{
-    public class Startup : FunctionsStartup
-    {
-        public override void Configure(IFunctionsHostBuilder builder)
-        {
-            builder.Services.WithServiceBusMessageHandler<OrderServiceBusMessageHandler, Order>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.Order)
-                            .WithServiceBusMessageHandler<ShipmentServiceBusMessageHandler, Shipment>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.Shipment);
-        }
-    }
-}
-```
+Now that we have created our message handlers, we can declare when we should use them by registering them with our router.
 
 ## Processing received messages through the message router
 Now that everything is setup, we need to actually use the declared message handlers by routing the messages from the Azure Function into the correct message handler.
@@ -113,9 +98,9 @@ namespace MessageProcessing
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            builder.Services.AddServiceBusMessageRouting()
-                            .WithServiceBusMessageHandler<OrderServiceBusMessageHandler, Order>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.Order)
-                            .WithServiceBusMessageHandler<ShipmentServiceBusMessageHandler, Shipment>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.Shipment);
+            builder.AddServiceBusMessageRouting()
+                   .WithServiceBusMessageHandler<OrderServiceBusMessageHandler, Order>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.Order)
+                   .WithServiceBusMessageHandler<ShipmentServiceBusMessageHandler, Shipment>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.Shipment);
         }
     }
 }
