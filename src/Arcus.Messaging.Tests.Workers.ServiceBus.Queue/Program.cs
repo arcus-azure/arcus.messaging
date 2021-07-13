@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
@@ -7,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.ServiceBus.Queue
 {
