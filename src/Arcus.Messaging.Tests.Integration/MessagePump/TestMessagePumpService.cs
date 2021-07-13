@@ -159,9 +159,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await using (var client = new ServiceBusClient(connectionString))
             await using (var receiver = client.CreateReceiver(properties.EntityPath, options))
             {
-                AsyncRetryPolicy<ServiceBusReceivedMessage> retryPolicy =
-                    Policy.HandleResult<ServiceBusReceivedMessage>(result => result is null)
-                          .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(1));
+                var retryPolicy = Policy.HandleResult<ServiceBusReceivedMessage>(result => result is null)
+                                        .WaitAndRetryForeverAsync(index => TimeSpan.FromSeconds(1));
 
                 await Policy.TimeoutAsync(TimeSpan.FromMinutes(2))
                             .WrapAsync(retryPolicy)
