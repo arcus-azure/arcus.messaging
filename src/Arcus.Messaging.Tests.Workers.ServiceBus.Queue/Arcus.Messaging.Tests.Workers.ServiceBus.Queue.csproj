@@ -8,14 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arcus.EventGrid.Publishing" Version="3.1.0" />
-    <PackageReference Include="Arcus.EventGrid.Testing" Version="3.1.0" />
+    <PackageReference Include="Arcus.EventGrid.Publishing" Version="[3.1.0,4.0.0)" />
+    <PackageReference Include="Arcus.EventGrid.Testing" Version="[3.1.0,4.0.0)" />
     <PackageReference Include="Guard.NET" Version="[1.2.0,2.0.0)" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="[3.1.8,5.0.0)" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="[3.1.8,5.0.0)" />
     <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="4.4.2" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="[12.0.0,13.0.0)" />
   </ItemGroup>
 
   <ItemGroup>
