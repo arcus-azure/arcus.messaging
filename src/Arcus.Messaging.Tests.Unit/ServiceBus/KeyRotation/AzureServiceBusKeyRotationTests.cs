@@ -80,7 +80,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.KeyRotation
         public async Task RotateServiceBusSecret_WithValidArguments_RotatesPrimarySecondaryAlternately(ServiceBusEntityType entity)
         {
             // Arrange
-            string vaultUrl = BogusGenerator.Internet.UrlWithPath(protocol: "https");
+            string vaultUrl = $"https://{BogusGenerator.Name.FirstName()}.vault.azure.net";
             string secretName = BogusGenerator.Random.Word();
             AzureServiceBusNamespace @namespace = GenerateAzureServiceBusLocation(entity);
             var response = new AzureOperationResponse<AccessKeys>
