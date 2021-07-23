@@ -4,6 +4,7 @@ Starting from v1.0, there're some major breaking changes. To make it easier for 
 - [New Azure SDK](#new-azure-sdk)
   - [Package update](#package-update)
   - [Service Bus message update for fallback message handlers](#service-bus-message-update-for-fallback-message-handlers)
+  - [Message correlation inforamation update](#message-correlation-inforamation-update)
 - [Moved message handler types to abstractions namespaces](#moved-message-handler-types-to-abstraction-namespaces)
 - [Renamed fallback message handler operations](#renamed-fallback-message-handler-operations)
 - [Fluent API discovery for message handling](#fluent-api-discovery-for-message-handling)
@@ -36,6 +37,21 @@ public class OrderFallbackMessageHandler : AzureServiceBusFallbackMessageHandler
 ```
 
 > Note that some Service Bus-specific operations were renamed to, see [this section](#renamed-fallback-message-handler-operations) for more info.
+
+### Message correlation inforamation update
+The correlation information model `MessageCorrelationInfo` could previously be extracted from the [`Message` of the old SDK](https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.servicebus.message?view=azure-dotnet) with the extention `message.GetCorrelationInfo()`.
+
+This new version works with the new `ServiceBusReceivedMessage`, so the correlation extension is also moved.
+
+```diff
+- using Microsoft.Azure.ServiceBus;
++ using Azure.Messaging.ServiceBus;
+
+- Message message = ...
++ ServiceBusReceivedMessage message = ...
+
+message.GetCorrelationInfo();
+```
 
 ## Moved message handler types to abstraction namespaces
 All your Azure Service Bus message handlers implementations will probably give compile errors. This is caused by the breaking change that moved all the 'message handler'-related types towards abstractions namespaces ([#153](https://github.com/arcus-azure/arcus.messaging/issues/153)).
