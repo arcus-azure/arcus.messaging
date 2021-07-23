@@ -23,6 +23,10 @@ PM > Install-Package Arcus.Messaging.Abstractions
 - Using message pumps with Azure Functions
     - Azure Service Bus ([docs](features/message-pumps/service-bus-azure-functions))
 
+## Guides
+
+* Guide to migrate towards the v1.0 release ([docs](guides/migration-guide-v1.0))
+
 ## Older versions
 
 - [v0.4](./../v0.4.0)
