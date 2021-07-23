@@ -12,6 +12,8 @@ Starting from v1.0, there're some major breaking changes. To make it easier for 
 ## New Azure SDK
 We have chosen to also update our library to the new Azure SDK when interacting with the Azure Service Bus ([#159](https://github.com/arcus-azure/arcus.messaging/discussions/159)). This package update has some consequences on our library.
 
+> Note that Azure Service Bus plug-ins are [still not supported](https://github.com/arcus-azure/arcus.messaging/discussions/159) in this new SDK.
+
 ### Package update
 The `Microsoft.Azure.ServiceBus` NuGet packge is now completly removed from the library and is changed by the `Arcus.Messaging.ServiceBus` NuGet package. This means that possible compile errors can occur when using types or signatures that were only available in this older package.
 
