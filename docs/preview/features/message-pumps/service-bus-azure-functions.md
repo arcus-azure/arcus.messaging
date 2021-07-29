@@ -99,8 +99,8 @@ namespace MessageProcessing
         public override void Configure(IFunctionsHostBuilder builder)
         {
             builder.AddServiceBusMessageRouting()
-                   .WithServiceBusMessageHandler<OrderServiceBusMessageHandler, Order>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.Order)
-                   .WithServiceBusMessageHandler<ShipmentServiceBusMessageHandler, Shipment>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.Shipment);
+                   .WithServiceBusMessageHandler<OrderV1ServiceBusMessageHandler, OrderV1>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.OrderV1)
+                   .WithServiceBusMessageHandler<OrderV2ServiceBusMessageHandler, OrderV2>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.OrderV2);
         }
     }
 }
