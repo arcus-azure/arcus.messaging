@@ -1,4 +1,5 @@
-﻿using Arcus.EventGrid.Publishing;
+﻿using System;
+using Arcus.EventGrid.Publishing;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
@@ -33,7 +34,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue
                     logger.LogInformation("Available config key: {Key}", entry.Key);
                 }
                 
-                var eventGridTopic = configuration.GetValue<string>("ARCUS_EVENTGRID_TOPIC_URI");
+                var eventGridTopic = Environment.GetEnvironmentVariable("ARCUS_EVENTGRID_TOPIC_URI");
                 var eventGridKey = configuration.GetValue<string>("ARCUS_EVENTGRID_AUTH_KEY");
 
                 return EventGridPublisherBuilder
