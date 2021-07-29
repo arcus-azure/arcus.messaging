@@ -5,6 +5,7 @@ using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 [assembly: FunctionsStartup(typeof(Startup))]
 
@@ -24,8 +25,14 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue
                     .AddJsonFile("local.settings.json", optional: true)
                     .Build();
 
-            builder.Services.AddTransient(svc =>
+            builder.Services.AddTransient(serviceProvider =>
             {
+                var logger = serviceProvider.GetService<ILogger<Startup>>();
+                foreach (var entry in configuration.AsEnumerable())
+                {
+                    logger.LogInformation("Available config key: {Key}", entry.Key);
+                }
+                
                 var eventGridTopic = configuration.GetValue<string>("ARCUS_EVENTGRID_TOPIC_URI");
                 var eventGridKey = configuration.GetValue<string>("ARCUS_EVENTGRID_AUTH_KEY");
 
