@@ -1,2 +1,3 @@
 variables:
   Project: 'Arcus.Messaging'
+  Vm.Image: 'ubuntu-latest'

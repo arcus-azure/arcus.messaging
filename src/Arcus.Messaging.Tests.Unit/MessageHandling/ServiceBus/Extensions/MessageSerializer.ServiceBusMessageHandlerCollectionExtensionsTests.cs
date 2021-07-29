@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
+namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
 {
     public partial class ServiceBusMessageHandlerCollectionExtensionsTests
     {

@@ -22,15 +22,15 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         }
 
         /// <summary>
-        ///     Process a new message that was received
+        /// Process a new Azure Service Bus message that was received but couldn't be handled by any of the general registered message handlers.
         /// </summary>
-        /// <param name="message">The Azure Service Bus Message message that was received</param>
-        /// <param name="messageContext">The context providing more information concerning the processing</param>
-        /// <param name="correlationInfo">
-        ///     The information concerning correlation of telemetry and processes by using a variety of unique
-        ///     identifiers.
-        /// </param>
-        /// <param name="cancellationToken">The cancellation token to cancel the processing.</param>
+        /// <param name="message">The Azure Service Bus Message message that was received.</param>
+        /// <param name="messageContext">The context providing more information concerning the processing.</param>
+        /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
+        /// <param name="cancellationToken">The token to cancel the processing.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="message"/>, the <paramref name="messageContext"/>, or the <paramref name="correlationInfo"/> is <c>null</c>.
+        /// </exception>
         public abstract Task ProcessMessageAsync(
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
@@ -38,12 +38,12 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             CancellationToken cancellationToken);
 
         /// <summary>
-        /// Completes the Azure Service Bus message on Azure.
+        /// Completes the Azure Service Bus message on Azure. This will delete the message from the service.
         /// </summary>
         /// <param name="message">The Azure Service Bus message to be completed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        protected async Task CompleteAsync(ServiceBusReceivedMessage message)
+        protected async Task CompleteMessageAsync(ServiceBusReceivedMessage message)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be completed");
 
@@ -59,13 +59,14 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         }
 
         /// <summary>
-        /// Dead letters the Azure Service Bus <paramref name="message"/> on Azure while providing <paramref name="newMessageProperties"/> for properties that has to be modified in the process.
+        /// Dead letters the Azure Service Bus <paramref name="message"/> on Azure
+        /// while providing <paramref name="newMessageProperties"/> for properties that has to be modified in the process.
         /// </summary>
         /// <param name="message">The message that has to be dead lettered.</param>
         /// <param name="newMessageProperties">The properties to modify on the message during the dead lettering of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        protected async Task DeadLetterAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
+        protected async Task DeadLetterMessageAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be dead lettered");
 
@@ -89,7 +90,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="deadLetterReason"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        protected async Task DeadLetterAsync(ServiceBusReceivedMessage message, string deadLetterReason, string deadLetterErrorDescription = null)
+        protected async Task DeadLetterMessageAsync(ServiceBusReceivedMessage message, string deadLetterReason, string deadLetterErrorDescription = null)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be dead lettered");
             Guard.NotNullOrWhitespace(deadLetterReason, nameof(deadLetterReason), "Requires a non-blank dead letter reason for the message");
@@ -106,13 +107,19 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         }
 
         /// <summary>
-        /// Abandon the Azure Service Bus <paramref name="message"/> on Azure while providing <paramref name="newMessageProperties"/> for properties that has to be modified in the process.
+        /// <para>
+        ///     Abandon the Azure Service Bus <paramref name="message"/> on Azure
+        ///     while providing <paramref name="newMessageProperties"/> for properties that has to be modified in the process.
+        /// </para>
+        /// <para>
+        ///     This will make the message available again for immediate processing as the lock of the message will be released.
+        /// </para>
         /// </summary>
         /// <param name="message">The message that has to be abandoned.</param>
         /// <param name="newMessageProperties">The properties to modify on the message during the abandoning of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        protected async Task AbandonAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
+        protected async Task AbandonMessageAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
         {
             Guard.NotNull(message, nameof(message), "Requires a message to be abandoned");
 

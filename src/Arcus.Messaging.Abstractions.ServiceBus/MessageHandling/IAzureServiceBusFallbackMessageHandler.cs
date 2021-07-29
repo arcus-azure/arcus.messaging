@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 
@@ -10,15 +11,15 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
     public interface IAzureServiceBusFallbackMessageHandler
     {
         /// <summary>
-        ///     Process a new message that was received
+        /// Process a new Azure Service Bus message that was received but couldn't be handled by any of the general registered message handlers.
         /// </summary>
-        /// <param name="message">The Azure Service Bus Message message that was received</param>
-        /// <param name="messageContext">The context providing more information concerning the processing</param>
-        /// <param name="correlationInfo">
-        ///     The information concerning correlation of telemetry and processes by using a variety of unique
-        ///     identifiers.
-        /// </param>
-        /// <param name="cancellationToken">The cancellation token to cancel the processing.</param>
+        /// <param name="message">The Azure Service Bus Message message that was received.</param>
+        /// <param name="messageContext">The context providing more information concerning the processing.</param>
+        /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
+        /// <param name="cancellationToken">The token to cancel the processing.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="message"/>, the <paramref name="messageContext"/>, or the <paramref name="correlationInfo"/> is <c>null</c>.
+        /// </exception>
         Task ProcessMessageAsync(
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,

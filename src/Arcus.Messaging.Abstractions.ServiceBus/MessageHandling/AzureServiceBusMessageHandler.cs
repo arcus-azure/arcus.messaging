@@ -18,15 +18,15 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         protected AzureServiceBusMessageHandler(ILogger logger) : base(logger) { }
 
         /// <summary>
-        ///     Process a new message that was received
+        /// Process a new Azure Service Bus message that was received.
         /// </summary>
-        /// <param name="message">Message that was received</param>
-        /// <param name="messageContext">Context providing more information concerning the processing</param>
-        /// <param name="correlationInfo">
-        ///     Information concerning correlation of telemetry and processes by using a variety of unique
-        ///     identifiers
-        /// </param>
-        /// <param name="cancellationToken">Cancellation token</param>
+        /// <param name="message">The Azure Service Bus Message message that was received.</param>
+        /// <param name="messageContext">The context providing more information concerning the processing.</param>
+        /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
+        /// <param name="cancellationToken">The token to cancel the processing.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="message"/>, the <paramref name="messageContext"/>, or the <paramref name="correlationInfo"/> is <c>null</c>.
+        /// </exception>
         public abstract Task ProcessMessageAsync(
             TMessage message,
             AzureServiceBusMessageContext messageContext,
@@ -34,7 +34,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             CancellationToken cancellationToken);
 
         /// <summary>
-        /// Completes the Azure Service Bus message on Azure.
+        /// Completes the Azure Service Bus message on Azure. This will delete the message from the service.
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
         protected async Task CompleteMessageAsync()
@@ -92,7 +92,12 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         }
 
         /// <summary>
-        /// Abandon the Azure Service Bus message on Azure while providing <paramref name="newMessageProperties"/> for properties that has to be modified in the process.
+        /// <para>
+        ///     Abandon the Azure Service Bus message on Azure while providing <paramref name="newMessageProperties"/> for properties that has to be modified in the process.
+        /// </para>
+        /// <para>
+        ///     This will make the message available again for immediate processing as the lock of the message will be released.
+        /// </para>
         /// </summary>
         /// <param name="newMessageProperties">The properties to modify on the message during the abandoning of the message.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>

@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
-using Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Stubs;
+using Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace Arcus.Messaging.Tests.Unit.Pumps.ServiceBus.Extensions
+namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
 {
     public partial class ServiceBusMessageHandlerCollectionExtensionsTests
     {

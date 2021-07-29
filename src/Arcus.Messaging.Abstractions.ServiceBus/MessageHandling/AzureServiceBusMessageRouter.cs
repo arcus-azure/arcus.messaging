@@ -22,28 +22,85 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
         /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
+        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger<AzureServiceBusMessageRouter> logger)
-            : this(serviceProvider, (ILogger) logger)
+        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options, ILogger<AzureServiceBusMessageRouter> logger)
+            : this(serviceProvider, options, (ILogger) logger)
         {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
         }
         
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
         /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
+        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options)
+            : this(serviceProvider, options, NullLogger.Instance)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger<AzureServiceBusMessageRouter> logger)
+            : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), (ILogger) logger)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider)
+            : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), NullLogger.Instance)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
         protected AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger logger)
-            : base(serviceProvider, logger ?? NullLogger<AzureServiceBusMessageRouter>.Instance)
+            : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), logger)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
+        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        protected AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options, ILogger logger)
+            : base(serviceProvider, options, logger ?? NullLogger<AzureServiceBusMessageRouter>.Instance)
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
 
             _fallbackMessageHandler = new Lazy<IAzureServiceBusFallbackMessageHandler>(() => serviceProvider.GetService<IAzureServiceBusFallbackMessageHandler>());
+
+            ServiceBusOptions = options;
         }
 
+        /// <summary>
+        /// Gets the consumer-configurable options to change the behavior of the Azure Service Bus router.
+        /// </summary>
+        protected AzureServiceBusMessageRouterOptions ServiceBusOptions { get; }
+        
         /// <summary>
         /// Gets the flag indicating whether or not the router has an registered <see cref="IAzureServiceBusFallbackMessageHandler"/> instance.
         /// </summary>
@@ -51,15 +108,17 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
+        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/>
+        /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
-        /// <param name="message">The message that was received.</param>
+        /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
         /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
         /// <param name="cancellationToken">The token to cancel the message processing.</param>
         /// <remarks>
-        ///     Note that registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s with specific Azure Service Bus operations, will not be able to call those operations
-        ///     without an <see cref="ServiceBusReceiver"/>. Use the <see cref="RouteMessageAsync(ServiceBusReceiver,ServiceBusReceivedMessage,AzureServiceBusMessageContext,MessageCorrelationInfo,CancellationToken)"/> instead.
+        ///     Note that registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s with specific Azure Service Bus operations (dead-letter, complete...),
+        ///     will not be able to call those operations without an <see cref="ServiceBusReceiver"/>.
+        ///     Use the <see cref="RouteMessageAsync(ServiceBusReceiver,ServiceBusReceivedMessage,AzureServiceBusMessageContext,MessageCorrelationInfo,CancellationToken)"/> instead.
         /// </remarks>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
@@ -85,12 +144,14 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
+        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/>
+        /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
-        ///     The instance that can receive Azure Service Bus <see cref="ServiceBusReceivedMessage"/>; used within <see cref="IMessageHandler{TMessage,TMessageContext}"/>s with Azure Service Bus specific operations.
+        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>;
+        ///     used within <see cref="AzureServiceBusMessageHandler{TMessage}"/>s or <see cref="AzureServiceBusFallbackMessageHandler"/>s.
         /// </param>
-        /// <param name="message">The message that was received by the <paramref name="messageReceiver"/>.</param>
+        /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
         /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
         /// <param name="cancellationToken">The token to cancel the message processing.</param>
@@ -115,12 +176,14 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
+        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/>
+        /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
-        ///     The instance that can receive Azure Service Bus <see cref="ServiceBusReceivedMessage"/>; used within <see cref="IMessageHandler{TMessage,TMessageContext}"/>s with Azure Service Bus specific operations.
+        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>;
+        ///     used within <see cref="AzureServiceBusMessageHandler{TMessage}"/>s or <see cref="AzureServiceBusFallbackMessageHandler"/>s.
         /// </param>
-        /// <param name="message">The message that was received by the <paramref name="messageReceiver"/>.</param>
+        /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
         /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
         /// <param name="cancellationToken">The token to cancel the message processing.</param>
