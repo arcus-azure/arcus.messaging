@@ -4,9 +4,7 @@ using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 [assembly: FunctionsStartup(typeof(Startup))]
 
@@ -20,22 +18,10 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue
         /// <param name="builder">The instance to build the registered services inside the functions app.</param>
         public override void Configure(IFunctionsHostBuilder builder)
         {
-            IConfiguration configuration = new ConfigurationBuilder()
-                    .SetBasePath(builder.GetContext().ApplicationRootPath)
-                    .AddEnvironmentVariables("ARCUS_")
-                    .AddJsonFile("local.settings.json", optional: true)
-                    .Build();
-
             builder.Services.AddTransient(serviceProvider =>
             {
-                var logger = serviceProvider.GetService<ILogger<Startup>>();
-                foreach (var entry in configuration.AsEnumerable())
-                {
-                    logger.LogInformation("Available config key: {Key}", entry.Key);
-                }
-                
                 var eventGridTopic = Environment.GetEnvironmentVariable("ARCUS_EVENTGRID_TOPIC_URI");
-                var eventGridKey = configuration.GetValue<string>("ARCUS_EVENTGRID_AUTH_KEY");
+                var eventGridKey = Environment.GetEnvironmentVariable("ARCUS_EVENTGRID_AUTH_KEY");
 
                 return EventGridPublisherBuilder
                     .ForTopic(eventGridTopic)
