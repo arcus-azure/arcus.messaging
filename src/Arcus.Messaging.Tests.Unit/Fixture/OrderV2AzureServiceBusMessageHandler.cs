@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
@@ -12,11 +13,18 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
     /// </summary>
     public class OrderV2AzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<OrderV2>
     {
+        private readonly ConcurrentQueue<OrderV2> _orders = new ConcurrentQueue<OrderV2>();
+        
         /// <summary>
         /// Gets the flag indicating whether or not this message handler was being used to process a message.
         /// </summary>
         public bool IsProcessed { get; private set; }
 
+        /// <summary>
+        /// Gets the current processed messages.
+        /// </summary>
+        public OrderV2[] ProcessedMessages => _orders.ToArray();
+        
         /// <summary>
         ///     Process a new message that was received
         /// </summary>
@@ -34,6 +42,8 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
             CancellationToken cancellationToken)
         {
             IsProcessed = true;
+            _orders.Enqueue(message);
+            
             return Task.CompletedTask;
         }
     }
