@@ -25,7 +25,7 @@ PM > Install-Package Arcus.Messaging.Abstractions
 
 ## Guides
 
-* Guide to migrate towards the v1.0 release ([docs](guides/migration-guide-v1.0))
+* Migrate from v0.x to v1.0 ([docs](guides/migration-guide-v1.0))
 
 ## Older versions
 
