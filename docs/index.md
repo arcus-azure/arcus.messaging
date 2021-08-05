@@ -24,8 +24,13 @@ PM > Install-Package Arcus.Messaging.Abstractions
 - Customize message pumps ([docs](features/message-pumps/customization))
     - Fallback message handlers
 
+## Guides
+
+* Migrate from v0.x to v1.0 ([docs](guides/migration-guide-v1.0))
+
 ## Older versions
 
+- [v0.6](v0.6.0)
 - [v0.5](v0.5.0)
 - [v0.4](v0.4.0)
 - [v0.3](v0.3.0)

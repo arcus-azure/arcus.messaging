@@ -20,10 +20,10 @@ PM > Install-Package Arcus.Messaging.ServiceBus.Core
 Starting from the message body, we provide an extension to quickly wrap the content in a valid Azure Service Bus `Message` type that can be send.
 
 ```csharp
-using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.ServiceBus;
 
 string rawString = "Some raw content";
-ServiceBusMessage stringMessage = rawString.AsServiceBusMessage();
+Message stringMessage = rawString.AsServiceBusMessage();
 
 Order order = new Order("some order id");
 Message orderMessage = order.AsServiceBusMessage();
@@ -32,10 +32,10 @@ Message orderMessage = order.AsServiceBusMessage();
 We also provide additional, optional parameters during the creation:
 
 ```csharp
-using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.ServiceBus;
 
 byte[] rawBytes = new [] { 0x54, 0x12 };
-ServiceBusMessage = byteMessage = rawBytes.AsServiceBusMessage(
+Message = byteMessage = rawBytes.AsServiceBusMessage(
     operationId: Guid.NewGuid().ToString(),
     transactionId: Guid.NewGuid().ToString(),
     encoding: Encoding.UTF8);
@@ -43,16 +43,16 @@ ServiceBusMessage = byteMessage = rawBytes.AsServiceBusMessage(
 
 ## Simplify Message Information Discovery
 
-On receive, the Azure Service Bus message contains a set of `.ApplicationProperties` with additional information ie. correlation.
+On receive, the Azure Service Bus message contains a set of `.UserProperties` with additional information ie. correlation.
 This information can be accessed in a more simplified way:
 
 ```csharp
 using Arcus.Messaging.Abstractions;
-using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.ServiceBus;
 
-ServiceBusessage message = ...
+Message message = ...
 
-// Extracted all correlation information from the `.ApplicationProperties` and wrapped inside a valid correlation type.
+// Extracted all correlation information from the `.UserProperties` and wrapped inside a valid correlation type.
 MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
 
 // Extract only the transaction identifier from the correlation information.
@@ -64,13 +64,13 @@ string myCustomPropertyValue = message.GetUserProperty<string>("my-custom-proper
 
 ## Simplify Message Context Information Discovery
 
-On receive, the context in which the message is received contains a set of `.ApplicationProperties` with additional information ie. encoding.
+On receive, the context in which the message is received contains a set of `.Properties` with additional information ie. encoding.
 This information can be acces in a more simplified way:
 
 ```csharp
 using Arcus.Messaging.Abstractions;
 
-// Extract the encoding information from the `.ApplicationProperties` and wrapped inside a valid `Encoding` type.
+// Extract the encoding information from the `.UserProperties` and wrapped inside a valid `Encoding` type.
 MessageContext messageContext = ...
 Encoding encoding = messageContext.GetMessageEncodingProperty();
 ```

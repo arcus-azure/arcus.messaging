@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Azure Service Bus Message Pump"
 layout: default
 ---
@@ -83,11 +83,8 @@ Other topics:
 - [Customized configuration](#customized-configuration)
 - [Fallback message handling](#fallback-message-handling)
 - [Influence handling of Service Bus message in a message handler](#influence-handling-of-Service-Bus-message-in-message-handler)
-- [Alternative Service Bus message routing](#alternative-Service-Bus-message-routing)
 - [Correlation](#correlation)
 - [Automatic Azure Key Vault credentials rotation](#automatic-azure-key-vault-credentials-rotation)
-
-> ⚠ The new Azure SDK doesn't yet support Azure Service Bus plugins. See this [migration guid](https://github.com/Azure/azure-sdk-for-net/blob/master/sdk/servicebus/Azure.Messaging.ServiceBus/MigrationGuide.md#known-gaps-from-previous-library) for more info on this topic.
 
 ## Configuration
 
@@ -101,13 +98,12 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         // Add Service Bus Queue message pump and use OrdersMessageHandler to process the messages
-        // - ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
+        // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
         services.AddServiceBusQueueMessagePump("ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
                 .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
         // Add Service Bus Topic message pump and use OrdersMessageHandler to process the messages on the 'My-Subscription-Name' subscription
-        // - Topic subscriptions over 50 characters will be truncated
-        // - ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
+        // ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
         services.AddServiceBusTopicMessagePump("My-Subscription-Name", "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
                 .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
@@ -142,25 +138,16 @@ public class Startup
             "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
         // Specify the name of the Service Bus Topic, and provide a name for the Topic subscription:
-        services.AddServiceBusMessageTopicMessagePump<OrdersMessageHandler>(
+        services.AddServiceBusMessageTopicPump<OrdersMessageHandler>(
             "My-Service-Bus-Topic-Name",
             "My-Service-Bus-Topic-Subscription-Name",
             "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
         // Specify a topic subscription prefix instead of a name to separate topic message pumps.
-        services.AddServiceBusTopicMessagePumpWithPrefix(
+        services.AddServiceBusTopicPumpWithPrefix(
             "My-Service-Bus-Topic-Name"
             "My-Service-Bus-Subscription-Prefix",
             "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
-
-        // Uses managed identity to authenticate with the Service Bus Topic:
-        services.AddServiceBusTopicMessagePumpUsingManagedIdentity(
-            topicName: properties.EntityPath,
-            subscriptionName: "Receive-All", 
-            fullyQualifiedNamespace: "<your-namespace>.servicebus.windows.net"
-            // The optional client id to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
-            // https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm
-            clientId: "<your-client-id>");
 
         services.AddServiceBusTopicMessagePump(
             "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
@@ -185,10 +172,6 @@ public class Startup
                 // (default: Transaction-Id).
                 options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
 
-                // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
-                // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
-                options.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
-
                 // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
                 // when the message pump starts/stops (default: CreateOnStart & DeleteOnStop).
                 options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
@@ -212,28 +195,11 @@ public class Startup
                 // The unique identifier for this background job to distinguish 
                 // this job instance in a multi-instance deployment (default: guid).
                 options.JobId = Guid.NewGuid().ToString();
-
-                // The name of the Azure Service Bus message property that has the transaction ID.
-                // (default: Transaction-Id).
-                options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
-
-                // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
-                // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
-                options.Deserialization.AdditionalMembers = AdditionalMembersHandling.Ignore;
             });
 
-        // Uses managed identity to authenticate with the Service Bus Topic:
-        services.AddServiceBusQueueMessagePumpUsingManagedIdentity(
-            queueName: "orders",
-            serviceBusNamespace: "<your-namespace>"
-            // The optional client id to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
-            // https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm
-            clientId: "<your-client-id>");
-
-        // Multiple message handlers can be added to the services, based on the message type (ex. 'Order', 'Customer'...), 
+        // Multiple message handlers can be added to the servies, based on the message type (ex. 'Order', 'Customer'...), 
         // the correct message handler will be selected.
-        services.AddServiceBusQueueMessagePump(...)
-                .WithServiceBusMessageHandler<OrdersMessageHandler, Order>()
+        services.WithServiceBusMessageHandler<OrdersMessageHandler, Order>()
                 .WithMessageHandler<CustomerMessageHandler, Customer>();
     }
 }
@@ -282,8 +248,7 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddServiceBusQueueMessagePump(...)
-                .WithServiceBusFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
+        services.WithServiceBusFallbackMessageHandler<WarnsUserFallbackMessageHandler>();
     }
 }
 ```
@@ -340,8 +305,7 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddServiceBusQueueMessagePump(...)
-                .WithServiceBusMessageHandler<AbandonUnknownOrderMessageHandler, Order>();
+        services.WithServiceBusMessageHandler<AbandonUnknownOrderMessageHandler, Order>();
     }
 }
 ```
@@ -361,7 +325,7 @@ Example:
 ```csharp
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
-using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 
 public class DeadLetterFallbackMessageHandler : AzureServiceBusFallbackMessageHandler
@@ -371,10 +335,10 @@ public class DeadLetterFallbackMessageHandler : AzureServiceBusFallbackMessageHa
     {
     }
 
-    public override async Task ProcessMessageAsync(ServiceBusReceivedMessage message, AzureServiceBusMessageContext context, ...)
+    public override async Task ProcessMessageAsync(Message message, AzureServiceBusMessageContext context, ...)
     {
         Logger.LogInformation("Message is not handled by any message handler, will dead letter");
-        await DeadLetterMessageAsync(message);
+        await DeadLetterAsync(message);
     }
 }
 ```
@@ -388,59 +352,10 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddServiceBusQueueMessagePump(...)
-                .WithServiceBusFallbackMessageHandler<DeadLetterFallbackMessageHandler>();
+        services.WithServiceBusFallbackMessageHandler<DeadLetterFallbackMessageHandler>();
     }
 }
 ```
-
-## Alternative Service Bus message routing
-
-By default, when registering the Azure Service Bus message pump a built-in message router is registered to handle the routing throughout the previously registered message handlers.
-
-This router is registered with the `IAzureServiceBusMessageRouter` interface (which implements the more general `IMessageRouter` for non-specific Service Bus messages).
-
-When you want for some reason alter the message routing or provide additional functionality, you can register your own router which the Azure Service Bus message pump will use instead.
-
-The following example shows you how a custom router is used for additional tracking. Note that the `AzureServiceBusMessageRouter` implements the `IAzureServiceBusMessageRouter` so we can override the necessary implemenetations.
-
-```csharp
-public class TrackedAzureServiceBusMessageRouter : AzureServiceBusMessageRouter
-{
-    public TrackedAzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger<AzureServiceBusMessageRouter> logger)
-        : base(serviceProvider, logger)
-    {
-    }
-
-    public override Task ProcessMessageAsync(
-        ServiceBusReceivedMessage message,
-        AzureServiceBusMessageContext messageContext,
-        MessageCorrelationInfo correlationInfo,
-        CancellationToken cancellationToken)
-    {
-        Logger.LogTrace("Start routing incoming message...");
-        base.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-        Logger.LogTrace("Done routing incoming message!");
-    }
-}
-```
-
-This custom message router can be registered with the following extension:
-
-```csharp
-public void ConfigureServices(IServiceCollection services)
-{
-    services.AddServiceBusMessageRouting(serviceProvider =>
-    {
-        var logger = serviceProvider.GetService<ILogger<TrackedAzureServiceBusMessageRouter>>();
-        return new TrackedAzureServiceBusMessageRouter(serviceProvider, logger);
-    });
-
-    services.AddServiceBusQueueMessagePump(...);
-}
-```
-
-> Note that your own router should be registered **before** you register the Azure Message Pump otherwise it cannot be overriden.
 
 ## Correlation
 
@@ -448,9 +363,9 @@ To retrieve the correlation information of Azure Service Bus messages, we provid
 
 ```csharp
 using Arcus.Messaging.Abstractions;
-using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.ServiceBus;
 
-ServiceBusReceivedMessage message = ...
+Message message = ...
 MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
 
 // Unique identifier that indicates an attempt to process a given message.
