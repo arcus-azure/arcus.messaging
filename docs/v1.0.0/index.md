@@ -5,12 +5,12 @@ layout: default
 
 # Installation
 
-[![NuGet Badge](https://buildstats.info/nuget/Arcus.Messaging.Abstractions)](https://www.nuget.org/packages/Arcus.Messaging.Abstractions/)
+[![NuGet Badge](https://buildstats.info/nuget/Arcus.Messaging.Abstractions?packageVersion=1.0.0)](https://www.nuget.org/packages/Arcus.Messaging.Abstractions/1.0.0)
 
 The features are available on NuGet:
 
 ```shell
-PM > Install-Package Arcus.Messaging.Abstractions
+PM > Install-Package Arcus.Messaging.Abstractions -Version 1.0.0
 ```
 
 # Features
@@ -20,8 +20,6 @@ PM > Install-Package Arcus.Messaging.Abstractions
 - Support for exposing TCP health probes to periodically check liveness/readiness of the host ([docs](features/tcp-health-probe))
 - Customize message pumps ([docs](features/message-pumps/customization))
     - Fallback message handlers
-- Using message pumps with Azure Functions
-    - Azure Service Bus ([docs](features/message-pumps/service-bus-azure-functions))
 
 ## Guides
 
@@ -29,7 +27,6 @@ PM > Install-Package Arcus.Messaging.Abstractions
 
 ## Older versions
 
-- [v1.0](./../v1.0.0)
 - [v0.6](./../v0.6.0)
 - [v0.4](./../v0.4.0)
 - [v0.3](./../v0.3.0)
