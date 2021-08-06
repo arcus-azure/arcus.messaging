@@ -1,7 +1,0 @@
-repository: arcus-azure/arcus.messaging
-theme: jekyll-theme-slate
-logo: https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png
-title: Arcus Messaging
-description: Messaging development in Azure with a breeze
-plugins:
-  - jemoji
