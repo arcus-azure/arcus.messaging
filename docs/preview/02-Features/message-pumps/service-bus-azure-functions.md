@@ -120,9 +120,11 @@ using Azure.Messaging.ServiceBus;
 public class MessageProcessingFunction
 {
     private readonly IAzureServiceBusMessageRouter _messageRouter;
+    private readonly string _jobId;
 
     public MessageProcessingFunction(IAzureServiceBusMessageRouter messageRouter)
     {
+        _jobId = $"job-{Guid.NewGuid()}";
         _messageRouter = messageRouter;
     }
 
@@ -132,7 +134,7 @@ public class MessageProcessingFunction
         ILogger log,
         CancellationToken cancellationToken)
     {
-        var messageContext = new AzureServiceBusMessageContext(message.MessageId, message.SystemProperties, message.UserProperties);
+        AzureServiceBusMessageContext messageContext = message.GetMessageContext(_jobId);
         MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
 
         _messageRouter.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
