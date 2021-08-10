@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -11,8 +14,11 @@ using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs;
 using Azure.Messaging.ServiceBus;
+using Bogus;
+using Microsoft.AspNetCore.Mvc.TagHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Xunit;
 using Order = Arcus.Messaging.Tests.Core.Messages.v1.Order;
@@ -296,6 +302,55 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             
             Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Error, messageHandlerV2.IsProcessed);
             Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Ignore, messageHandlerV1.IsProcessed);
+        }
+
+        [Fact]
+        public async Task WithServiceBusRouting_ExtremeNumberOfMessages_StillUsesTheCorrectMessageHandler()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(services);
+
+            var spyOrderV1MessageHandler = new OrderV1AzureServiceBusMessageHandler();
+            var spyOrderV2MessageHandler = new OrderV2AzureServiceBusMessageHandler();
+            
+            collection.WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(messageBodyFilter: order => order.ArticleNumber == "NotExisting")
+                      .WithServiceBusMessageHandler<OrderV2AzureServiceBusMessageHandler, OrderV2>(implementationFactory: provider => spyOrderV2MessageHandler)
+                      .WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>()
+                      .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(messageContextFilter: context => context.MessageId == "NotExisting")
+                      .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(provider => spyOrderV1MessageHandler)
+                      .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>();
+
+            services.AddServiceBusMessageRouting();
+            
+            // Assert
+            IServiceProvider serviceProvider = services.BuildServiceProvider();
+            var router = serviceProvider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            int messageCount = 100;
+            IEnumerable<ServiceBusReceivedMessage> messages =
+                Enumerable.Range(0, messageCount)
+                          .SelectMany(index =>
+                          {
+                              var orderV1 = OrderGenerator.Generate().AsServiceBusReceivedMessage();
+                              var orderV2 = OrderV2Generator.Generate().AsServiceBusReceivedMessage();
+                              return new[] {orderV1, orderV2};
+                          });
+
+            foreach (ServiceBusReceivedMessage message in messages)
+            {
+                await router.RouteMessageAsync(message,
+                    new AzureServiceBusMessageContext(
+                        $"id-{Guid.NewGuid()}",
+                        $"job-{Guid.NewGuid()}",
+                        AzureServiceBusSystemProperties.CreateFrom(message),
+                        new ReadOnlyDictionary<string, object>(new Dictionary<string, object>())),
+                    new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}"),
+                    CancellationToken.None);
+            }
+            
+            Assert.Equal(messageCount, spyOrderV1MessageHandler.ProcessedMessages.Length);
+            Assert.Equal(messageCount, spyOrderV2MessageHandler.ProcessedMessages.Length);
         }
 
         [Fact]
