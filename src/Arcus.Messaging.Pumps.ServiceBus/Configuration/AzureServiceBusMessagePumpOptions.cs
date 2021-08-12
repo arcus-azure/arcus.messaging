@@ -104,12 +104,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets the consumer-configurable options to change the deserialization behavior.
         /// </summary>
-        public MessageDeserializationOptions Deserialization => MessageRouterOptions.Deserialization;
+        [Obsolete("Use the " + nameof(Routing) + ".Deserialization instead")]
+        public MessageDeserializationOptions Deserialization => Routing.Deserialization;
 
         /// <summary>
         /// Gets the consumer-configurable options to change the behavior of the message router.
         /// </summary>
-        internal AzureServiceBusMessageRouterOptions MessageRouterOptions { get; } = new AzureServiceBusMessageRouterOptions();
+        public AzureServiceBusMessageRouterOptions Routing { get; } = new AzureServiceBusMessageRouterOptions();
 
         /// <summary>
         /// Gets the default consumer-configurable options for Azure Service Bus Queue message pumps.
