@@ -830,7 +830,7 @@ namespace Microsoft.Extensions.DependencyInjection
             ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting(provider =>
             {
                 var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
-                return new AzureServiceBusMessageRouter(provider, options.MessageRouterOptions, logger);
+                return new AzureServiceBusMessageRouter(provider, options.Routing, logger);
             });
             
             services.AddHostedService(serviceProvider =>
