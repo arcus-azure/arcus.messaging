@@ -371,7 +371,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
             catch (Exception exception)
             {
-                Logger.LogError(exception, "Incoming message failed to be JSON deserialized to message type '{MessageType]' due to an exception", messageType.Name);
+                Logger.LogError(exception, "Incoming message failed to be JSON deserialized to message type '{MessageType}' due to an exception", messageType.Name);
             }
             finally
             {
