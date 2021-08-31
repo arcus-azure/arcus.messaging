@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Core.Messages.v2;
@@ -16,7 +17,9 @@ using Arcus.Security.Providers.AzureKeyVault;
 using Arcus.Security.Providers.AzureKeyVault.Authentication;
 using Arcus.Security.Providers.AzureKeyVault.Configuration;
 using Arcus.Testing.Logging;
+using Azure;
 using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Azure.ServiceBus;
@@ -110,6 +113,41 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 // Assert
                 await service.SimulateMessageProcessingAsync(connectionString);
+            }
+        }
+
+        [Theory]
+        [InlineData(TopicSubscription.None, false)]
+        [InlineData(TopicSubscription.CreateOnStart, true)]
+        [InlineData(TopicSubscription.DeleteOnStop, false)]
+        [InlineData(TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop, true)]
+        public async Task ServiceBusTopicMessagePump_WithNoneTopicSubscription_DoesntCreateTopicSubscription(TopicSubscription topicSubscription, bool expected)
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Topic);
+            var options = new WorkerOptions();
+            var subscriptionName = $"Subscription-{Guid.NewGuid():N}";
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusTopicMessagePump(
+                       subscriptionName, 
+                       configuration => connectionString, 
+                       opt => opt.TopicSubscription = topicSubscription)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+            
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            {
+                var client = new ServiceBusAdministrationClient(connectionString);
+                var properties = ServiceBusConnectionStringProperties.Parse(connectionString);
+                
+                Response<bool> subscriptionExistsResponse = await client.SubscriptionExistsAsync(properties.EntityPath, subscriptionName);
+                if (subscriptionExistsResponse.Value)
+                {
+                    await client.DeleteSubscriptionAsync(properties.EntityPath, subscriptionName);
+                }
+                
+                Assert.Equal(expected, subscriptionExistsResponse.Value);
             }
         }
         

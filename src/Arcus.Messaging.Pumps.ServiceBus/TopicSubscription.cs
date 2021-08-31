@@ -9,12 +9,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     public enum TopicSubscription
     {
         /// <summary>
-        /// Creates a new topic subscription when the message pump starts.
+        /// Don't create any Azure Service Bus Topic subscription during the lifecycle of the <see cref="AzureServiceBusMessagePump"/>.
+        /// </summary>
+        None = 0,
+        
+        /// <summary>
+        /// Creates a new Azure Service Bus Topic subscription when the message pump starts.
         /// </summary>
         CreateOnStart = 1,
 
         /// <summary>
-        /// Deletes the new topic subscription when the message pump stops.
+        /// Deletes the new Azure Service Bus Topic subscription when the message pump stops.
         /// </summary>
         DeleteOnStop = 2
     }
