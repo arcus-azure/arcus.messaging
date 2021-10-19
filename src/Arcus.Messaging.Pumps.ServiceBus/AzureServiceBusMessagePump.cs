@@ -353,7 +353,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
             {
-                var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<ICorrelationInfoAccessor<MessageCorrelationInfo>>();
+                var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                 if (correlationInfoAccessor is null)
                 {
                     Logger.LogTrace("No message correlation configured in Azure Service Bus message pump '{JobId}' while processing message '{MessageId}'", JobId, message.MessageId);
