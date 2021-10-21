@@ -4,6 +4,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Observability.Correlation;
 using Arcus.Security.Core;
 using Azure.Core;
 using Azure.Identity;
@@ -822,7 +823,12 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
 
-            services.AddCorrelation<MessageCorrelationInfo>();
+            services.AddCorrelation<MessageCorrelationInfo>()
+                    .AddScoped<IMessageCorrelationInfoAccessor>(serviceProvider =>
+                    {
+                        return new MessageCorrelationInfoAccessor(
+                            serviceProvider.GetRequiredService<ICorrelationInfoAccessor<MessageCorrelationInfo>>());
+                    });
 
             AzureServiceBusMessagePumpOptions options = 
                 DetermineAzureServiceBusMessagePumpOptions(serviceBusEntity, configureQueueMessagePump, configureTopicMessagePump);

@@ -463,6 +463,30 @@ string transactionId = correlationInfo.TransactionId;
 string operationId = correlationInfo.OperationId;
 ```
 
+To retrieve the correlation information in other application code, you can use a dedicated marker interface called `IMessageCorrelationInfoAccessor`.
+Note that this is a scoped dependency and so will be the same instance across a scoped operation.
+
+```csharp
+using Arcus.Messaging.Abstractions;
+
+public class DependencyService
+{
+    private readonly IMessageCorrelationInfoAccessor _accessor;
+
+    public DependencyService(IMessageCorrelationInfoAccessor accessor)
+    {
+        _accessor = accessor;
+    }
+
+    public void Method()
+    {
+        MessageCorrelationInfo correlation = _accessor.GetCorrelationInfo();
+
+        _accessor.SetCorrelation(correlation);
+    }
+}
+```
+
 ## Automatic Azure Key Vault credentials rotation
 
 The additional library `Arcus.Messaging.Pumps.ServiceBus.KeyRotation` provides an extension on the message pump to restart the pump automatically when the credentials of the pump stored in Azure Key Vault are changed.

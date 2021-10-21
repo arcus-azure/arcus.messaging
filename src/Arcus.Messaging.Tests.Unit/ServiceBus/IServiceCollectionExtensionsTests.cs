@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Unit.Fixture;
@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Arcus.Messaging.Tests.Unit.ServiceBus
 {
+    // ReSharper disable once InconsistentNaming
     public class IServiceCollectionExtensionsTests
     {
         [Fact]
@@ -69,6 +70,272 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
         }
 
+        [Fact]
+        public void AddServiceBusTopicMessagePump_WithSubscriptionNameConfig_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePump("subscription name", (IConfiguration config) => null);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusTopicMessagePump_WithSubscriptionNameSecretProvider_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePump("subscription name", (ISecretProvider secretProvider) => null);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusTopicMessagePump_WithSubscriptionNameSecretName_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePump("subscription name", "secret name");
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+
+        [Fact]
+        public void AddServiceBusTopicMessagePump_WithTopicNameSubscriptionNameConfig_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePump("topic name", "subscription name", (IConfiguration config) => null);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusTopicMessagePump_WithTopicNameSubscriptionNameSecretProvider_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePump("topic name", "subscription name", (ISecretProvider secretProvider) => null);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusTopicMessagePump_WithTopicNameSubscriptionNameSecretName_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePump("topic name", "subscription name", "secret name");
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+
+        [Fact]
+        public void AddServiceBusTopicMessagePumpWithPrefix_WithSubscriptionNameConfig_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePumpWithPrefix("subscription prefix", (IConfiguration config) => null);
+
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+
+        [Fact]
+        public void AddServiceBusTopicMessagePumpWithPrefix_WithSubscriptionNameSecretProvider_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePumpWithPrefix("subscription prefix", (ISecretProvider secretProvider) => null);
+
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+
+        [Fact]
+        public void AddServiceBusTopicMessagePumpWithPrefix_WithSubscriptionNameSecretName_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePumpWithPrefix("subscription prefix", "secret name");
+
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+
+        [Fact]
+        public void AddServiceBusTopicMessagePumpWithPrefix_WithTopicNameSubscriptionNameConfig_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePumpWithPrefix("topic name", "subscription prefix", (IConfiguration config) => null);
+
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+
+        [Fact]
+        public void AddServiceBusTopicMessagePumpWithPrefix_WithTopicNameSubscriptionNameSecretProvider_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePumpWithPrefix("topic name", "subscription prefix", (ISecretProvider secretProvider) => null);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusTopicMessagePumpWithPrefix_WithTopicNameSubscriptionNameSecretName_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePumpWithPrefix("topic name", "subscription prefix", "secret name");
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusTopicMessagePumpUsingManagedIdentity_WithTopicNameSubscriptionNameSecretName_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePumpUsingManagedIdentity("topic name", "subscription name", "service bus namespace");
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusTopicMessagePumpUsingManagedIdentityWithPrefix_WithTopicNameSubscriptionNameSecretName_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusTopicMessagePumpUsingManagedIdentityWithPrefix("topic name", "subscription prefix", "service bus namespace");
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
         [Fact]
         public async Task AddServiceBusQueueMessagePump_IndirectSecretProviderWithQueueName_WiresUpCorrectly()
         {
@@ -130,6 +397,120 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             {
                 spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
             }
+        }
+        
+        [Fact]
+        public void AddServiceBusQueueMessagePump_WithSecretProvider_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusQueueMessagePump((ISecretProvider secretProvider) => null);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusQueueMessagePump_WithConfiguration_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusQueueMessagePump((IConfiguration config) => null);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusQueueMessagePump_WithQueueNameSecretName_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusQueueMessagePump("queue name", "secret name");
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusQueueMessagePump_WithQueueNameSecretProvider_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusQueueMessagePump("queue name", (ISecretProvider secretProvider) => null);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusQueueMessagePump_WithQueueNameConfiguration_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusQueueMessagePump("queue name", (IConfiguration config) => null);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+        
+        [Fact]
+        public void AddServiceBusQueueMessagePumpUsingManagedIdentity_WithQueueNameConfiguration_RegistersDedicatedCorrelation()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusQueueMessagePumpUsingManagedIdentity("queue name", "service bus namespace");
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
 
         [Fact]
