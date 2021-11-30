@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 namespace Arcus.Messaging.Health.Tcp
 {
@@ -87,7 +88,8 @@ namespace Arcus.Messaging.Health.Tcp
             var serializingSettings = new JsonSerializerSettings
             {
                 Formatting = Formatting.None, 
-                NullValueHandling = NullValueHandling.Ignore
+                NullValueHandling = NullValueHandling.Ignore,
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
             };
 
             var enumConverter = new StringEnumConverter { AllowIntegerValues = false };
