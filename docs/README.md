@@ -45,7 +45,7 @@ When tagging a new version, the document versioning mechanism will:
 - Append the new version number to `versions.json`.
 
 
-## Syntax higlighting
+## Syntax highlighting
 
 To have syntax highlighting within the codeblocks you have to use one of the prism supported languages:
 
