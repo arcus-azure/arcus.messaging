@@ -59,17 +59,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a collection of services to subtract the message handlers from");
             Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write trace messages during the lifetime of the message handlers");
 
-            object engine = 
-                serviceProvider.GetType().GetProperty("Engine")?.GetValue(serviceProvider) 
-                ?? serviceProvider.GetRequiredFieldValue("_engine");
-            
-            object callSiteFactory = engine.GetRequiredPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
-            var descriptors = callSiteFactory.GetRequiredFieldValue<IEnumerable>("_descriptors");
+            Type[] serviceTypes = GetServiceRegistrationTypes(serviceProvider, logger);
 
             var messageHandlers = new Collection<MessageHandler>();
-            foreach (object descriptor in descriptors)
+            foreach (Type serviceType in serviceTypes)
             {
-                var serviceType = (Type) descriptor.GetRequiredPropertyValue("ServiceType");
                 if (serviceType.Name == typeof(IMessageHandler<,>).Name 
                     && serviceType.Namespace == typeof(IMessageHandler<>).Namespace
                     && messageHandlers.All(handler => handler._serviceType != serviceType))
@@ -84,6 +78,76 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             return messageHandlers.AsEnumerable();
+        }
+
+        private static Type[] GetServiceRegistrationTypes(IServiceProvider serviceProvider, ILogger logger)
+        {
+            try
+            {
+                Type[] serviceTypes = 
+                    GetServiceRegistrationTypesFromMicrosoftExtensions(serviceProvider, logger)
+                        .Concat(GetServiceRegistrationTypesFromWebJobs(serviceProvider, logger))
+                        .ToArray();
+
+                if (serviceTypes.Length <= 0)
+                {
+                    logger.LogWarning("No message handlers registrations were found in the service provider");
+                }
+                
+                return serviceTypes;
+            }
+            catch (Exception exception) when (exception is TypeNotFoundException || exception is InvalidCastException)
+            {
+                const string message = "The registered message handlers cannot be retrieved from the service provider because the current version of the dependency injection package doesn't match the expected package used in the Arcus messaging";
+                logger.LogCritical(exception, message);
+                throw new NotSupportedException(message, exception);
+            }
+        }
+
+        private static IEnumerable<Type> GetServiceRegistrationTypesFromMicrosoftExtensions(IServiceProvider serviceProvider, ILogger logger)
+        {
+            object engine = 
+                serviceProvider.GetType().GetProperty("Engine")?.GetValue(serviceProvider) 
+                ?? serviceProvider.GetType().GetField("_engine", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(serviceProvider);
+
+            if (engine is null)
+            {
+                logger.LogTrace("No message handling registrations using the Microsoft.Extensions.* package, expected if you're within Web Jobs/Azure Functions");
+                return Enumerable.Empty<Type>();
+            }
+
+            object callSiteFactory = engine.GetRequiredPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
+            var descriptors = callSiteFactory.GetRequiredFieldValue<IEnumerable>("_descriptors");
+
+            var serviceTypes = new Collection<Type>();
+            foreach (object descriptor in descriptors)
+            {
+                var serviceType = descriptor.GetRequiredPropertyValue<Type>("ServiceType");
+                serviceTypes.Add(serviceType);
+            }
+
+            return serviceTypes;
+        }
+
+        private static IEnumerable<Type> GetServiceRegistrationTypesFromWebJobs(IServiceProvider serviceProvider, ILogger logger)
+        {
+            object container = serviceProvider.GetType().GetField("_container", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(serviceProvider);
+            if (container is null)
+            {
+                logger.LogTrace("No message handling registrations using the Web Jobs/Azure Function package, expected if you're within SDK worker");
+                return Enumerable.Empty<Type>();
+            }
+            
+            var descriptors = (IEnumerable) container.InvokeMethod("GetServiceRegistrations", BindingFlags.Public | BindingFlags.Instance);
+
+            var serviceTypes = new Collection<Type>();
+            foreach (object descriptor in descriptors)
+            {
+                var serviceType = descriptor.GetRequiredFieldValue<Type>("ServiceType", BindingFlags.Public | BindingFlags.Instance);
+                serviceTypes.Add(serviceType);
+            }
+
+            return serviceTypes;
         }
 
         /// <summary>
@@ -221,37 +285,49 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             if (_service.GetType().Name == typeof(MessageHandlerRegistration<,>).Name)
             {
                 _logger.LogTrace("Custom {MessageBodySerializerType} found on the registered message handler, start custom deserialization...", nameof(IMessageBodySerializer));
-
                 var serializer = _service.GetPropertyValue<IMessageBodySerializer>("Serializer", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (serializer != null)
+                if (serializer is null)
                 {
-                    Task<MessageResult> deserializeMessageAsync = serializer.DeserializeMessageAsync(message);
-                    if (deserializeMessageAsync != null)
-                    {
-                        MessageResult result = await deserializeMessageAsync;
-                        if (result != null)
-                        {
-                            if (result.IsSuccess)
-                            {
-                                Type deserializedMessageType = result.DeserializedMessage.GetType();
-                                if (deserializedMessageType == MessageType
-                                    || deserializedMessageType.IsSubclassOf(MessageType))
-                                {
-                                    return result;
-                                }
+                    _logger.LogTrace("No {MessageBodySerializerType} was found on the registered message handler, so no custom deserialization is available", nameof(IMessageBodySerializer));
+                    return MessageResult.Failure("No custom deserialization was found on the registered message handler");
+                }
 
-                                _logger.LogTrace("Incoming message '{DeserializedMessageType}' was successfully custom deserialized but can't be processed by message handler because the handler expects message type '{MessageHandlerMessageType}'; fallback to default deserialization", deserializedMessageType.Name, MessageType.Name);
-                                return MessageResult.Failure("Custom message deserialization failed because it didn't match the expected message handler's message type");
-                            }
-
-                            _logger.LogTrace("Custom {MessageBodySerializerType} message deserialization failed: {ErrorMessage} {Exception}", nameof(IMessageBodySerializer), result.ErrorMessage, result.Exception);
-                            return MessageResult.Failure("Custom message deserialization failed due to an exception");
-                        }
-                    }
-
+                Task<MessageResult> deserializeMessageAsync = serializer.DeserializeMessageAsync(message);
+                if (deserializeMessageAsync is null)
+                {
                     _logger.LogTrace("Invalid {MessageBodySerializerType} message deserialization was configured on the registered message handler, custom deserialization returned 'null'", nameof(IMessageBodySerializer));
                     return MessageResult.Failure("Invalid custom deserialization was configured on the registered message handler");
                 }
+
+                MessageResult result = await deserializeMessageAsync;
+                if (result is null)
+                {
+                    _logger.LogTrace("No {MessageBodySerializerType} was found on the registered message handler, so no custom deserialization is available", nameof(IMessageBodySerializer));
+                    return MessageResult.Failure("No custom deserialization was found on the registered message handler");
+                }
+
+                if (result.IsSuccess)
+                {
+                    Type deserializedMessageType = result.DeserializedMessage.GetType();
+                    if (deserializedMessageType == MessageType || deserializedMessageType.IsSubclassOf(MessageType))
+                    {
+                        return result;
+                    }
+
+                    _logger.LogTrace("Incoming message '{DeserializedMessageType}' was successfully custom deserialized but can't be processed by message handler because the handler expects message type '{MessageHandlerMessageType}'; fallback to default deserialization", deserializedMessageType.Name, MessageType.Name);
+                    return MessageResult.Failure("Custom message deserialization failed because it didn't match the expected message handler's message type");
+                }
+
+                if (result.Exception != null)
+                {
+                    _logger.LogError(result.Exception, "Custom {MessageBodySerializerType} message deserialization failed: {ErrorMessage}", nameof(IMessageBodySerializer), result.ErrorMessage); 
+                }
+                else
+                {
+                    _logger.LogError("Custom {MessageBodySerializerType} message deserialization failed: {ErrorMessage}", nameof(IMessageBodySerializer), result.ErrorMessage); 
+                }
+                
+                return MessageResult.Failure("Custom message deserialization failed due to an exception");
             }
 
             _logger.LogTrace("No {MessageBodySerializerType} was found on the registered message handler, so no custom deserialization is available", nameof(IMessageBodySerializer));
