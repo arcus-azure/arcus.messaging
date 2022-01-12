@@ -19,6 +19,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
     /// Represents an <see cref="IMessageHandler{TMessage,TMessageContext}"/> that processes <see cref="CloudEvent"/>s representing <see cref="SecretNewVersionCreated"/> events
     /// that will eventually result in restarting an <see cref="AzureServiceBusMessagePump"/> instance.
     /// </summary>
+    [Obsolete("To auto-restart Azure Service Bus message pumps upon rotated credentials, please use the 'Arcus.BackgroundJobs.KeyVault' package instead")]
     public class ReAuthenticateOnRotatedCredentialsMessageHandler : IAzureServiceBusMessageHandler<CloudEvent>
     {
         private readonly string _targetConnectionStringKey;

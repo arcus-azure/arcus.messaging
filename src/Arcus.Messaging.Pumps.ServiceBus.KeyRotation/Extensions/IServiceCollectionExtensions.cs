@@ -29,6 +29,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation.Extensions
         ///     Thrown when the <paramref name="services"/> or the searched for <see cref="AzureServiceBusMessagePump"/> based on the given <paramref name="jobId"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionNamePrefix"/> or <paramref name="serviceBusTopicConnectionStringSecretKey"/> is blank.</exception>
+        [Obsolete("To auto-restart Azure Service Bus message pumps upon rotated credentials, please use the 'Arcus.BackgroundJobs.KeyVault' package instead")]
         public static ServiceBusMessageHandlerCollection WithAutoRestartServiceBusMessagePumpOnRotatedCredentials(
             this ServiceBusMessageHandlerCollection services,
             string jobId,
