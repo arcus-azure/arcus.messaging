@@ -75,10 +75,14 @@ stages:
         value: 'workers-service-bus-queue'
       - name: 'Images.ServiceBus.Topic'
         value: 'workers-service-bus-topic'
+      - name: 'Images.AzureFunction.ServiceBus.Queue'
+        value: 'runtimes-az-func-service-bus-queue'
       - name: 'Arcus.Health.Port.Queue'
         value: '42063'
       - name: 'Arcus.Health.Port.Topic'
         value: '42064'
+      - name: 'Arcus.AzureFunctions.Queue.Port'
+        value: '42065'
     jobs:
       - job: DockerIntegrationTests
         displayName: 'Run Docker integration tests'
@@ -90,33 +94,7 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
-          - template: templates/build-and-run-worker-container.yml
-            parameters:
-              projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Queue'
-              containerName: '$(Images.ServiceBus.Queue)'
-              imageName: '$(Images.ServiceBus.Queue)'
-              imageTag: $(Build.BuildId)
-              healthPort: $(Arcus.Health.Port.Queue)
-              connectionString: '$(Arcus.ServiceBus.Docker.ConnectionStringWithQueue)'
-          - template: templates/build-and-run-worker-container.yml
-            parameters:
-              projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Topic'
-              containerName: '$(Images.ServiceBus.Topic)'
-              imageName: '$(Images.ServiceBus.Topic)'
-              imageTag: $(Build.BuildId)
-              healthPort: $(Arcus.Health.Port.Topic)
-              connectionString: '$(Arcus.ServiceBus.Docker.ConnectionStringWithTopic)'
-          - template: test/run-integration-tests.yml@templates
-            parameters:
-              dotnetSdkVersion: '$(DotNet.Sdk.Version)'
-              projectName: '$(Project).Tests.Integration'
-              category: 'Docker'
-          - task: PowerShell@2
-            displayName: 'Get Docker container logs'
-            inputs:
-              targetType: 'inline'
-              script: 'docker logs $(Images.ServiceBus.Queue)'
-            condition: failed()
+          - template: templates/run-docker-integration-tests.yml
 
   - stage: SelfContainingIntegrationTests
     displayName: Self-Containing Integration Tests
