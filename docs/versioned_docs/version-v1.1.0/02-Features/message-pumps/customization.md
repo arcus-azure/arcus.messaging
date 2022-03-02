@@ -8,11 +8,13 @@ layout: default
 While the message processing is handled by the `IMessageHandler<>` implementations, the message router controls in what format the message is received.
 We allow several customizations while using a built-in or implementing your own message router.
 
-- [Filter messages based on message context](#filter-messages-based-on-message-context)
-- [Control custom deserialization](#control-custom-deserialization)
-  - [Extending the message pump](#extending-the-message-pump)
-  - [Bring your own deserialization](#bring-your-own-deserialization)
-- [Fallback message handling](#fallback-message-handling)
+- [Customize message pumps](#customize-message-pumps)
+  - [Filter messages based on message context](#filter-messages-based-on-message-context)
+  - [Control custom deserialization](#control-custom-deserialization)
+    - [Extending the message router](#extending-the-message-router)
+    - [Bring your own deserialization](#bring-your-own-deserialization)
+  - [Filter messages based on message body](#filter-messages-based-on-message-body)
+  - [Fallback message handling](#fallback-message-handling)
 
 ## Filter messages based on message context
 
@@ -177,7 +179,7 @@ public class Startup
 
 ## Filter messages based on message body
 
-When registereing a new message handler, one can opt-in to add a filter on the incoming message body which filters out messages that are not needed to be processed.
+When registering a new message handler, one can opt-in to add a filter on the incoming message body which filters out messages that are not needed to be processed.
 This can be useful when you want to route messages based on the message content itself instead of the messaging context.
 
 Following example shows how a message handler should only process a certain message when the status is 'Sales'; meaning only `Order` for the sales division will be processed.
@@ -234,7 +236,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Microsoft.Extensions.Logging;
 
-public class WarnsUserFallbackMessageHandler : IFallbackMessageHandller
+public class WarnsUserFallbackMessageHandler : IFallbackMessageHandler
 {
     private readonly ILogger _logger;
 

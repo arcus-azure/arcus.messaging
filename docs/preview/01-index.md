@@ -18,16 +18,16 @@ PM > Install-Package Arcus.Messaging.Abstractions
 # Features
 
 - Support for using message pumps for the following brokers:
-    - Azure Service Bus ([docs](features/message-pumps/service-bus) | [extensions](features/service-bus))
-- Support for exposing TCP health probes to periodically check liveness/readiness of the host ([docs](features/tcp-health-probe))
-- Customize message pumps ([docs](features/message-pumps/customization))
+    - Azure Service Bus ([docs](./features/message-pumps/service-bus.md) | [extensions](./features/service-bus.md))
+- Support for exposing TCP health probes to periodically check liveness/readiness of the host ([docs](./features/tcp-health-probe.md))
+- Customize message pumps ([docs](./features/message-pumps/customization.md))
     - Fallback message handlers
 - Using message pumps with Azure Functions
-    - Azure Service Bus ([docs](features/message-pumps/service-bus-azure-functions))
+    - Azure Service Bus ([docs](./features/message-pumps/service-bus-azure-functions.md))
 
 ## Guides
 
-* Migrate from v0.x to v1.0 ([docs](guides/migration-guide-v1.0))
+* Migrate from v0.x to v1.0 ([docs](./guides/migration-guide-v1.0.md))
 
 # License
 This is licensed under The MIT License (MIT). Which means that you can use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the web application. But you always need to state that Codit is the original author of this web application.

@@ -50,7 +50,7 @@ This information can be accessed in a more simplified way:
 using Arcus.Messaging.Abstractions;
 using Azure.Messaging.ServiceBus;
 
-ServiceBusessage message = ...
+ServiceBusMessage message = ...
 
 // Extracted all correlation information from the `.ApplicationProperties` and wrapped inside a valid correlation type.
 MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
@@ -65,7 +65,7 @@ string myCustomPropertyValue = message.GetUserProperty<string>("my-custom-proper
 ## Simplify Message Context Information Discovery
 
 On receive, the context in which the message is received contains a set of `.ApplicationProperties` with additional information ie. encoding.
-This information can be acces in a more simplified way:
+This information can be access in a more simplified way:
 
 ```csharp
 using Arcus.Messaging.Abstractions;

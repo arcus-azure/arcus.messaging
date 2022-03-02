@@ -147,7 +147,7 @@ public class Startup
             options => 
             {
                 // Indicate whether or not messages should be automatically marked as completed 
-                // if no exceptions occured andprocessing has finished (default: true).
+                // if no exceptions occurred and processing has finished (default: true).
                 options.AutoComplete = true;
 
                 // The amount of concurrent calls to process messages 
@@ -168,7 +168,7 @@ public class Startup
             options => 
             {
                 // Indicate whether or not messages should be automatically marked as completed 
-                // if no exceptions occured andprocessing has finished (default: true).
+                // if no exceptions occurred and processing has finished (default: true).
                 options.AutoComplete = true;
 
                 // The amount of concurrent calls to process messages 
@@ -180,7 +180,7 @@ public class Startup
                 options.JobId = Guid.NewGuid().ToString();
             });
 
-        // Multiple message handlers can be added to the servies, based on the message type (ex. 'Order', 'Customer'...), 
+        // Multiple message handlers can be added to the services, based on the message type (ex. 'Order', 'Customer'...), 
         // the correct message handler will be selected.
         services.WithServiceBusMessageHandler<OrdersMessageHandler, Order>()
                 .WithMessageHandler<CustomerMessageHandler, Customer>();
@@ -204,7 +204,7 @@ using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
 using Microsoft.Extensions.Logging;
 
-public class WarnsUserFallbackMessageHandler : IAzureServiceBusFallbackMessageHandller
+public class WarnsUserFallbackMessageHandler : IAzureServiceBusFallbackMessageHandler
 {
     private readonly ILogger _logger;
 
@@ -254,7 +254,7 @@ string cycleId = correlationInfo.CycleId;
 // Unique identifier that relates different requests together.
 string transactionId = correlationInfo.TransactionId;
 
-// Unique idenfier that distinguishes the request.
+// Unique identifier that distinguishes the request.
 string operationId = correlationInfo.OperationId;
 ```
 

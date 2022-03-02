@@ -51,7 +51,7 @@ or with using the more general `IMessageHandler<>`, that will use the more gener
 
 ```csharp
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHanlding;
+using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 
 public class OrdersMessageHandler : IMessageHandler<Order>
 {
@@ -138,7 +138,7 @@ public class Startup
             options => 
             {
                 // Indicate whether or not messages should be automatically marked as completed 
-                // if no exceptions occured andprocessing has finished (default: true).
+                // if no exceptions occurred and processing has finished (default: true).
                 options.AutoComplete = true;
 
                 // The amount of concurrent calls to process messages 
@@ -159,7 +159,7 @@ public class Startup
             options => 
             {
                 // Indicate whether or not messages should be automatically marked as completed 
-                // if no exceptions occured andprocessing has finished (default: true).
+                // if no exceptions occurred and processing has finished (default: true).
                 options.AutoComplete = true;
 
                 // The amount of concurrent calls to process messages 
@@ -171,7 +171,7 @@ public class Startup
                 options.JobId = Guid.NewGuid().ToString();
             });
 
-        // Multiple message handlers can be added to the servies, based on the message type (ex. 'Order', 'Customer'...), 
+        // Multiple message handlers can be added to the services, based on the message type (ex. 'Order', 'Customer'...), 
         // the correct message handler will be selected.
         services.WithServiceBusMessageHandler<OrdersMessageHandler, Order>()
                 .WithMessageHandler<CustomerMessageHandler, Customer>();

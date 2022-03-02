@@ -79,11 +79,15 @@ public class OrdersMessageHandler : IMessageHandler<Order>
 ```
 
 Other topics:
-- [Configuration](#configuration)
-- [Customized configuration](#customized-configuration)
-- [Fallback message handling](#fallback-message-handling)
-- [Influence handling of Service Bus message in a message handler](#influence-handling-of-Service-Bus-message-in-message-handler)
-- [Correlation](#correlation)
+- [Azure Service Bus Message Pump](#azure-service-bus-message-pump)
+  - [Configuration](#configuration)
+    - [Customized Configuration](#customized-configuration)
+  - [Fallback message handling](#fallback-message-handling)
+  - [Influence handling of Service Bus message in message handler](#influence-handling-of-service-bus-message-in-message-handler)
+    - [During (regular) message handling](#during-regular-message-handling)
+    - [During fallback message handling](#during-fallback-message-handling)
+  - [Correlation](#correlation)
+  - [Want to get started easy? Use our templates!](#want-to-get-started-easy-use-our-templates)
 
 ## Configuration
 
@@ -153,7 +157,7 @@ public class Startup
             options => 
             {
                 // Indicate whether or not messages should be automatically marked as completed 
-                // if no exceptions occured andprocessing has finished (default: true).
+                // if no exceptions occurred and processing has finished (default: true).
                 options.AutoComplete = true;
 
                 // The amount of concurrent calls to process messages 
@@ -174,7 +178,7 @@ public class Startup
             options => 
             {
                 // Indicate whether or not messages should be automatically marked as completed 
-                // if no exceptions occured andprocessing has finished (default: true).
+                // if no exceptions occurred and processing has finished (default: true).
                 options.AutoComplete = true;
 
                 // The amount of concurrent calls to process messages 
@@ -210,7 +214,7 @@ using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 
-public class WarnsUserFallbackMessageHandler : IAzureServiceBusFallbackMessageHandller
+public class WarnsUserFallbackMessageHandler : IAzureServiceBusFallbackMessageHandler
 {
     private readonly ILogger _logger;
 
@@ -362,7 +366,7 @@ string cycleId = correlationInfo.CycleId;
 // Unique identifier that relates different requests together.
 string transactionId = correlationInfo.TransactionId;
 
-// Unique idenfier that distinguishes the request.
+// Unique identifier that distinguishes the request.
 string operationId = correlationInfo.OperationId;
 ```
 
