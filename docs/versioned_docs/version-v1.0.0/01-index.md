@@ -19,7 +19,7 @@ PM > Install-Package Arcus.Messaging.Abstractions -Version 1.0.0
 
 - Support for using message pumps for the following brokers:
     - Azure Service Bus ([docs](./02-Features/message-pumps/service-bus.md) | [extensions](./02-Features/service-bus.md))
-- Support for exposing TCP health probes to periodically check liveness/readiness of the host ([docs](./02-Features/tcp-health-probe))
+- Support for exposing TCP health probes to periodically check liveness/readiness of the host ([docs](./02-Features/tcp-health-probe.md))
 - Customize message pumps ([docs](./02-Features/message-pumps/customization.md))
     - Fallback message handlers
 
