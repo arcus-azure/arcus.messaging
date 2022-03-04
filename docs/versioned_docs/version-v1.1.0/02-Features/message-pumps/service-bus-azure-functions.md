@@ -13,9 +13,10 @@ That's why we extracted our message routing functionality so you can call it dir
 
 We will walk you through the process of using message handlers with Azure Functions:
 
-1. [Create a new Azure Function with Service Bus binding](#receive-azure-service-bus-message-in-an-azure-function)
-2. [Declaring our Azure Service Bus message handlers](#declaring-our-azure-service-bus-message-handlers)
-3. [Processing received messages through the message router](#processing-received-messages-through-the-message-router)
+- [Azure Service Bus Message Pump for Azure Functions](#azure-service-bus-message-pump-for-azure-functions)
+  - [Receive Azure Service Bus message in an Azure Function](#receive-azure-service-bus-message-in-an-azure-function)
+  - [Declaring our Azure Service Bus message handlers](#declaring-our-azure-service-bus-message-handlers)
+  - [Processing received messages through the message router](#processing-received-messages-through-the-message-router)
 
 ## Receive Azure Service Bus message in an Azure Function
 Here's an example of how an Azure Function receives an Azure Service Bus message from a topic:
@@ -106,7 +107,7 @@ namespace MessageProcessing
 }
 ```
 
-This extension will register an `IAzureServiceBusMessageRouter` interface allows you access to message handling with specific Service Bus operations during the message processing (like dead lettering and abandonning).
+This extension will register an `IAzureServiceBusMessageRouter` interface allows you access to message handling with specific Service Bus operations during the message processing (like dead lettering and abandoning).
 
 It also registers an more general `IMessageRouter` you can use if the general message routing (with the message raw message body as `string` as incoming message) will suffice.
 

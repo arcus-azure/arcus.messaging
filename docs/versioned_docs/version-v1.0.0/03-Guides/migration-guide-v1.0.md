@@ -1,13 +1,14 @@
 # Migration guide towards v1.0
 Starting from v1.0, there're some major breaking changes. To make it easier for you you migrate towards this new version, we have assembled an migration guide to help you in the process.
 
-- [New Azure SDK](#new-azure-sdk)
-  - [Package update](#package-update)
-  - [Service Bus message update for fallback message handlers](#service-bus-message-update-for-fallback-message-handlers)
-  - [Message correlation inforamation update](#message-correlation-inforamation-update)
-- [Moved message handler types to abstractions namespaces](#moved-message-handler-types-to-abstraction-namespaces)
-- [Renamed fallback message handler operations](#renamed-fallback-message-handler-operations)
-- [Fluent API discovery for message handling](#fluent-api-discovery-for-message-handling)
+- [Migration guide towards v1.0](#migration-guide-towards-v10)
+  - [New Azure SDK](#new-azure-sdk)
+    - [Package update](#package-update)
+    - [Service Bus message update for fallback message handlers](#service-bus-message-update-for-fallback-message-handlers)
+    - [Message correlation information update](#message-correlation-information-update)
+  - [Moved message handler types to abstraction namespaces](#moved-message-handler-types-to-abstraction-namespaces)
+  - [Renamed fallback message handler operations](#renamed-fallback-message-handler-operations)
+  - [Fluent API discovery for message handling](#fluent-api-discovery-for-message-handling)
 
 ## New Azure SDK
 We have chosen to also update our library to the new Azure SDK when interacting with the Azure Service Bus ([#159](https://github.com/arcus-azure/arcus.messaging/discussions/159)). This package update has some consequences on our library.
@@ -15,10 +16,10 @@ We have chosen to also update our library to the new Azure SDK when interacting 
 > Note that Azure Service Bus plug-ins are [still not supported](https://github.com/arcus-azure/arcus.messaging/discussions/159) in this new SDK.
 
 ### Package update
-The `Microsoft.Azure.ServiceBus` NuGet packge is now completly removed from the library and is changed by the `Arcus.Messaging.ServiceBus` NuGet package. This means that possible compile errors can occur when using types or signatures that were only available in this older package.
+The `Microsoft.Azure.ServiceBus` NuGet package is now completely removed from the library and is changed by the `Arcus.Messaging.ServiceBus` NuGet package. This means that possible compile errors can occur when using types or signatures that were only available in this older package.
 
 ### Service Bus message update for fallback message handlers
-The `AzureServiceBusFallbackMessagHandler<>` abstract type has an updated signature as it now uses the new `ServiceBusReceivedMessage` instead of the `Message` when providing a fallback for a message handler pipeline:
+The `AzureServiceBusFallbackMessageHandler<>` abstract type has an updated signature as it now uses the new `ServiceBusReceivedMessage` instead of the `Message` when providing a fallback for a message handler pipeline:
 
 ```diff
 - using Microsoft.Azure.ServiceBus;
@@ -40,8 +41,8 @@ public class OrderFallbackMessageHandler : AzureServiceBusFallbackMessageHandler
 
 > Note that some Service Bus-specific operations were renamed to, see [this section](#renamed-fallback-message-handler-operations) for more info.
 
-### Message correlation inforamation update
-The correlation information model `MessageCorrelationInfo` could previously be extracted from the [`Message` of the old SDK](https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.servicebus.message?view=azure-dotnet) with the extention `message.GetCorrelationInfo()`.
+### Message correlation information update
+The correlation information model `MessageCorrelationInfo` could previously be extracted from the [`Message` of the old SDK](https://docs.microsoft.com/en-us/dotnet/api/microsoft.azure.servicebus.message?view=azure-dotnet) with the extension `message.GetCorrelationInfo()`.
 
 This new version works with the new `ServiceBusReceivedMessage`, so the correlation extension is also moved.
 

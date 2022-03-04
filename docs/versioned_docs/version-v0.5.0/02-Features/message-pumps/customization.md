@@ -8,9 +8,10 @@ layout: default
 While the message processing is handled by the `IMessageHandler<>` implementations, the message pump controls in what format the message is received.
 We allow several customizations while implementing your own message pump.
 
-- [Control custom deserialization](#control-custom-deserialization)
-- [Filter messages based on message context](#filter-messages-based-on-message-context)
-- [Fallback message handling](#fallback-message-handling)
+- [Customize message pumps](#customize-message-pumps)
+  - [Control custom deserialization](#control-custom-deserialization)
+  - [Filter messages based on message context](#filter-messages-based-on-message-context)
+  - [Fallback message handling](#fallback-message-handling)
 
 ## Control custom deserialization
 
@@ -61,7 +62,7 @@ Following example shows how a message handler should only process a certain mess
 We'll use a simple message handler implementation:
 
 ```csharp
-using Arcus.Messaging.Abstrations;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
 
 public class OrderMessageHandler : IMessageHandler<Order>
@@ -106,7 +107,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions;
 using Microsoft.Extensions.Logging;
 
-public class WarnsUserFallbackMessageHandler : IFallbackMessageHandller
+public class WarnsUserFallbackMessageHandler : IFallbackMessageHandler
 {
     private readonly ILogger _logger;
 

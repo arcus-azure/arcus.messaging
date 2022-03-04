@@ -17,7 +17,7 @@ Based on the message type of the registered message handlers, the pump determine
 using System;
 using Arcus.Messaging.Pumps.Abstractions;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjeciton;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 public class OrderMessagePump : MessagePump

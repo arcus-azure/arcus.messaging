@@ -8,11 +8,13 @@ layout: default
 While the message processing is handled by the `IMessageHandler<>` implementations, the message pump controls in what format the message is received.
 We allow several customizations while implementing your own message pump.
 
-- [Filter messages based on message context](#filter-messages-based-on-message-context)
-- [Control custom deserialization](#control-custom-deserialization)
-  - [Extending the message pump](#extending-the-message-pump)
-  - [Bring your own deserialization](#bring-your-own-deserialization)
-- [Fallback message handling](#fallback-message-handling)
+- [Customize message pumps](#customize-message-pumps)
+  - [Filter messages based on message context](#filter-messages-based-on-message-context)
+  - [Control custom deserialization](#control-custom-deserialization)
+    - [Extending the message pump](#extending-the-message-pump)
+    - [Bring your own deserialization](#bring-your-own-deserialization)
+  - [Filter messages based on message body](#filter-messages-based-on-message-body)
+  - [Fallback message handling](#fallback-message-handling)
 
 ## Filter messages based on message context
 
@@ -99,7 +101,7 @@ public class OrderMessagePump : MessagePump
 You can also choose to extend the built-in message deserialization with additional deserializer to meet your needs. 
 This allows you to easily deserialize into different message formats or reuse existing (de)serialization capabilities that you already have without altering your message pump. 
 
-You start by implemeting an `IMessageBodySerializer`. The following example shows how an expected type can be transformed to something else. 
+You start by implementing an `IMessageBodySerializer`. The following example shows how an expected type can be transformed to something else. 
 The result type (in this case `OrderBatch`) will be then be used to check if there is an `IMessageHandler` registered with that message type.
 
 ```csharp
@@ -146,7 +148,7 @@ public class Startup
 
 ## Filter messages based on message body
 
-When registereing a new message handler, one can opt-in to add a filter on the incoming message body which filters out messages that are not needed to be processed.
+When registering a new message handler, one can opt-in to add a filter on the incoming message body which filters out messages that are not needed to be processed.
 This can be useful when you want to route messages based on the message content itself instead of the messaging context.
 
 Following example shows how a message handler should only process a certain message when the status is 'Sales'; meaning only `Order` for the sales division will be processed.
@@ -203,7 +205,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 using Microsoft.Extensions.Logging;
 
-public class WarnsUserFallbackMessageHandler : IFallbackMessageHandller
+public class WarnsUserFallbackMessageHandler : IFallbackMessageHandler
 {
     private readonly ILogger _logger;
 

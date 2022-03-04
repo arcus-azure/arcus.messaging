@@ -32,7 +32,7 @@ public class Startup
 
         // Or, add your extra health checks in a configuration delegate.
         services.AddTcpHealthProbes(
-            "MyConfigurationkeyToTcpHealthPort",
+            "MyConfigurationKeyToTcpHealthPort",
             configureHealthChecks: healthBuilder => 
             {
                 healthBuilder.AddCheck("Example", () => HealthCheckResult.Healthy("Example is OK!"), tags: new[] { "example" })
@@ -52,7 +52,7 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        // Add TCP health probe with or whitout extra health checks.
+        // Add TCP health probe with or without extra health checks.
         services.AddTcpHealthProbes(
             "MyConfigurationKeyToTcpHealthPort",
             configureTcpListenerOptions: options =>
