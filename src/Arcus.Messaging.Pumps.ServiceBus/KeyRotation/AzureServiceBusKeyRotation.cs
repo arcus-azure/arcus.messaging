@@ -13,6 +13,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.KeyRotation
     /// <summary>
     /// Represents the functionality to rotate Azure Service Bus connection string keys stored inside a Azure Key Vault.
     /// </summary>
+    [Obsolete("To auto-restart Azure Service Bus message pumps upon rotated credentials, please use the 'Arcus.BackgroundJobs.KeyVault' package instead")]
     public class AzureServiceBusKeyRotation
     {
         private readonly AzureServiceBusClient _serviceBusClient;
