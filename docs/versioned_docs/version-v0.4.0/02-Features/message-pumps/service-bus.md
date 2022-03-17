@@ -126,7 +126,7 @@ Next to that, we provide a **variety of overloads** to allow you to:
 - Specify the name of the queue/topic
 - Only provide a prefix for the topic subscription, so each topic message pump is handling messages on separate subscriptions
 - Configure how the message pump should work *(ie. max concurrent calls & auto delete)*
-- Read the connection string from the configuration *(although we highly recommend using a secret store instead)*
+- Read the connection string from the configuration *(although we highly recommend using the [Arcus secret store](https://security.arcus-azure.net/features/secret-store) instead)*
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -190,7 +190,7 @@ public class Startup
                 options.JobId = Guid.NewGuid().ToString();
             });
 
-        // Multiple message handlers can be added to the servies, based on the message type (ex. 'Order', 'Customer'...), 
+        // Multiple message handlers can be added to the services, based on the message type (ex. 'Order', 'Customer'...), 
         // the correct message handler will be selected.
         services.WithServiceBusMessageHandler<OrdersMessageHandler, Order>()
                 .WithMessageHandler<CustomerMessageHandler, Customer>();
