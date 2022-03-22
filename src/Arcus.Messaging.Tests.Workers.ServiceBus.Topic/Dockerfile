@@ -1,7 +1,7 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-alpine3.11 AS base
+FROM mcr.microsoft.com/azure-functions/dotnet:4 AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine3.11 AS build
+FROM mcr.microsoft.com/dotnet/sdk:6.0.100-bullseye-slim AS build
 WORKDIR /src
 COPY ["Arcus.Messaging.Tests.Workers.ServiceBus.Topic/Arcus.Messaging.Tests.Workers.ServiceBus.Topic.csproj", "Arcus.Messaging.Tests.Workers.ServiceBus.Topic/"]
 RUN dotnet restore "Arcus.Messaging.Tests.Workers.ServiceBus.Topic/Arcus.Messaging.Tests.Workers.ServiceBus.Topic.csproj"
