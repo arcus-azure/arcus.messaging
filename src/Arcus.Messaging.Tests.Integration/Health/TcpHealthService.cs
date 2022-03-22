@@ -1,13 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using GuardNet;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Arcus.Messaging.Tests.Integration.Health
 {
@@ -48,14 +53,45 @@ namespace Arcus.Messaging.Tests.Integration.Health
                 _logger.LogTrace("Retrieving health report...");
                 using (NetworkStream clientStream = client.GetStream())
                 using (var reader = new StreamReader(clientStream))
+                using (var jsonReader = new JsonTextReader(reader))
                 {
-                    string healthReport = await reader.ReadToEndAsync();
-                    var report = JsonConvert.DeserializeObject<HealthReport>(healthReport, new HealthReportEntryConverter());
+                    JObject json = JObject.Load(jsonReader);
 
-                    _logger.LogTrace("Health report retrieved");
-                    return report;
+                    if (json.TryGetValue("Entries", out JToken entries)
+                        && json.TryGetValue("Status", out JToken status)
+                        && json.TryGetValue("TotalDuration", out JToken totalDuration))
+                    {
+                       IEnumerable<KeyValuePair<string, HealthReportEntry>> reportEntries = entries.Children().Select(CreateHealthReportEntry);
+
+                        var report = new HealthReport(
+                            new ReadOnlyDictionary<string, HealthReportEntry>(reportEntries.ToDictionary(entry => entry.Key, entry => entry.Value)),
+                            Enum.Parse<HealthStatus>(status.Value<string>()),
+                            TimeSpan.Parse(totalDuration.Value<string>()));
+
+                        _logger.LogTrace("Health report retrieved");
+                        return report;
+                    }
+
+                    return null;
                 }
             }
+        }
+
+        private static KeyValuePair<string, HealthReportEntry> CreateHealthReportEntry(JToken entry)
+        {
+            JToken token = entry.First;
+
+            var healthStatus = token["Status"].ToObject<HealthStatus>();
+            var description = token["Description"]?.ToObject<string>();
+            var duration = token["Duration"].ToObject<TimeSpan>();
+            var exception = token["Exception"]?.ToObject<Exception>();
+            var data = token["Data"]?.ToObject<Dictionary<string, object>>();
+            var readOnlyDictionary = new ReadOnlyDictionary<string, object>(data ?? new Dictionary<string, object>());
+            var tags = token["Tags"]?.ToObject<string[]>();
+
+            return new KeyValuePair<string, HealthReportEntry>(
+                entry.Path.Replace("Entries.", ""),
+                new HealthReportEntry(healthStatus, description, duration, exception, readOnlyDictionary, tags));
         }
     }
 }
