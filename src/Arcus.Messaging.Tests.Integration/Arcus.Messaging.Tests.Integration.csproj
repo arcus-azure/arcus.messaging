@@ -1,39 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <IsPackable>false</IsPackable>
-    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Content Include="appsettings.local.json" Condition="'$(Configuration)' == 'Debug'">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Arcus.EventGrid.Publishing" Version="3.1.0" />
     <PackageReference Include="Arcus.EventGrid.Testing" Version="3.1.0" />
-    <PackageReference Include="Arcus.Observability.Telemetry.Core" Version="[2.0.0,3.0.0)" />
-    <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Sinks.ApplicationInsights" Version="[2.0.0,3.0.0)" />
-    <PackageReference Include="Arcus.Security.Providers.AzureKeyVault" Version="1.4.0" />
+    <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Sinks.ApplicationInsights" Version="2.4.0" />
+    <PackageReference Include="Arcus.Security.Providers.AzureKeyVault" Version="1.7.0" />
     <PackageReference Include="Arcus.Testing.Logging" Version="0.2.0" />
-    <PackageReference Include="Guard.NET" Version="[1.2.0,2.0.0)" />
     <PackageReference Include="Microsoft.Azure.ApplicationInsights.Query" Version="1.0.0" />
     <PackageReference Include="Microsoft.Azure.Management.ServiceBus" Version="2.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="[3.1.8,5.0.0)" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="[3.1.8,5.0.0)" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="[3.1.8,5.0.0)" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="[3.1.8,5.0.0)" />
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="[3.1.8,5.0.0)" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="[3.1.8,5.0.0)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
-    <PackageReference Include="Serilog" Version="[2.9.0,3.0.0)" />
+    <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="3.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
     <PackageReference Include="xunit" Version="2.3.1" />
@@ -45,6 +32,15 @@
     <ProjectReference Include="..\Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Health\Arcus.Messaging.Health.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Workers\Arcus.Messaging.Tests.Workers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.local.json" Condition="'$(Configuration)' == 'Debug'">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

@@ -96,6 +96,17 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             return fieldValue;
         }
 
+        internal static object GetOptionalFieldValue(this object instance, string fieldName, BindingFlags bindingFlags = BindingFlags.NonPublic | BindingFlags.Instance)
+        {
+            Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the field '{fieldName}'");
+            Type instanceType = instance.GetType();
+
+            FieldInfo fieldInfo = instanceType.GetField(fieldName, bindingFlags);
+            
+            object fieldValue = fieldInfo?.GetValue(instance);
+            return fieldValue;
+        }
+
         /// <summary>
         /// Gets the value of the property of the current <paramref name="instance"/>.
         /// </summary>
@@ -181,6 +192,16 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             object propertyValue = propertyInfo.GetValue(instance);
+            return propertyValue;
+        }
+
+        internal static object GetOptionalPropertyValue(this object instance, string propertyName, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
+        {
+            Type instanceType = instance.GetType();
+
+            PropertyInfo propertyInfo = instanceType.GetProperty(propertyName, bindingFlags);
+           
+            object propertyValue = propertyInfo?.GetValue(instance);
             return propertyValue;
         }
 
