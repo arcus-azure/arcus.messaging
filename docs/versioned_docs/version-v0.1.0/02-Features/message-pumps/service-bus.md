@@ -107,7 +107,7 @@ Next to that, we provide a **variety of overloads** to allow you to:
 - Specify the name of the queue/topic
 - Only provide a prefix for the topic subscription, so each topic message pump is handling messages on separate subscriptions
 - Configure how the message pump should work *(ie. max concurrent calls & auto delete)*
-- Read the connection string from the configuration *(although we highly recommend using a secret store instead)*
+- Read the connection string from the configuration *(although we highly recommend using the [Arcus secret store](https://security.arcus-azure.net/features/secret-store) instead)*
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -197,7 +197,7 @@ string cycleId = correlationInfo.CycleId;
 // Unique identifier that relates different requests together.
 string transactionId = correlationInfo.TransactionId;
 
-// Unique idenfier that distinguishes the request.
+// Unique identifier that distinguishes the request.
 string operationId = correlationInfo.OperationId;
 ```
 
