@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/azure-functions/dotnet:4 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:6.0.3-alpine3.15 AS base
 WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0.100-bullseye-slim AS build
