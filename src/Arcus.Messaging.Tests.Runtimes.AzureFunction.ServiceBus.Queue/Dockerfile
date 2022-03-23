@@ -1,4 +1,3 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine AS publish3
 FROM mcr.microsoft.com/dotnet/sdk:6.0.100-bullseye-slim AS publish
 WORKDIR /src
 COPY ["Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue/Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.csproj", "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue/"]
