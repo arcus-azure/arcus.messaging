@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine AS publish
+FROM mcr.microsoft.com/dotnet/sdk:6.0.100-bullseye-slim AS publish
 WORKDIR /src
 COPY ["Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue/Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.csproj", "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue/"]
 COPY ["Arcus.Messaging.Tests.Workers/Arcus.Messaging.Tests.Workers.csproj", "Arcus.Messaging.Tests.Workers/"]
@@ -14,7 +14,7 @@ RUN dotnet restore "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queu
 COPY . .
 RUN dotnet publish "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue/Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.csproj" -c Release -o /app/publish
 
-FROM mcr.microsoft.com/azure-functions/dotnet:3.0 AS runtime
+FROM mcr.microsoft.com/azure-functions/dotnet:4 AS runtime
 WORKDIR /home/site/wwwroot
 EXPOSE 80
 COPY --from=publish /app/publish .
