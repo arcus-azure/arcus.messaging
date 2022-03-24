@@ -25,11 +25,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             get
             {
                 yield return new object[] { Encoding.UTF8 };
-                yield return new object[] { Encoding.UTF7 };
-                yield return new object[] { Encoding.UTF32 };
-                yield return new object[] { Encoding.ASCII };
-                yield return new object[] { Encoding.Unicode };
-                yield return new object[] { Encoding.BigEndianUnicode };
+                //yield return new object[] { Encoding.UTF7 };
+                //yield return new object[] { Encoding.UTF32 };
+                //yield return new object[] { Encoding.ASCII };
+                //yield return new object[] { Encoding.Unicode };
+                //yield return new object[] { Encoding.BigEndianUnicode };
             }
         }
 
