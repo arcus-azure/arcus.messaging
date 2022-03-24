@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
@@ -17,22 +15,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     [Trait("Category", "Docker")]
     public class ServiceBusMessagePumpDockerTests : DockerServiceBusIntegrationTest
     {
-        private const string QueueConnectionStringKey = "Arcus:ServiceBus:Docker:ConnectionStringWithQueue";
-        private const string TopicConnectionStringKey = "Arcus:ServiceBus:Docker:ConnectionStringWithTopic";
-
-        public static IEnumerable<object[]> Encodings
-        {
-            get
-            {
-                yield return new object[] { Encoding.UTF8 };
-                //yield return new object[] { Encoding.UTF7 };
-                //yield return new object[] { Encoding.UTF32 };
-                //yield return new object[] { Encoding.ASCII };
-                //yield return new object[] { Encoding.Unicode };
-                //yield return new object[] { Encoding.BigEndianUnicode };
-            }
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessagePumpDockerTests" /> class.
         /// </summary>
@@ -41,29 +23,18 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Theory]
-        [MemberData(nameof(Encodings))]
-        public async Task ServiceBusQueueMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding)
-        {
-            await ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(messageEncoding, QueueConnectionStringKey);
-        }
-
-        [Theory]
-        [MemberData(nameof(Encodings))]
-        public async Task ServiceBusTopicMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding)
-        {
-            await ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(messageEncoding, TopicConnectionStringKey);
-        }
-
-        private async Task ServiceBusMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(Encoding messageEncoding, string connectionStringKey)
+        [InlineData("Arcus:ServiceBus:Docker:ConnectionStringWithQueue")]
+        [InlineData("Arcus:ServiceBus:Docker:ConnectionStringWithTopic")]
+        public async Task ServiceBusTopicMessagePump_PublishServiceBusMessage_MessageSuccessfullyProcessed(string connectionString)
         {
             // Arrange
             var operationId = Guid.NewGuid().ToString();
             var transactionId = Guid.NewGuid().ToString();
             Order order = OrderGenerator.Generate();
-            ServiceBusMessage orderMessage = order.AsServiceBusMessage(operationId, transactionId, encoding: messageEncoding);
+            ServiceBusMessage orderMessage = order.AsServiceBusMessage(operationId, transactionId);
 
             // Act
-            await SenderOrderToServiceBusAsync(orderMessage, connectionStringKey);
+            await SenderOrderToServiceBusAsync(orderMessage, connectionString);
 
             // Assert
             OrderCreatedEventData orderCreatedEventData = ReceiveOrderFromEventGrid(operationId);
