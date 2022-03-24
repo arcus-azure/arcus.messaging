@@ -162,7 +162,10 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
         private static IEnumerable<Type> GetServiceRegistrationTypesFromWebJobs(IServiceProvider serviceProvider, ILogger logger)
         {
-            object container = serviceProvider.GetOptionalFieldValue("_container");
+            object containerNetCore = serviceProvider.GetOptionalFieldValue("_container");
+            object containerNet6 = serviceProvider.GetOptionalFieldValue("_resolver");
+            object container = containerNetCore ?? containerNet6;
+            
             if (container is null)
             {
                 logger.LogTrace("No message handling registrations using the Web Jobs/Azure Function package, expected if you're within SDK worker");
@@ -174,18 +177,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             foreach (object descriptor in descriptors)
             {
                 var serviceType = descriptor.GetRequiredFieldValue<Type>("ServiceType", BindingFlags.Public | BindingFlags.Instance);
-                serviceTypes.Add(serviceType);
-            }
-
-            return serviceTypes;
-        }
-
-        private static IEnumerable<Type> ExtractServiceTypesFromDescriptors(IEnumerable descriptors)
-        {
-            var serviceTypes = new Collection<Type>();
-            foreach (object descriptor in descriptors)
-            {
-                var serviceType = descriptor.GetRequiredFieldValue<Type>("ServiceType");
                 serviceTypes.Add(serviceType);
             }
 
