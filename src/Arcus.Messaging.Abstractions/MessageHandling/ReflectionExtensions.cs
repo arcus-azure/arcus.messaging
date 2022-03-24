@@ -96,6 +96,12 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             return fieldValue;
         }
 
+        /// <summary>
+        /// Gets the optional value of the optional field of the current <paramref name="instance"/>.
+        /// </summary>
+        /// <param name="instance">The instance to get the field from.</param>
+        /// <param name="fieldName">The name of the field on the <paramref name="instance"/>.</param>
+        /// <param name="bindingFlags">The way the field is declared on the <paramref name="instance"/>.</param>
         internal static object GetOptionalFieldValue(this object instance, string fieldName, BindingFlags bindingFlags = BindingFlags.NonPublic | BindingFlags.Instance)
         {
             Guard.NotNull(instance, nameof(instance), $"Requires a instance object to get the field '{fieldName}'");
@@ -195,6 +201,12 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             return propertyValue;
         }
 
+        /// <summary>
+        /// Gets the optional value of the optional property of the current <paramref name="instance"/>.
+        /// </summary>
+        /// <param name="instance">The instance to get the property from.</param>
+        /// <param name="propertyName">The name of the property on the <paramref name="instance"/>.</param>
+        /// <param name="bindingFlags">The way the property is declared  on the <paramref name="instance"/>.</param>
         internal static object GetOptionalPropertyValue(this object instance, string propertyName, BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance)
         {
             Type instanceType = instance.GetType();
