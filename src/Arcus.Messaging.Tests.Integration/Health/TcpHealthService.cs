@@ -61,14 +61,9 @@ namespace Arcus.Messaging.Tests.Integration.Health
                         && json.TryGetValue("Status", out JToken status)
                         && json.TryGetValue("TotalDuration", out JToken totalDuration))
                     {
-                       IEnumerable<KeyValuePair<string, HealthReportEntry>> reportEntries = entries.Children().Select(CreateHealthReportEntry);
+                       HealthReport report = ParseHealthReport(entries, status, totalDuration);
 
-                        var report = new HealthReport(
-                            new ReadOnlyDictionary<string, HealthReportEntry>(reportEntries.ToDictionary(entry => entry.Key, entry => entry.Value)),
-                            Enum.Parse<HealthStatus>(status.Value<string>()),
-                            TimeSpan.Parse(totalDuration.Value<string>()));
-
-                        _logger.LogTrace("Health report retrieved");
+                       _logger.LogTrace("Health report retrieved");
                         return report;
                     }
 
@@ -77,10 +72,29 @@ namespace Arcus.Messaging.Tests.Integration.Health
             }
         }
 
-        private static KeyValuePair<string, HealthReportEntry> CreateHealthReportEntry(JToken entry)
+        private static HealthReport ParseHealthReport(JToken entries, JToken status, JToken totalDuration)
         {
-            JToken token = entry.First;
+            Dictionary<string, HealthReportEntry> reportEntries =
+                entries.Children()
+                       .Select(CreateHealthReportEntry)
+                       .ToDictionary(entry => entry.Key, entry => entry.Value);
 
+            var healthStatus = Enum.Parse<HealthStatus>(status.Value<string>());
+            TimeSpan duration = TimeSpan.Parse(totalDuration.Value<string>());
+
+            var report = new HealthReport(
+                new ReadOnlyDictionary<string, HealthReportEntry>(reportEntries),
+                healthStatus,
+                duration);
+            
+            return report;
+        }
+
+        private static KeyValuePair<string, HealthReportEntry> CreateHealthReportEntry(JToken healthEntryJson)
+        {
+            JToken token = healthEntryJson.First;
+
+            string name = healthEntryJson.Path.Replace("Entries.", "");
             var healthStatus = token["Status"].ToObject<HealthStatus>();
             var description = token["Description"]?.ToObject<string>();
             var duration = token["Duration"].ToObject<TimeSpan>();
@@ -89,9 +103,8 @@ namespace Arcus.Messaging.Tests.Integration.Health
             var readOnlyDictionary = new ReadOnlyDictionary<string, object>(data ?? new Dictionary<string, object>());
             var tags = token["Tags"]?.ToObject<string[]>();
 
-            return new KeyValuePair<string, HealthReportEntry>(
-                entry.Path.Replace("Entries.", ""),
-                new HealthReportEntry(healthStatus, description, duration, exception, readOnlyDictionary, tags));
+            var healthEntry = new HealthReportEntry(healthStatus, description, duration, exception, readOnlyDictionary, tags);
+            return new KeyValuePair<string, HealthReportEntry>(name, healthEntry);
         }
     }
 }
