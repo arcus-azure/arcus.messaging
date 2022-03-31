@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Threading.Tasks;
 using Arcus.EventGrid;
 using Arcus.EventGrid.Contracts;
@@ -77,8 +78,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         /// Simulate the message processing of the message pump using the Azure Service Bus.
         /// </summary>
         /// <param name="connectionString">The connection string used to send a Azure Service Bus message to the respectively running message pump.</param>
+        /// <param name="encoding">The optional character encoding for the simulated message body.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionString"/> is blank.</exception>
-        public async Task SimulateMessageProcessingAsync(string connectionString)
+        public async Task SimulateMessageProcessingAsync(string connectionString, Encoding encoding = null)
         {
             Guard.NotNullOrWhitespace(connectionString, nameof(connectionString));
 
@@ -92,7 +94,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var transactionId = Guid.NewGuid().ToString();
 
             Order order = OrderGenerator.Generate();
-            ServiceBusMessage orderMessage = order.AsServiceBusMessage(operationId, transactionId);
+            ServiceBusMessage orderMessage = order.AsServiceBusMessage(operationId, transactionId, encoding);
             orderMessage.ApplicationProperties["Topic"] = "Orders";
             await SendMessageToServiceBusAsync(connectionString, orderMessage);
 

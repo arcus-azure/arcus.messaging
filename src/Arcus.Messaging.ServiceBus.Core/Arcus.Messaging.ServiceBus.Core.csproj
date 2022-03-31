@@ -1,9 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>net6.0;netstandard2.1</TargetFrameworks>
     <LangVersion>latest</LangVersion>
-    <PackageId>Arcus.Messaging.ServiceBus.Core</PackageId>
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
     <Product>Arcus.Messaging</Product>
@@ -21,7 +20,12 @@
     <NoWarn>NU5125;NU5048</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.2.0" />
+    <PackageReference Include="Guard.NET" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net6.0'">
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.0.0" />
     <PackageReference Include="Guard.NET" Version="1.2.0" />
   </ItemGroup>

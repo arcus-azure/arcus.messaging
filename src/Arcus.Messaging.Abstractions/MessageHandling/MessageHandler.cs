@@ -106,9 +106,10 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
         private static IEnumerable<Type> GetServiceRegistrationTypesFromMicrosoftExtensions(IServiceProvider serviceProvider, ILogger logger)
         {
-            object engine = 
-                serviceProvider.GetType().GetProperty("Engine")?.GetValue(serviceProvider) 
-                ?? serviceProvider.GetType().GetField("_engine", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(serviceProvider);
+            object engine =
+                (serviceProvider.GetOptionalPropertyValue("Engine") 
+                 ?? serviceProvider.GetOptionalFieldValue("_engine"))
+                 ?? GetEngineFromServiceProviderNet6(serviceProvider);
 
             if (engine is null)
             {
@@ -116,9 +117,18 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 return Enumerable.Empty<Type>();
             }
 
-            object callSiteFactory = engine.GetRequiredPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
-            var descriptors = callSiteFactory.GetRequiredFieldValue<IEnumerable>("_descriptors");
+            object callSiteFactory =
+                GetCallSiteFactoryFromServiceProviderNetCore(engine)
+                ?? GetCallSiteFactoryFromServiceProviderNet6(engine);
+           
+            if (callSiteFactory is null)
+            {
+                logger.LogTrace("No message handling registrations using the Microsoft.Extensions.* package, expected if you're within Web Jobs/Azure Functions");
+                return Enumerable.Empty<Type>();
+            }
 
+            var descriptors = callSiteFactory.GetRequiredFieldValue<IEnumerable>("_descriptors");
+            
             var serviceTypes = new Collection<Type>();
             foreach (object descriptor in descriptors)
             {
@@ -129,9 +139,33 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             return serviceTypes;
         }
 
+        private static object GetEngineFromServiceProviderNet6(IServiceProvider serviceProvider)
+        {
+            object engine = serviceProvider.GetOptionalPropertyValue("RootProvider", BindingFlags.NonPublic | BindingFlags.Instance)?.GetOptionalFieldValue("_engine");
+            return engine;
+        }
+
+        private static object GetCallSiteFactoryFromServiceProviderNetCore(object engine)
+        {
+            object callSiteFactory = engine.GetOptionalPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
+            return callSiteFactory;
+        }
+
+        private static object GetCallSiteFactoryFromServiceProviderNet6(object engine)
+        {
+            object callSiteFactory =
+                engine.GetOptionalFieldValue("_serviceProvider")
+                      .GetOptionalPropertyValue("CallSiteFactory", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            return callSiteFactory;
+        }
+
         private static IEnumerable<Type> GetServiceRegistrationTypesFromWebJobs(IServiceProvider serviceProvider, ILogger logger)
         {
-            object container = serviceProvider.GetType().GetField("_container", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(serviceProvider);
+            object containerNetCore = serviceProvider.GetOptionalFieldValue("_container");
+            object containerNet6 = serviceProvider.GetOptionalFieldValue("_resolver");
+            object container = containerNetCore ?? containerNet6;
+            
             if (container is null)
             {
                 logger.LogTrace("No message handling registrations using the Web Jobs/Azure Function package, expected if you're within SDK worker");
@@ -139,7 +173,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
             
             var descriptors = (IEnumerable) container.InvokeMethod("GetServiceRegistrations", BindingFlags.Public | BindingFlags.Instance);
-
             var serviceTypes = new Collection<Type>();
             foreach (object descriptor in descriptors)
             {

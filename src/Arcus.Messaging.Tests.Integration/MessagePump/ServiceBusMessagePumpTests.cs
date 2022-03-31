@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
@@ -24,7 +25,6 @@ using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Serilog;
@@ -48,6 +48,63 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public ServiceBusMessagePumpTests(ITestOutputHelper outputWriter)
         {
             _logger = new XunitTestLogger(outputWriter);
+        }
+
+        public static IEnumerable<object[]> Encodings
+        {
+            get
+            {
+                yield return new object[] { Encoding.UTF8 };
+                yield return new object[] { Encoding.UTF32 };
+                yield return new object[] { Encoding.ASCII };
+                yield return new object[] { Encoding.Unicode };
+                yield return new object[] { Encoding.BigEndianUnicode };
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(Encodings))]
+        public async Task ServiceBusQueueMessagePump_PublishesEncodedServiceBusMessage_MessageSuccessfullyProcessed(Encoding encoding)
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Queue);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString, encoding);
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(Encodings))]
+        public async Task ServiceBusTopicMessagePump_PublishesEncodedServiceBusMessage_MessageSuccessfullyProcessed(Encoding encoding)
+        {
+            // Arrange
+            var config = TestConfig.Create();
+            string connectionString = config.GetServiceBusConnectionString(ServiceBusEntityType.Topic);
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(config)
+                   .AddServiceBusTopicMessagePump(
+                       "Test-Receive-All-Topic-Only",
+                       configuration => connectionString,
+                       opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var service = await TestMessagePumpService.StartNewAsync(config, _logger))
+            {
+                // Assert
+                await service.SimulateMessageProcessingAsync(connectionString, encoding);
+            }
         }
 
         [Fact]
