@@ -20,6 +20,10 @@
     <NoWarn>NU5125;NU5048</NoWarn>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="Arcus.Observability.Telemetry.Core" Version="[2.4.0,3.0.0)" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.Abstractions\Arcus.Messaging.Abstractions.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.ServiceBus.Core\Arcus.Messaging.ServiceBus.Core.csproj" />
