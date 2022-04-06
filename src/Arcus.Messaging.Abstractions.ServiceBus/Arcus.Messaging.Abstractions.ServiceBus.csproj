@@ -20,7 +20,7 @@
     <NoWarn>NU5125;NU5048</NoWarn>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+  <ItemGroup>
     <PackageReference Include="Arcus.Observability.Telemetry.Core" Version="[2.4.0,3.0.0)" />
   </ItemGroup>
 
