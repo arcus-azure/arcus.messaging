@@ -4,7 +4,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Observability.Telemetry.Core;
+#if NET6_0
+using Arcus.Observability.Telemetry.Core; 
+#endif
 using Azure.Messaging.ServiceBus;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
@@ -203,8 +205,10 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
 
+#if NET6_0
             var isSuccessful = false;
-            using (DurationMeasurement measurement = DurationMeasurement.Start())
+            using (DurationMeasurement measurement = DurationMeasurement.Start()) 
+#endif
             {
                 try
                 {
@@ -223,7 +227,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                             SetServiceBusPropertiesForSpecificOperations(messageHandler, args, messageContext);
 
                             await messageHandler.ProcessMessageAsync(result.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
-                            isSuccessful = true;
+#if NET6_0
+                            isSuccessful = true; 
+#endif
                             return;
                         }
                     }
@@ -231,7 +237,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     EnsureFallbackMessageHandlerAvailable();
                     await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
                     await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
-                    isSuccessful = true;
+#if NET6_0
+                    isSuccessful = true; 
+#endif
                 }
                 catch (Exception exception)
                 {
