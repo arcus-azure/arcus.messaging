@@ -240,8 +240,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 }
                 finally
                 {
-                    string entityName = messageReceiver.EntityPath;
-                    string serviceBusNamespace = messageReceiver.FullyQualifiedNamespace;
+                    string entityName = messageReceiver?.EntityPath ?? "<not-available>";
+                    string serviceBusNamespace = messageReceiver?.FullyQualifiedNamespace ?? "<not-available>";
                     Logger.LogServiceBusRequest(serviceBusNamespace, entityName, operationName: null, isSuccessful, measurement, ServiceBusEntityType.Unknown);
                 }
             }
