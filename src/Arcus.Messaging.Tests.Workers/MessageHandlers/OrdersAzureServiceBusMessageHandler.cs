@@ -11,20 +11,26 @@ using Arcus.Messaging.Tests.Core.Messages.v1;
 using CloudNative.CloudEvents;
 using GuardNet;
 using Microsoft.Extensions.Logging;
+using Xunit;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class OrdersAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<Order>
     {
         private readonly IEventGridPublisher _eventGridPublisher;
+        private readonly IMessageCorrelationInfoAccessor _correlationAccessor;
         private readonly ILogger<OrdersAzureServiceBusMessageHandler> _logger;
 
-        public OrdersAzureServiceBusMessageHandler(IEventGridPublisher eventGridPublisher, ILogger<OrdersAzureServiceBusMessageHandler> logger)
+        public OrdersAzureServiceBusMessageHandler(
+            IEventGridPublisher eventGridPublisher, 
+            IMessageCorrelationInfoAccessor correlationAccessor,
+            ILogger<OrdersAzureServiceBusMessageHandler> logger)
         {
             Guard.NotNull(eventGridPublisher, nameof(eventGridPublisher));
             Guard.NotNull(logger, nameof(logger));
 
             _eventGridPublisher = eventGridPublisher;
+            _correlationAccessor = correlationAccessor;
             _logger = logger;
         }
 
@@ -47,9 +53,20 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             _logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", 
                                    order.Id, order.Amount, order.ArticleNumber, order.Customer.FirstName, order.Customer.LastName);
 
+            EnsureSameCorrelation(correlationInfo);
             await PublishEventToEventGridAsync(order, correlationInfo.OperationId, correlationInfo);
 
             _logger.LogInformation("Order {OrderId} processed", order.Id);
+        }
+
+        private void EnsureSameCorrelation(MessageCorrelationInfo correlationInfo)
+        {
+            MessageCorrelationInfo registeredCorrelation = _correlationAccessor.GetCorrelationInfo();
+            Assert.NotNull(registeredCorrelation);
+            Assert.Equal(registeredCorrelation.OperationId, correlationInfo.OperationId);
+            Assert.Equal(registeredCorrelation.TransactionId, correlationInfo.TransactionId);
+            Assert.Equal(registeredCorrelation.OperationParentId, correlationInfo.OperationParentId);
+            Assert.Equal(registeredCorrelation.CycleId, correlationInfo.CycleId);
         }
 
         private async Task PublishEventToEventGridAsync(Order orderMessage, string operationId, MessageCorrelationInfo correlationInfo)
