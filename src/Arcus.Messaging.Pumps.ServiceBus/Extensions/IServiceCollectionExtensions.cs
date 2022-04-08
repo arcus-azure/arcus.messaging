@@ -823,13 +823,6 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
 
-            services.AddCorrelation<MessageCorrelationInfo>()
-                    .AddScoped<IMessageCorrelationInfoAccessor>(serviceProvider =>
-                    {
-                        return new MessageCorrelationInfoAccessor(
-                            serviceProvider.GetRequiredService<ICorrelationInfoAccessor<MessageCorrelationInfo>>());
-                    });
-
             AzureServiceBusMessagePumpOptions options = 
                 DetermineAzureServiceBusMessagePumpOptions(serviceBusEntity, configureQueueMessagePump, configureTopicMessagePump);
 

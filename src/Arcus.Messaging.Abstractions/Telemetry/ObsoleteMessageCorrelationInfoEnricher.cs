@@ -5,11 +5,13 @@ using Arcus.Observability.Telemetry.Serilog.Enrichers;
 using Serilog.Core;
 using Serilog.Events;
 
+// ReSharper disable once CheckNamespace - made deprecated.
 namespace Arcus.Messaging.Pumps.Abstractions.Telemetry
 {
     /// <summary>
     /// Logger enrichment of the <see cref="MessageCorrelationInfo" /> model.
     /// </summary>
+    [Obsolete("Use the message correlation enricher in a different namespace instead: " +  nameof(Messaging.Abstractions.Telemetry.MessageCorrelationInfoEnricher) + " without 'Pumps'")]
     public class MessageCorrelationInfoEnricher : CorrelationInfoEnricher<MessageCorrelationInfo>
     {
         private const string CycleId = "CycleId";

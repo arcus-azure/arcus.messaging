@@ -4,11 +4,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.Telemetry;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Serilog.Context;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
@@ -202,17 +204,36 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
 
+            using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+            {
+                var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
+                if (correlationInfoAccessor is null)
+                {
+                    Logger.LogTrace("No message correlation configured in Azure Service Bus message router while processing message '{MessageId}'", message.MessageId);
+                    await RouteMessageWithPotentialFallbackCoreAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                }
+                else
+                {
+                    correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
+                    using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
+                    {
+                        await RouteMessageWithPotentialFallbackCoreAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                    }
+                }
+            }
+        }
+
+        private async Task RouteMessageWithPotentialFallbackCoreAsync(
+            ServiceBusReceiver messageReceiver,
+            ServiceBusReceivedMessage message,
+            AzureServiceBusMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellationToken)
+        {
             try
             {
                 MessageHandler[] messageHandlers = GetRegisteredMessageHandlers().ToArray();
-                if (messageHandlers.Length <= 0 && !HasFallbackMessageHandler && !HasAzureServiceBusFallbackHandler)
-                {
-                    throw new InvalidOperationException(
-                        $"Azure Service Bus message pump cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' " 
-                        + "because no 'IAzureServiceBusMessageHandler<>' was registered in the dependency injection container. "
-                        + $"Make sure you call the correct 'WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} "
-                        + "during the registration of the Azure Service Bus message pump or message router to register a message handler");
-                }
+                EnsureAnyMessageHandlerAvailable(messageHandlers);
 
                 Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
                 string messageBody = encoding.GetString(message.Body.ToArray());
@@ -224,28 +245,44 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     {
                         var args = new ProcessMessageEventArgs(message, messageReceiver, cancellationToken);
                         SetServiceBusPropertiesForSpecificOperations(messageHandler, args, messageContext);
-                        
+
                         await messageHandler.ProcessMessageAsync(result.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
                         return;
                     }
                 }
 
-                if (!HasFallbackMessageHandler && !HasAzureServiceBusFallbackHandler)
-                {
-                    throw new InvalidOperationException(
-                        $"Message pump cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' "
-                        + "because none of the registered 'IAzureServiceBusMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context; "
-                        + $"and no '{nameof(IFallbackMessageHandler)}' or '{nameof(IAzureServiceBusFallbackMessageHandler)}' was registered to fall back to."
-                        + $"Make sure you call the correct '.WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} during the registration of the message pump or message router to register a message handler");
-                }
-
+                EnsureFallbackMessageHandlerAvailable();
                 await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
                 await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
             }
             catch (Exception exception)
             {
-                Logger.LogCritical(exception, "Unable to process message with ID '{MessageId}'",  message.MessageId);
+                Logger.LogCritical(exception, "Unable to process message with ID '{MessageId}'", message.MessageId);
                 throw;
+            }
+        }
+
+        private void EnsureAnyMessageHandlerAvailable(MessageHandler[] messageHandlers)
+        {
+            if (messageHandlers.Length <= 0 && !HasFallbackMessageHandler && !HasAzureServiceBusFallbackHandler)
+            {
+                throw new InvalidOperationException(
+                    $"Azure Service Bus message router cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' "
+                    + "because no 'IAzureServiceBusMessageHandler<>' was registered in the dependency injection container. "
+                    + $"Make sure you call the correct 'WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} "
+                    + "during the registration of the Azure Service Bus message pump or message router to register a message handler");
+            }
+        }
+
+        private void EnsureFallbackMessageHandlerAvailable()
+        {
+            if (!HasFallbackMessageHandler && !HasAzureServiceBusFallbackHandler)
+            {
+                throw new InvalidOperationException(
+                    $"Azure Service Bus message router cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' "
+                    + "because none of the registered 'IAzureServiceBusMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context; "
+                    + $"and no '{nameof(IFallbackMessageHandler)}' or '{nameof(IAzureServiceBusFallbackMessageHandler)}' was registered to fall back to."
+                    + $"Make sure you call the correct '.WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} during the registration of the message pump or message router to register a message handler");
             }
         }
 
