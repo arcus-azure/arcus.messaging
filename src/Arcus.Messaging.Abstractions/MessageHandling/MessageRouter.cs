@@ -226,6 +226,19 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         }
 
         /// <summary>
+        /// Gets all the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances in the application.
+        /// </summary>
+        /// <param name="serviceProvider">The scoped service provider from which the registered message handlers will be extracted.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        protected IEnumerable<MessageHandler> GetRegisteredMessageHandlers(IServiceProvider serviceProvider)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to extract the registered services from");
+            
+            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(serviceProvider, Logger);
+            return handlers;
+        }
+
+        /// <summary>
         /// Deserializes the incoming <paramref name="message"/> within the <paramref name="messageContext"/> for a specific <paramref name="handler"/>.
         /// </summary>
         /// <param name="message">The incoming message that needs to be deserialized so it can be processed by the <paramref name="handler"/>.</param>

@@ -210,20 +210,21 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 if (correlationInfoAccessor is null)
                 {
                     Logger.LogTrace("No message correlation configured in Azure Service Bus message router while processing message '{MessageId}'", message.MessageId);
-                    await RouteMessageWithPotentialFallbackCoreAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                    await RouteMessageWithPotentialFallbackCoreAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
                 }
                 else
                 {
                     correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
                     using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
                     {
-                        await RouteMessageWithPotentialFallbackCoreAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                        await RouteMessageWithPotentialFallbackCoreAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
                     }
                 }
             }
         }
 
         private async Task RouteMessageWithPotentialFallbackCoreAsync(
+            IServiceProvider serviceProvider,
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
@@ -232,7 +233,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         {
             try
             {
-                MessageHandler[] messageHandlers = GetRegisteredMessageHandlers().ToArray();
+                MessageHandler[] messageHandlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
                 EnsureAnyMessageHandlerAvailable(messageHandlers);
 
                 Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
