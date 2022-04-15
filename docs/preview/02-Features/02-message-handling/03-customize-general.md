@@ -1,14 +1,14 @@
 ---
-title: "Message Pump Customization"
+title: "Customize general message handling"
 layout: default
 ---
 
-# Customize message pumps
+# Customize general message handling
 
 While the message processing is handled by the `IMessageHandler<>` implementations, the message router controls in what format the message is received.
 We allow several customizations while using a built-in or implementing your own message router.
 
-- [Customize message pumps](#customize-message-pumps)
+- [Customize general message handling](#customize-general-message-handling)
   - [Filter messages based on message context](#filter-messages-based-on-message-context)
   - [Control custom deserialization](#control-custom-deserialization)
     - [Extending the message router](#extending-the-message-router)
@@ -211,8 +211,6 @@ using Microsoft.Extensions.DependencyInjection;
 // Message handler registration
 public class Startup
 {
-    ...
-    
     public void ConfigureServices(IServiceCollection services)
     {
         services.WithMessageHandler<OrderMessageHandler, Order>((Order order) => order.Type == Department.Sales);

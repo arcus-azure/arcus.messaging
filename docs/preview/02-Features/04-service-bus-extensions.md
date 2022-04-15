@@ -3,9 +3,15 @@ title: "Azure Service Bus Extensions"
 layout: default
 ---
 
-# Azure Service Bus Features
+# Azure Service Bus Extensions
 
 We provide several additional features related to message creation and message/context discoverability.
+
+- [Azure Service Bus Extensions](#azure-service-bus-extensions)
+  - [Installation](#installation)
+  - [Simplify Creating Service Bus Messages](#simplify-creating-service-bus-messages)
+  - [Simplify Message Information Discovery](#simplify-message-information-discovery)
+  - [Simplify Message Context Information Discovery](#simplify-message-context-information-discovery)
 
 ## Installation
 
