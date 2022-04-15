@@ -23,7 +23,7 @@ PM > Install-Package Arcus.Messaging.Abstractions
     - Azure Functions ([docs](./02-Features/02-message-handling/02-service-bus-azure-functions.md)) 
 - Support for exposing TCP health probes to periodically check liveness/readiness of the host ([docs](./02-Features/03-tcp-health-probe.md))
 - Azure Service Bus extensions ([docs](./02-Features/04-service-bus-extensions.md))
-- Customize general message handling ([docs](./02-Features/02-message-handling/03-custom-general.md))
+- Customize general message handling ([docs](./02-Features/02-message-handling/03-customize-general.md))
 
 ## Guides
 
