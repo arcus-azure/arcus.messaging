@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Observability.Telemetry.Core;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
@@ -204,26 +205,39 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
 
+            var isSuccessful = false;
+            using (DurationMeasurement measurement = DurationMeasurement.Start())
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
             {
-                var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
-                if (correlationInfoAccessor is null)
+                try
                 {
-                    Logger.LogTrace("No message correlation configured in Azure Service Bus message router while processing message '{MessageId}'", message.MessageId);
-                    await RouteMessageWithPotentialFallbackCoreAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
-                }
-                else
-                {
-                    correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
-                    using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
+                    var correlationInfoAccessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
+                    if (correlationInfoAccessor is null)
                     {
-                        await RouteMessageWithPotentialFallbackCoreAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                        Logger.LogTrace("No message correlation configured in Azure Service Bus message router while processing message '{MessageId}'", message.MessageId);
+                        await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
                     }
+                    else
+                    {
+                        correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
+                        using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor)))
+                        {
+                            await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                        }
+                    }
+
+                    isSuccessful = true;
+                }
+                finally
+                {
+                    string entityName = messageReceiver?.EntityPath ?? "<not-available>";
+                    string serviceBusNamespace = messageReceiver?.FullyQualifiedNamespace ?? "<not-available>";
+                    Logger.LogServiceBusRequest(serviceBusNamespace, entityName, operationName: null, isSuccessful, measurement, ServiceBusEntityType.Unknown);
                 }
             }
         }
 
-        private async Task RouteMessageWithPotentialFallbackCoreAsync(
+        private async Task TryRouteMessageWithPotentialFallbackAsync(
             IServiceProvider serviceProvider,
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
@@ -350,7 +364,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 {
                     if (messageReceiver is null)
                     {
-                        Logger.LogWarning("Fallback message handler '{MessageHandlerType}' uses specific Azure Service Bus operations, but is unable to be configured during message routing because the message router didn't receive a Azure Service Bus message receiver; use other '{RouteMessageAsync}' method overload",
+                        Logger.LogWarning("Fallback message handler '{MessageHandlerType}' uses specific Azure Service Bus operations, but is unable to be configured during message routing because the message router didn't receive a Azure Service Bus message receiver; use other '{MethodName}' method overload",
                             _fallbackMessageHandler.Value.GetType().Name, nameof(RouteMessageAsync));
                     }
                     else
@@ -361,7 +375,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 }
 
                 string fallbackMessageHandlerTypeName = _fallbackMessageHandler.Value.GetType().Name;
-                Logger.LogTrace("Fallback on registered '{FallbackMessageHandlerType}' because none of the message handlers w ere able to process the message", fallbackMessageHandlerTypeName);
+                Logger.LogTrace("Fallback on registered '{FallbackMessageHandlerType}' because none of the message handlers were able to process the message", fallbackMessageHandlerTypeName);
                 await _fallbackMessageHandler.Value.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
                 Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' has processed the message", fallbackMessageHandlerTypeName); 
             }
