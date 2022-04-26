@@ -342,13 +342,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
-            if (String.IsNullOrEmpty(message.CorrelationId))
+            if (string.IsNullOrEmpty(message.CorrelationId))
             {
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus message pump '{JobId}'", message.MessageId, JobId);
             }
 
             AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId);
-            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo(Settings.Options.Correlation?.TransactionIdPropertyName ?? PropertyNames.TransactionId);
+            MessageCorrelationInfo correlationInfo = 
+                message.GetCorrelationInfo(
+                    Settings.Options.Routing.Correlation?.TransactionIdPropertyName ?? PropertyNames.TransactionId,
+                    Settings.Options.Routing.Correlation?.OperationParentIdPropertyName ?? PropertyNames.OperationParentId);
+            
             ServiceBusReceiver receiver = args.GetServiceBusReceiver();
 
             await _messageRouter.RouteMessageAsync(receiver, args.Message, messageContext, correlationInfo, args.CancellationToken);

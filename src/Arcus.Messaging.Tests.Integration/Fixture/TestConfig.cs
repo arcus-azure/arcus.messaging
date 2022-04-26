@@ -63,6 +63,16 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             return value;
         }
 
+        public string GetServiceBusTopicConnectionString()
+        {
+            return GetServiceBusConnectionString(ServiceBusEntityType.Topic);
+        }
+
+        public string GetServiceBusQueueConnectionString()
+        {
+            return GetServiceBusConnectionString(ServiceBusEntityType.Queue);
+        }
+
         /// <summary>
         /// Gets the Service Bus connection string based on the given <paramref name="entity"/>.
         /// </summary>

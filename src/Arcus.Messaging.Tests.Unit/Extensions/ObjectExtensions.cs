@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using Azure.Core.Amqp;
@@ -20,15 +22,13 @@ namespace Azure.Messaging.ServiceBus
         /// Creates an <see cref="ServiceBusReceivedMessage"/> based on the given <paramref name="messageBody"/>.
         /// </summary>
         /// <param name="messageBody">The custom typed message body to wrap inside an Azure Service Bus message.</param>
-        /// <param name="applicationPropertyKey">The additional application property key to add to the message.</param>
-        /// <param name="applicationPropertyValue">The additional application property value to add to the message.</param>
         /// <param name="operationId">The optional correlation operation ID to add to the message.</param>
+        /// <param name="applicationProperties">The set of additional application properties to include in the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageBody"/> is <c>null</c>.</exception>
         public static ServiceBusReceivedMessage AsServiceBusReceivedMessage(
-            this object messageBody, 
-            string applicationPropertyKey = null, 
-            object applicationPropertyValue = null, 
-            string operationId = null)
+            this object messageBody,
+            string operationId = null,
+            IDictionary<string, string> applicationProperties = null)
         {
             Guard.NotNull(messageBody, nameof(messageBody), "Requires a message body to wrap in an received Azure Service Bus message");
             
@@ -46,9 +46,12 @@ namespace Azure.Messaging.ServiceBus
                 amqp.Properties.CorrelationId = new AmqpMessageId(operationId);
             }
 
-            if (applicationPropertyKey != null)
+            if (applicationProperties != null)
             {
-                amqp.ApplicationProperties[applicationPropertyKey] = applicationPropertyValue;
+                foreach (KeyValuePair<string, string> applicationProperty in applicationProperties)
+                {
+                    amqp.ApplicationProperties[applicationProperty.Key] = applicationProperty.Value;
+                }
             }
 
             var serviceBusMessage = (ServiceBusReceivedMessage) Activator.CreateInstance(

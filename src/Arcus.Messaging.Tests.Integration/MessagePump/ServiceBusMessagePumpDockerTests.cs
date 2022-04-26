@@ -45,7 +45,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Assert.Equal(order.ArticleNumber, orderCreatedEventData.ArticleNumber);
             Assert.Equal(transactionId, orderCreatedEventData.CorrelationInfo.TransactionId);
             Assert.Equal(operationId, orderCreatedEventData.CorrelationInfo.OperationId);
-            Assert.NotEmpty(orderCreatedEventData.CorrelationInfo.CycleId);
         }
     }
 }
