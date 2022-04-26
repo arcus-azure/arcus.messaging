@@ -164,7 +164,7 @@ public class OrderBatchMessageBodySerializer : IMessageBodySerializer
 }
 ```
 
-The registration of these message body handlers can be done just as easily as an `IMessageSerializer`:
+The registration of these message body serializers can be done just as easily as an `IAzureServiceBusMessageHandler`:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
