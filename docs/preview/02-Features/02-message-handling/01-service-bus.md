@@ -141,7 +141,7 @@ public class Startup
 
 
 ### Bring your own deserialization
-You can also choose to extend the built-in message deserialization with additional deserializer to meet your needs. 
+You can also choose to extend the built-in message deserialization with a custom deserializer to meet your needs. 
 This allows you to easily deserialize into different message formats or reuse existing (de)serialization capabilities that you already have without altering the message router. 
 
 You start by implementing an `IMessageBodySerializer`. The following example shows how an expected type can be transformed to something else. 
