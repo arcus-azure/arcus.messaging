@@ -22,6 +22,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
     <PackageReference Include="Arcus.Observability.Correlation" Version="[2.4.0,3.0.0)" />
+    <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Enrichers" Version="[2.4.0,3.0.0)" />
     <PackageReference Include="Guard.NET" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
@@ -31,6 +32,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' != 'net6.0'">
     <PackageReference Include="Arcus.Observability.Correlation" Version="[2.0.0,3.0.0)" />
+    <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Enrichers" Version="[2.0.0,3.0.0)" />
     <PackageReference Include="Guard.NET" Version="1.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="[3.1.8,5.0.0)" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[3.1.8,5.0.0)" />

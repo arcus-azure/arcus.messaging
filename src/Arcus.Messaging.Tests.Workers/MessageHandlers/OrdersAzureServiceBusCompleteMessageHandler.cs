@@ -16,10 +16,13 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         /// <summary>
         /// Initializes a new instance of the <see cref="OrdersAzureServiceBusCompleteMessageHandler"/> class.
         /// </summary>
-        public OrdersAzureServiceBusCompleteMessageHandler(IEventGridPublisher eventGridPublisher, ILogger<OrdersAzureServiceBusMessageHandler> logger) 
+        public OrdersAzureServiceBusCompleteMessageHandler(
+            IEventGridPublisher eventGridPublisher, 
+            IMessageCorrelationInfoAccessor correlationAccessor,
+            ILogger<OrdersAzureServiceBusMessageHandler> logger) 
             : base(logger)
         {
-            _orderMessageHandler = new OrdersAzureServiceBusMessageHandler(eventGridPublisher, logger);
+            _orderMessageHandler = new OrdersAzureServiceBusMessageHandler(eventGridPublisher, correlationAccessor, logger);
         }
 
         /// <summary>
