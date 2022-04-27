@@ -28,7 +28,7 @@ namespace Azure.Messaging.ServiceBus
         public static ServiceBusReceivedMessage AsServiceBusReceivedMessage(
             this object messageBody,
             string operationId = null,
-            IDictionary<string, string> applicationProperties = null)
+            IDictionary<string, object> applicationProperties = null)
         {
             Guard.NotNull(messageBody, nameof(messageBody), "Requires a message body to wrap in an received Azure Service Bus message");
             
@@ -48,7 +48,7 @@ namespace Azure.Messaging.ServiceBus
 
             if (applicationProperties != null)
             {
-                foreach (KeyValuePair<string, string> applicationProperty in applicationProperties)
+                foreach (KeyValuePair<string, object> applicationProperty in applicationProperties)
                 {
                     amqp.ApplicationProperties[applicationProperty.Key] = applicationProperty.Value;
                 }

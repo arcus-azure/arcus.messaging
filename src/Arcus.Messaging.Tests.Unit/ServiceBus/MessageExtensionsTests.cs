@@ -228,10 +228,10 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             string operationParentIdValue = null)
         {
             Order order = OrderGenerator.Generate();
-            var applicationProperties = new Dictionary<string, string>();
+            var applicationProperties = new Dictionary<string, object>();
             if (transactionIdKey != null)
             {
-                applicationProperties[transactionIdKey] = transactionIdValue?.ToString();
+                applicationProperties[transactionIdKey] = transactionIdValue;
             }
 
             if (operationParentIdKey != null)
