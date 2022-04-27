@@ -29,6 +29,22 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.AzureFunctions
             IServiceProvider provider = services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IAzureServiceBusMessageRouter>());
         }
+
+        [Fact]
+        public void AddServiceBusRoutingWithOptions_RegistersRouter_GetsRouterSucceeds()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var builder = new Mock<IFunctionsHostBuilder>();
+            builder.Setup(b => b.Services).Returns(services);
+
+            // Act
+            builder.Object.AddServiceBusMessageRouting(configureOptions: options => { });
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            Assert.NotNull(provider.GetService<IAzureServiceBusMessageRouter>());
+        }
         
         [Fact]
         public void AddServiceBusRoutingT_RegistersRouter_GetsRouterSucceeds()
@@ -44,6 +60,31 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.AzureFunctions
                 return new TestAzureServiceBusMessageRouter(serviceProvider, NullLogger.Instance);
             });
             
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetService<IAzureServiceBusMessageRouter>();
+            Assert.NotNull(router);
+            Assert.IsType<TestAzureServiceBusMessageRouter>(router);
+        }
+
+        [Fact]
+        public void AddServiceBusRoutingTWithOptions_RegistersRouter_GetsRouterSucceeds()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var builder = new Mock<IFunctionsHostBuilder>();
+            builder.Setup(b => b.Services).Returns(services);
+            var operationParentIdPropertyName = "MyOperationParentIdProperty";
+
+            // Act
+            builder.Object.AddServiceBusMessageRouting(
+                (serviceProvider, options) =>
+                {
+                    Assert.Equal(operationParentIdPropertyName, options.Correlation.OperationParentIdPropertyName);
+                    return new TestAzureServiceBusMessageRouter(serviceProvider, NullLogger.Instance);
+                }, 
+                options => options.Correlation.OperationParentIdPropertyName = operationParentIdPropertyName);
+
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
             var router = provider.GetService<IAzureServiceBusMessageRouter>();
