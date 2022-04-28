@@ -148,7 +148,7 @@ stages:
                 ```shell
                 PM > Install-Package $(Project).Pumps.ServiceBus --Version $(Build.BuildNumber)
                 ```
-                For a complete list of all Arcus.Security packages see the [documentation](https://messaging.arcus-azure.net/).
+                For a complete list of all Arcus.Messaging packages see the [documentation](https://messaging.arcus-azure.net/).
                 ## What's new?
                 ### Features
                 * Provide the capability to do something (#123)
