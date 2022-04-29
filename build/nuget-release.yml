@@ -144,8 +144,18 @@ stages:
             parameters:
               repositoryName: 'arcus-azure/arcus.messaging'
               releaseNotes: |
-                Install new version via [NuGet](https://www.nuget.org/packages/Arcus.Messaging.Pumps.ServiceBus/$(Build.BuildNumber))
+                Install the Arcus.Messaging packages that you need via NuGet, for instance [$(Project).Pumps.ServiceBus](https://www.nuget.org/packages/$(Project).Pumps.ServiceBus/$(Build.BuildNumber)):
                 ```shell
-                PM > Install-Package Arcus.Messaging.Pumps.ServiceBus --Version $(Build.BuildNumber)
+                PM > Install-Package $(Project).Pumps.ServiceBus --Version $(Build.BuildNumber)
                 ```
+                For a complete list of all Arcus.Messaging packages see the [documentation](https://messaging.arcus-azure.net/).
+                ## What's new?
+                ### Features
+                * Provide the capability to do something (#123)
+                ### Fixes / Changes
+                None.
+                ### Breaking Changes
+                None.
+                ### Removal
+                None.
           - template: nuget/publish-official-package.yml@templates
