@@ -19,7 +19,7 @@ PM > Install-Package Arcus.Messaging.Abstractions
 
 - Support for using message handling for the following brokers:
   - Azure Service Bus
-    - Worker ([docs](./02-Features/02-message-handling/01-service-bus.md))
+    - Worker Service ([docs](./02-Features/02-message-handling/01-service-bus.md))
     - Azure Functions ([docs](./02-Features/02-message-handling/02-service-bus-azure-functions.md)) 
 - Support for exposing TCP health probes to periodically check liveness/readiness of the host ([docs](./02-Features/03-tcp-health-probe.md))
 - Azure Service Bus extensions ([docs](./02-Features/04-service-bus-extensions.md))
