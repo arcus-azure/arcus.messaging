@@ -9,7 +9,7 @@
     <Description>Provides Azure Service Bus message handling/routing for Azure Functions.</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
     <PackageLicenseUrl>https://github.com/arcus-azure/arcus.messaging/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/arcus-azure/arcus.messaging</PackageProjectUrl>
+    <PackageProjectUrl>https://messaging.arcus-azure.net/</PackageProjectUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
@@ -19,6 +19,10 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>NU5125;NU5048</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
