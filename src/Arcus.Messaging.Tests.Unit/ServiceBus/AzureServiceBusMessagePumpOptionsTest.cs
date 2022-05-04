@@ -67,5 +67,31 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             Assert.Equal(expected, options.Correlation.TransactionIdPropertyName);
         }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void OperationParentIdPropertyName_ValueIsBlank_Throws(string operationParentIdPropertyName)
+        {
+            // Arrange
+            var options = new AzureServiceBusMessagePumpOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() =>
+                options.Correlation.OperationParentIdPropertyName = operationParentIdPropertyName);
+        }
+
+        [Fact]
+        public void OperationParentIdPropertyName_ValueNotBlank_Succeeds()
+        {
+            // Arrange
+            var options = new AzureServiceBusMessagePumpOptions();
+            var operationParentId = $"operation-parent-{Guid.NewGuid()}";
+
+            // Act
+            options.Correlation.OperationParentIdPropertyName = operationParentId;
+
+            // Assert
+            Assert.Equal(operationParentId, options.Correlation.OperationParentIdPropertyName);
+        }
     }
 }

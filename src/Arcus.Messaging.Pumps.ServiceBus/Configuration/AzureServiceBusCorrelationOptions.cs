@@ -1,25 +1,63 @@
-﻿using Arcus.Messaging.Abstractions;
+﻿using System;
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using GuardNet;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
     /// <summary>
-    /// Represents the user-configurable options to control the correlation information tracking during the receiving of the Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
+    /// Represents the user-configurable options to control the correlation information tracking
+    /// during the receiving of the Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
     /// </summary>
     public class AzureServiceBusCorrelationOptions
     {
-        private string _transactionIdProperty = PropertyNames.TransactionId;
+        private readonly MessageCorrelationOptions _correlationOptions;
         
+        private string _transactionIdPropertyName = PropertyNames.TransactionId,
+                       _operationParentIdPropertyName = PropertyNames.OperationParentId;
+
         /// <summary>
-        /// Gets or sets the name of the Azure Service Bus message property to determine the transaction ID.
+        /// Initializes a new instance of the <see cref="AzureServiceBusCorrelationOptions" /> class.
         /// </summary>
+        public AzureServiceBusCorrelationOptions() : this(new MessageCorrelationOptions())
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusCorrelationOptions" /> class.
+        /// </summary>
+        internal AzureServiceBusCorrelationOptions(MessageCorrelationOptions correlationOptions)
+        {
+            _correlationOptions = correlationOptions;
+        }
+
+        /// <summary>
+        /// Gets or sets the name of the Azure Service Bus message property to retrieve the transaction ID.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
         public string TransactionIdPropertyName
         {
-            get => _transactionIdProperty;
+            get => _transactionIdPropertyName;
             set
             {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Transaction ID message property name for Azure Service Bus Message cannot be blank");
-                _transactionIdProperty = value;
+                Guard.NotNullOrWhitespace(value, nameof(value), "Transaction ID message property name for the Azure Service Bus message cannot be blank");
+                _transactionIdPropertyName = value;
+                _correlationOptions.TransactionIdPropertyName = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the name of the Azure Service Bus message property to retrieve the operation parent ID.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
+        public string OperationParentIdPropertyName
+        {
+            get => _operationParentIdPropertyName;
+            set
+            {
+                Guard.NotNullOrWhitespace(value, nameof(value), "Operation parent ID message property name for the Azure Service Bus message cannot be blank");
+                _operationParentIdPropertyName = value;
+                _correlationOptions.OperationParentIdPropertyName = value;
             }
         }
     }

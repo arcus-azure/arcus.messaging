@@ -9,5 +9,10 @@
         /// Gets the consumer-configurable options to change the deserialization behavior of the message router.
         /// </summary>
         public MessageDeserializationOptions Deserialization { get; } = new MessageDeserializationOptions();
+
+        /// <summary>
+        /// Gets the options to control the correlation information upon the receiving of messages in the message router.
+        /// </summary>
+        public MessageCorrelationOptions Correlation { get; } = new MessageCorrelationOptions();
     }
 }

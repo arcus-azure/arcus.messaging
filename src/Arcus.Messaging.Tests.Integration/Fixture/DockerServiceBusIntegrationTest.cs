@@ -9,6 +9,7 @@ using Arcus.Messaging.Tests.Core.Messages.v1;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -85,10 +86,13 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             
             Event orderCreatedEvent = Assert.Single(deserializedEventGridMessage.Events);
             Assert.NotNull(orderCreatedEvent);
-            
-            var orderCreatedEventData = orderCreatedEvent.GetPayload<OrderCreatedEventData>();
+
+            Assert.NotNull(orderCreatedEvent.Data);
+            var json = orderCreatedEvent.Data.ToString();
+            Assert.NotNull(json);
+            var orderCreatedEventData = JsonConvert.DeserializeObject<OrderCreatedEventData>(json, new MessageCorrelationInfoJsonConverter());
             Assert.NotNull(orderCreatedEventData);
-            
+
             return orderCreatedEventData;
         }
 

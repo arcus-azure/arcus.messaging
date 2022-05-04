@@ -32,7 +32,11 @@ namespace Arcus.Messaging.Tests.Integration.AzureFunctions.ServiceBus
             var transactionId = Guid.NewGuid().ToString();
             
             Order order = OrderGenerator.Generate();
-            ServiceBusMessage orderMessage = order.AsServiceBusMessage(operationId, transactionId);
+            ServiceBusMessage orderMessage =
+                ServiceBusMessageBuilder.CreateForBody(order)
+                                        .WithOperationId(operationId)
+                                        .WithTransactionId(transactionId)
+                                        .Build();
 
             // Act
             await SenderOrderToServiceBusAsync(orderMessage, QueueConnectionString);
@@ -45,7 +49,6 @@ namespace Arcus.Messaging.Tests.Integration.AzureFunctions.ServiceBus
             Assert.Equal(order.ArticleNumber, orderEventData.ArticleNumber);
             Assert.Equal(transactionId, orderEventData.CorrelationInfo.TransactionId);
             Assert.Equal(operationId, orderEventData.CorrelationInfo.OperationId);
-            Assert.NotEmpty(orderEventData.CorrelationInfo.CycleId);
         }
     }
 }

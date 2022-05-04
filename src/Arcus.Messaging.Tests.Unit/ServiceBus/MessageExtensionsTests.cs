@@ -50,12 +50,18 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         }
 
         [Fact]
-        public void GetMessageCorrelationInfo_WithCorrelationIdAndTransactionIdAsUserProperties_ReturnsCorrelationInfo()
+        public void GetMessageCorrelationInfo_WithDefaultCorrelation_ReturnsCorrelationInfo()
         {
             // Arrange
             var expectedOperationId = $"operation-{Guid.NewGuid()}";
             var expectedTransactionId = $"transaction-{Guid.NewGuid()}";
-            ServiceBusReceivedMessage message = CreateMessage(PropertyNames.TransactionId, expectedTransactionId, expectedOperationId);
+            var expectedOperationParentId = $"operation-parent-{Guid.NewGuid()}";
+            ServiceBusReceivedMessage message = CreateMessage(
+                correlationId: expectedOperationId,
+                transactionIdKey: PropertyNames.TransactionId, 
+                transactionIdValue: expectedTransactionId, 
+                operationParentIdKey: PropertyNames.OperationParentId,
+                operationParentIdValue: expectedOperationParentId);
             
             // Act
             MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
@@ -65,6 +71,57 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.NotEmpty(correlationInfo.CycleId);
             Assert.Equal(expectedOperationId, correlationInfo.OperationId);
             Assert.Equal(expectedTransactionId, correlationInfo.TransactionId);
+            Assert.Equal(expectedOperationParentId, correlationInfo.OperationParentId); 
+        }
+
+        [Theory]
+        [InlineData(PropertyNames.TransactionId, PropertyNames.OperationParentId)]
+        [InlineData("my-transaction-id", PropertyNames.OperationParentId)]
+        [InlineData(PropertyNames.TransactionId, "my-operation-parent-id")]
+        [InlineData("my-transaction-id", "my-operation-parent-id")]
+        public void GetMessageCorrelationInfo_WithCustomCorrelationKeys_ReturnsCorrelationInfoWithCorrectRetrievals(string transactionIdKey, string operationParentIdKey)
+        {
+            // Arrange
+            var expectedOperationId = $"operation-{Guid.NewGuid()}";
+            var expectedTransactionId = $"transaction-{Guid.NewGuid()}";
+            var expectedOperationParentId = $"operation-parent-{Guid.NewGuid()}";
+            ServiceBusReceivedMessage message = CreateMessage(
+                correlationId: expectedOperationId,
+                transactionIdKey: transactionIdKey,
+                transactionIdValue: expectedTransactionId,
+                operationParentIdKey: operationParentIdKey,
+                operationParentIdValue: expectedOperationParentId);
+
+            // Act
+            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo(transactionIdKey, operationParentIdKey);
+
+            // Assert
+            Assert.NotNull(correlationInfo);
+            Assert.NotEmpty(correlationInfo.CycleId);
+            Assert.Equal(expectedOperationId, correlationInfo.OperationId);
+            Assert.Equal(expectedTransactionId, correlationInfo.TransactionId);
+            Assert.Equal(expectedOperationParentId, correlationInfo.OperationParentId);
+        }
+
+        [Theory]
+        [InlineData(PropertyNames.TransactionId, null)]
+        [InlineData(null, PropertyNames.OperationParentId)]
+        [InlineData(null, null)]
+        public void GetMessageCorrelation_WithoutCorrelationKeys_Fails(
+            string transactionIdKey,
+            string operationParentIdKey)
+        {
+            // Arrange
+            ServiceBusReceivedMessage message = CreateMessage(
+                correlationId: $"operation-{Guid.NewGuid()}",
+                transactionIdKey: transactionIdKey,
+                transactionIdValue: $"transaction-{Guid.NewGuid()}",
+                operationParentIdKey: operationParentIdKey,
+                operationParentIdValue: $"operation-parent-{Guid.NewGuid()}");
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => message.GetCorrelationInfo(transactionIdKey, operationParentIdKey));
         }
 
         [Fact]
@@ -123,7 +180,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void GetTransactionId_WithoutTransactionIdAsUserProperty_ReturnsEmptyString()
         {
             // Arrange
-            ServiceBusReceivedMessage message = CreateMessage(key: null, value: null);
+            ServiceBusReceivedMessage message = CreateMessage(transactionIdKey: null, transactionIdValue: null);
 
             // Act
             string transactionId = message.GetTransactionId();
@@ -163,11 +220,26 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.Equal(expectedTransactionId, transactionId);
         }
 
-        private static ServiceBusReceivedMessage CreateMessage(string key = null, object value = null, string correlationId = null)
+        private static ServiceBusReceivedMessage CreateMessage(
+            string transactionIdKey = null, 
+            object transactionIdValue = null, 
+            string correlationId = null,
+            string operationParentIdKey = null,
+            string operationParentIdValue = null)
         {
             Order order = OrderGenerator.Generate();
-            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage(key, value, correlationId);
+            var applicationProperties = new Dictionary<string, object>();
+            if (transactionIdKey != null)
+            {
+                applicationProperties[transactionIdKey] = transactionIdValue;
+            }
 
+            if (operationParentIdKey != null)
+            {
+                applicationProperties[operationParentIdKey] = operationParentIdValue;
+            }
+
+            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage(correlationId, applicationProperties);
             return message;
         }
     }

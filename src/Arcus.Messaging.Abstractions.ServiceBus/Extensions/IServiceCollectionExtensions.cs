@@ -65,7 +65,34 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure Service Bus message router");
 
-            services.TryAddSingleton<IAzureServiceBusMessageRouter>(serviceProvider => implementationFactory(serviceProvider));
+           return AddServiceBusMessageRouting(services, (provider, options) => implementationFactory(provider), configureOptions: null);
+        }
+
+        /// <summary>
+        ///     Adds an <see cref="IAzureServiceBusMessageRouter"/> implementation
+        ///     to route the incoming messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.
+        /// </summary>
+        /// <param name="services">The collection of services to add the router to.</param>
+        /// <param name="implementationFactory">The function to create the <typeparamref name="TMessageRouter"/> implementation.</param>
+        /// <param name="configureOptions">The function to configure the options that change the behavior of the router.</param>
+        /// <typeparam name="TMessageRouter">The type of the <see cref="IAzureServiceBusMessageRouter"/> implementation.</typeparam>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        public static ServiceBusMessageHandlerCollection AddServiceBusMessageRouting<TMessageRouter>(
+            this IServiceCollection services,
+            Func<IServiceProvider, AzureServiceBusMessageRouterOptions, TMessageRouter> implementationFactory,
+            Action<AzureServiceBusMessageRouterOptions> configureOptions)
+            where TMessageRouter : IAzureServiceBusMessageRouter
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
+            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure Service Bus message router");
+
+            services.TryAddSingleton<IAzureServiceBusMessageRouter>(serviceProvider =>
+            {
+                var options = new AzureServiceBusMessageRouterOptions();
+                configureOptions?.Invoke(options);
+
+                return implementationFactory(serviceProvider, options);
+            });
             services.AddMessageRouting(serviceProvider => serviceProvider.GetRequiredService<IAzureServiceBusMessageRouter>());
 
             return new ServiceBusMessageHandlerCollection(services);
