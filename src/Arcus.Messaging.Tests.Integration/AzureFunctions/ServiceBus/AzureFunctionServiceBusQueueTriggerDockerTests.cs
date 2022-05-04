@@ -34,7 +34,7 @@ namespace Arcus.Messaging.Tests.Integration.AzureFunctions.ServiceBus
             Order order = OrderGenerator.Generate();
             ServiceBusMessage orderMessage =
                 ServiceBusMessageBuilder.CreateForBody(order)
-                                        .WithCorrelationId(operationId)
+                                        .WithOperationId(operationId)
                                         .WithTransactionId(transactionId)
                                         .Build();
 

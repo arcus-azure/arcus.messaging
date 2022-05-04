@@ -276,7 +276,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Order order = OrderGenerator.Generate();
             ServiceBusMessage message =
                 ServiceBusMessageBuilder.CreateForBody(order, encoding ?? Encoding.UTF8)
-                                        .WithCorrelationId(operationId)
+                                        .WithOperationId(operationId)
                                         .WithTransactionId(transactionId, transactionIdPropertyName)
                                         .WithOperationParentId(operationParentId, operationParentIdPropertyName)
                                         .Build();
@@ -833,7 +833,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Order order = OrderGenerator.Generate();
             ServiceBusMessage orderMessage = 
                 ServiceBusMessageBuilder.CreateForBody(order)
-                                        .WithCorrelationId(operationId)
+                                        .WithOperationId(operationId)
                                         .WithTransactionId(transactionId)
                                         .Build();
 

@@ -137,7 +137,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var operationId = $"operation-{Guid.NewGuid()}";
 
             // Act
-            builder.WithCorrelationId(operationId);
+            builder.WithOperationId(operationId);
 
             // Assert
             ServiceBusMessage message = builder.Build();
@@ -152,7 +152,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
 
             // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => builder.WithCorrelationId(operationId));
+            Assert.ThrowsAny<ArgumentException>(() => builder.WithOperationId(operationId));
         }
 
         [Fact]

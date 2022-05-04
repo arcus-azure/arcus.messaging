@@ -54,7 +54,7 @@ namespace Microsoft.Azure.ServiceBus
         /// </summary>
         /// <param name="operationId">The unique identifier for this operation.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="operationId"/> is blank.</exception>
-        public ServiceBusMessageBuilder WithCorrelationId(string operationId)
+        public ServiceBusMessageBuilder WithOperationId(string operationId)
         {
             Guard.NotNullOrWhitespace(operationId, nameof(operationId), "Requires a non-blank operation ID for the Azure Service Bus message");
             _operationId = operationId;
