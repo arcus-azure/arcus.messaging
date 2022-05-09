@@ -151,11 +151,11 @@ namespace Microsoft.Azure.ServiceBus
                 }
             };
 
-            if (_operationIdProperty.Key is null)
+            if (_operationIdProperty.Key is null && _operationIdProperty.Value is not null)
             {
                 message.CorrelationId = _operationIdProperty.Value?.ToString();
             } 
-            else
+            else if (_operationIdProperty.Value is not null)
             {
                 message.ApplicationProperties.Add(_operationIdProperty);
             }
