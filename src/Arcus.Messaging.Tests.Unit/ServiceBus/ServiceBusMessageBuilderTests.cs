@@ -94,6 +94,23 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.Equal(transactionId, message.ApplicationProperties[transactionIdPropertyName]);
         }
 
+        [Fact]
+        public void Create_WithTransactionIdPropertyNameTwice_Succeeds()
+        {
+            // Arrange
+            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            var transactionId = $"transaction-{Guid.NewGuid()}";
+            var wrongPropertyName = "MyTransaction";
+
+            // Act
+            builder.WithTransactionId(transactionId, wrongPropertyName).WithTransactionId(transactionId);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            Assert.Equal(transactionId, message.ApplicationProperties[PropertyNames.TransactionId]);
+            Assert.DoesNotContain(wrongPropertyName, message.ApplicationProperties.Keys);
+        }
+
         [Theory]
         [ClassData(typeof(Blanks))]
         public void CreateWithDefaultTransactionId_WithoutTransactionId_Fails(string transactionId)
@@ -144,6 +161,23 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.Equal(operationId, message.CorrelationId);
         }
 
+        [Fact]
+        public void Create_WithOperationIdPropertyName_Succeeds()
+        {
+            // Arrange
+            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            var operationId = $"operation-{Guid.NewGuid()}";
+            var operationIdPropertyName = "MyOperation";
+
+            // Act
+            builder.WithOperationId(operationId, operationIdPropertyName);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            Assert.NotEqual(operationId, message.CorrelationId);
+            Assert.Equal(operationId, message.ApplicationProperties[operationIdPropertyName]);
+        }
+
         [Theory]
         [ClassData(typeof(Blanks))]
         public void Create_WithoutOperationId_Fails(string operationId)
@@ -153,6 +187,46 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => builder.WithOperationId(operationId));
+        }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void CreateWithPropertyName_WithoutOperationId_Fails(string operationId)
+        {
+            // Arrange
+            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => builder.WithOperationId(operationId));
+        }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void CreateWithPropertyName_WithoutOperationIdPropertyName_Fails(string operationIdPropertyName)
+        {
+            // Arrange
+            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            var operationId = $"operation-{Guid.NewGuid()}";
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => builder.WithOperationId(operationId, operationIdPropertyName));
+        }
+
+        [Fact]
+        public void Create_WithOperationIdPropertyNameTwice_Succeeds()
+        {
+            // Arrange
+            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            var operationId = $"operation-{Guid.NewGuid()}";
+            var wrongPropertyName = "MyOperation";
+
+            // Act
+            builder.WithOperationId(operationId, wrongPropertyName).WithOperationId(operationId);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            Assert.Equal(operationId, message.CorrelationId);
+            Assert.DoesNotContain(wrongPropertyName, message.ApplicationProperties.Keys);
         }
 
         [Fact]
@@ -184,6 +258,23 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             ServiceBusMessage message = builder.Build();
             Assert.Equal(operationParentId, message.ApplicationProperties[operationParentIdPropertyName]);
+        }
+
+        [Fact]
+        public void Create_WithOperationParentIdPropertyNameTwice_Succeeds()
+        {
+            // Arrange
+            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            var operationParentId = $"operation-{Guid.NewGuid()}";
+            var wrongPropertyName = "MyOperation";
+
+            // Act
+            builder.WithOperationParentId(operationParentId, wrongPropertyName).WithOperationParentId(operationParentId);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            Assert.Equal(operationParentId, message.ApplicationProperties[PropertyNames.OperationParentId]);
+            Assert.DoesNotContain(wrongPropertyName, message.ApplicationProperties.Keys);
         }
 
         [Theory]
