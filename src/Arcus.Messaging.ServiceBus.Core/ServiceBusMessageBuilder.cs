@@ -66,7 +66,7 @@ namespace Microsoft.Azure.ServiceBus
         /// Adds an <paramref name="operationId"/> as an application property in the <see cref="ServiceBusMessage.ApplicationProperties"/>.
         /// </summary>
         /// <param name="operationId">The unique identifier for this operation.</param>
-        /// <param name="operationIdPropertyName">The name of the application property of the <paramref name="operationIdPropertyName"/>.</param>
+        /// <param name="operationIdPropertyName">The name of the application property where the <paramref name="operationId"/> will be set.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="operationId"/> or the <paramref name="operationIdPropertyName"/> is blank.</exception>
         public ServiceBusMessageBuilder WithOperationId(string operationId, string operationIdPropertyName)
         {
