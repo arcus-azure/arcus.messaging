@@ -94,7 +94,7 @@ namespace Microsoft.Azure.ServiceBus
         /// with <paramref name="transactionIdPropertyName"/> as key.
         /// </summary>
         /// <param name="transactionId">The unique identifier of the current transaction.</param>
-        /// <param name="transactionIdPropertyName">The name of the application property for the <paramref name="transactionId"/>.</param>
+        /// <param name="transactionIdPropertyName">The custom name that must be given to the application property that contains the <paramref name="transactionId"/>.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionId"/> or the <paramref name="transactionIdPropertyName"/> is blank.</exception>
         public ServiceBusMessageBuilder WithTransactionId(string transactionId, string transactionIdPropertyName)
         {
@@ -122,7 +122,7 @@ namespace Microsoft.Azure.ServiceBus
         /// with <paramref name="operationParentIdPropertyName"/> as key.
         /// </summary>
         /// <param name="operationParentId">The unique identifier of the current operation.</param>
-        /// <param name="operationParentIdPropertyName">The name of the application property for the <paramref name="operationParentId"/>.</param>
+        /// <param name="operationParentIdPropertyName">The custom name that must be given to the application property that contains the <paramref name="operationParentId"/>.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="operationParentId"/> or the <paramref name="operationParentIdPropertyName"/> is blank.</exception>
         public ServiceBusMessageBuilder WithOperationParentId(
             string operationParentId,
