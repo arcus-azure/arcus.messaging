@@ -13,6 +13,7 @@
     <PackageIconUrl>https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>Azure;Messaging;ServiceBus;AzureFunctions</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
