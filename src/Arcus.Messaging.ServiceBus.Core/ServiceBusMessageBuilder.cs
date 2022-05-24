@@ -16,8 +16,7 @@ namespace Microsoft.Azure.ServiceBus
     {
         private readonly object _messageBody;
         private readonly Encoding _encoding;
-        private string _operationId;
-        private KeyValuePair<string, object> _transactionIdProperty, _operationParentIdProperty;
+        private KeyValuePair<string, object> _transactionIdProperty, _operationParentIdProperty, _operationIdProperty;
 
         private ServiceBusMessageBuilder(object messageBody, Encoding encoding)
         {
@@ -46,6 +45,7 @@ namespace Microsoft.Azure.ServiceBus
         {
             Guard.NotNull(messageBody, nameof(messageBody), "Requires a message body to include in the to-be-created Azure Service Bus message");
             Guard.NotNull(encoding, nameof(encoding), "Requires an encoding instance to encode the passed-in message body so it can be included in the Azure Service Bus message");
+            
             return new ServiceBusMessageBuilder(messageBody, encoding);
         }
 
@@ -57,7 +57,23 @@ namespace Microsoft.Azure.ServiceBus
         public ServiceBusMessageBuilder WithOperationId(string operationId)
         {
             Guard.NotNullOrWhitespace(operationId, nameof(operationId), "Requires a non-blank operation ID for the Azure Service Bus message");
-            _operationId = operationId;
+
+            _operationIdProperty = new KeyValuePair<string, object>(null, operationId);
+            return this;
+        }
+
+        /// <summary>
+        /// Adds an <paramref name="operationId"/> as an application property in the <see cref="ServiceBusMessage.ApplicationProperties"/>.
+        /// </summary>
+        /// <param name="operationId">The unique identifier for this operation.</param>
+        /// <param name="operationIdPropertyName">The custom name that must be given to the application property that contains the <paramref name="operationId"/>.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="operationId"/> or the <paramref name="operationIdPropertyName"/> is blank.</exception>
+        public ServiceBusMessageBuilder WithOperationId(string operationId, string operationIdPropertyName)
+        {
+            Guard.NotNullOrWhitespace(operationId, nameof(operationId), "Requires a non-blank operation ID for the Azure Service Bus message");
+            Guard.NotNullOrWhitespace(operationIdPropertyName, nameof(operationIdPropertyName), "Requires a non-blank application property name to assign the operation ID to the Azure Service Bus message");
+
+            _operationIdProperty = new KeyValuePair<string, object>(operationIdPropertyName, operationId);
             return this;
         }
 
@@ -78,7 +94,7 @@ namespace Microsoft.Azure.ServiceBus
         /// with <paramref name="transactionIdPropertyName"/> as key.
         /// </summary>
         /// <param name="transactionId">The unique identifier of the current transaction.</param>
-        /// <param name="transactionIdPropertyName">The name of the application property for the <paramref name="transactionId"/>.</param>
+        /// <param name="transactionIdPropertyName">The custom name that must be given to the application property that contains the <paramref name="transactionId"/>.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionId"/> or the <paramref name="transactionIdPropertyName"/> is blank.</exception>
         public ServiceBusMessageBuilder WithTransactionId(string transactionId, string transactionIdPropertyName)
         {
@@ -106,7 +122,7 @@ namespace Microsoft.Azure.ServiceBus
         /// with <paramref name="operationParentIdPropertyName"/> as key.
         /// </summary>
         /// <param name="operationParentId">The unique identifier of the current operation.</param>
-        /// <param name="operationParentIdPropertyName">The name of the application property for the <paramref name="operationParentId"/>.</param>
+        /// <param name="operationParentIdPropertyName">The custom name that must be given to the application property that contains the <paramref name="operationParentId"/>.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="operationParentId"/> or the <paramref name="operationParentIdPropertyName"/> is blank.</exception>
         public ServiceBusMessageBuilder WithOperationParentId(
             string operationParentId,
@@ -135,17 +151,21 @@ namespace Microsoft.Azure.ServiceBus
                 }
             };
 
-            if (_operationId != null)
+            if (_operationIdProperty.Key is null && _operationIdProperty.Value is not null)
             {
-                message.CorrelationId = _operationId;
+                message.CorrelationId = _operationIdProperty.Value?.ToString();
+            } 
+            else if (_operationIdProperty.Value is not null)
+            {
+                message.ApplicationProperties.Add(_operationIdProperty);
             }
 
-            if (_transactionIdProperty.Key != null)
+            if (_transactionIdProperty.Key is not null)
             {
                 message.ApplicationProperties.Add(_transactionIdProperty);
             }
 
-            if (_operationParentIdProperty.Key != null)
+            if (_operationParentIdProperty.Key is not null)
             {
                 message.ApplicationProperties.Add(_operationParentIdProperty);
             }
