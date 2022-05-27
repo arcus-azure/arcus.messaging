@@ -8,9 +8,14 @@ using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Unit.Fixture;
+using Arcus.Observability.Telemetry.Core;
+using Arcus.Testing.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
+using Serilog;
+using Serilog.Events;
 using Xunit;
 using Order = Arcus.Messaging.Tests.Core.Messages.v1.Order;
 
@@ -60,8 +65,8 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             var ignoredDefaultHandler = new DefaultTestMessageHandler();
             var ignoredHandler = new TestMessageHandler();
             collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(serviceProvider => ignoredDefaultHandler)
-                    .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
-                    .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
+                      .WithMessageHandler<StubTestMessageHandler<TestMessage, TestMessageContext>, TestMessage, TestMessageContext>(serviceProvider => spyHandler)
+                      .WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(serviceProvider => ignoredHandler);
 
             // Act
             services.AddMessageRouting(serviceProvider => new TestMessageRouter(serviceProvider, NullLogger.Instance));
@@ -225,7 +230,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Ignore, messageHandlerV1.IsProcessed);
             Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Error, messageHandlerV2.IsProcessed);
         }
-        
+
         [Fact]
         public void CreateWithoutOptionsAndLogger_WithoutServiceProvider_Fails()
         {

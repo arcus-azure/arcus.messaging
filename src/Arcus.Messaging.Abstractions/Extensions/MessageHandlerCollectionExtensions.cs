@@ -2,6 +2,7 @@
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using GuardNet;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -26,7 +27,11 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
 
-            collection.Services.AddTransient<IMessageHandler<TMessage, MessageContext>, TMessageHandler>();
+            collection.Services.AddTransient(
+                serviceProvider => MessageHandler.Create(
+                    messageHandler: ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider),
+                    logger: serviceProvider.GetService<ILogger<IMessageHandler<TMessage, MessageContext>>>()));
+            
             return collection;
         }
 
@@ -48,7 +53,11 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent collection");
 
-            collection.Services.AddTransient<IMessageHandler<TMessage, MessageContext>, TMessageHandler>(implementationFactory);
+            collection.Services.AddTransient(
+                serviceProvider => MessageHandler.Create(
+                    messageHandler: implementationFactory(serviceProvider),
+                    logger: serviceProvider.GetService<ILogger<IMessageHandler<TMessage, MessageContext>>>()));
+            
             return collection;
         }
 
@@ -68,7 +77,11 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
 
-            collection.Services.AddTransient<IMessageHandler<TMessage, TMessageContext>, TMessageHandler>();
+            collection.Services.AddTransient(
+                serviceProvider => MessageHandler.Create(
+                    messageHandler: ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider),
+                    logger: serviceProvider.GetService<ILogger<IMessageHandler<TMessage, TMessageContext>>>()));
+
             return collection;
         }
 
@@ -92,7 +105,11 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent collection");
 
-            collection.Services.AddTransient<IMessageHandler<TMessage, TMessageContext>, TMessageHandler>(implementationFactory);
+            collection.Services.AddTransient(
+                serviceProvider => MessageHandler.Create(
+                    messageHandler: implementationFactory(serviceProvider),
+                    logger: serviceProvider.GetService<ILogger<IMessageHandler<TMessage, TMessageContext>>>()));
+
             return collection;
         }
 

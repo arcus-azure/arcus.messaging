@@ -105,14 +105,12 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
 
-            services.Services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
-                serviceProvider => new MessageHandlerRegistration<TMessage, TMessageContext>(
-                    messageContextFilter: null,
-                    messageBodySerializer: null,
+            services.Services.AddTransient(
+                serviceProvider => MessageHandler.Create(
+                    implementationFactory(serviceProvider),
                     messageBodyFilter: messageBodyFilter,
-                    messageHandlerImplementation: implementationFactory(serviceProvider),
-                    logger: serviceProvider.GetService<ILogger<MessageHandlerRegistration<TMessage, TMessageContext>>>()));
-
+                    logger: serviceProvider.GetService<ILogger<IMessageHandler<TMessage, TMessageContext>>>()));
+            
             return services;
         }
     }

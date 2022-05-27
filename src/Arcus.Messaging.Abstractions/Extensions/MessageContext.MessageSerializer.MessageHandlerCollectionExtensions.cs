@@ -166,13 +166,12 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
             Guard.NotNull(messageHandlerImplementationFactory, nameof(messageHandlerImplementationFactory), "Requires a function to create the message handler with dependent services");
 
-            services.Services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
-                serviceProvider => new MessageHandlerRegistration<TMessage, TMessageContext>(
+            services.Services.AddTransient(
+                serviceProvider => MessageHandler.Create(
+                    messageHandler: messageHandlerImplementationFactory(serviceProvider),
                     messageContextFilter: messageContextFilter,
                     messageBodySerializer: messageBodySerializer,
-                    messageBodyFilter: null,
-                    messageHandlerImplementation: messageHandlerImplementationFactory(serviceProvider),
-                    logger: serviceProvider.GetService<ILogger<MessageHandlerRegistration<TMessage, TMessageContext>>>()));
+                    logger: serviceProvider.GetService<ILogger<IMessageHandler<TMessage, TMessageContext>>>()));
 
             return services;
         }
@@ -228,13 +227,12 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageHandlerImplementationFactory, nameof(messageHandlerImplementationFactory), "Requires a function to create the message handler with dependent services");
             Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer to deserialize the incoming message for the message handler");
 
-            services.Services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
-                serviceProvider => new MessageHandlerRegistration<TMessage, TMessageContext>(
+            services.Services.AddTransient(
+                serviceProvider => MessageHandler.Create(
+                    messageHandler: messageHandlerImplementationFactory(serviceProvider),
                     messageContextFilter: messageContextFilter,
                     messageBodySerializer: messageBodySerializerImplementationFactory(serviceProvider),
-                    messageBodyFilter: null,
-                    messageHandlerImplementation: messageHandlerImplementationFactory(serviceProvider),
-                    logger: serviceProvider.GetService<ILogger<MessageHandlerRegistration<TMessage, TMessageContext>>>()));
+                    logger: serviceProvider.GetService<ILogger<IMessageHandler<TMessage, TMessageContext>>>()));
 
             return services;
         }

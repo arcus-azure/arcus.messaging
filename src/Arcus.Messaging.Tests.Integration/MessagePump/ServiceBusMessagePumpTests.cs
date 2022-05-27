@@ -846,7 +846,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 RetryAssertUntilTelemetryShouldBeAvailable(() =>
                 {
                     Assert.Contains(spySink.CurrentLogEmits,
-                        log => log.Exception?.InnerException?.Message.Contains("Sabotage") is true 
+                        log => log.Exception?.Message.Contains("Sabotage") is true 
                                && log.ContainsProperty(ContextProperties.Correlation.OperationId, operationId) 
                                && log.ContainsProperty(ContextProperties.Correlation.TransactionId, transactionId));
                 },
@@ -924,7 +924,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                           _logger.LogError(exception, "Failed assertion. Reason: {Message}", exception.Message);
                           return true;
                       })
-                      .WaitAndRetryForever(index => TimeSpan.FromSeconds(3));
+                      .WaitAndRetryForever(index => TimeSpan.FromSeconds(5));
 
             Policy.Timeout(timeout)
                   .Wrap(retryPolicy)

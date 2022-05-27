@@ -105,14 +105,12 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
 
-            services.Services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
-                serviceProvider => new MessageHandlerRegistration<TMessage, TMessageContext>(
-                    messageContextFilter: messageContextFilter, 
-                    messageBodySerializer: null,
-                    messageBodyFilter: null,
-                    messageHandlerImplementation: implementationFactory(serviceProvider),
-                    logger: serviceProvider.GetService<ILogger<MessageHandlerRegistration<TMessage, TMessageContext>>>()));
-
+            services.Services.AddTransient(
+                serviceProvider => MessageHandler.Create(
+                    messageHandler: implementationFactory(serviceProvider), 
+                    messageContextFilter: messageContextFilter,
+                    logger: serviceProvider.GetService<ILogger<IMessageHandler<TMessage, TMessageContext>>>()));
+            
             return services;
         }
     }
