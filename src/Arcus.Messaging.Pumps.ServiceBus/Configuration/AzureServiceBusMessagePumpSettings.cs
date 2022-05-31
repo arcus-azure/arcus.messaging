@@ -9,6 +9,7 @@ using Azure.Messaging.ServiceBus.Administration;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -306,9 +307,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 
             if (userDefinedSecretProvider is null)
             {
-                throw new KeyNotFoundException(
-                    $"No configured {nameof(ICachedSecretProvider)} or {nameof(ISecretProvider)} implementation found in the service container. "
-                    + "Please configure such an implementation (ex. in the Startup) of your application");
+                throw new InvalidOperationException(
+                    "Could not retrieve the Azure Service Bus connection string from the Arcus secret store because no secret store was configured in the application,"
+                    + $"please configure the Arcus secret store with '{nameof(IHostBuilderExtensions.ConfigureSecretStore)}' on the application '{nameof(IHost)}' "
+                    + $"or during the service collection registration 'AddSecretStore' on the application '{nameof(IServiceCollection)}'."
+                    + "For more information on the Arcus secret store, see: https://security.arcus-azure.net/features/secret-store");
             }
 
             Task<string> getConnectionStringTask = _getConnectionStringFromSecretFunc(userDefinedSecretProvider);
