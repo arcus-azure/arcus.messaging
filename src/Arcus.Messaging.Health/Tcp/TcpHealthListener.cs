@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -175,7 +177,8 @@ namespace Arcus.Messaging.Health.Tcp
             IHealthReportSerializer reportSerializer = _tcpListenerOptions.Serializer;
             if (reportSerializer is null)
             {
-                string json = JsonConvert.SerializeObject(healthReport, SerializationSettings);
+                HealthReport updatedReport = RemoveExceptionDetails(healthReport);
+                string json = JsonConvert.SerializeObject(updatedReport, SerializationSettings);
                 byte[] response = Encoding.UTF8.GetBytes(json);
 
                 return response;
@@ -191,6 +194,19 @@ namespace Arcus.Messaging.Health.Tcp
 
                 return response;
             }
+        }
+
+        private static HealthReport RemoveExceptionDetails(HealthReport report)
+        {
+            var entries = new Dictionary<string, HealthReportEntry>();
+            foreach ((string key, HealthReportEntry entry) in report.Entries)
+            {
+                entries.Add(key, new HealthReportEntry(entry.Status, entry.Description, entry.Duration, exception: null, entry.Data, entry.Tags));
+            }
+
+            return new HealthReport(
+                new ReadOnlyDictionary<string, HealthReportEntry>(entries),
+                report.TotalDuration);
         }
 
         /// <summary>
