@@ -103,7 +103,6 @@ namespace Arcus.Messaging.Tests.Integration.Health
                     Assert.NotEmpty(item.Value.Data);
                     Assert.Null(item.Value.Exception);
                 });
-
             }
         }
 
