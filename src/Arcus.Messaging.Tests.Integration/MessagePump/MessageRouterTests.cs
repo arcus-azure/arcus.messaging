@@ -51,7 +51,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 {
                     await router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None);
                 }
-                catch (InvalidOperationException)
+                catch (InvalidOperationException exception) when(exception.Message.Contains("cannot correctly process the message"))
                 {
                     // Assert
                     Assert.Contains(spySink.CurrentLogEmits,
