@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +11,6 @@ using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
@@ -72,7 +70,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var message = new TestMessage();
-            var context = TestMessageContext.Generate();
+            var context = new MessageContext("message-id", new Dictionary<string, object>());
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             await messageHandler.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
             Assert.True(spyHandler.IsProcessed);
@@ -328,17 +326,11 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void SubtractsMessageHandlers_SelectsAllRegistrations()
         {
             // Arrange
-            var descriptors = new Collection<ServiceDescriptor>
-            {
-                ServiceDescriptor.Singleton(Mock.Of<IMessageHandler<string, MessageContext>>()),
-                ServiceDescriptor.Singleton(Mock.Of<IMessageHandler<int, MessageContext>>()),
-                ServiceDescriptor.Singleton(Mock.Of<IMessageHandler<TimeSpan, MessageContext>>()),
-                ServiceDescriptor.Singleton(provider => Mock.Of<IMessageHandler<byte, TestMessageContext>>()), 
-                ServiceDescriptor.Singleton<IMessageHandler<TestMessage, TestMessageContext>, TestMessageHandler>(), 
-            };
-
             var collection = new MessageHandlerCollection(new ServiceCollection());
-            Assert.All(descriptors, descriptor => collection.Services.Insert(descriptors.IndexOf(descriptor), descriptor));
+            collection.WithMessageHandler<StubTestMessageHandler<string, MessageContext>, string>();
+            collection.WithMessageHandler<StubTestMessageHandler<Exception, MessageContext>, Exception>();
+            collection.WithMessageHandler<StubTestMessageHandler<TestMessage, MessageContext>, TestMessage>(provider => new StubTestMessageHandler<TestMessage, MessageContext>());
+            collection.WithMessageHandler<StubTestMessageHandler<TestMessage, MessageContext>, TestMessage>();
 
             IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
             
@@ -346,7 +338,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
 
             // Assert
-            Assert.Equal(descriptors.Count, messageHandlers.Count());
+            Assert.Equal(4, messageHandlers.Count());
         }
 
         [Fact]

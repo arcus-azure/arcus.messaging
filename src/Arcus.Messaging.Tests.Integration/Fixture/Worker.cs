@@ -22,6 +22,11 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         }
 
         /// <summary>
+        /// Gets the registered application services of the test worker.
+        /// </summary>
+        public IServiceProvider Services => _host.Services;
+
+        /// <summary>
         /// Spawns a new test worker configurable with <paramref name="options"/>.
         /// </summary>
         /// <param name="options">The configurable options to influence the content of the test worker.</param>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions.Telemetry;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
+using Serilog.Context;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
@@ -144,8 +146,12 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
-            bool isProcessed = await TryProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-            return isProcessed;
+            using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+            using (UsingMessageCorrelationEnricher(serviceScope.ServiceProvider, correlationInfo))
+            {
+                bool isProcessed = await TryProcessMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
+                return isProcessed; 
+            }
         }
 
         /// <summary>
@@ -171,7 +177,46 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
-            bool isProcessed = await TryProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+            using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+            using (UsingMessageCorrelationEnricher(serviceScope.ServiceProvider, correlationInfo))
+            {
+                await RouteMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// Creates a Serilog message correlation enricher on the Serilog <see cref="LogContext"/> during the the course of the returned <see cref="IDisposable"/>.
+        /// </summary>
+        /// <param name="serviceProvider">The scoped service provider to extract the <see cref="IMessageCorrelationInfoAccessor"/>.</param>
+        /// <param name="correlationInfo">The message correlation to be set on the <see cref="IMessageCorrelationInfoAccessor"/>.</param>
+        /// <returns>
+        ///     A temporary set of a Serilog message correlation enricher on the Serilog <see cref="LogContext"/>.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> or <paramref name="correlationInfo"/> is <c>null</c>.</exception>
+        protected IDisposable UsingMessageCorrelationEnricher(IServiceProvider serviceProvider, MessageCorrelationInfo correlationInfo)
+        {
+            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a scoped service provider to extract the message correlation accessor");
+            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to set on the message correlation accessor");
+
+            var correlationInfoAccessor = serviceProvider.GetService<IMessageCorrelationInfoAccessor>();
+            if (correlationInfoAccessor is null)
+            {
+                return null;
+            }
+
+            correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
+            return LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor));
+        }
+
+        private async Task RouteMessageAsync<TMessageContext>(
+            IServiceProvider serviceProvider,
+            string message,
+            TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellationToken)
+            where TMessageContext : MessageContext
+        {
+            bool isProcessed = await TryProcessMessageAsync(serviceProvider, message, messageContext, correlationInfo, cancellationToken);
             if (isProcessed)
             {
                 return;
@@ -184,17 +229,18 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                     $"Message pump cannot correctly process the message in the '{typeof(TMessageContext).Name}' "
                     + "because none of the registered 'IMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context. "
                     + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump or message router to register a message handler");
-            }
+            } 
         }
 
         private async Task<bool> TryProcessMessageAsync<TMessageContext>(
+            IServiceProvider serviceProvider,
             string message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-            MessageHandler[] handlers = GetRegisteredMessageHandlers().ToArray();
+            MessageHandler[] handlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
             if (handlers.Length <= 0 && _fallbackMessageHandler.Value is null)
             {
                 throw new InvalidOperationException(
@@ -208,7 +254,12 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 MessageResult result = await DeserializeMessageForHandlerAsync(message, messageContext, handler);
                 if (result.IsSuccess)
                 {
-                    await handler.ProcessMessageAsync(result.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
+                    bool isProcessed = await handler.ProcessMessageAsync(result.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
+                    if (!isProcessed)
+                    {
+                        continue;
+                    }
+
                     return true;
                 }
             }
@@ -219,6 +270,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets all the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances in the application.
         /// </summary>
+        [Obsolete("Use the overload with a dedicated scoped " + nameof(IServiceProvider) + ": " + nameof(GetRegisteredMessageHandlers) + " so that the correlation information is enriched during the message routing")]
         protected IEnumerable<MessageHandler> GetRegisteredMessageHandlers()
         {
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(ServiceProvider, Logger);

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Tests.Core.Messages.v1
 {
@@ -15,5 +16,8 @@ namespace Arcus.Messaging.Tests.Core.Messages.v1
 
         [JsonProperty]
         public Customer Customer { get; set; }
+
+        [JsonProperty]
+        public DateTimeOffset Date { get; set; }
     }
 }

@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
 
-            handlers.Services.AddTransient<IMessageHandler<TMessage, AzureServiceBusMessageContext>, TMessageHandler>();
+            handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>();
             return handlers;
         }
 
@@ -49,7 +49,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent handlers");
 
-            handlers.Services.AddTransient<IMessageHandler<TMessage, AzureServiceBusMessageContext>, TMessageHandler>(implementationFactory);
+            handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(implementationFactory);
             return handlers;
         }
 

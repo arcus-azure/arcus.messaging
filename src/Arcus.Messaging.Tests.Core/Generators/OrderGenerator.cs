@@ -16,7 +16,8 @@ namespace Arcus.Messaging.Tests.Core.Generators
                 .RuleFor(u => u.Customer, () => customerGenerator)
                 .RuleFor(u => u.Id, f => Guid.NewGuid().ToString())
                 .RuleFor(u => u.Amount, f => f.Random.Int())
-                .RuleFor(u => u.ArticleNumber, f => f.Commerce.Product());
+                .RuleFor(u => u.ArticleNumber, f => f.Commerce.Product())
+                .RuleFor(u => u.Date, f => f.Date.RecentOffset());
 
             return orderGenerator.Generate();
         }
