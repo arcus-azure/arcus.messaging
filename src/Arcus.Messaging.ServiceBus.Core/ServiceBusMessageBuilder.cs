@@ -2,12 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using Arcus.Messaging.Abstractions;
-using Azure.Messaging.ServiceBus;
 using GuardNet;
 using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
-namespace Microsoft.Azure.ServiceBus
+namespace Azure.Messaging.ServiceBus
 {
     /// <summary>
     /// Represents a builder instance to create <see cref="ServiceBusMessage"/> instances in different ways.
@@ -45,7 +44,7 @@ namespace Microsoft.Azure.ServiceBus
         {
             Guard.NotNull(messageBody, nameof(messageBody), "Requires a message body to include in the to-be-created Azure Service Bus message");
             Guard.NotNull(encoding, nameof(encoding), "Requires an encoding instance to encode the passed-in message body so it can be included in the Azure Service Bus message");
-            
+
             return new ServiceBusMessageBuilder(messageBody, encoding);
         }
 
@@ -56,9 +55,11 @@ namespace Microsoft.Azure.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="operationId"/> is blank.</exception>
         public ServiceBusMessageBuilder WithOperationId(string operationId)
         {
-            Guard.NotNullOrWhitespace(operationId, nameof(operationId), "Requires a non-blank operation ID for the Azure Service Bus message");
+            if (operationId is not null)
+            {
+                _operationIdProperty = new KeyValuePair<string, object>(null, operationId);
+            }
 
-            _operationIdProperty = new KeyValuePair<string, object>(null, operationId);
             return this;
         }
 
@@ -67,13 +68,17 @@ namespace Microsoft.Azure.ServiceBus
         /// </summary>
         /// <param name="operationId">The unique identifier for this operation.</param>
         /// <param name="operationIdPropertyName">The custom name that must be given to the application property that contains the <paramref name="operationId"/>.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="operationId"/> or the <paramref name="operationIdPropertyName"/> is blank.</exception>
+        /// <remarks>
+        ///     <para>When no <paramref name="operationId"/> is specified, no operation ID will be set on the <see cref="ServiceBusMessage"/>;</para>
+        ///     <para>when no <paramref name="operationIdPropertyName"/> is specified, the default location <see cref="ServiceBusMessage.CorrelationId"/> will be used to set the operation ID.</para>
+        /// </remarks>
         public ServiceBusMessageBuilder WithOperationId(string operationId, string operationIdPropertyName)
         {
-            Guard.NotNullOrWhitespace(operationId, nameof(operationId), "Requires a non-blank operation ID for the Azure Service Bus message");
-            Guard.NotNullOrWhitespace(operationIdPropertyName, nameof(operationIdPropertyName), "Requires a non-blank application property name to assign the operation ID to the Azure Service Bus message");
+            if (operationId is not null)
+            {
+                _operationIdProperty = new KeyValuePair<string, object>(operationIdPropertyName, operationId);
+            }
 
-            _operationIdProperty = new KeyValuePair<string, object>(operationIdPropertyName, operationId);
             return this;
         }
 
@@ -82,10 +87,9 @@ namespace Microsoft.Azure.ServiceBus
         /// with <see cref="PropertyNames.TransactionId"/> as key.
         /// </summary>
         /// <param name="transactionId">The unique identifier of the current transaction.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionId"/> is blank.</exception>
+        /// <remarks>When no <paramref name="transactionId"/> is specified, no transaction ID will be set on the <see cref="ServiceBusMessage"/>.</remarks>
         public ServiceBusMessageBuilder WithTransactionId(string transactionId)
         {
-            Guard.NotNullOrWhitespace(transactionId, nameof(transactionId), "Requires a non-blank transaction ID for the Azure Service Bus message");
             return WithTransactionId(transactionId, PropertyNames.TransactionId);
         }
 
@@ -95,13 +99,19 @@ namespace Microsoft.Azure.ServiceBus
         /// </summary>
         /// <param name="transactionId">The unique identifier of the current transaction.</param>
         /// <param name="transactionIdPropertyName">The custom name that must be given to the application property that contains the <paramref name="transactionId"/>.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionId"/> or the <paramref name="transactionIdPropertyName"/> is blank.</exception>
+        /// <remarks>
+        ///     <para>When no <paramref name="transactionId"/> is specified, no transaction ID will be set on the <see cref="ServiceBusMessage"/>;</para>
+        ///     <para>when no <paramref name="transactionIdPropertyName"/> is specified, the default <see cref="PropertyNames.TransactionId"/> application property name will be used.</para>
+        /// </remarks>
         public ServiceBusMessageBuilder WithTransactionId(string transactionId, string transactionIdPropertyName)
         {
-            Guard.NotNullOrWhitespace(transactionId, nameof(transactionId), "Requires a non-blank transaction ID for the Azure Service Bus message");
-            Guard.NotNullOrWhitespace(transactionIdPropertyName, nameof(transactionIdPropertyName), "Requires a non-blank property name of the transaction ID for the Azure Service Bus message");
+            if (transactionId is not null)
+            {
+                _transactionIdProperty = new KeyValuePair<string, object>(
+                    transactionIdPropertyName ?? PropertyNames.TransactionId,
+                    transactionId); 
+            }
 
-            _transactionIdProperty = new KeyValuePair<string, object>(transactionIdPropertyName, transactionId);
             return this;
         }
 
@@ -110,10 +120,9 @@ namespace Microsoft.Azure.ServiceBus
         /// with <see cref="PropertyNames.OperationParentId"/> as key.
         /// </summary>
         /// <param name="operationParentId">The unique identifier of the current parent operation.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="operationParentId"/> is blank.</exception>
+        /// <remarks>When no <paramref name="operationParentId"/> is specified, no operation parent ID will be set on the <see cref="ServiceBusMessage"/>.</remarks>
         public ServiceBusMessageBuilder WithOperationParentId(string operationParentId)
         {
-            Guard.NotNullOrWhitespace(operationParentId, nameof(operationParentId), "Requires a non-blank transaction ID for the Azure Service Bus message");
             return WithOperationParentId(operationParentId, PropertyNames.OperationParentId);
         }
 
@@ -123,15 +132,21 @@ namespace Microsoft.Azure.ServiceBus
         /// </summary>
         /// <param name="operationParentId">The unique identifier of the current operation.</param>
         /// <param name="operationParentIdPropertyName">The custom name that must be given to the application property that contains the <paramref name="operationParentId"/>.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="operationParentId"/> or the <paramref name="operationParentIdPropertyName"/> is blank.</exception>
+        /// <remarks>
+        ///     <para>When no <paramref name="operationParentId"/> is specified, no operation parent ID will be set on the <see cref="ServiceBusMessage"/>;</para>
+        ///     <para>when no <paramref name="operationParentIdPropertyName"/> is specified, the default <see cref="PropertyNames.OperationParentId"/> application property name will be used.</para>
+        /// </remarks>
         public ServiceBusMessageBuilder WithOperationParentId(
             string operationParentId,
             string operationParentIdPropertyName)
         {
-            Guard.NotNullOrWhitespace(operationParentId, nameof(operationParentId), "Requires a non-blank transaction ID for the Azure Service Bus message");
-            Guard.NotNullOrWhitespace(operationParentIdPropertyName, nameof(operationParentIdPropertyName), "Requires a non-blank property name of the transaction ID for the Azure Service Bus message");
+            if (operationParentId is not null)
+            {
+                _operationParentIdProperty = new KeyValuePair<string, object>(
+                    operationParentIdPropertyName ?? PropertyNames.OperationParentId,
+                    operationParentId); 
+            }
 
-            _operationParentIdProperty = new KeyValuePair<string, object>(operationParentIdPropertyName, operationParentId);
             return this;
         }
 

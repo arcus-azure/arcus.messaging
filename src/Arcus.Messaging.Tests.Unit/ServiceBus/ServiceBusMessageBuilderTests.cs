@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Text;
+using System.Text.Json;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Tests.Unit.Fixture;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Azure.ServiceBus;
+using Bogus;
 using Xunit;
 
 namespace Arcus.Messaging.Tests.Unit.ServiceBus
@@ -67,7 +69,8 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void Create_WithTransactionId_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
             var transactionId = $"transaction-{Guid.NewGuid()}";
 
             // Act
@@ -75,14 +78,16 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             ServiceBusMessage message = builder.Build();
-            Assert.Equal(transactionId, message.ApplicationProperties[PropertyNames.TransactionId]);
+            AssertEqualOrder(expected, message);
+            Assert.Equal(transactionId, Assert.Contains(PropertyNames.TransactionId, message.ApplicationProperties));
         }
 
         [Fact]
         public void Create_WithCustomTransactionIdProperty_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
             var transactionId = $"transaction-{Guid.NewGuid()}";
             var transactionIdPropertyName = "MyTransactionIdProperty";
 
@@ -91,14 +96,16 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             ServiceBusMessage message = builder.Build();
-            Assert.Equal(transactionId, message.ApplicationProperties[transactionIdPropertyName]);
+            AssertEqualOrder(expected, message);
+            Assert.Equal(transactionId, Assert.Contains(transactionIdPropertyName, message.ApplicationProperties));
         }
 
         [Fact]
         public void Create_WithTransactionIdPropertyNameTwice_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
             var transactionId = $"transaction-{Guid.NewGuid()}";
             var wrongPropertyName = "MyTransaction";
 
@@ -107,50 +114,67 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             ServiceBusMessage message = builder.Build();
-            Assert.Equal(transactionId, message.ApplicationProperties[PropertyNames.TransactionId]);
-            Assert.DoesNotContain(wrongPropertyName, message.ApplicationProperties.Keys);
+            AssertEqualOrder(expected, message);
+            Assert.Equal(transactionId, Assert.Contains(PropertyNames.TransactionId, message.ApplicationProperties));
+            Assert.DoesNotContain(wrongPropertyName, message.ApplicationProperties);
         }
 
-        [Theory]
-        [ClassData(typeof(Blanks))]
-        public void CreateWithDefaultTransactionId_WithoutTransactionId_Fails(string transactionId)
+        [Fact]
+        public void CreateWithDefaultTransactionId_WithoutTransactionId_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
 
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => builder.WithTransactionId(transactionId));
+            // Act
+            builder.WithTransactionId(transactionId: null);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(expected, message);
+            Assert.DoesNotContain(PropertyNames.TransactionId, message.ApplicationProperties);
         }
 
-        [Theory]
-        [ClassData(typeof(Blanks))]
-        public void CreateWithCustomTransactionId_WithoutTransactionId_Fails(string transactionId)
+        [Fact]
+        public void CreateWithCustomTransactionId_WithoutTransactionId_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
+            var propertyName = "MyTransactionIdProperty";
 
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() =>
-                builder.WithTransactionId(transactionId, "MyTransactionIdProperty"));
+            // Act
+            builder.WithTransactionId(transactionId: null, propertyName);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(expected, message);
+            Assert.DoesNotContain(propertyName, message.ApplicationProperties);
         }
 
-        [Theory]
-        [ClassData(typeof(Blanks))]
-        public void CreateWithCustomTransactionId_WithoutTransactionIdPropertyName_Fails(string transactionIdPropertyName)
+        [Fact]
+        public void CreateWithCustomTransactionId_WithoutTransactionIdPropertyName_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order order = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(order);
             var transactionId = $"transaction-{Guid.NewGuid()}";
 
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => builder.WithTransactionId(transactionId, transactionIdPropertyName));
+            // Act
+            builder.WithTransactionId(transactionId, transactionIdPropertyName: null);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(order, message);
+            Assert.Equal(transactionId, Assert.Contains(PropertyNames.TransactionId, message.ApplicationProperties));
         }
 
         [Fact]
         public void Create_WithOperationId_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
             var operationId = $"operation-{Guid.NewGuid()}";
 
             // Act
@@ -158,6 +182,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(expected, message);
             Assert.Equal(operationId, message.CorrelationId);
         }
 
@@ -165,7 +190,8 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void Create_WithOperationIdPropertyName_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
             var operationId = $"operation-{Guid.NewGuid()}";
             var operationIdPropertyName = "MyOperation";
 
@@ -174,49 +200,67 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(expected, message);
             Assert.NotEqual(operationId, message.CorrelationId);
-            Assert.Equal(operationId, message.ApplicationProperties[operationIdPropertyName]);
+            Assert.Equal(operationId, Assert.Contains(operationIdPropertyName, message.ApplicationProperties));
+        }
+
+        [Fact]
+        public void Create_WithoutOperationId_Succeeds()
+        {
+            // Arrange
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
+
+            // Act
+            builder.WithOperationId(operationId: null);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(expected, message);
+            Assert.Empty(message.CorrelationId);
         }
 
         [Theory]
         [ClassData(typeof(Blanks))]
-        public void Create_WithoutOperationId_Fails(string operationId)
+        public void CreateWithPropertyName_WithoutOperationId_Succeeds(string operationId)
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
 
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => builder.WithOperationId(operationId));
+            // Act
+            builder.WithOperationId(operationId, "MyOperationIdProperty");
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(expected, message);
+            Assert.Empty(message.CorrelationId);
         }
 
-        [Theory]
-        [ClassData(typeof(Blanks))]
-        public void CreateWithPropertyName_WithoutOperationId_Fails(string operationId)
+        [Fact]
+        public void CreateWithPropertyName_WithoutOperationIdPropertyName_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => builder.WithOperationId(operationId));
-        }
-
-        [Theory]
-        [ClassData(typeof(Blanks))]
-        public void CreateWithPropertyName_WithoutOperationIdPropertyName_Fails(string operationIdPropertyName)
-        {
-            // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
             var operationId = $"operation-{Guid.NewGuid()}";
 
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => builder.WithOperationId(operationId, operationIdPropertyName));
+            // Act
+            builder.WithOperationId(operationId, operationIdPropertyName: null);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(expected, message);
+            Assert.Equal(operationId, message.CorrelationId);
         }
 
         [Fact]
         public void Create_WithOperationIdPropertyNameTwice_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
             var operationId = $"operation-{Guid.NewGuid()}";
             var wrongPropertyName = "MyOperation";
 
@@ -225,15 +269,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(expected, message);
             Assert.Equal(operationId, message.CorrelationId);
-            Assert.DoesNotContain(wrongPropertyName, message.ApplicationProperties.Keys);
+            Assert.DoesNotContain(wrongPropertyName, message.ApplicationProperties);
         }
 
         [Fact]
         public void Create_WithOperationParentId_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
             var operationParentId = $"operation-parent-{Guid.NewGuid()}";
 
             // Act
@@ -241,14 +287,16 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             ServiceBusMessage message = builder.Build();
-            Assert.Equal(operationParentId, message.ApplicationProperties[PropertyNames.OperationParentId]);
+            AssertEqualOrder(expected, message);
+            Assert.Equal(operationParentId, Assert.Contains(PropertyNames.OperationParentId, message.ApplicationProperties));
         }
 
         [Fact]
         public void Create_WithCustomOperationParentIdProperty_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
             var operationParentId = $"operation-parent-{Guid.NewGuid()}";
             var operationParentIdPropertyName = "MyOperationParentIdProperty";
 
@@ -257,14 +305,16 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             ServiceBusMessage message = builder.Build();
-            Assert.Equal(operationParentId, message.ApplicationProperties[operationParentIdPropertyName]);
+            AssertEqualOrder(expected, message);
+            Assert.Equal(operationParentId, Assert.Contains(operationParentIdPropertyName, message.ApplicationProperties));
         }
 
         [Fact]
         public void Create_WithOperationParentIdPropertyNameTwice_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
             var operationParentId = $"operation-{Guid.NewGuid()}";
             var wrongPropertyName = "MyOperation";
 
@@ -273,43 +323,75 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             ServiceBusMessage message = builder.Build();
-            Assert.Equal(operationParentId, message.ApplicationProperties[PropertyNames.OperationParentId]);
-            Assert.DoesNotContain(wrongPropertyName, message.ApplicationProperties.Keys);
+            AssertEqualOrder(expected, message);
+            Assert.Equal(operationParentId, Assert.Contains(PropertyNames.OperationParentId, message.ApplicationProperties));
+            Assert.DoesNotContain(wrongPropertyName, message.ApplicationProperties);
         }
 
-        [Theory]
-        [ClassData(typeof(Blanks))]
-        public void CreateWithDefaultOperationParentId_WithoutOperationParentId_Fails(string operationParentId)
+        [Fact]
+        public void CreateWithDefaultOperationParentId_WithoutOperationParentId_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
 
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => builder.WithOperationParentId(operationParentId));
+            // Act
+            builder.WithOperationParentId(operationParentId: null);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(expected, message);
+            Assert.DoesNotContain(PropertyNames.OperationParentId, message.ApplicationProperties);
         }
 
-        [Theory]
-        [ClassData(typeof(Blanks))]
-        public void CreateWithCustomOperationParentId_WithoutOperationParentId_Fails(string operationParentId)
+        [Fact]
+        public void CreateWithCustomOperationParentId_WithoutOperationParentId_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
+            var propertyName = "MyOperationParentIdProperty";
 
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() =>
-                builder.WithOperationParentId(operationParentId, "MyOperationParentIdProperty"));
+            // Act
+            builder.WithOperationParentId(operationParentId: null, propertyName);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(expected, message);
+            Assert.DoesNotContain(propertyName, message.ApplicationProperties);
         }
 
-        [Theory]
-        [ClassData(typeof(Blanks))]
-        public void CreateWithCustomOperationParentId_WithoutOperationParentIdPropertyName_Fails(string operationParentIdPropertyName)
+        [Fact]
+        public void CreateWithCustomOperationParentId_WithoutOperationParentIdPropertyName_Succeeds()
         {
             // Arrange
-            var builder = ServiceBusMessageBuilder.CreateForBody(messageBody: 1);
+            Order expected = GenerateOrder();
+            var builder = ServiceBusMessageBuilder.CreateForBody(expected);
             var operationParentId = $"operation-parent-{Guid.NewGuid()}";
 
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => builder.WithOperationParentId(operationParentId, operationParentIdPropertyName));
+            // Act
+            builder.WithOperationParentId(operationParentId, operationParentIdPropertyName: null);
+
+            // Assert
+            ServiceBusMessage message = builder.Build();
+            AssertEqualOrder(expected, message);
+            Assert.Equal(operationParentId, Assert.Contains(PropertyNames.OperationParentId, message.ApplicationProperties));
+        }
+
+        private static Order GenerateOrder()
+        {
+            Faker<Order> generator = new Faker<Order>()
+                .RuleFor(order => order.OrderId, faker => faker.Random.Hash())
+                .RuleFor(order => order.CustomerName, faker => faker.Name.FullName());
+
+            Order order = generator.Generate();
+            return order;
+        }
+
+        private static void AssertEqualOrder(Order expected, ServiceBusMessage message)
+        {
+            var actual = JsonSerializer.Deserialize<Order>(message.Body);
+            Assert.Equal(expected, actual);
         }
     }
 }
