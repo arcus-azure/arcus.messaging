@@ -24,6 +24,7 @@ namespace Microsoft.Azure.ServiceBus
         /// <param name="encoding">Encoding to use during serialization. Defaults to UTF8</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageBody"/> is <c>null</c>.</exception>
         /// <returns>an <see cref="ServiceBusMessage"/>.</returns>
+        [Obsolete("Use the " + nameof(ServiceBusMessageBuilder) + " instead to create " + nameof(ServiceBusMessage) + " instances")]
         public static ServiceBusMessage AsServiceBusMessage(this object messageBody, string operationId = null, string transactionId = null, Encoding encoding = null)
         { 
             Guard.NotNull(messageBody, nameof(messageBody), "Requires a message body to create an Azure Service Bus message this message body");
