@@ -6,6 +6,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// Exception thrown when a specific value of a type cannot be found during reflected selection.
     /// </summary>
     [Serializable]
+    [Obsolete("No need to have a custom exception anymore since any reflection code is removed")]
     public class ValueMissingException : Exception
     {
         /// <summary>

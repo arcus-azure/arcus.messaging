@@ -192,8 +192,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets the concrete class type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
         /// </summary>
-        /// <exception cref="TypeNotFoundException">Thrown when there's a problem with finding the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</exception>
-        /// <exception cref="ValueMissingException">Thrown when there's no value for the <see cref="IMessageHandler{TMessage,TMessageContext}"/> type value.</exception>
         public object GetMessageHandlerInstance()
         {
             return _messageHandlerInstance;
@@ -202,8 +200,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
         /// </summary>
-        /// <exception cref="TypeNotFoundException">Thrown when there's a problem with finding the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</exception>
-        /// <exception cref="ValueMissingException">Thrown when there's no value for the <see cref="IMessageHandler{TMessage,TMessageContext}"/> type value.</exception>
         public Type GetMessageHandlerType()
         {
             return _messageHandlerInstanceType;
