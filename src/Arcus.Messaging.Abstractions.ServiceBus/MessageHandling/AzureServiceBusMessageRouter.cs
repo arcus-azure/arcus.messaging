@@ -208,7 +208,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             var isSuccessful = false;
             using (DurationMeasurement measurement = DurationMeasurement.Start())
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
-            using (UsingMessageCorrelationEnricher(serviceScope.ServiceProvider, correlationInfo))
+            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo)))
             {
                 try
                 {

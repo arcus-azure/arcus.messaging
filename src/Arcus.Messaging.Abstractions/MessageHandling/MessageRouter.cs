@@ -147,7 +147,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
-            using (UsingMessageCorrelationEnricher(serviceScope.ServiceProvider, correlationInfo))
+            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo)))
             {
                 bool isProcessed = await TryProcessMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
                 return isProcessed; 
@@ -178,7 +178,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
-            using (UsingMessageCorrelationEnricher(serviceScope.ServiceProvider, correlationInfo))
+            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo)))
             {
                 await RouteMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
             }
@@ -193,6 +193,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     A temporary set of a Serilog message correlation enricher on the Serilog <see cref="LogContext"/>.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> or <paramref name="correlationInfo"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(MessageCorrelationInfoAccessor) + " directly with the message correlation model")]
         protected IDisposable UsingMessageCorrelationEnricher(IServiceProvider serviceProvider, MessageCorrelationInfo correlationInfo)
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a scoped service provider to extract the message correlation accessor");
