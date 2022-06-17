@@ -149,8 +149,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
             using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo)))
             {
-                var accessor = serviceScope.ServiceProvider.GetRequiredService<IMessageCorrelationInfoAccessor>();
-                accessor.SetCorrelationInfo(correlationInfo);
+                var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
+                accessor?.SetCorrelationInfo(correlationInfo);
 
                 bool isProcessed = await TryProcessMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
                 return isProcessed; 
@@ -183,8 +183,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
             using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo)))
             {
-                var accessor = serviceScope.ServiceProvider.GetRequiredService<IMessageCorrelationInfoAccessor>();
-                accessor.SetCorrelationInfo(correlationInfo);
+                var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
+                accessor?.SetCorrelationInfo(correlationInfo);
 
                 await RouteMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
             }
