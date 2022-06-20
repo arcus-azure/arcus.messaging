@@ -8,6 +8,7 @@ using Arcus.Observability.Telemetry.Core;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -208,10 +209,13 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             var isSuccessful = false;
             using (DurationMeasurement measurement = DurationMeasurement.Start())
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
-            using (UsingMessageCorrelationEnricher(serviceScope.ServiceProvider, correlationInfo))
+            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo)))
             {
                 try
                 {
+                    var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
+                    accessor?.SetCorrelationInfo(correlationInfo);
+
                     await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
                     isSuccessful = true;
                 }
