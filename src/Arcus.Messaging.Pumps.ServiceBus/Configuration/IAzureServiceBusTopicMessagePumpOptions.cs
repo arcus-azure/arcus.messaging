@@ -56,11 +56,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets the options to control the correlation information upon the receiving of Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
         /// </summary>
+        [Obsolete("Will be moved to message routing options in the future")]
         AzureServiceBusCorrelationOptions Correlation { get; }
         
         /// <summary>
         /// Gets the consumer-configurable options to change the deserialization behavior.
         /// </summary>
+        [Obsolete("Will be moved to message routing options in the future")]
         MessageDeserializationOptions Deserialization { get; }
     }
 }
