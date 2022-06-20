@@ -147,7 +147,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
-            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo)))
+            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.Telemetry)))
             {
                 var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                 accessor?.SetCorrelationInfo(correlationInfo);
@@ -181,7 +181,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
-            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo)))
+            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.Telemetry)))
             {
                 var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                 accessor?.SetCorrelationInfo(correlationInfo);

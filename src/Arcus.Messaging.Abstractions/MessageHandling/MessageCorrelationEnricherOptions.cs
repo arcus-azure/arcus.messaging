@@ -8,7 +8,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// <summary>
     /// Represents the consumer configurable options model to change the behavior of the Serilog <see cref="MessageCorrelationInfoEnricher"/>.
     /// </summary>
-    internal class MessageCorrelationEnricherOptions : CorrelationInfoEnricherOptions
+    public class MessageCorrelationEnricherOptions : CorrelationInfoEnricherOptions
     {
         private string _cycleIdPropertyName = "CycleId";
 
