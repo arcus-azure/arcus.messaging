@@ -195,7 +195,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var context = TestMessageContext.Generate();
-            Assert.Equal(matchesContext, messageHandler.CanProcessMessage(messageContext: context));
+            Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
         }
 
         [Theory]
@@ -243,7 +243,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var context = new MessageContext("message-id", new Dictionary<string, object>());
-            Assert.Equal(matchesContext, messageHandler.CanProcessMessage(messageContext: context));
+            Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
         }
 
         [Fact]
