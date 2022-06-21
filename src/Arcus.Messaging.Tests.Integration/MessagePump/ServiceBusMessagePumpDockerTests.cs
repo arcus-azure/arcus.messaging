@@ -5,7 +5,6 @@ using Arcus.Messaging.Tests.Core.Generators;
 using Azure.Messaging.ServiceBus;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
-using Microsoft.Azure.ServiceBus;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -31,7 +30,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var operationId = Guid.NewGuid().ToString();
             var transactionId = Guid.NewGuid().ToString();
             Order order = OrderGenerator.Generate();
-            ServiceBusMessage orderMessage = order.AsServiceBusMessage(operationId, transactionId);
+
+            ServiceBusMessageBuilder serviceBusMessageBuilder = ServiceBusMessageBuilder.CreateForBody(order);
+            serviceBusMessageBuilder.WithOperationId(operationId);
+            serviceBusMessageBuilder.WithTransactionId(transactionId);
+
+            ServiceBusMessage orderMessage = serviceBusMessageBuilder.Build();
 
             // Act
             await SenderOrderToServiceBusAsync(orderMessage, connectionString);
