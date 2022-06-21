@@ -5,7 +5,6 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Observability.Correlation;
 using Azure.Messaging.ServiceBus;
