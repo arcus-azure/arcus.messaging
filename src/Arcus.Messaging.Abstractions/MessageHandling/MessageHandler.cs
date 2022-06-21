@@ -208,22 +208,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
         /// </summary>
-        /// <param name="messageContext">The messaging context information that holds information about the currently processing message.</param>
-        /// <returns>
-        ///     [true] if the registered <typeparamref name="TMessageContext"/> predicate holds; [false] otherwise.
-        /// </returns>
-        /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
-        [Obsolete("Use the " + nameof(CanProcessMessageBasedOnContext) + " specific message context overload instead")]
-        public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext)
-            where TMessageContext : MessageContext
-        {
-            bool canProcessMessageBasedOnContext = CanProcessMessageBasedOnContext(messageContext);
-            return canProcessMessageBasedOnContext;
-        }
-
-        /// <summary>
-        /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
-        /// </summary>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
         /// <param name="messageContext">The context in which the incoming message is processed.</param>
         public bool CanProcessMessageBasedOnContext<TMessageContext>(TMessageContext messageContext) 
