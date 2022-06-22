@@ -21,6 +21,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets the options to control the Serilog <see cref="MessageCorrelationInfoEnricher"/> when the incoming message is routed via the message router.
         /// </summary>
-        public MessageCorrelationEnricherOptions Telemetry { get; } = new MessageCorrelationEnricherOptions();
+        public MessageCorrelationEnricherOptions CorrelationEnricher { get; } = new MessageCorrelationEnricherOptions();
     }
 }
