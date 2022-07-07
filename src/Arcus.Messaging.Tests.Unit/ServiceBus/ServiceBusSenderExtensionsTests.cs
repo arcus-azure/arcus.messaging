@@ -117,7 +117,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation));
         }
 
-        
         [Fact]
         public async Task SendMessagesBodyWithoutOptions_WithCustomDependencyId_Succeeds()
         {
@@ -286,7 +285,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation));
         }
 
-        
         [Fact]
         public async Task SendMessagesWithoutOptions_WithCustomDependencyId_Succeeds()
         {
