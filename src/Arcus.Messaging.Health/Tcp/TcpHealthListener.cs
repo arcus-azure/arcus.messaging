@@ -139,16 +139,20 @@ namespace Arcus.Messaging.Health.Tcp
             while (!stoppingToken.IsCancellationRequested)
             {
                 HealthReport report = await _healthService.CheckHealthAsync(stoppingToken);
-                await AcceptConnectionAsync(report);
+                await AcceptConnectionAsync(report, stoppingToken);
             }
         }
 
-        private async Task AcceptConnectionAsync(HealthReport report)
+        private async Task AcceptConnectionAsync(HealthReport report, CancellationToken cancellationToken)
         {
             try
             {
                 _logger.LogTrace("Accepting TCP client on port {Port}...", Port);
+#if NET6_0
+                using (TcpClient client = await _listener.AcceptTcpClientAsync(cancellationToken))
+#else 
                 using (TcpClient client = await _listener.AcceptTcpClientAsync())
+#endif
                 {
                     _logger.LogTrace("TCP client accepted on port {Port}!", Port);
                     using (NetworkStream clientStream = client.GetStream())
@@ -162,7 +166,7 @@ namespace Arcus.Messaging.Health.Tcp
                         }
 
                         byte[] response = SerializeHealthReport(report);
-                        clientStream.Write(response, 0, response.Length);
+                        await clientStream.WriteAsync(response, 0, response.Length, cancellationToken);
                     }
                 }
             }

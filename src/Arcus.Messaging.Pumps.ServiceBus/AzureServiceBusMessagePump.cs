@@ -168,6 +168,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     Logger.LogTrace("Subscription '{SubscriptionName}' created on topic '{TopicPath}'", SubscriptionName, entityPath);
                 }
             }
+            catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
+            {
+                // Ignore.
+            }
             catch (Exception exception)
             {
                 Logger.LogWarning(exception, "Failed to create topic subscription with name '{SubscriptionName}' on Service Bus resource", SubscriptionName);
@@ -179,10 +183,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             try
             {
-                await OpenNewMessageReceiverAsync();
+                await OpenNewMessageReceiverAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
             }
-            catch (TaskCanceledException exception)
+            catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
             {
                 Logger.LogTrace(exception, "Azure Service Bus message pump '{JobId}' processing was cancelled", JobId);
             }
@@ -197,7 +201,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
         }
 
-        private async Task OpenNewMessageReceiverAsync()
+        private async Task OpenNewMessageReceiverAsync(CancellationToken cancellationToken = default)
         {
             _messageProcessor = await Settings.CreateMessageProcessorAsync();
             Namespace = _messageProcessor.FullyQualifiedNamespace;
@@ -210,7 +214,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Logger.LogTrace("Starting message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", JobId, EntityPath, Namespace);
             _messageProcessor.ProcessErrorAsync += ProcessErrorAsync;
             _messageProcessor.ProcessMessageAsync += ProcessMessageAsync;
-            await _messageProcessor.StartProcessingAsync();
+            await _messageProcessor.StartProcessingAsync(cancellationToken);
             Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", JobId, EntityPath, Namespace);
         }
 
@@ -223,17 +227,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                Logger.LogTrace("Closing message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'",  JobId, EntityPath, Namespace);
-                await _messageProcessor.StopProcessingAsync();
+                Logger.LogTrace("Closing message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'", JobId, EntityPath, Namespace);
+                await _messageProcessor.CloseAsync();
                 _messageProcessor.ProcessMessageAsync -= ProcessMessageAsync;
                 _messageProcessor.ProcessErrorAsync -= ProcessErrorAsync;
-                await _messageProcessor.CloseAsync();
-                Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}",  JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
+               
+                Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}", JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
             }
-            catch (TaskCanceledException) 
+            catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
             {
-                // Ignore.
-            } 
+            }
             catch (Exception exception)
             {
                 Logger.LogWarning(exception, "Cannot correctly close the message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}': {Message}",  JobId, EntityPath, Namespace, exception.Message);
@@ -259,7 +262,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     if (Interlocked.Increment(ref _unauthorizedExceptionCount) >= Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart)
                     {
                         Logger.LogTrace("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
-                        await RestartAsync();
+                        await RestartAsync(args.CancellationToken);
                     }
                     else
                     {
@@ -280,6 +283,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Logger.LogTrace("Restarting Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' ...", JobId, EntityPath, Namespace);
             await CloseMessageReceiverAsync();
             await OpenNewMessageReceiverAsync();
+            Logger.LogInformation("Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' restarted!", JobId, EntityPath, Namespace);
+        }
+
+        /// <summary>
+        /// Restart core functionality of the message pump.
+        /// </summary>
+        public async Task RestartAsync(CancellationToken cancellationToken)
+        {
+            Interlocked.Exchange(ref _unauthorizedExceptionCount, 0);
+
+            Logger.LogTrace("Restarting Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' ...", JobId, EntityPath, Namespace);
+            await CloseMessageReceiverAsync();
+            await OpenNewMessageReceiverAsync(cancellationToken);
             Logger.LogInformation("Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' restarted!", JobId, EntityPath, Namespace);
         }
 
@@ -308,7 +324,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                bool subscriptionExists = await serviceBusClient.SubscriptionExistsAsync(entityPath, SubscriptionName, cancellationToken);
+                bool subscriptionExists =
+                    await serviceBusClient.SubscriptionExistsAsync(entityPath, SubscriptionName, cancellationToken);
                 if (subscriptionExists)
                 {
                     Logger.LogTrace("Deleting subscription '{SubscriptionName}' on topic '{Path}'...", SubscriptionName, entityPath);
@@ -319,6 +336,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 {
                     Logger.LogTrace("Cannot delete topic subscription with name '{SubscriptionName}' because no subscription exists on Service Bus resource", SubscriptionName);
                 }
+            }
+            catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
+            {
+                // Ignore.
             }
             catch (Exception exception)
             {
