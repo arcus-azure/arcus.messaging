@@ -168,11 +168,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     Logger.LogTrace("Subscription '{SubscriptionName}' created on topic '{TopicPath}'", SubscriptionName, entityPath);
                 }
             }
-            catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
-            {
-                // Ignore.
-            }
-            catch (Exception exception)
+            catch (Exception exception) when (exception is not TaskCanceledException && exception is not OperationCanceledException)
             {
                 Logger.LogWarning(exception, "Failed to create topic subscription with name '{SubscriptionName}' on Service Bus resource", SubscriptionName);
             }
@@ -186,11 +182,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 await OpenNewMessageReceiverAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
             }
-            catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
-            {
-                Logger.LogTrace(exception, "Azure Service Bus message pump '{JobId}' processing was cancelled", JobId);
-            }
-            catch (Exception exception)
+            catch (Exception exception) when (exception is not TaskCanceledException && exception is not OperationCanceledException)
             {
                 Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages");
                 await HandleReceiveExceptionAsync(exception);
@@ -234,10 +226,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                
                 Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}", JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
             }
-            catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
-            {
-            }
-            catch (Exception exception)
+            catch (Exception exception) when (exception is not TaskCanceledException && exception is not OperationCanceledException)
             {
                 Logger.LogWarning(exception, "Cannot correctly close the message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}': {Message}",  JobId, EntityPath, Namespace, exception.Message);
             }
@@ -337,11 +326,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     Logger.LogTrace("Cannot delete topic subscription with name '{SubscriptionName}' because no subscription exists on Service Bus resource", SubscriptionName);
                 }
             }
-            catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
-            {
-                // Ignore.
-            }
-            catch (Exception exception)
+            catch (Exception exception) when (exception is not TaskCanceledException && exception is not OperationCanceledException)
             {
                 Logger.LogWarning(exception, "Failed to delete topic subscription with name '{SubscriptionName}' on Service Bus resource", SubscriptionName);
             }
