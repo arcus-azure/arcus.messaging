@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Tests.Integration.MessagePump;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
