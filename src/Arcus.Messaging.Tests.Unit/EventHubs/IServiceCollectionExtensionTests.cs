@@ -46,7 +46,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             string storageAccountConnectionStringSecretName = BogusGenerator.Lorem.Word();
             var services = new ServiceCollection();
             services.AddSingleton(Mock.Of<IConfiguration>())
-                    .AddLogging()
+                    .AddLogging();
 
             // Act
             services.AddEventHubsMessagePump(eventHubsName, eventHubsConnectionStringSecretName, blobStorageContainerName, storageAccountConnectionStringSecretName);

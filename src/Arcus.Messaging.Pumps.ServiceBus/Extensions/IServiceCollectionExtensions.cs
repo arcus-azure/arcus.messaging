@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <remarks>
         ///     <para>When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace.</para>
         ///     <para>Make sure that the application has the Arcus secret store configured correctly.
-        ///           For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="getConnectionStringFromSecretFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the secret store.</param>

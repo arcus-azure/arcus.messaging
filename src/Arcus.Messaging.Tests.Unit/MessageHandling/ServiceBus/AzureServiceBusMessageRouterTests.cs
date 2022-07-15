@@ -15,7 +15,6 @@ using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs;
 using Azure.Messaging.ServiceBus;
 using Bogus;
-using Microsoft.AspNetCore.Mvc.TagHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualBasic;

@@ -141,6 +141,9 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             return new KeyRotationConfig(secret, servicePrincipal, azureEnv);
         }
 
+        /// <summary>
+        /// Gets all the configuration to run the Azure EventHubs integration tests.
+        /// </summary>
         public EventHubsConfig GetEventHubsConfig()
         {
             return new EventHubsConfig(

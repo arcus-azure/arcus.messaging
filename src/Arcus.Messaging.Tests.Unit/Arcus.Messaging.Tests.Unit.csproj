@@ -14,9 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arcus.EventGrid.Testing" Version="3.1.0" />
     <PackageReference Include="Arcus.Testing.Security.Providers.InMemory" Version="0.3.0" />
-    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
     <PackageReference Include="Moq" Version="4.13.1" />
     <PackageReference Include="Serilog" Version="2.10.0" />

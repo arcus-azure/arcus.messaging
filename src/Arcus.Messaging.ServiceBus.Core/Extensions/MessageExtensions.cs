@@ -172,9 +172,9 @@ namespace Microsoft.Azure.ServiceBus
 
         private static string GetOptionalUserProperty(this ServiceBusReceivedMessage message, string propertyName)
         {
-            if (message.ApplicationProperties.TryGetValue(propertyName, out object transactionId))
+            if (message.ApplicationProperties.TryGetValue(propertyName, out object propertyValue))
             {
-                return transactionId.ToString();
+                return propertyValue.ToString();
             }
 
             return null;
