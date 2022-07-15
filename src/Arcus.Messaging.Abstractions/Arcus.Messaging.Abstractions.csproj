@@ -11,7 +11,7 @@
     <PackageLicenseUrl>https://github.com/arcus-azure/arcus.messaging/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://messaging.arcus-azure.net/</PackageProjectUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png</PackageIconUrl>
-    <RepositoryUrl>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
+    <RepositoryUrl>https://github.com/arcus-azure/arcus.security</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>Azure;Messaging</PackageTags>
