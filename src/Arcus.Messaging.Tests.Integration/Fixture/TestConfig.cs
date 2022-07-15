@@ -141,6 +141,14 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             return new KeyRotationConfig(secret, servicePrincipal, azureEnv);
         }
 
+        public EventHubsConfig GetEventHubsConfig()
+        {
+            return new EventHubsConfig(
+                _config.GetValue<string>("Arcus:EventHubs:SelfContained:EventHubsName"),
+                _config.GetValue<string>("Arcus:EventHubs:SelfContained:ConnectionString"),
+                _config.GetValue<string>("Arcus:EventHubs:SelfContained:BlobStorage:StorageAccountConnectionString"));
+        }
+
         /// <summary>
         /// Gets a configuration sub-section with the specified key.
         /// </summary>
