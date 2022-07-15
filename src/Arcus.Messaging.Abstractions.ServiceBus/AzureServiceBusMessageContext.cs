@@ -54,7 +54,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         public int DeliveryCount { get; }
 
         /// <summary>
-        ///     Gets the unique ID on which message pump his message was processed.
+        ///     Gets the unique ID on which message pump tis message was processed.
         /// </summary>
         public string JobId { get; }
     }
