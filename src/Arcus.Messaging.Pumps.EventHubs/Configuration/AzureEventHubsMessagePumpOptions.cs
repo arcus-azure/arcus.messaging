@@ -11,7 +11,7 @@ namespace Arcus.Messaging.Pumps.EventHubs.Configuration
         private string _consumerGroup = "$Default";
 
         /// <summary>
-        /// Gets or sets tThe name of the consumer group this processor is associated with. Events are read in the context of this group. (Default: <c>"$Default"</c>).
+        /// Gets or sets the name of the consumer group this processor is associated with. Events are read in the context of this group. (Default: <c>"$Default"</c>).
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
         public string ConsumerGroup
