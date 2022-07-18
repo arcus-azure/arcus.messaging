@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.EventGrid.Publishing.Interfaces;
@@ -14,9 +11,6 @@ using Xunit;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
-    /// <summary>
-    /// 
-    /// </summary>
     public class OrderEventHubsMessageHandler : OrdersMessageHandler, IAzureEventHubsMessageHandler<Order>
     {
         private readonly IMessageCorrelationInfoAccessor _correlationAccessor;
@@ -67,6 +61,5 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             Assert.Equal(registeredCorrelation.OperationParentId, correlationInfo.OperationParentId);
             Assert.Equal(registeredCorrelation.CycleId, correlationInfo.CycleId);
         }
-
     }
 }

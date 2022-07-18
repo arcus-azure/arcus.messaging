@@ -31,7 +31,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.Topic
                         var configuration = svc.GetRequiredService<IConfiguration>();
                         var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
                         var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
-                        
+
                         return EventGridPublisherBuilder
                             .ForTopic(eventGridTopic)
                             .UsingAuthenticationKey(eventGridKey)

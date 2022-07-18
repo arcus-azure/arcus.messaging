@@ -100,15 +100,10 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
         {
             using (var measurement = DurationMeasurement.Start())
             {
-                try
-                {
-                    string messageBody = message.Data.ToString();
-                    await base.RouteMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-                }
-                finally
-                {
-                    // TODO: Log EventHubs request.
-                } 
+                string messageBody = message.Data.ToString();
+                await base.RouteMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+                
+                // TODO: Log EventHubs request.
             }
         }
 
@@ -132,14 +127,9 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
         {
             using (var measurement = DurationMeasurement.Start())
             {
-                try
-                {
-                    return base.RouteMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                }
-                finally
-                {
-                    // TODO: Log EventHubs request.
-                } 
+                return base.RouteMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+                
+                // TODO: Log EventHubs request.
             }
         }
     }
