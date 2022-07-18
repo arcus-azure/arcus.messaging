@@ -59,7 +59,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string eventHubsConnectionStringSecretName = "Arcus_EventHubs_ConnectionString",
                    storageAccountConnectionStringSecretName = "Arcus_StorageAccount_ConnectionString";
 
-                var options = new WorkerOptions();
+            var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
                    .AddSecretStore(stores => stores.AddInMemory(new Dictionary<string, string>
                    {
