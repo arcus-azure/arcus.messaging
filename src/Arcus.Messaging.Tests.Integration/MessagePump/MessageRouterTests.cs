@@ -9,6 +9,7 @@ using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Observability.Telemetry.Core;
+using Arcus.Testing.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Serilog;

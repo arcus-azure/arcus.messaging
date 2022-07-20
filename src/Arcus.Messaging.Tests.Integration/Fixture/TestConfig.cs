@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Tests.Integration.MessagePump;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -139,6 +137,17 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                     _config.GetValue<string>("Arcus:KeyRotation:KeyVault:SecretNewVersionCreated:ServiceBusConnectionStringWithTopicEndpoint")));
 
             return new KeyRotationConfig(secret, servicePrincipal, azureEnv);
+        }
+
+        /// <summary>
+        /// Gets all the configuration to run the Azure EventHubs integration tests.
+        /// </summary>
+        public EventHubsConfig GetEventHubsConfig()
+        {
+            return new EventHubsConfig(
+                _config.GetValue<string>("Arcus:EventHubs:SelfContained:EventHubsName"),
+                _config.GetValue<string>("Arcus:EventHubs:SelfContained:ConnectionString"),
+                _config.GetValue<string>("Arcus:EventHubs:SelfContained:BlobStorage:StorageAccountConnectionString"));
         }
 
         /// <summary>

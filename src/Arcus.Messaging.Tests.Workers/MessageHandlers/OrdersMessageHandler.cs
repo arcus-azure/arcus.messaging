@@ -16,16 +16,17 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
     public class OrdersMessageHandler : IMessageHandler<Order>
     {
         private readonly IEventGridPublisher _eventGridPublisher;
-        private readonly ILogger<OrdersAzureServiceBusMessageHandler> _logger;
 
-        public OrdersMessageHandler(IEventGridPublisher eventGridPublisher, ILogger<OrdersAzureServiceBusMessageHandler> logger)
+        public OrdersMessageHandler(IEventGridPublisher eventGridPublisher, ILogger<OrdersMessageHandler> logger)
         {
             Guard.NotNull(eventGridPublisher, nameof(eventGridPublisher));
             Guard.NotNull(logger, nameof(logger));
 
             _eventGridPublisher = eventGridPublisher;
-            _logger = logger;
+            Logger = logger;
         }
+
+        protected ILogger<OrdersMessageHandler> Logger { get; }
 
         /// <summary>
         ///     Process a new message that was received
@@ -43,15 +44,15 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", 
+            Logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", 
                                    order.Id, order.Amount, order.ArticleNumber, order.Customer.FirstName, order.Customer.LastName);
 
             await PublishEventToEventGridAsync(order, correlationInfo.OperationId, correlationInfo);
 
-            _logger.LogInformation("Order {OrderId} processed", order.Id);
+            Logger.LogInformation("Order {OrderId} processed", order.Id);
         }
 
-        private async Task PublishEventToEventGridAsync(Order orderMessage, string operationId, MessageCorrelationInfo correlationInfo)
+        protected async Task PublishEventToEventGridAsync(Order orderMessage, string operationId, MessageCorrelationInfo correlationInfo)
         {
             var eventData = new OrderCreatedEventData(
                 orderMessage.Id,
@@ -72,7 +73,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 
             await _eventGridPublisher.PublishAsync(orderCreatedEvent);
 
-            _logger.LogInformation("Event {EventId} was published with subject {EventSubject}", orderCreatedEvent.Id, orderCreatedEvent.Subject);
+            Logger.LogInformation("Event {EventId} was published with subject {EventSubject}", orderCreatedEvent.Id, orderCreatedEvent.Subject);
         }
     }
 }
