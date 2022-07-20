@@ -80,7 +80,7 @@ The Azure EventHubs uses the `EventProcessorClient` internally. To learn more ab
 In this example, we are using the Azure EventHubs message pump to process event messages and use the connection strings stored in the Arcus secret store:
 - Azure EventHubs name: The name of the Event Hub that the processor is connected to, specific to the EventHubs namespace that contains it.
 - Azure EventHubs connection string secret name: The name of the secret to retrieve the Azure EventHubs connection string using your registered Arcus secret store implementation.
-- Azure EventHubs Blob storage container name: The name of the Azure Blob storage container in the storage account to reference where the event checkpoints will be stored and the load balanced.
+- Azure EventHubs Blob storage container name: The name of the Azure Blob storage container in the storage account to reference where the event checkpoints will be stored. The events will be streamed to this storage so that the client only has to worry about event processing, not event capturing.
 - Azure EventHubs Blob storage account connection string secret name: The name of the secret to retrieve the Azure EventHubs connection string using your registered Arcus secret store implementation.
 
 ## Pump Configuration
