@@ -11,7 +11,7 @@
     <PackageLicenseUrl>https://github.com/arcus-azure/arcus.messaging/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://messaging.arcus-azure.net/</PackageProjectUrl>
     <PackageIconUrl>https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png</PackageIconUrl>
-    <RepositoryUrl>https://github.com/arcus-azure/arcus.security</RepositoryUrl>
+    <RepositoryUrl>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>Azure;Messaging</PackageTags>
@@ -26,8 +26,6 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-    <PackageReference Include="Arcus.Observability.Correlation" Version="[2.4.0,3.0.0)" />
-    <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Enrichers" Version="[2.4.0,3.0.0)" />
     <PackageReference Include="Guard.NET" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
@@ -36,8 +34,6 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != 'net6.0'">
-    <PackageReference Include="Arcus.Observability.Correlation" Version="[2.2.0,3.0.0)" />
-    <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Enrichers" Version="[2.2.0,3.0.0)" />
     <PackageReference Include="Guard.NET" Version="1.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="[3.1.8,5.0.0)" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[3.1.8,5.0.0)" />
@@ -46,6 +42,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Arcus.Observability.Correlation" Version="[2.5.0,3.0.0)" />
+    <PackageReference Include="Arcus.Observability.Telemetry.Core" Version="[2.5.0,3.0.0)" />
+    <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Enrichers" Version="[2.5.0,3.0.0)" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
