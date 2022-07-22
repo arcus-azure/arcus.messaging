@@ -33,7 +33,6 @@ namespace Arcus.Messaging.Tests.Workers.EventHubs
                         var eventGridTopic = configuration.GetValue<string>("EVENTGRID_TOPIC_URI");
                         var eventGridKey = configuration.GetValue<string>("EVENTGRID_AUTH_KEY");
 
-
                         return EventGridPublisherBuilder
                                .ForTopic(eventGridTopic)
                                .UsingAuthenticationKey(eventGridKey)
