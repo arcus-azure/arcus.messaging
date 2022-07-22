@@ -23,21 +23,11 @@ steps:
       echo "##vso[task.logissue type=error;]Missing template parameter \"imageTag\""
       echo "##vso[task.complete result=Failed;]"
     fi
-    if [ -z "$HEALTH_PORT" ]; then
-      echo "##vso[task.logissue type=error;]Missing template parameter \"healthPort\""
-      echo "##vso[task.complete result=Failed;]"
-    fi
-    if [ -z "$CONNECTION_STRING" ]; then
-      echo "##vso[task.logissue type=error;]Missing template parameter \"connectionString\""
-      echo "##vso[task.complete result=Failed;]"
-    fi
   env:
     CONTAINER_NAME: ${{ parameters.containerName }}
     PROJECT_NAME: ${{ parameters.projectName }}
     IMAGE_NAME: ${{ parameters.imageName }}
     BUILD_VERSION: ${{ parameters.imageTag }}
-    HEALTH_PORT: ${{ parameters.healthPort }}
-    CONNECTION_STRING: ${{ parameters.connectionString }}
   displayName: Check for required parameters in YAML template
 - task: Docker@1
   displayName: 'Build Docker image ''${{ parameters.imageName }}'' for ''${{ parameters.projectName }}'''
