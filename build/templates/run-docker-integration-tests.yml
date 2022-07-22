@@ -10,6 +10,7 @@ steps:
     containerName: '$(Images.ServiceBus.Queue)'
     imageName: '$(Images.ServiceBus.Queue)'
     imageTag: $(Build.BuildId)
+    port: '$(Arcus.Health.Port.Queue)'
     envVars: |
       ARCUS_HEALTH_PORT=$(Arcus.Health.Port.Queue)
       EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
@@ -21,6 +22,7 @@ steps:
     containerName: '$(Images.ServiceBus.Topic)'
     imageName: '$(Images.ServiceBus.Topic)'
     imageTag: $(Build.BuildId)
+    port: '$(Arcus.Health.Port.Topic)'
     envVars: |
       ARCUS_HEALTH_PORT=$(Arcus.Health.Port.Topic)
       EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
@@ -39,6 +41,7 @@ steps:
     containerName: '$(Images.EventHubs)'
     imageName: '$(Images.EventHubs)'
     imageTag: $(Build.BuildId)
+    port: '$(Arcus.Health.Port.EventHubs)'
     envVars: |
       ARCUS_HEALTH_PORT=$(Arcus.Health.Port.EventHubs)
       EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)

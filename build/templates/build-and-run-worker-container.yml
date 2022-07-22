@@ -3,6 +3,7 @@ parameters:
   projectName: ''
   imageName: ''
   imageTag: ''
+  port: ''
   envVars: {}
 
 steps:
@@ -23,11 +24,16 @@ steps:
       echo "##vso[task.logissue type=error;]Missing template parameter \"imageTag\""
       echo "##vso[task.complete result=Failed;]"
     fi
+     if [ -z "PORT" ]; then
+      echo "##vso[task.logissue type=error;]Missing template parameter \"port\""
+      echo "##vso[task.complete result=Failed;]"
+    fi
   env:
     CONTAINER_NAME: ${{ parameters.containerName }}
     PROJECT_NAME: ${{ parameters.projectName }}
     IMAGE_NAME: ${{ parameters.imageName }}
     BUILD_VERSION: ${{ parameters.imageTag }}
+    PORT: ${{ parameters.port }}
   displayName: Check for required parameters in YAML template
 - task: Docker@1
   displayName: 'Build Docker image ''${{ parameters.imageName }}'' for ''${{ parameters.projectName }}'''
@@ -42,5 +48,5 @@ steps:
     command: 'Run an image'
     imageName: '${{ parameters.imageName }}:${{ parameters.imageTag }}'
     containerName: '${{ parameters.containerName }}'
-    ports: '${{ parameters.healthPort }}:${{ parameters.healthPort }}'
+    ports: '${{ parameters.port }}:${{ parameters.port }}'
     envVars: ${{ parameters.envVars }}
