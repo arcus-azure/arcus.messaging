@@ -24,6 +24,10 @@ namespace Arcus.Messaging.Tests.Workers.EventHubs
                     configuration.AddCommandLine(args);
                     configuration.AddEnvironmentVariables();
                 })
+                .ConfigureSecretStore((config, stores) =>
+                {
+                    stores.AddConfiguration(config);
+                })
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddLogging();
@@ -38,7 +42,10 @@ namespace Arcus.Messaging.Tests.Workers.EventHubs
                                .UsingAuthenticationKey(eventGridKey)
                                .Build();
                     });
-                    services.AddEventHubsMessagePump("EVENTHUBS_NAME", "EVENTHUBS_CONNECIONSTRING", "BLOBSTORAGE_CONTAINERNAME", "STORAGEACCOUNT_CONNECTIONSTRING")
+
+                    var eventHubsName = hostContext.Configuration.GetValue<string>("EVENTHUBS_NAME");
+                    var containerName = hostContext.Configuration.GetValue<string>("BLOBSTORAGE_CONTAINERNAME");
+                    services.AddEventHubsMessagePump(eventHubsName, "EVENTHUBS_CONNECIONSTRING", containerName, "STORAGEACCOUNT_CONNECTIONSTRING")
                             .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
 
                     services.AddTcpHealthProbes("ARCUS_HEALTH_PORT", builder => builder.AddCheck("sample", () => HealthCheckResult.Healthy()));
