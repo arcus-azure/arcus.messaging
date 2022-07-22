@@ -46,6 +46,22 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.EventHubs
             Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write diagnostic trace messages during the lifetime of the temporary Azure Blob storage container");
 
             string containerName = $"eventhubs-{Guid.NewGuid()}";
+            return await CreateAsync(storageAccountConnectionString, containerName, logger);
+        }
+
+         /// <summary>
+        /// Creates an <see cref="TemporaryBlobStorageContainer"/> instance that creates an Azure Blob container on the Azure storage account
+        /// that is accessed via the given <paramref name="storageAccountConnectionString"/>.
+        /// </summary>
+        /// <param name="storageAccountConnectionString">The Azure storage account connection string on which a temporary Azure Blob storage container should be created.</param>
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the lifetime of the temporary Azure blob storage container.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="storageAccountConnectionString"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="logger"/> is <c>null</c>.</exception>
+        public static async Task<TemporaryBlobStorageContainer> CreateAsync(string storageAccountConnectionString, string containerName, ILogger logger)
+        {
+            Guard.NotNullOrWhitespace(storageAccountConnectionString, nameof(storageAccountConnectionString), "Requires a non-blank connection string to access the Azure storage account");
+            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write diagnostic trace messages during the lifetime of the temporary Azure Blob storage container");
+
             var blobClient = new BlobServiceClient(storageAccountConnectionString);
             
             logger.LogTrace("Add Azure Blob storage container '{ContainerName}'", containerName);

@@ -20,6 +20,7 @@ variables:
   - group: 'Arcus - GitHub Package Registry'
   - group: 'Build Configuration'
   - template: ./variables/build.yml
+  - template: ./variables/test.yml
   - name: 'Package.Version'
     value: ${{ parameters['Package.Version'] }}
 
@@ -74,19 +75,6 @@ stages:
     displayName: Docker Integration Tests
     dependsOn: Build
     condition: succeeded()
-    variables:
-      - name: 'Images.ServiceBus.Queue'
-        value: 'workers-service-bus-queue'
-      - name: 'Images.ServiceBus.Topic'
-        value: 'workers-service-bus-topic'
-      - name: 'Images.AzureFunction.ServiceBus.Queue'
-        value: 'runtimes-az-func-service-bus-queue'
-      - name: 'Arcus.Health.Port.Queue'
-        value: '42063'
-      - name: 'Arcus.Health.Port.Topic'
-        value: '42064'
-      - name: 'Arcus.AzureFunctions.Queue.Port'
-        value: '42065'
     jobs:
       - job: DockerIntegrationTests
         displayName: 'Run Docker integration tests'

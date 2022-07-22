@@ -10,16 +10,22 @@ steps:
     containerName: '$(Images.ServiceBus.Queue)'
     imageName: '$(Images.ServiceBus.Queue)'
     imageTag: $(Build.BuildId)
-    healthPort: $(Arcus.Health.Port.Queue)
-    connectionString: '$(Arcus.ServiceBus.Docker.ConnectionStringWithQueue)'
+    envVars: |
+      ARCUS_HEALTH_PORT=$(Arcus.Health.Port.Queue)
+      EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
+      EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
+      ARCUS_SERVICEBUS_CONNECTIONSTRING=$(Arcus.ServiceBus.Docker.ConnectionStringWithQueue)
 - template: build-and-run-worker-container.yml
   parameters:
     projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Topic'
     containerName: '$(Images.ServiceBus.Topic)'
     imageName: '$(Images.ServiceBus.Topic)'
     imageTag: $(Build.BuildId)
-    healthPort: $(Arcus.Health.Port.Topic)
-    connectionString: '$(Arcus.ServiceBus.Docker.ConnectionStringWithTopic)'
+    envVars: |
+      ARCUS_HEALTH_PORT=$(Arcus.Health.Port.Topic)
+      EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
+      EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
+      ARCUS_SERVICEBUS_CONNECTIONSTRING=$(Arcus.ServiceBus.Docker.ConnectionStringWithTopic)
 - template: build-and-run-az-func-container.yml
   parameters:
     projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue'
@@ -27,6 +33,20 @@ steps:
     imageName: '$(Images.AzureFunction.ServiceBus.Queue)'
     imageTag: '$(Build.BuildId)'
     port: '$(Arcus.AzureFunctions.Queue.Port)'
+- template: build-and-run-worker-container.yml
+  parameters:
+    projectName: 'Arcus.Messaging.Tests.Workers.EventHubs'
+    containerName: '$(Images.EventHubs)'
+    imageName: '$(Images.EventHubs)'
+    imageTag: $(Build.BuildId)
+    envVars: |
+      ARCUS_HEALTH_PORT=$(Arcus.Health.Port.EventHubs)
+      EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
+      EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
+      EVENTHUBS_NAME=$(Arcus.EventHubs.Docker.EventHubsName)
+      EVENTHUBS_CONNECIONSTRING=$(Arcus.EventHubs.ConnectionString)
+      BLOBSTORAGE_CONTAINERNAME=$(Arcus.EventHubs.Docker.BlobStorage.ContainerName)
+      STORAGEACCOUNT_CONNECTIONSTRING=$(Arcus.EventHubs.BlobStorage.StorageAccountConnectionString)
 - template: test/run-integration-tests.yml@templates
   parameters:
     dotnetSdkVersion: '$(DotNet.Sdk.Version)'

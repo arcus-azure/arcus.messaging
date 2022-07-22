@@ -8,7 +8,6 @@ using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs;
-using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs.MessageHandling;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Testing.Logging;
@@ -56,6 +55,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
             string eventHubsConnectionStringSecretName = "Arcus_EventHubs_ConnectionString",
                    storageAccountConnectionStringSecretName = "Arcus_StorageAccount_ConnectionString";
 
@@ -66,11 +66,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        [eventHubsConnectionStringSecretName] = eventHubs.EventHubsConnectionString,
                        [storageAccountConnectionStringSecretName] = eventHubs.StorageConnectionString
                    }))
-                   .AddEventHubsMessagePump(eventHubs.EventHubsName, eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName)
+                   .AddEventHubsMessagePump(eventHubsName, eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName)
                    .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
 
             EventData expected = CreateOrderEventDataMessage();
-            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubs.EventHubsName);
+            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
 
             await using (var worker = await Worker.StartNewAsync(options))
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
