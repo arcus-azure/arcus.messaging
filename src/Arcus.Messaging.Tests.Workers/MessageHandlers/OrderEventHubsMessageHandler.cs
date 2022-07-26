@@ -12,7 +12,7 @@ using CloudNative.CloudEvents;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
-namespace Arcus.Messaging.Tests.Integration.MessagePump.EventHubs.MessageHandling
+namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class OrderEventHubsMessageHandler : IAzureEventHubsMessageHandler<Order>
     {
