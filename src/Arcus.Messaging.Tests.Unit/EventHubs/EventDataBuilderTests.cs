@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Abstractions.EventHubs;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Azure.Messaging.EventHubs;
 using Bogus;
@@ -25,7 +26,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             Assert.NotNull(message);
             Assert.NotEmpty(message.Body.ToArray());
             Assert.Equal(messageBody.ToString(), Encoding.UTF8.GetString(message.Body.ToArray()));
-            Encoding encoding = message.GetMessageContext("namespace", "consumergroup", "name").GetMessageEncodingProperty();
+            Encoding encoding = AzureEventHubsMessageContext.CreateFrom(message, "namespace", "consumergroup", "name").GetMessageEncodingProperty();
             Assert.Equal(Encoding.UTF8, encoding);
         }
 
@@ -44,7 +45,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             Assert.NotNull(message);
             Assert.NotEmpty(message.Body.ToArray());
             Assert.Equal(messageBody.ToString(), expectedEncoding.GetString(message.Body.ToArray()));
-            Encoding actualEncoding = message.GetMessageContext("namespace", "consumergroup", "name").GetMessageEncodingProperty();
+            Encoding actualEncoding = AzureEventHubsMessageContext.CreateFrom(message, "namespace", "consumergroup", "name").GetMessageEncodingProperty();
             Assert.Equal(expectedEncoding, actualEncoding);
         }
 
