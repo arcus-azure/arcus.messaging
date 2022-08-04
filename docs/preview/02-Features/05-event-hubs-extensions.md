@@ -61,6 +61,13 @@ await producer.SendAsync(orders, correlation, logger, options =>
     // The Azure EventHubs application function to generate a dependency ID which will be added to both the message as the dependency tracking.
     // Default: GUID generation.
     options.GenerateDependencyId = () => $"dependency-{Guid.NewGuid()}";
+
+    // The contextual information that will be used when tracking the Azure EventHubs dependency.
+    // Default: empty dictionary.
+    options.AddTelemetryContext(new Dictionary<string, object>
+    {
+        ["Additional_EventHubs_Info"] = "EventHubs-Info"
+    });
 });
 
 EventData[] messages = ...
