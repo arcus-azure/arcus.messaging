@@ -104,6 +104,29 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
         }
 
         [Fact]
+        public async Task SendMessagesBodyWithoutOptions_WithCustomTelemetryContext_Succeeds()
+        {
+            // Arrange
+            var spySender = new InMemoryEventHubProducerClient();
+            var expectedOrders = BogusGenerator.Make(5, () => OrderGenerator.Generate());
+            string key = Guid.NewGuid().ToString(), value = Guid.NewGuid().ToString();
+            var telemetryContext = new Dictionary<string, object> { [key] = value };
+            MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
+            var logger = new InMemoryLogger();
+
+            // Act
+            await spySender.SendAsync(expectedOrders, correlation, logger, options => options.AddTelemetryContext(telemetryContext));
+
+            // Assert
+            string logMessage = AssertDependencyTelemetry(logger);
+            Assert.Contains(key, logMessage);
+            Assert.Contains(value, logMessage);
+            Assert.All(
+                spySender.Messages.Zip(expectedOrders), 
+                item => AssertEnrichedEventData(item.First, item.Second, correlation));
+        }
+
+        [Fact]
         public async Task SendMessagesWithoutOptions_WithMessageCorrelation_Succeeds()
         {
             // Arrange
@@ -190,6 +213,31 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
                 item => AssertEnrichedEventData(item.First, item.Second, correlation, operationParentPropertyName: upstreamServicePropertyName));
         }
 
+        [Fact]
+        public async Task SendMessagesWithoutOptions_WithCustomTelemetryContext_Succeeds()
+        {
+            // Arrange
+            var spySender = new InMemoryEventHubProducerClient();
+            var expectedOrders = BogusGenerator.Make(5, () => OrderGenerator.Generate());
+            var messages = expectedOrders.Select(order => EventDataBuilder.CreateForBody(order).Build());
+
+            string key = Guid.NewGuid().ToString(), value = Guid.NewGuid().ToString();
+            var telemetryContext = new Dictionary<string, object> { [key] = value };
+            MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
+            var logger = new InMemoryLogger();
+
+            // Act
+            await spySender.SendAsync(messages, correlation, logger, options => options.AddTelemetryContext(telemetryContext));
+
+            // Assert
+            string logMessage = AssertDependencyTelemetry(logger);
+            Assert.Contains(key, logMessage);
+            Assert.Contains(value, logMessage);
+            Assert.All(
+                spySender.Messages.Zip(expectedOrders), 
+                item => AssertEnrichedEventData(item.First, item.Second, correlation));
+        }
+
         private static MessageCorrelationInfo GenerateMessageCorrelationInfo()
         {
             return new MessageCorrelationInfo(
@@ -198,11 +246,13 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
                 $"parent-{Guid.NewGuid()}");
         }
 
-        private static void AssertDependencyTelemetry(InMemoryLogger logger)
+        private static string AssertDependencyTelemetry(InMemoryLogger logger)
         {
             string logMessage = Assert.Single(logger.Messages);
             Assert.Contains("Dependency", logMessage);
             Assert.Matches(DependencyIdPattern, logMessage);
+
+            return logMessage;
         }
 
         private static void AssertDependencyTelemetry(InMemoryLogger logger, string dependencyId)

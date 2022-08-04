@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -20,7 +21,7 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
 {
     [Collection("Integration")]
     [Trait("Category", "Integration")]
-    public class EventHubsSenderExtensionsTests : IAsyncLifetime
+    public class EventHubProducerClientExtensionsTests : IAsyncLifetime
     {
         private const string DependencyIdPattern = @"with ID [a-z0-9]{8}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{12}";
 
@@ -31,9 +32,9 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
         private TemporaryBlobStorageContainer _blobStorageContainer;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="EventHubsSenderExtensionsTests" /> class.
+        /// Initializes a new instance of the <see cref="EventHubProducerClientExtensionsTests" /> class.
         /// </summary>
-        public EventHubsSenderExtensionsTests(ITestOutputHelper outputWriter)
+        public EventHubProducerClientExtensionsTests(ITestOutputHelper outputWriter)
         {
             _config = TestConfig.Create();
             _eventHubsConfig = _config.GetEventHubsConfig();
@@ -76,6 +77,8 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
             var dependencyId = $"parent-{Guid.NewGuid()}";
             string transactionIdPropertyName = "My-Transaction-Id", upstreamServicePropertyName = "My-UpstreamService-Id";
             var logger = new InMemoryLogger();
+            string key = Guid.NewGuid().ToString(), value = Guid.NewGuid().ToString();
+            var telemetryContext = new Dictionary<string, object> { [key] = value };
 
             await using (var client = new EventHubProducerClient(_eventHubsConfig.EventHubsConnectionString, _eventHubsConfig.EventHubsName))
             {
@@ -84,6 +87,7 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
                     options.TransactionIdPropertyName = transactionIdPropertyName;
                     options.UpstreamServicePropertyName = upstreamServicePropertyName;
                     options.GenerateDependencyId = () => dependencyId;
+                    options.AddTelemetryContext(telemetryContext);
                 });
             }
 
@@ -91,6 +95,8 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
             string logMessage = Assert.Single(logger.Messages);
             Assert.Contains("Dependency", logMessage);
             Assert.Matches($"with ID {dependencyId}", logMessage);
+            Assert.Contains(key, logMessage);
+            Assert.Contains(value, logMessage);
 
             await RetryAssertUntilServiceBusMessageIsAvailableAsync(message =>
             {

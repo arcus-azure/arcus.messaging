@@ -419,7 +419,7 @@ namespace Azure.Messaging.EventHubs.Producer
                 }
                 finally
                 {
-                    logger.LogEventHubsDependency(client.FullyQualifiedNamespace, client.EventHubName, isSuccessful, measurement, dependencyId);
+                    logger.LogEventHubsDependency(client.FullyQualifiedNamespace, client.EventHubName, isSuccessful, measurement, dependencyId, options.TelemetryContext);
                 }
             }
         }

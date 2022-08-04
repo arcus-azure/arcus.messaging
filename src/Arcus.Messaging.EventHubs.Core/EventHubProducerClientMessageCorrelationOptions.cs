@@ -47,11 +47,6 @@ namespace Arcus.Messaging.EventHubs.Core
         }
 
         /// <summary>
-        /// Gets or sets the type of the Azure Service Bus entity when tracking Azure Service Bus dependencies.
-        /// </summary>
-        public ServiceBusEntityType EntityType { get; set; }
-
-        /// <summary>
         /// Gets or sets the function to generate the dependency ID used when tracking Azure Service Bus dependencies.
         /// </summary>
         public Func<string> GenerateDependencyId
@@ -62,6 +57,22 @@ namespace Arcus.Messaging.EventHubs.Core
                 Guard.NotNull(value, nameof(value), "Requires a function to generate the dependency ID used when tracking Azure Service Bus dependencies");
                 _generateDependencyId = value;
             }
+        }
+
+        /// <summary>
+        /// Gets the telemetry context used during the Azure EventHubs dependency tracking.
+        /// </summary>
+        internal Dictionary<string, object> TelemetryContext { get; private set; } = new Dictionary<string, object>();
+
+        /// <summary>
+        /// Adds a telemetry context while tracking the Azure EventHubs dependency.
+        /// </summary>
+        /// <param name="telemetryContext">The dictionary with contextual information about the dependency telemetry.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="telemetryContext"/> is <c>null</c>.</exception>
+        public void AddTelemetryContext(Dictionary<string, object> telemetryContext)
+        {
+            Guard.NotNull(telemetryContext, nameof(telemetryContext), "Requires a telemetry context instance to add to the dependency tracking");
+            TelemetryContext = telemetryContext;
         }
     }
 }
