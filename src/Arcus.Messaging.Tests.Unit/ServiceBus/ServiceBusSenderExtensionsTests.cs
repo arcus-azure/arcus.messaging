@@ -362,7 +362,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             string key = BogusGenerator.Lorem.Word(), value = BogusGenerator.Lorem.Word();
             var telemetryContext = new Dictionary<string, object> { [key] = value };
             
-            var upstreamServicePropertyName = "My-UpstreamService-Id";
             MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
             var logger = new InMemoryLogger();
 
@@ -375,7 +374,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.Contains(value, logMessage);
             Assert.All(
                 spySender.Messages.Zip(expectedOrders), 
-                item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation, operationParentPropertyName: upstreamServicePropertyName));
+                item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation));
         }
 
         private static MessageCorrelationInfo GenerateMessageCorrelationInfo()
