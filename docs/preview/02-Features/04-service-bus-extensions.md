@@ -61,6 +61,12 @@ await sender.SendMessageAsync(order, correlation, logger, options =>
     // The Azure Service Bus application function to generate a dependency ID which will be added to both the message as the dependency tracking.
     // Default: GUID generation.
     options.GenerateDependencyId = () => $"dependency-{Guid.NewGuid()}";
+
+    // The dictionary containing any additional contextual inforamtion that will be used when tracking the Azure Service Bus dependency (Default: empty dictionary).
+    options.AddTelemetryContext(new Dictionary<string, object>
+    {
+        ["My-ServiceBus-custom-key"] = "Any additional information"
+    });
 });
 
 ServiceBusMessage message = ...

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using Arcus.Messaging.Abstractions;
 using Azure.Messaging.ServiceBus;
@@ -60,6 +61,22 @@ namespace Arcus.Messaging.ServiceBus.Core
                 Guard.NotNull(value, nameof(value), "Requires a function to generate the dependency ID used when tracking Azure Service Bus dependencies");
                 _generateDependencyId = value;
             }
+        }
+
+        /// <summary>
+        /// Gets the telemetry context used during HTTP dependency tracking.
+        /// </summary>
+        internal Dictionary<string, object> TelemetryContext { get; private set; } = new Dictionary<string, object>();
+
+        /// <summary>
+        /// Adds a telemetry context while tracking the Azure Service Bus dependency.
+        /// </summary>
+        /// <param name="telemetryContext">The dictionary with contextual information about the dependency telemetry.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="telemetryContext"/> is <c>null</c>.</exception>
+        public void AddTelemetryContext(Dictionary<string, object> telemetryContext)
+        {
+            Guard.NotNull(telemetryContext, nameof(telemetryContext), "Requires a telemetry context dictionary to add to the Azure Service Bus dependency tracking");
+            TelemetryContext = telemetryContext;
         }
     }
 }

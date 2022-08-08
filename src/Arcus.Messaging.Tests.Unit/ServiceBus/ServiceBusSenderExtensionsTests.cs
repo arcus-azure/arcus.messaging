@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -351,6 +352,32 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation, operationParentPropertyName: upstreamServicePropertyName));
         }
 
+        [Fact]
+        public async Task SendMessagesWithoutOptions_WithCustomTelemetryContext_Succeeds()
+        {
+            // Arrange
+            var spySender = new InMemoryServiceBusSender();
+            var expectedOrders = BogusGenerator.Make(5, () => OrderGenerator.Generate());
+            var messages = expectedOrders.Select(order => ServiceBusMessageBuilder.CreateForBody(order).Build());
+            string key = BogusGenerator.Lorem.Word(), value = BogusGenerator.Lorem.Word();
+            var telemetryContext = new Dictionary<string, object> { [key] = value };
+            
+            var upstreamServicePropertyName = "My-UpstreamService-Id";
+            MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
+            var logger = new InMemoryLogger();
+
+            // Act
+            await spySender.SendMessagesAsync(messages, correlation, logger, options => options.AddTelemetryContext(telemetryContext));
+
+            // Assert
+            string logMessage = AssertDependencyTelemetry(logger);
+            Assert.Contains(key, logMessage);
+            Assert.Contains(value, logMessage);
+            Assert.All(
+                spySender.Messages.Zip(expectedOrders), 
+                item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation, operationParentPropertyName: upstreamServicePropertyName));
+        }
+
         private static MessageCorrelationInfo GenerateMessageCorrelationInfo()
         {
             return new MessageCorrelationInfo(
@@ -359,11 +386,13 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 $"parent-{Guid.NewGuid()}");
         }
 
-        private static void AssertDependencyTelemetry(InMemoryLogger logger)
+        private static string AssertDependencyTelemetry(InMemoryLogger logger)
         {
             string logMessage = Assert.Single(logger.Messages);
             Assert.Contains("Dependency", logMessage);
             Assert.Matches(DependencyIdPattern, logMessage);
+
+            return logMessage;
         }
 
         private static void AssertDependencyTelemetry(InMemoryLogger logger, string dependencyId)

@@ -1,23 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Testing.Logging;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Polly;
 using Polly.Wrap;
-using Serilog.Core;
 using Xunit;
-using static Arcus.Observability.Telemetry.Core.ContextProperties;
 
 namespace Arcus.Messaging.Tests.Integration.ServiceBus
 {
@@ -78,6 +71,8 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
             MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
             var dependencyId = $"parent-{Guid.NewGuid()}";
             string transactionIdPropertyName = "My-Transaction-Id", upstreamServicePropertyName = "My-UpstreamService-Id";
+            string key = $"key-{Guid.NewGuid()}", value = $"value-{Guid.NewGuid()}";
+            var telemetryContext = new Dictionary<string, object> { [key] = value };
             var logger = new InMemoryLogger();
 
             string connectionString = _config.GetServiceBusQueueConnectionString();
@@ -93,10 +88,16 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
                         options.TransactionIdPropertyName = transactionIdPropertyName;
                         options.UpstreamServicePropertyName = upstreamServicePropertyName;
                         options.GenerateDependencyId = () => dependencyId;
+                        options.AddTelemetryContext(telemetryContext);
                     });
                 }
 
                 // Assert
+                string logMessage = Assert.Single(logger.Messages);
+                Assert.Contains("Dependency", logMessage);
+                Assert.Matches($"with ID {dependencyId}", logMessage);
+                Assert.Contains(key, logMessage);
+                Assert.Contains(value, logMessage);
                 await RetryAssertUntilServiceBusMessageIsAvailableAsync(client, connectionStringProperties.EntityPath, message =>
                 {
                     var actual = message.Body.ToObjectFromJson<Order>();
@@ -104,10 +105,6 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
 
                     Assert.Equal(correlation.TransactionId, message.ApplicationProperties[transactionIdPropertyName]);
                     Assert.Equal(dependencyId, message.ApplicationProperties[upstreamServicePropertyName]);
-
-                    string logMessage = Assert.Single(logger.Messages);
-                    Assert.Contains("Dependency", logMessage);
-                    Assert.Matches($"with ID {dependencyId}", logMessage);
                 });
             }
         }
