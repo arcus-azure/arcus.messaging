@@ -66,7 +66,7 @@ namespace Arcus.Messaging.ServiceBus.Core
         /// <summary>
         /// Gets the telemetry context used during HTTP dependency tracking.
         /// </summary>
-        internal Dictionary<string, object> TelemetryContext { get; private set; } = new Dictionary<string, object>();
+        internal Dictionary<string, object> TelemetryContext { get; } = new Dictionary<string, object>();
 
         /// <summary>
         /// Adds a telemetry context while tracking the Azure Service Bus dependency.
@@ -76,7 +76,10 @@ namespace Arcus.Messaging.ServiceBus.Core
         public void AddTelemetryContext(Dictionary<string, object> telemetryContext)
         {
             Guard.NotNull(telemetryContext, nameof(telemetryContext), "Requires a telemetry context dictionary to add to the Azure Service Bus dependency tracking");
-            TelemetryContext = telemetryContext;
+            foreach (KeyValuePair<string, object> item in telemetryContext)
+            {
+                TelemetryContext[item.Key] = item.Value;
+            }
         }
     }
 }

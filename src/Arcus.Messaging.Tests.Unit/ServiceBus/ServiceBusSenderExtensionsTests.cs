@@ -359,19 +359,25 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var spySender = new InMemoryServiceBusSender();
             var expectedOrders = BogusGenerator.Make(5, () => OrderGenerator.Generate());
             var messages = expectedOrders.Select(order => ServiceBusMessageBuilder.CreateForBody(order).Build());
-            string key = BogusGenerator.Lorem.Word(), value = BogusGenerator.Lorem.Word();
-            var telemetryContext = new Dictionary<string, object> { [key] = value };
-            
+            string key1 = BogusGenerator.Lorem.Word(), value1 = BogusGenerator.Lorem.Word();
+            string key2 = BogusGenerator.Lorem.Word(), value2 = BogusGenerator.Lorem.Word();
+
             MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
             var logger = new InMemoryLogger();
 
             // Act
-            await spySender.SendMessagesAsync(messages, correlation, logger, options => options.AddTelemetryContext(telemetryContext));
+            await spySender.SendMessagesAsync(messages, correlation, logger, options =>
+            {
+                options.AddTelemetryContext(new Dictionary<string, object> { [key1] = value1 });
+                options.AddTelemetryContext(new Dictionary<string, object> { [key2] = value2, [key1] = value2 });
+            });
 
             // Assert
             string logMessage = AssertDependencyTelemetry(logger);
-            Assert.Contains(key, logMessage);
-            Assert.Contains(value, logMessage);
+            Assert.Contains(key1, logMessage);
+            Assert.DoesNotContain(value1, logMessage);
+            Assert.Contains(key2, logMessage);
+            Assert.Contains(value2, logMessage);
             Assert.All(
                 spySender.Messages.Zip(expectedOrders), 
                 item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation));
