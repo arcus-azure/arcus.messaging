@@ -77,8 +77,8 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
             var dependencyId = $"parent-{Guid.NewGuid()}";
             string transactionIdPropertyName = "My-Transaction-Id", upstreamServicePropertyName = "My-UpstreamService-Id";
             var logger = new InMemoryLogger();
-            string key = Guid.NewGuid().ToString(), value = Guid.NewGuid().ToString();
-            var telemetryContext = new Dictionary<string, object> { [key] = value };
+            string key1 = Guid.NewGuid().ToString(), value1 = Guid.NewGuid().ToString();
+            string key2 = Guid.NewGuid().ToString(), value2 = Guid.NewGuid().ToString();
 
             await using (var client = new EventHubProducerClient(_eventHubsConfig.EventHubsConnectionString, _eventHubsConfig.EventHubsName))
             {
@@ -87,7 +87,8 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
                     options.TransactionIdPropertyName = transactionIdPropertyName;
                     options.UpstreamServicePropertyName = upstreamServicePropertyName;
                     options.GenerateDependencyId = () => dependencyId;
-                    options.AddTelemetryContext(telemetryContext);
+                    options.AddTelemetryContext(new Dictionary<string, object> { [key1] = value1 });
+                    options.AddTelemetryContext(new Dictionary<string, object> { [key2] = value2, [key1] = value2 });
                 });
             }
 
@@ -95,8 +96,10 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
             string logMessage = Assert.Single(logger.Messages);
             Assert.Contains("Dependency", logMessage);
             Assert.Matches($"with ID {dependencyId}", logMessage);
-            Assert.Contains(key, logMessage);
-            Assert.Contains(value, logMessage);
+            Assert.Contains(key1, logMessage);
+            Assert.DoesNotContain(value1, logMessage);
+            Assert.Contains(key2, logMessage);
+            Assert.Contains(value2, logMessage);
 
             await RetryAssertUntilServiceBusMessageIsAvailableAsync(message =>
             {

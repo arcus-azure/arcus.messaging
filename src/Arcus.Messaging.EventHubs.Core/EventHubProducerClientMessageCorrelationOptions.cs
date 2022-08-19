@@ -62,7 +62,7 @@ namespace Arcus.Messaging.EventHubs.Core
         /// <summary>
         /// Gets the telemetry context used during the Azure EventHubs dependency tracking.
         /// </summary>
-        internal Dictionary<string, object> TelemetryContext { get; private set; } = new Dictionary<string, object>();
+        internal Dictionary<string, object> TelemetryContext { get; } = new Dictionary<string, object>();
 
         /// <summary>
         /// Adds a telemetry context while tracking the Azure EventHubs dependency.
@@ -72,7 +72,10 @@ namespace Arcus.Messaging.EventHubs.Core
         public void AddTelemetryContext(Dictionary<string, object> telemetryContext)
         {
             Guard.NotNull(telemetryContext, nameof(telemetryContext), "Requires a telemetry context instance to add to the dependency tracking");
-            TelemetryContext = telemetryContext;
+            foreach (KeyValuePair<string, object> item in telemetryContext)
+            {
+                TelemetryContext[item.Key] = item.Value;
+            }
         }
     }
 }
