@@ -5,6 +5,7 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Observability.Telemetry.Core;
 using Azure.Messaging.EventHubs;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
@@ -18,42 +19,43 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
         /// Initializes a new instance of the <see cref="AzureEventHubsMessageRouter"/> class.
         /// </summary>
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureEventHubsMessageHandler{TMessage}"/> instances.</param>
-        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
-        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public AzureEventHubsMessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger<AzureEventHubsMessageRouter> logger) 
-            : base(serviceProvider, options, logger)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureEventHubsMessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureEventHubsMessageHandler{TMessage}"/> instances.</param>
-        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public AzureEventHubsMessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options)
-            : base(serviceProvider, options)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureEventHubsMessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureEventHubsMessageHandler{TMessage}"/> instances.</param>
-        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public AzureEventHubsMessageRouter(IServiceProvider serviceProvider, ILogger<AzureEventHubsMessageRouter> logger) : base(serviceProvider, logger)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureEventHubsMessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureEventHubsMessageHandler{TMessage}"/> instances.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
         public AzureEventHubsMessageRouter(IServiceProvider serviceProvider)
-            : base(serviceProvider)
+            : this(serviceProvider, NullLogger<AzureEventHubsMessageRouter>.Instance)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureEventHubsMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureEventHubsMessageHandler{TMessage}"/> instances.</param>
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public AzureEventHubsMessageRouter(IServiceProvider serviceProvider, ILogger<AzureEventHubsMessageRouter> logger) 
+            : this(serviceProvider, new AzureEventHubsMessageRouterOptions(), logger)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureEventHubsMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureEventHubsMessageHandler{TMessage}"/> instances.</param>
+        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public AzureEventHubsMessageRouter(IServiceProvider serviceProvider, AzureEventHubsMessageRouterOptions options)
+            : this(serviceProvider, options, NullLogger<AzureEventHubsMessageRouter>.Instance)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureEventHubsMessageRouter"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureEventHubsMessageHandler{TMessage}"/> instances.</param>
+        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
+        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        public AzureEventHubsMessageRouter(IServiceProvider serviceProvider, AzureEventHubsMessageRouterOptions options, ILogger<AzureEventHubsMessageRouter> logger) 
+            : this(serviceProvider, options, (ILogger) logger)
         {
         }
 
@@ -64,7 +66,7 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
         protected AzureEventHubsMessageRouter(IServiceProvider serviceProvider, ILogger logger) 
-            : base(serviceProvider, logger)
+            : this(serviceProvider, new AzureEventHubsMessageRouterOptions(), logger)
         {
         }
 
@@ -75,10 +77,16 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
         /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        protected AzureEventHubsMessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger logger) 
+        protected AzureEventHubsMessageRouter(IServiceProvider serviceProvider, AzureEventHubsMessageRouterOptions  options, ILogger logger) 
             : base(serviceProvider, options, logger)
         {
+            EventHubsOptions = options ?? new AzureEventHubsMessageRouterOptions();
         }
+
+        /// <summary>
+        /// Gets the consumer-configurable options to change the behavior of the Azure Service Bus router.
+        /// </summary>
+        protected AzureEventHubsMessageRouterOptions EventHubsOptions { get; }
 
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureEventHubsMessageHandler{TMessage}"/>s

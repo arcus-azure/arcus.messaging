@@ -270,6 +270,22 @@ public class Program
             // The name of the consumer group this processor is associated with. Events are read in the context of this group. 
             // Default: "$Default"
             options.ConsumerGroup = "<my-eventhubs-consumer-group>";
+
+            // The name of the Azure EventHubs message property that has the transaction ID.
+            // (default: Transaction-Id).
+            options.Routing.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
+
+            // The name of the Azure EventHubs message property that has the upstream service ID.
+            // (default: Operation-Parent-Id).
+            options.Routing.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
+
+            // The property name to enrich the log event with the correlation information cycle ID.
+            // (default: CycleId)
+            options.Routing.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
+
+            // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
+            // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
+            options.Routing.Deserialization.AdditionalMembers = AdditionalMembersHandling.Ignore;
         });
     }
 }

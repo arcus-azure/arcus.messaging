@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using Arcus.Security.Core;
-using Arcus.Security.Core.Caching;
 using Azure.Messaging.EventHubs;
 using Azure.Storage.Blobs;
 using GuardNet;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace Arcus.Messaging.Pumps.EventHubs.Configuration
 {

@@ -2,10 +2,12 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Tests.Unit.EventHubs.Fixture;
 #if NET6_0
 using Arcus.Messaging.Abstractions.EventHubs;
 using Azure.Messaging.EventHubs;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs.Fixture;
@@ -13,6 +15,7 @@ using Newtonsoft.Json;
 #endif
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using ArgumentException = System.ArgumentException;
 
 namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs
 {
@@ -132,6 +135,64 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs
             IServiceProvider provider = services.BuildServiceProvider();
             var router = provider.GetService<IAzureEventHubsMessageRouter>();
             Assert.NotNull(router);
+        }
+
+        [Fact]
+        public void Add_WithImplementationFactory_AddRouter()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act
+            services.AddEventHubsMessageRouting(provider => new TestAzureEventHubsMessageRouter(provider));
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetService<IAzureEventHubsMessageRouter>();
+            Assert.NotNull(router);
+            Assert.IsType<TestAzureEventHubsMessageRouter>(router);
+            Assert.NotNull(provider.GetService<IMessageRouter>());
+        }
+
+        [Fact]
+        public void Add_WithoutImplementationFactory_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.AddEventHubsMessageRouting<AzureEventHubsMessageRouter>(implementationFactory: null));
+        }
+
+        [Fact]
+        public void Add_WithOptionsWithImplementationFactory_AddRouter()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act
+            services.AddEventHubsMessageRouting((provider, options) => new TestAzureEventHubsMessageRouter(provider), options => { });
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetService<IAzureEventHubsMessageRouter>();
+            Assert.NotNull(router);
+            Assert.IsType<TestAzureEventHubsMessageRouter>(router);
+            Assert.NotNull(provider.GetService<IMessageRouter>());
+        }
+
+        [Fact]
+        public void Add_WithOptionsWithoutImplementationFactory_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.AddEventHubsMessageRouting<AzureEventHubsMessageRouter>(
+                    implementationFactory: null, 
+                    configureOptions: options => { }));
         }
     }
 #endif
