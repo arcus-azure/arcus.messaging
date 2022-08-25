@@ -2,14 +2,17 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
+using Arcus.Messaging.Pumps.EventHubs.Configuration;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs;
-using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs.MessageHandling;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
+using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Testing.Logging;
 using Azure.Messaging.EventHubs;
@@ -56,19 +59,137 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs)
+               .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+
+            // Act / Assert
+            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+        }
+
+        [Fact]
+        public async Task EventHubsMessagePumpWithMessageContextFilter_PublishesMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs)
+                .WithEventHubsMessageHandler<TestEventHubsMessageHandler<Order>, Order>(messageContextFilter: context => false)
+                .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+
+            // Act / Assert
+            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+        }
+
+        [Fact]
+        public async Task EventHubsMessagePumpWithMessageFilter_PublishesMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs)
+                .WithEventHubsMessageHandler<TestEventHubsMessageHandler<Order>, Order>(messageBodyFilter: body => false)
+                .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+
+            // Act / Assert
+            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+        }
+
+        [Fact]
+        public async Task EventHubsMessagePumpWithDifferentMessageType_PublishesMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs)
+                .WithEventHubsMessageHandler<TestEventHubsMessageHandler<Shipment>, Shipment>()
+                .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+
+            // Act / Assert
+            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+        }
+
+        [Fact]
+        public async Task EventHubsMessagePumpWithMessageBodySerializer_PublishesMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs)
+                .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>(messageBodySerializerImplementationFactory: provider =>
+                {
+                    var logger = provider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
+                    return new OrderBatchMessageBodySerializer(logger);
+                });
+
+            // Act / Assert
+            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+        }
+
+        [Fact]
+        public async Task EventHubsMessagePumpWithFallback_PublishesMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs)
+                .WithEventHubsMessageHandler<TestEventHubsMessageHandler<Shipment>, Shipment>()
+                .WithFallbackMessageHandler<OrderEventHubsFallbackMessageHandler>();
+
+            // Act / Assert
+            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+        }
+
+        [Fact]
+        public async Task EventHubsMessagePumpWithAll_PublishesMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var properties = EventHubsConnectionStringProperties.Parse(eventHubs.EventHubsConnectionString);
+
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs)
+                .WithEventHubsMessageHandler<TestEventHubsMessageHandler<Shipment>, Shipment>()
+                .WithEventHubsMessageHandler<TestEventHubsMessageHandler<Order>, Order>(messageBodyFilter: body => false)
+                .WithEventHubsMessageHandler<TestEventHubsMessageHandler<Order>, Order>(messageContextFilter: body => false)
+                .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>(
+                    messageContextFilter: context => context.ConsumerGroup == "$Default" 
+                                                     && context.EventHubsName == eventHubs.EventHubsName
+                                                     && context.EventHubsNamespace == properties.FullyQualifiedNamespace,
+                    messageBodySerializerImplementationFactory: provider =>
+                    {
+                        var logger = provider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
+                        return new OrderBatchMessageBodySerializer(logger);
+                    },
+                    messageBodyFilter: order => Guid.TryParse(order.Id, out Guid _),
+                    messageHandlerImplementationFactory: provider =>
+                    {
+                        return new OrderEventHubsMessageHandler(
+                            provider.GetRequiredService<IEventGridPublisher>(),
+                            provider.GetRequiredService<IMessageCorrelationInfoAccessor>(),
+                            provider.GetRequiredService<ILogger<OrderEventHubsMessageHandler>>());
+                    });
+
+            // Act / Assert
+            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+        }
+
+        private EventHubsMessageHandlerCollection AddEventHubsMessagePump(WorkerOptions options, EventHubsConfig eventHubs)
+        {
             string eventHubsConnectionStringSecretName = "Arcus_EventHubs_ConnectionString",
                    storageAccountConnectionStringSecretName = "Arcus_StorageAccount_ConnectionString";
 
-            var options = new WorkerOptions();
-            options.AddEventGridPublisher(_config)
-                   .AddSecretStore(stores => stores.AddInMemory(new Dictionary<string, string>
-                   {
-                       [eventHubsConnectionStringSecretName] = eventHubs.EventHubsConnectionString,
-                       [storageAccountConnectionStringSecretName] = eventHubs.StorageConnectionString
-                   }))
-                   .AddEventHubsMessagePump(eventHubs.EventHubsName, eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName)
-                   .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+            return options.AddEventGridPublisher(_config)
+                          .AddSecretStore(stores => stores.AddInMemory(new Dictionary<string, string>
+                          {
+                              [eventHubsConnectionStringSecretName] = eventHubs.EventHubsConnectionString,
+                              [storageAccountConnectionStringSecretName] = eventHubs.StorageConnectionString
+                          }))
+                          .AddEventHubsMessagePump(eventHubs.EventHubsName, eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName);
+        }
 
+        private async Task TestEventHubsMessageHandlingAsync(WorkerOptions options, EventHubsConfig eventHubs)
+        {
             EventData expected = CreateOrderEventDataMessage();
             var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubs.EventHubsName);
 

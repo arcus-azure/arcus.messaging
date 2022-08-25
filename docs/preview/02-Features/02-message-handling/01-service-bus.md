@@ -148,7 +148,7 @@ You start by implementing an `IMessageBodySerializer`. The following example sho
 The result type (in this case `OrderBatch`) will then be used to check if there is an `IAzureServiceBusMessageHandler` registered for that message type.
 
 ```csharp
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 
 public class OrderBatchMessageBodySerializer : IMessageBodySerializer
 {
@@ -177,7 +177,7 @@ public class Startup
         services.WitServiceBusMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
 
         // Register the message body serializer  in the dependency container where the dependent services are manually injected.
-        services.WithServiceMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
+        services.WithServiceBusMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
         {
             var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
             return new OrderBatchMessageHandler(logger);
@@ -206,7 +206,7 @@ public class Order
 }
 
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 
 // Message handler
 public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
@@ -240,7 +240,7 @@ Following example shows how such a message handler can be implemented:
 
 ```csharp
 using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 
@@ -294,7 +294,7 @@ Example:
 
 ```csharp
 using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Microsoft.Extensions.Logging;
 
 public class AbandonsUnknownOrderMessageHandler : AzureServiceBusMessageHandler<Order>
@@ -346,7 +346,7 @@ Example:
 
 ```csharp
 using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
+using Arcus.Messaging.ServiceBus.Abstractions.MessageHandling;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 
