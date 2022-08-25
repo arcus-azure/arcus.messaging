@@ -13,7 +13,7 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
     /// <summary>
     /// Represents an <see cref="IMessageRouter"/> that can route Azure EventHubs <see cref="EventData"/>s.
     /// </summary>
-    internal class AzureEventHubsMessageRouter : MessageRouter, IAzureEventHubsMessageRouter
+    public class AzureEventHubsMessageRouter : MessageRouter, IAzureEventHubsMessageRouter
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureEventHubsMessageRouter"/> class.
