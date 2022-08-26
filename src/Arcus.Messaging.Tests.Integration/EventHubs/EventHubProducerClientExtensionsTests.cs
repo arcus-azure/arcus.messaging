@@ -41,6 +41,8 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
             _logger = new XunitTestLogger(outputWriter);
         }
 
+        private string EventHubsName => _eventHubsConfig.GetEventHubsName(IntegrationTestType.SelfContained);
+
         [Fact]
         public async Task SendMessage_WithMessageCorrelation_TracksMessage()
         {
@@ -49,7 +51,7 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
             MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
             var logger = new InMemoryLogger();
 
-            await using (var client = new EventHubProducerClient(_eventHubsConfig.EventHubsConnectionString, _eventHubsConfig.EventHubsName))
+            await using (var client = new EventHubProducerClient(_eventHubsConfig.EventHubsConnectionString, EventHubsName))
             {
                 await client.SendAsync(new [] { order }, correlation, logger);
             }
@@ -80,7 +82,7 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
             string key1 = Guid.NewGuid().ToString(), value1 = Guid.NewGuid().ToString();
             string key2 = Guid.NewGuid().ToString(), value2 = Guid.NewGuid().ToString();
 
-            await using (var client = new EventHubProducerClient(_eventHubsConfig.EventHubsConnectionString, _eventHubsConfig.EventHubsName))
+            await using (var client = new EventHubProducerClient(_eventHubsConfig.EventHubsConnectionString, EventHubsName))
             {
                 await client.SendAsync(new [] { order }, correlation, logger, options =>
                 {
@@ -170,7 +172,7 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
         private EventProcessorClient CreateEventProcessorClient()
         {
             var storageClient = new BlobContainerClient(_eventHubsConfig.StorageConnectionString, _blobStorageContainer.ContainerName);
-            var eventProcessor = new EventProcessorClient(storageClient, "$Default", _eventHubsConfig.EventHubsConnectionString, _eventHubsConfig.EventHubsName);
+            var eventProcessor = new EventProcessorClient(storageClient, "$Default", _eventHubsConfig.EventHubsConnectionString, EventHubsName);
             
             return eventProcessor;
         }
