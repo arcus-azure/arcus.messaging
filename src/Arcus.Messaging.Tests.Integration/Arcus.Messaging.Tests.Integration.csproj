@@ -47,4 +47,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="MessagePump\EventHubs\MessageHandling\" />
+  </ItemGroup>
+
 </Project>

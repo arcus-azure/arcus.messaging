@@ -7,7 +7,7 @@ using Azure.Messaging.EventHubs;
 namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
 {
     /// <summary>
-    /// Represents an <see cref="IMessageRouter"/> that can route Azure Service Bus <see cref="EventData"/>s.
+    /// Represents an <see cref="IMessageRouter"/> that can route Azure EventHubs <see cref="EventData"/>s.
     /// </summary>
     public interface IAzureEventHubsMessageRouter : IMessageRouter
     {

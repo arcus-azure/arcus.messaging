@@ -287,7 +287,7 @@ namespace Azure.Messaging.ServiceBus
             Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(sender, nameof(sender), "Requires an Azure Service Bus sender to while sending a correlated message");
+            Guard.NotNull(sender, nameof(sender), "Requires an Azure Service Bus sender to send a correlated message");
             Guard.NotNull(messages, nameof(messages), "Requires a series of Azure Service Bus messages to send as correlated messages");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
             Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure Service Bus dependency while sending the correlated messages");
@@ -315,9 +315,9 @@ namespace Azure.Messaging.ServiceBus
                     isSuccessful = true;
                 }
                 finally
-               {
-                   logger.LogServiceBusDependency(sender.FullyQualifiedNamespace, sender.EntityPath, isSuccessful, measurement, dependencyId, options.EntityType);
-               }
+                {
+                    logger.LogServiceBusDependency(sender.FullyQualifiedNamespace, sender.EntityPath, isSuccessful, measurement, dependencyId, options.EntityType, options.TelemetryContext);
+                }
             }
         }
     }

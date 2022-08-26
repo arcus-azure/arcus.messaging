@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <remarks>
         ///     <para>When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace.</para>
         ///     <para>Make sure that the application has the Arcus secret store configured correctly.
-        ///           For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="getConnectionStringFromSecretFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the secret store.</param>
@@ -56,7 +56,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <remarks>
         ///     <para>When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace.</para>
         ///     <para>Make sure that the application has the Arcus secret store configured correctly.
-        ///           For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="getConnectionStringFromConfigurationFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the configuration.</param>
@@ -85,7 +85,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <remarks>
         ///     <para>When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace.</para>
         ///     <para>Make sure that the application has the Arcus secret store configured correctly.
-        ///           For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="secretName">
@@ -116,7 +116,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <remarks>
         ///     Make sure that the application has the Arcus secret store configured correctly.
-        ///     For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="queueName">The name of the Azure Service Bus Queue to process.</param>
@@ -150,7 +150,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <remarks>
         ///     Make sure that the application has the Arcus secret store configured correctly.
-        ///     For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
         /// </remarks>
         /// <param name="queueName">The name of the Azure Service Bus Queue to process.</param>
         /// <param name="services">The collection of services to add the message pump to.</param>
@@ -274,7 +274,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <remarks>
         ///     <para>When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.</para>
         ///     <para>Make sure that the application has the Arcus secret store configured correctly.
-        ///           For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="subscriptionName">The name of the Azure Service Bus Topic subscription to process.</param>
         /// <param name="services">The collection of services to add the message pump to.</param>
@@ -311,7 +311,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <remarks>
         ///     <para>When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.</para>
         ///     <para>Make sure that the application has the Arcus secret store configured correctly.
-        ///           For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="subscriptionName">The name of the Azure Service Bus Topic subscription to process.</param>
         /// <param name="services">The collection of services to add the message pump to.</param>
@@ -381,7 +381,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <remarks>
         ///     Make sure that the application has the Arcus secret store configured correctly.
-        ///     For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
         /// </remarks>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
         /// <param name="subscriptionName">The name of the Azure Service Bus Topic subscription to process</param>
@@ -421,7 +421,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <remarks>
         ///     Make sure that the application has the Arcus secret store configured correctly.
-        ///     For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
         /// </remarks>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
         /// <param name="subscriptionName">The name of the Azure Service Bus Topic subscription to process.</param>
@@ -532,7 +532,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <remarks>
         ///     <para>When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.</para>
         ///     <para>Make sure that the application has the Arcus secret store configured correctly.
-        ///           For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="subscriptionPrefix">
@@ -570,7 +570,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <remarks>
         ///     <para>When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.</para>
         ///     <para>Make sure that the application has the Arcus secret store configured correctly.
-        ///           For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="subscriptionPrefix">
@@ -642,7 +642,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <remarks>
         ///     Make sure that the application has the Arcus secret store configured correctly.
-        ///     For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
@@ -684,7 +684,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <remarks>
         ///     Make sure that the application has the Arcus secret store configured correctly.
-        ///     For on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
