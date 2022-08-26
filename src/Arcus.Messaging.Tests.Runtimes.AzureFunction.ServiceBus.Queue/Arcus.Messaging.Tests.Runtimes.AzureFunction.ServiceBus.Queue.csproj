@@ -16,7 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.AzureFunctions.ServiceBus\Arcus.Messaging.AzureFunctions.ServiceBus.csproj" />
-    <ProjectReference Include="..\Arcus.Messaging.Tests.Workers\Arcus.Messaging.Tests.Workers.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.Tests.Workers.ServiceBus\Arcus.Messaging.Tests.Workers.ServiceBus.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
