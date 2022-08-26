@@ -79,16 +79,13 @@ await sender.SendMessagesAsync(mesages, ...);
 
 ## Simplify Creating Service Bus Messages
 
-Starting from the message body, we provide an extension to quickly wrap the content in a valid Azure Service Bus `Message` type that can be send.
+Starting from the message body, we provide a builder to quickly wrap the content in a valid Azure Service Bus `ServiceBusMessage` type that can be send.
 
 ```csharp
 using Azure.Messaging.ServiceBus;
 
-string rawString = "Some raw content";
-ServiceBusMessage stringMessage = rawString.AsServiceBusMessage();
-
-Order order = new Order("some order id");
-Message orderMessage = order.AsServiceBusMessage();
+Order order = new Order("order-id");
+ServiceBusMessage message = ServiceBusMessageBuilder.CreateForBody(order).Build(); 
 ```
 
 We also provide additional, optional parameters during the creation:
@@ -96,12 +93,18 @@ We also provide additional, optional parameters during the creation:
 ```csharp
 using Azure.Messaging.ServiceBus;
 
-byte[] rawBytes = new [] { 0x54, 0x12 };
-ServiceBusMessage = byteMessage = rawBytes.AsServiceBusMessage(
-    operationId: Guid.NewGuid().ToString(),
-    transactionId: Guid.NewGuid().ToString(),
-    encoding: Encoding.UTF8);
+ServiceBusMessage message =
+  ServiceBusMessageBuilder.CreateForBody(order, Encoding.UTF8)
+                          .WithOperationId($"operation-{Guid.NewGuid()}")
+                          .WithTransactionId($"transaction-{Guid.NewGuid()}")
+                          .WithOperationParentId($"parent-{Guid.NewGuid()}")
+                          .Build();
 ```
+
+
+* `OperationId`: reflects the ID that identifies a single operation within a service. The passed ID will be set on the `message.CorrelationId` property.
+* `TransactionId`: reflects the ID that identifies the entire transaction across multiple services. The passed ID will be set on the `message.ApplicationProperties` dictionary with the key `"Transaction-Id"`, which is overridable.
+* `OperationParentId`: reflecs the ID that identifies the sender of the event message to the receiver of the message (parent -> child). The passed ID will be set on the `message.ApplicationProperties` dictionary with the key `Operation-Parent-Id`, which is overriable.
 
 ## Simplify Message Information Discovery
 
@@ -136,5 +139,3 @@ using Arcus.Messaging.Abstractions;
 MessageContext messageContext = ...
 Encoding encoding = messageContext.GetMessageEncodingProperty();
 ```
-
-[&larr; back](/)

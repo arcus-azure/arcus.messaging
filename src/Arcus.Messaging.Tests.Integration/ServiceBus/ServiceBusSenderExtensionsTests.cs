@@ -1,23 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Testing.Logging;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Polly;
 using Polly.Wrap;
-using Serilog.Core;
 using Xunit;
-using static Arcus.Observability.Telemetry.Core.ContextProperties;
 
 namespace Arcus.Messaging.Tests.Integration.ServiceBus
 {
