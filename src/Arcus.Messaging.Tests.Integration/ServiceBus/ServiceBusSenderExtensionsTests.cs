@@ -71,6 +71,8 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
             MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
             var dependencyId = $"parent-{Guid.NewGuid()}";
             string transactionIdPropertyName = "My-Transaction-Id", upstreamServicePropertyName = "My-UpstreamService-Id";
+            string key = $"key-{Guid.NewGuid()}", value = $"value-{Guid.NewGuid()}";
+            var telemetryContext = new Dictionary<string, object> { [key] = value };
             var logger = new InMemoryLogger();
 
             string connectionString = _config.GetServiceBusQueueConnectionString();
@@ -86,10 +88,16 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
                         options.TransactionIdPropertyName = transactionIdPropertyName;
                         options.UpstreamServicePropertyName = upstreamServicePropertyName;
                         options.GenerateDependencyId = () => dependencyId;
+                        options.AddTelemetryContext(telemetryContext);
                     });
                 }
 
                 // Assert
+                string logMessage = Assert.Single(logger.Messages);
+                Assert.Contains("Dependency", logMessage);
+                Assert.Matches($"with ID {dependencyId}", logMessage);
+                Assert.Contains(key, logMessage);
+                Assert.Contains(value, logMessage);
                 await RetryAssertUntilServiceBusMessageIsAvailableAsync(client, connectionStringProperties.EntityPath, message =>
                 {
                     var actual = message.Body.ToObjectFromJson<Order>();
@@ -97,10 +105,6 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
 
                     Assert.Equal(correlation.TransactionId, message.ApplicationProperties[transactionIdPropertyName]);
                     Assert.Equal(dependencyId, message.ApplicationProperties[upstreamServicePropertyName]);
-
-                    string logMessage = Assert.Single(logger.Messages);
-                    Assert.Contains("Dependency", logMessage);
-                    Assert.Matches($"with ID {dependencyId}", logMessage);
                 });
             }
         }

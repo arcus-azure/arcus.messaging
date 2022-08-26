@@ -315,9 +315,9 @@ namespace Azure.Messaging.ServiceBus
                     isSuccessful = true;
                 }
                 finally
-               {
-                   logger.LogServiceBusDependency(sender.FullyQualifiedNamespace, sender.EntityPath, isSuccessful, measurement, dependencyId, options.EntityType);
-               }
+                {
+                    logger.LogServiceBusDependency(sender.FullyQualifiedNamespace, sender.EntityPath, isSuccessful, measurement, dependencyId, options.EntityType, options.TelemetryContext);
+                }
             }
         }
     }
