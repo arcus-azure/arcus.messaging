@@ -10,7 +10,7 @@ They help in hte send/receive process of Azure EventHubs event messages.
 
 ## Installation
 
-This features requires to install our NuGet package:
+These features require to install our NuGet package:
 
 ```shell
 PM > Install-Package Arcus.Messaging.EventHubs.Core
