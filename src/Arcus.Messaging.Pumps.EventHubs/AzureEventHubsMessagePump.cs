@@ -119,8 +119,9 @@ namespace Arcus.Messaging.Pumps.EventHubs
             // TODO: create extension on `EventData` to retrieve context.
             var context = AzureEventHubsMessageContext.CreateFrom(args.Data, _eventProcessor);
             
-            // TODO: pass-in message routing options to configure where the correlation properties comes from.
-            MessageCorrelationInfo correlation = args.Data.GetCorrelationInfo();
+            MessageCorrelationInfo correlation = args.Data.GetCorrelationInfo(
+                transactionIdPropertyName: _eventHubsConfig.Options.Routing.Correlation.TransactionIdPropertyName,
+                operationParentIdPropertyName: _eventHubsConfig.Options.Routing.Correlation.OperationParentIdPropertyName);
 
             await _messageRouter.RouteMessageAsync(args.Data, context, correlation, args.CancellationToken);
             await args.UpdateCheckpointAsync(args.CancellationToken);

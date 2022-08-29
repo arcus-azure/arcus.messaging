@@ -174,7 +174,35 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestEventHubsMessageHandlingAsync(options, eventHubs);
         }
 
-        private EventHubsMessageHandlerCollection AddEventHubsMessagePump(WorkerOptions options, EventHubsConfig eventHubs)
+        [Fact]
+        public async Task EventHubsMessagePump_WithCustomTransactionIdProperty_RetrievesCorrelationCorrectlyDuringMessageProcessing()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var customTransactionIdPropertyName = "MyTransactionId";
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Correlation.TransactionIdPropertyName = customTransactionIdPropertyName)
+                .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+
+            // Act / Assert
+            await TestEventHubsMessageHandlingAsync(options, eventHubs, customTransactionIdPropertyName);
+        }
+
+        [Fact]
+        public async Task EventHubsMessagePump_WithCustomOperationParentIdProperty_RetrievesCorrelationCorrectlyDuringMessageProcessing()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var customOperationParentIdPropertyName = "MyOperationParentId";
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Correlation.OperationParentIdPropertyName = customOperationParentIdPropertyName)
+                .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+
+            // Act / Assert
+            await TestEventHubsMessageHandlingAsync(options, eventHubs, operationParentIdPropertyName: customOperationParentIdPropertyName);
+        }
+
+        private EventHubsMessageHandlerCollection AddEventHubsMessagePump(WorkerOptions options, EventHubsConfig eventHubs, Action<AzureEventHubsMessagePumpOptions> configureOptions = null)
         {
             string eventHubsConnectionStringSecretName = "Arcus_EventHubs_ConnectionString",
                    storageAccountConnectionStringSecretName = "Arcus_StorageAccount_ConnectionString";
@@ -185,12 +213,16 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                               [eventHubsConnectionStringSecretName] = eventHubs.EventHubsConnectionString,
                               [storageAccountConnectionStringSecretName] = eventHubs.StorageConnectionString
                           }))
-                          .AddEventHubsMessagePump(eventHubs.EventHubsName, eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName);
+                          .AddEventHubsMessagePump(eventHubs.EventHubsName, eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName, configureOptions);
         }
 
-        private async Task TestEventHubsMessageHandlingAsync(WorkerOptions options, EventHubsConfig eventHubs)
+        private async Task TestEventHubsMessageHandlingAsync(
+            WorkerOptions options, 
+            EventHubsConfig eventHubs, 
+            string transactionIdPropertyName = PropertyNames.TransactionId, 
+            string operationParentIdPropertyName = PropertyNames.OperationParentId)
         {
-            EventData expected = CreateOrderEventDataMessage();
+            EventData expected = CreateOrderEventDataMessage(transactionIdPropertyName, operationParentIdPropertyName);
             var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubs.EventHubsName);
 
             await using (var worker = await Worker.StartNewAsync(options))
@@ -201,18 +233,18 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
                 // Assert
                 OrderCreatedEventData actual = consumer.ConsumeOrderEvent(expected.CorrelationId);
-                AssertReceivedOrderEventData(expected, actual);
+                AssertReceivedOrderEventData(expected, actual, transactionIdPropertyName, operationParentIdPropertyName);
             }
         }
 
-        private static EventData CreateOrderEventDataMessage()
+        private static EventData CreateOrderEventDataMessage(string transactionIdPropertyName, string operationParentIdPropertyName)
         {
             Order order = OrderGenerator.Generate();
             var eventData = new EventData(JsonConvert.SerializeObject(order));
             eventData.MessageId = $"message-{Guid.NewGuid()}";
             eventData.CorrelationId = $"operation-{Guid.NewGuid()}";
-            eventData.Properties[PropertyNames.TransactionId] = $"transaction-{Guid.NewGuid()}";
-            eventData.Properties[PropertyNames.OperationParentId] = $"parent-{Guid.NewGuid()}";
+            eventData.Properties[transactionIdPropertyName] = $"transaction-{Guid.NewGuid()}";
+            eventData.Properties[operationParentIdPropertyName] = $"parent-{Guid.NewGuid()}";
 
             return eventData;
         }
@@ -220,8 +252,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private static void AssertReceivedOrderEventData(
             EventData message,
             OrderCreatedEventData receivedEventData,
-            string transactionIdPropertyName = PropertyNames.TransactionId,
-            string operationParentIdPropertyName = PropertyNames.OperationParentId,
+            string transactionIdPropertyName,
+            string operationParentIdPropertyName,
             Encoding encoding = null)
         {
             encoding = encoding ?? Encoding.UTF8;
