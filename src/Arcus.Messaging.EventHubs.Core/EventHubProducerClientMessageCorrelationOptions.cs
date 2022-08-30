@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using Arcus.Messaging.Abstractions;
+using Arcus.Observability.Correlation;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using GuardNet;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace Arcus.Messaging.EventHubs.Core
 {
     /// <summary>
-    /// Represents the user-configurable options to influence the message correlation tracking behavior of the <see cref="EventHubProducerClientExtensions.SendAsync(EventHubProducerClient,IEnumerable{EventData},MessageCorrelationInfo,ILogger,SendEventOptions,Action{EventHubProducerClientMessageCorrelationOptions},CancellationToken)"/> extensions.
+    /// Represents the user-configurable options to influence the message correlation tracking behavior of the <see cref="EventHubProducerClientExtensions.SendAsync(EventHubProducerClient,IEnumerable{EventData},CorrelationInfo,ILogger,SendEventOptions,Action{EventHubProducerClientMessageCorrelationOptions},CancellationToken)"/> extensions.
     /// </summary>
     public class EventHubProducerClientMessageCorrelationOptions
     {
