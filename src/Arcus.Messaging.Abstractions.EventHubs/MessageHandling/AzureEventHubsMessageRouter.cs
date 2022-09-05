@@ -98,12 +98,25 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
+            bool isSuccessful = false;
             using (var measurement = DurationMeasurement.Start())
             {
-                string messageBody = message.Data.ToString();
-                await base.RouteMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-                
-                // TODO: Log EventHubs request.
+                try
+                {
+                    string messageBody = message.Data.ToString();
+                    await base.RouteMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+                    isSuccessful = true;
+                }
+                finally
+                {
+                    Logger.LogEventHubsRequest(
+                        messageContext.EventHubsNamespace, 
+                        messageContext.ConsumerGroup, 
+                        messageContext.EventHubsName,
+                        operationName: null,
+                        isSuccessful,
+                        measurement);
+                }
             }
         }
 
@@ -119,17 +132,41 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        public override Task RouteMessageAsync<TMessageContext>(
+        public override async Task RouteMessageAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
+            bool isSuccessful = false;
             using (var measurement = DurationMeasurement.Start())
             {
-                return base.RouteMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                
-                // TODO: Log EventHubs request.
+                try
+                {
+                    await base.RouteMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+                    isSuccessful = true;
+                }
+                finally
+                {
+                    string eventHubsNamespace = "<not-available>";
+                    string consumerGroup = "<not-available>";
+                    string eventHubsName = "<not-available>";
+
+                    if (messageContext is AzureEventHubsMessageContext context)
+                    {
+                        eventHubsNamespace = context.EventHubsNamespace;
+                        consumerGroup = context.ConsumerGroup;
+                        eventHubsName = context.EventHubsName;
+                    }
+
+                    Logger.LogEventHubsRequest(
+                        eventHubsNamespace, 
+                        consumerGroup, 
+                        eventHubsName,
+                        operationName: null,
+                        isSuccessful,
+                        measurement);
+                }
             }
         }
     }
