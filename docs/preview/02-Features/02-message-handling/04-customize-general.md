@@ -8,14 +8,6 @@ layout: default
 While the message processing is handled by the `IMessageHandler<>` implementations, the message router controls in what format the message is received.
 We allow several customizations while using a built-in or implementing your own message router.
 
-- [Customize general message handling](#customize-general-message-handling)
-  - [Filter messages based on message context](#filter-messages-based-on-message-context)
-  - [Control custom deserialization](#control-custom-deserialization)
-    - [Extending the message router](#extending-the-message-router)
-    - [Bring your own deserialization](#bring-your-own-deserialization)
-  - [Filter messages based on message body](#filter-messages-based-on-message-body)
-  - [Fallback message handling](#fallback-message-handling)
-
 ## Filter messages based on message context
 
 When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.
