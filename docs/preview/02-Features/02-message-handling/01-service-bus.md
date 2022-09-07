@@ -443,6 +443,14 @@ public class Startup
                 // (default: Transaction-Id).
                 options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
 
+                // The name of the Azure Service Bus message property that has the upstream service ID.
+                // (default: Operation-Parent-Id).
+                options.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
+
+                // The property name to enrich the log event with the correlation information cycle ID.
+                // (default: CycleId)
+                options.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
+
                 // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
                 // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
                 options.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
@@ -474,6 +482,14 @@ public class Startup
                 // The name of the Azure Service Bus message property that has the transaction ID.
                 // (default: Transaction-Id).
                 options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
+
+                // The name of the Azure Service Bus message property that has the upstream service ID.
+                // (default: Operation-Parent-Id).
+                options.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
+
+                // The property name to enrich the log event with the correlation information cycle ID.
+                // (default: CycleId)
+                options.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
 
                 // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
                 // when deserializing the incoming message (default: AdditionalMemberHandling.Error).

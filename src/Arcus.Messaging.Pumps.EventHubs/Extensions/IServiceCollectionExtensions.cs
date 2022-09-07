@@ -104,12 +104,17 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNullOrWhitespace(blobContainerName, nameof(blobContainerName), "Requires a non-blank Azure Blob storage container name to store event checkpoints and load balance the consumed event messages send to the message pump");
             Guard.NotNullOrWhitespace(storageAccountConnectionStringSecretName, nameof(storageAccountConnectionStringSecretName), "Requires a non-blank secret name to retrieve the connection string to the Azure Blob storage where the event checkpoints will be stored and events will be load balanced during the event processing of the message pump");
             
-            EventHubsMessageHandlerCollection collection = services.AddEventHubsMessageRouting();
+            var options = new AzureEventHubsMessagePumpOptions();
+            configureOptions?.Invoke(options);
+
+            EventHubsMessageHandlerCollection collection = services.AddEventHubsMessageRouting(provider =>
+            {
+                var logger = provider.GetService<ILogger<AzureEventHubsMessageRouter>>();
+                return new AzureEventHubsMessageRouter(provider, options.Routing, logger);
+            });
+            
             services.AddHostedService(serviceProvider =>
             {
-                var options = new AzureEventHubsMessagePumpOptions();
-                configureOptions?.Invoke(options);
-
                 ISecretProvider secretProvider = DetermineSecretProvider(serviceProvider);
                 var eventHubsConfig = new AzureEventHubsMessagePumpConfig(
                     eventHubsName, eventHubsConnectionStringSecretName, blobContainerName, storageAccountConnectionStringSecretName, secretProvider, options);

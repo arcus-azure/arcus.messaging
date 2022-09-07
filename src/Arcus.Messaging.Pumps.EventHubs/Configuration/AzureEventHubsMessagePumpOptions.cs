@@ -1,4 +1,5 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using GuardNet;
 
 namespace Arcus.Messaging.Pumps.EventHubs.Configuration
@@ -23,5 +24,10 @@ namespace Arcus.Messaging.Pumps.EventHubs.Configuration
                 _consumerGroup = value;
             }
         }
+
+        /// <summary>
+        /// Gets the consumer-configurable options to change the behavior of the message router.
+        /// </summary>
+        public AzureEventHubsMessageRouterOptions Routing { get; } = new AzureEventHubsMessageRouterOptions();
     }
 }
