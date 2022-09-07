@@ -145,8 +145,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
             var properties = EventHubsConnectionStringProperties.Parse(eventHubs.EventHubsConnectionString);
-
+            
             var options = new WorkerOptions();
             AddEventHubsMessagePump(options, eventHubs)
                 .WithEventHubsMessageHandler<TestEventHubsMessageHandler<Shipment>, Shipment>()
@@ -154,7 +155,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 .WithEventHubsMessageHandler<TestEventHubsMessageHandler<Order>, Order>(messageContextFilter: body => false)
                 .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>(
                     messageContextFilter: context => context.ConsumerGroup == "$Default" 
-                                                     && context.EventHubsName == eventHubs.EventHubsName
+                                                     && context.EventHubsName == eventHubsName
                                                      && context.EventHubsNamespace == properties.FullyQualifiedNamespace,
                     messageBodySerializerImplementationFactory: provider =>
                     {
@@ -204,6 +205,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         private EventHubsMessageHandlerCollection AddEventHubsMessagePump(WorkerOptions options, EventHubsConfig eventHubs, Action<AzureEventHubsMessagePumpOptions> configureOptions = null)
         {
+            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
             string eventHubsConnectionStringSecretName = "Arcus_EventHubs_ConnectionString",
                    storageAccountConnectionStringSecretName = "Arcus_StorageAccount_ConnectionString";
 
@@ -213,7 +215,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                               [eventHubsConnectionStringSecretName] = eventHubs.EventHubsConnectionString,
                               [storageAccountConnectionStringSecretName] = eventHubs.StorageConnectionString
                           }))
-                          .AddEventHubsMessagePump(eventHubs.EventHubsName, eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName, configureOptions);
+                          .AddEventHubsMessagePump(eventHubsName, eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName, configureOptions);
         }
 
         private async Task TestEventHubsMessageHandlingAsync(
@@ -223,7 +225,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string operationParentIdPropertyName = PropertyNames.OperationParentId)
         {
             EventData expected = CreateOrderEventDataMessage(transactionIdPropertyName, operationParentIdPropertyName);
-            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubs.EventHubsName);
+            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
+            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
 
             await using (var worker = await Worker.StartNewAsync(options))
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))

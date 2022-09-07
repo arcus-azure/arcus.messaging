@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.Threading;
 using Arcus.Messaging.Abstractions;
-using Azure.Messaging.ServiceBus;
+using Azure.Messaging.EventHubs;
+using Azure.Messaging.EventHubs.Producer;
 using GuardNet;
 using Microsoft.Extensions.Logging;
 
-namespace Arcus.Messaging.ServiceBus.Core
+namespace Arcus.Messaging.EventHubs.Core
 {
     /// <summary>
-    /// Represents the user-configurable options to influence the message correlation tracking behavior of the <see cref="ServiceBusSenderExtensions.SendMessageAsync(ServiceBusSender,ServiceBusMessage,MessageCorrelationInfo,ILogger,Action{ServiceBusSenderMessageCorrelationOptions},CancellationToken)"/> extensions.
+    /// Represents the user-configurable options to influence the message correlation tracking behavior of the <see cref="EventHubProducerClientExtensions.SendAsync(EventHubProducerClient,IEnumerable{EventData},MessageCorrelationInfo,ILogger,SendEventOptions,Action{EventHubProducerClientMessageCorrelationOptions},CancellationToken)"/> extensions.
     /// </summary>
-    public class ServiceBusSenderMessageCorrelationOptions
+    public class EventHubProducerClientMessageCorrelationOptions
     {
         private string _transactionIdPropertyName = PropertyNames.TransactionId;
         private string _upstreamServicePropertyName = PropertyNames.OperationParentId;
@@ -46,11 +47,6 @@ namespace Arcus.Messaging.ServiceBus.Core
         }
 
         /// <summary>
-        /// Gets or sets the type of the Azure Service Bus entity when tracking Azure Service Bus dependencies.
-        /// </summary>
-        public ServiceBusEntityType EntityType { get; set; }
-
-        /// <summary>
         /// Gets or sets the function to generate the dependency ID used when tracking Azure Service Bus dependencies.
         /// </summary>
         public Func<string> GenerateDependencyId
@@ -64,18 +60,18 @@ namespace Arcus.Messaging.ServiceBus.Core
         }
 
         /// <summary>
-        /// Gets the telemetry context used during HTTP dependency tracking.
+        /// Gets the telemetry context used during the Azure EventHubs dependency tracking.
         /// </summary>
         internal Dictionary<string, object> TelemetryContext { get; } = new Dictionary<string, object>();
 
         /// <summary>
-        /// Adds a telemetry context while tracking the Azure Service Bus dependency.
+        /// Adds a telemetry context while tracking the Azure EventHubs dependency.
         /// </summary>
         /// <param name="telemetryContext">The dictionary with contextual information about the dependency telemetry.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="telemetryContext"/> is <c>null</c>.</exception>
         public void AddTelemetryContext(Dictionary<string, object> telemetryContext)
         {
-            Guard.NotNull(telemetryContext, nameof(telemetryContext), "Requires a telemetry context dictionary to add to the Azure Service Bus dependency tracking");
+            Guard.NotNull(telemetryContext, nameof(telemetryContext), "Requires a telemetry context instance to add to the dependency tracking");
             foreach (KeyValuePair<string, object> item in telemetryContext)
             {
                 TelemetryContext[item.Key] = item.Value;
