@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using Arcus.Messaging.Abstractions;
+using Arcus.Observability.Correlation;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
 using Microsoft.Extensions.Logging;
@@ -9,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace Arcus.Messaging.ServiceBus.Core
 {
     /// <summary>
-    /// Represents the user-configurable options to influence the message correlation tracking behavior of the <see cref="ServiceBusSenderExtensions.SendMessageAsync(ServiceBusSender,ServiceBusMessage,MessageCorrelationInfo,ILogger,Action{ServiceBusSenderMessageCorrelationOptions},CancellationToken)"/> extensions.
+    /// Represents the user-configurable options to influence the message correlation tracking behavior of the <see cref="ServiceBusSenderExtensions.SendMessageAsync(ServiceBusSender,ServiceBusMessage,CorrelationInfo,ILogger,Action{ServiceBusSenderMessageCorrelationOptions},CancellationToken)"/> extensions.
     /// </summary>
     public class ServiceBusSenderMessageCorrelationOptions
     {

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.EventHubs.Core;
+using Arcus.Observability.Correlation;
 using Arcus.Observability.Telemetry.Core;
 using GuardNet;
 using Microsoft.Extensions.Logging;
@@ -50,7 +51,7 @@ namespace Azure.Messaging.EventHubs.Producer
         public static async Task SendAsync(
             this EventHubProducerClient client,
             IEnumerable<object> eventBatch,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -97,7 +98,7 @@ namespace Azure.Messaging.EventHubs.Producer
         public static async Task SendAsync(
             this EventHubProducerClient client,
             IEnumerable<object> eventBatch,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             Action<EventHubProducerClientMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
@@ -146,7 +147,7 @@ namespace Azure.Messaging.EventHubs.Producer
         public static async Task SendAsync(
             this EventHubProducerClient client,
             IEnumerable<object> eventBatch,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             SendEventOptions sendEventOptions,
             CancellationToken cancellationToken = default(CancellationToken))
@@ -196,7 +197,7 @@ namespace Azure.Messaging.EventHubs.Producer
         public static async Task SendAsync(
             this EventHubProducerClient client,
             IEnumerable<object> eventBatch,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             SendEventOptions sendEventOptions,
             Action<EventHubProducerClientMessageCorrelationOptions> configureOptions,
@@ -238,7 +239,7 @@ namespace Azure.Messaging.EventHubs.Producer
         public static async Task SendAsync(
             this EventHubProducerClient client,
             IEnumerable<EventData> eventBatch,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -285,7 +286,7 @@ namespace Azure.Messaging.EventHubs.Producer
         public static async Task SendAsync(
             this EventHubProducerClient client,
             IEnumerable<EventData> eventBatch,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             Action<EventHubProducerClientMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
@@ -334,7 +335,7 @@ namespace Azure.Messaging.EventHubs.Producer
         public static async Task SendAsync(
             this EventHubProducerClient client,
             IEnumerable<EventData> eventBatch,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             SendEventOptions sendEventOptions,
             CancellationToken cancellationToken = default(CancellationToken))
@@ -384,7 +385,7 @@ namespace Azure.Messaging.EventHubs.Producer
         public static async Task SendAsync(
             this EventHubProducerClient client, 
             IEnumerable<EventData> eventBatch,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             SendEventOptions sendEventOptions,
             Action<EventHubProducerClientMessageCorrelationOptions> configureOptions,

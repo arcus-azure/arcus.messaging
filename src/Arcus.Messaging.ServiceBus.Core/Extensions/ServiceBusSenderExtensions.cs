@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.ServiceBus.Core;
+using Arcus.Observability.Correlation;
 using Arcus.Observability.Telemetry.Core;
 using GuardNet;
 using Microsoft.Extensions.Logging;
@@ -35,7 +36,7 @@ namespace Azure.Messaging.ServiceBus
         public static async Task SendMessageAsync(
             this ServiceBusSender sender,
             object messageBody,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -66,7 +67,7 @@ namespace Azure.Messaging.ServiceBus
         public static async Task SendMessageAsync(
             this ServiceBusSender sender,
             object messageBody,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
@@ -102,7 +103,7 @@ namespace Azure.Messaging.ServiceBus
         public static async Task SendMessagesAsync(
             this ServiceBusSender sender,
             IEnumerable<object> messageBodies,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -140,7 +141,7 @@ namespace Azure.Messaging.ServiceBus
         public static async Task SendMessagesAsync(
             this ServiceBusSender sender,
             IEnumerable<object> messageBodies,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
@@ -177,7 +178,7 @@ namespace Azure.Messaging.ServiceBus
         public static async Task SendMessageAsync(
             this ServiceBusSender sender,
             ServiceBusMessage message,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -208,7 +209,7 @@ namespace Azure.Messaging.ServiceBus
         public static async Task SendMessageAsync(
             this ServiceBusSender sender,
             ServiceBusMessage message,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
@@ -244,7 +245,7 @@ namespace Azure.Messaging.ServiceBus
         public static async Task SendMessagesAsync(
             this ServiceBusSender sender,
             IEnumerable<ServiceBusMessage> messages,
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
@@ -282,7 +283,7 @@ namespace Azure.Messaging.ServiceBus
         public static async Task SendMessagesAsync(
             this ServiceBusSender sender, 
             IEnumerable<ServiceBusMessage> messages, 
-            MessageCorrelationInfo correlationInfo,
+            CorrelationInfo correlationInfo,
             ILogger logger,
             Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
