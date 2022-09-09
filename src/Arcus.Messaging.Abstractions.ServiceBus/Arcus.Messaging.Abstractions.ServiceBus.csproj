@@ -34,10 +34,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arcus.Observability.Telemetry.Core" Version="[2.5.0,3.0.0)" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.Abstractions\Arcus.Messaging.Abstractions.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.ServiceBus.Core\Arcus.Messaging.ServiceBus.Core.csproj" />
   </ItemGroup>
