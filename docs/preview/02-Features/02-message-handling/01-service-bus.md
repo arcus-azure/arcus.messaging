@@ -13,22 +13,6 @@ As a user, the only thing you have to do is **focus on processing messages, not 
 
 ![Message handling schema](/media/worker-message-handling.png)
 
-- [Azure Service Bus message handling](#azure-service-bus-message-handling)
-  - [Installation](#installation)
-  - [Message handler example](#message-handler-example)
-  - [Message handler registration](#message-handler-registration)
-    - [Filter messages based on message context](#filter-messages-based-on-message-context)
-    - [Bring your own deserialization](#bring-your-own-deserialization)
-    - [Filter messages based on message body](#filter-messages-based-on-message-body)
-    - [Fallback message handling](#fallback-message-handling)
-  - [Influence handling of Service Bus message in message handler](#influence-handling-of-service-bus-message-in-message-handler)
-    - [During (regular) message handling](#during-regular-message-handling)
-    - [During fallback message handling](#during-fallback-message-handling)
-  - [Pump Configuration](#pump-configuration)
-  - [Alternative Service Bus message routing](#alternative-service-bus-message-routing)
-  - [Message Correlation](#message-correlation)
-  - [Want to get started easy? Use our templates!](#want-to-get-started-easy-use-our-templates)
-
 ## Installation
 This features requires to install our NuGet package:
 

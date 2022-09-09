@@ -1,15 +1,6 @@
 # Migration guide towards v1.0
 Starting from v1.0, there're some major breaking changes. To make it easier for you you migrate towards this new version, we have assembled an migration guide to help you in the process.
 
-- [Migration guide towards v1.0](#migration-guide-towards-v10)
-  - [New Azure SDK](#new-azure-sdk)
-    - [Package update](#package-update)
-    - [Service Bus message update for fallback message handlers](#service-bus-message-update-for-fallback-message-handlers)
-    - [Message correlation information update](#message-correlation-information-update)
-  - [Moved message handler types to abstraction namespaces](#moved-message-handler-types-to-abstraction-namespaces)
-  - [Renamed fallback message handler operations](#renamed-fallback-message-handler-operations)
-  - [Fluent API discovery for message handling](#fluent-api-discovery-for-message-handling)
-
 ## New Azure SDK
 We have chosen to also update our library to the new Azure SDK when interacting with the Azure Service Bus ([#159](https://github.com/arcus-azure/arcus.messaging/discussions/159)). This package update has some consequences on our library.
 
