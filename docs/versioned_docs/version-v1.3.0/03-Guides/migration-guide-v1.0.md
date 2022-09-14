@@ -1,5 +1,5 @@
 # Migration guide towards v1.0
-Starting from v1.0, there're some major breaking changes. To make it easier for you you migrate towards this new version, we have assembled an migration guide to help you in the process.
+Starting from v1.0, there are some major breaking changes. To make it easier for you migrate towards this new version, we have assembled a migration guide to help you in the process.
 
 ## New Azure SDK
 We have chosen to also update our library to the new Azure SDK when interacting with the Azure Service Bus ([#159](https://github.com/arcus-azure/arcus.messaging/discussions/159)). This package update has some consequences on our library.
