@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
+using Arcus.Messaging.Pumps.EventHubs;
 using Arcus.Messaging.Pumps.EventHubs.Configuration;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
@@ -141,6 +144,40 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Fact]
+        public async Task RestartedEventHubsMessagePump_PublishMessage_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs)
+                .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+
+            EventData expected = CreateOrderEventDataMessage();
+            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
+            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
+
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
+            {
+                IEnumerable<AzureEventHubsMessagePump> messagePumps = 
+                    worker.Services.GetServices<IHostedService>()
+                                   .OfType<AzureEventHubsMessagePump>();
+
+                AzureEventHubsMessagePump messagePump = Assert.Single(messagePumps);
+                Assert.NotNull(messagePump);
+
+                await messagePump.RestartAsync(CancellationToken.None);
+
+                // Act
+                await producer.ProduceAsync(expected);
+
+                // Assert
+                OrderCreatedEventData actual = consumer.ConsumeOrderEvent(expected.CorrelationId);
+                AssertReceivedOrderEventData(expected, actual);
+            }
+        }
+
+        [Fact]
         public async Task EventHubsMessagePumpWithAll_PublishesMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
@@ -210,6 +247,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    storageAccountConnectionStringSecretName = "Arcus_StorageAccount_ConnectionString";
 
             return options.AddEventGridPublisher(_config)
+                          .ConfigureLogging(_logger)
                           .AddSecretStore(stores => stores.AddInMemory(new Dictionary<string, string>
                           {
                               [eventHubsConnectionStringSecretName] = eventHubs.EventHubsConnectionString,

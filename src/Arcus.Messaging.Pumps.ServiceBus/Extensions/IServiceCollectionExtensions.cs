@@ -869,7 +869,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
                 return new AzureServiceBusMessageRouter(provider, options.Routing, logger);
             });
-            
+            collection.JobId = options.JobId;
+
             services.AddHostedService(serviceProvider =>
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();

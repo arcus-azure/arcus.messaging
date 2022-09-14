@@ -18,7 +18,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
     /// Represents a message pump for processing messages on an Azure EventHubs resource.
     /// </summary>
     /// <seealso cref="MessagePump"/>
-    internal class AzureEventHubsMessagePump : MessagePump
+    public class AzureEventHubsMessagePump : MessagePump, IRestartableMessagePump
     {
         private readonly AzureEventHubsMessagePumpConfig _eventHubsConfig;
         private readonly IAzureEventHubsMessageRouter _messageRouter;
@@ -55,12 +55,19 @@ namespace Arcus.Messaging.Pumps.EventHubs
 
             _eventHubsConfig = eventHubsConfiguration;
             _messageRouter = messageRouter;
-            _loggingScope = logger.BeginScope("Job: {JobId}", Id);
+            
+            JobId = _eventHubsConfig.Options.JobId;
+            _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
         }
 
         private string EventHubName => _eventProcessor?.EventHubName;
         private string ConsumerGroup => _eventProcessor?.ConsumerGroup;
         private string Namespace => _eventProcessor?.FullyQualifiedNamespace;
+
+        /// <summary>
+        /// Gets the unique message pump ID to identify the pump that needs to be restarted.
+        /// </summary>
+        public string JobId { get; }
 
         /// <summary>
         /// This method is called when the <see cref="T:Microsoft.Extensions.Hosting.IHostedService" /> starts. The implementation should return a task that represents
@@ -75,14 +82,33 @@ namespace Arcus.Messaging.Pumps.EventHubs
                 await StartEventProcessingAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
             }
-            catch (Exception exception) when (exception is not TaskCanceledException && exception is not OperationCanceledException)
+            catch (Exception exception)
             {
-                Logger.LogCritical(exception, "Failed to start Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}': {Message}", Id, ConsumerGroup, EventHubName, Namespace, exception.Message);
+                if (exception is TaskCanceledException || exception is OperationCanceledException)
+                {
+                    Logger.LogDebug("Azure EventHubs message pump '{JobId}' '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' is cancelled", JobId, ConsumerGroup, EventHubName, Namespace);
+                }
+                else
+                {
+                    Logger.LogCritical(exception, "Failed to start Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}': {Message}", JobId, ConsumerGroup, EventHubName, Namespace, exception.Message); 
+                }
             }
             finally
             {
                 await StopEventProcessingAsync();
             }
+        }
+
+        /// <summary>
+        /// Programmatically restart the message pump.
+        /// </summary>
+        /// <param name="cancellationToken">The token to cancel the restart process.</param>
+        public async Task RestartAsync(CancellationToken cancellationToken)
+        {
+            Logger.LogTrace("Restarting Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' ...", JobId, ConsumerGroup, EventHubName, Namespace);
+            await StopEventProcessingAsync();
+            await StartEventProcessingAsync(cancellationToken);
+            Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' restarted!", JobId, ConsumerGroup, EventHubName, Namespace);
         }
 
         private async Task StartEventProcessingAsync(CancellationToken stoppingToken)
@@ -91,9 +117,9 @@ namespace Arcus.Messaging.Pumps.EventHubs
             _eventProcessor.ProcessEventAsync += ProcessMessageAsync;
             _eventProcessor.ProcessErrorAsync += ProcessErrorAsync;
             
-            Logger.LogTrace("Starting Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}'", Id, ConsumerGroup, EventHubName, Namespace);
+            Logger.LogTrace("Starting Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}'", JobId, ConsumerGroup, EventHubName, Namespace);
             await _eventProcessor.StartProcessingAsync(stoppingToken);
-            Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' started: {Time}", Id, ConsumerGroup, EventHubName, Namespace, DateTimeOffset.UtcNow);
+            Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' started: {Time}", JobId, ConsumerGroup, EventHubName, Namespace, DateTimeOffset.UtcNow);
         }
 
         private async Task ProcessMessageAsync(ProcessEventArgs args)
@@ -101,7 +127,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
             EventData message = args.Data;
             if (message is null)
             {
-                Logger.LogWarning("Received message on Azure EventHubs message pump '{JobId}' was null, skipping", Id);
+                Logger.LogWarning("Received message on Azure EventHubs message pump '{JobId}' was null, skipping", JobId);
                 return;
             }
 
@@ -113,7 +139,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
 
             if (string.IsNullOrEmpty(message.CorrelationId))
             {
-                Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure EventHubs message pump '{JobId}'", message.MessageId, Id);
+                Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure EventHubs message pump '{JobId}'", message.MessageId, JobId);
             }
 
             // TODO: create extension on `EventData` to retrieve context.
@@ -131,11 +157,15 @@ namespace Arcus.Messaging.Pumps.EventHubs
         {
             if (args.Exception is null)
             {
-                Logger.LogWarning("Thrown exception on Azure EventHubs message pump '{JobId}' was null, skipping", Id);
+                Logger.LogWarning("Thrown exception on Azure EventHubs message pump '{JobId}' was null, skipping", JobId);
+            }
+            else if (args.Exception is TaskCanceledException)
+            {
+                Logger.LogDebug("Azure EventHubs message pump '{JobId}' is cancelled", JobId);
             }
             else
             {
-                Logger.LogCritical(args.Exception, "Unable to process message in Azure EventHubs message pump from {ConsumerGroup}/{EventHubName} with client {ClientId}", ConsumerGroup, EventHubName, _eventProcessor.Identifier);
+                Logger.LogCritical(args.Exception, "Unable to process message in Azure EventHubs message pump '{JobId}' from {ConsumerGroup}/{EventHubName} with client {ClientId}", JobId, ConsumerGroup, EventHubName, _eventProcessor.Identifier);
             }
 
             return Task.CompletedTask;
@@ -145,15 +175,15 @@ namespace Arcus.Messaging.Pumps.EventHubs
         {
             try
             {
-                Logger.LogTrace("Stopping Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}'",  Id, ConsumerGroup, EventHubName , Namespace);
+                Logger.LogTrace("Stopping Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}'",  JobId, ConsumerGroup, EventHubName , Namespace);
                 await _eventProcessor.StopProcessingAsync();
                 _eventProcessor.ProcessEventAsync -= ProcessMessageAsync;
                 _eventProcessor.ProcessErrorAsync -= ProcessErrorAsync;
-                Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' stopped: {Time}",  Id, ConsumerGroup, EventHubName , Namespace, DateTimeOffset.UtcNow);
+                Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' stopped: {Time}",  JobId, ConsumerGroup, EventHubName , Namespace, DateTimeOffset.UtcNow);
             }
             catch (Exception exception)
             {
-                Logger.LogWarning(exception, "Cannot correctly close the azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}': {Message}", Id, ConsumerGroup, EventHubName , Namespace, exception.Message);
+                Logger.LogWarning(exception, "Cannot correctly close the azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}': {Message}", JobId, ConsumerGroup, EventHubName , Namespace, exception.Message);
             }
         }
 

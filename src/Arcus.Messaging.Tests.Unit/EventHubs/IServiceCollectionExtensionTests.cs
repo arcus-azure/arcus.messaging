@@ -1,4 +1,5 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using Bogus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +35,33 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             IServiceProvider provider = services.BuildServiceProvider();
             var host = provider.GetService<IHostedService>();
             Assert.NotNull(host);
+        }
+
+        [Fact]
+        public void AddWithoutOptions_WithCustomJobId_Succeeds()
+        {
+            // Arrange
+            string eventHubsName = BogusGenerator.Lorem.Word();
+            string eventHubsConnectionStringSecretName = BogusGenerator.Lorem.Word();
+            string blobStorageContainerName = BogusGenerator.Lorem.Word();
+            string storageAccountConnectionStringSecretName = BogusGenerator.Lorem.Word();
+            string jobId = BogusGenerator.Random.Guid().ToString();
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<IConfiguration>())
+                    .AddLogging()
+                    .AddSecretStore(stores => stores.AddInMemory());
+
+            // Act
+            EventHubsMessageHandlerCollection collection = 
+                services.AddEventHubsMessagePump(
+                    eventHubsName, eventHubsConnectionStringSecretName, blobStorageContainerName, storageAccountConnectionStringSecretName, 
+                    options => options.JobId = jobId);
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var host = provider.GetService<IHostedService>();
+            Assert.NotNull(host);
+            Assert.Equal(jobId, collection.JobId);
         }
 
         [Fact]

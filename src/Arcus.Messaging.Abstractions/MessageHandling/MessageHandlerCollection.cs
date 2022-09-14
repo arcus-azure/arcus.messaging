@@ -20,6 +20,12 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(services, nameof(services), "Requires a collection of services to register the message handling logic into");
             Services = services;
         }
+
+        /// <summary>
+        /// Gets or sets the unique message pump ID to identify the message pump throughout the application.
+        /// This ID can be used to get a reference of the previously registered message pump for which a message handler is registered.
+        /// </summary>
+        public string JobId { get; set; }
         
         /// <summary>
         /// Gets the current available collection of services to register the message handling logic into.
