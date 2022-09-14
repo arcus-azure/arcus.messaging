@@ -13,7 +13,7 @@ The library makes sure that developers only have to concern themselves with the 
 * Migrate from v0.x to v1.0 ([docs](./03-Guides/migration-guide-v1.0.md))
 
 # Installation
-The features are available on NuGet, for example:
+The packages are available on NuGet, for example:
 
 ```shell
 PM > Install-Package Arcus.Messaging.Pumps.ServiceBus
