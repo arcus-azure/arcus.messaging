@@ -37,7 +37,8 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+        services.AddYourMessagePump()
+                .WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
     }
 }
 ```
