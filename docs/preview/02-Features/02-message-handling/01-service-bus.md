@@ -117,7 +117,8 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithServiceBusMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+        services.AddServiceBusTopicMessagePump(...)
+                .WithServiceBusMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
     }
 }
 ```
@@ -160,14 +161,16 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         // Register the message body serializer in the dependency container where the dependent services will be injected.
-        services.WitServiceBusMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
+        services.AddServiceBusTopicMessagePump(...)
+                .WitServiceBusMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
 
         // Register the message body serializer  in the dependency container where the dependent services are manually injected.
-        services.WithServiceBusMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
-        {
-            var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
-            return new OrderBatchMessageHandler(logger);
-        });
+        services.AddServiceBusTopicMessagePump(...)
+                .WithServiceBusMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
+                {
+                    var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
+                    return new OrderBatchMessageHandler(logger);
+                });
     }
 }
 ```
@@ -210,7 +213,8 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithServiceMessageHandler<OrderMessageHandler, Order>((Order order) => order.Type == Department.Sales);
+        services.AddServiceBusTopicMessagePump(...)
+                .WithServiceMessageHandler<OrderMessageHandler, Order>((Order order) => order.Type == Department.Sales);
     }
 }
 ```
