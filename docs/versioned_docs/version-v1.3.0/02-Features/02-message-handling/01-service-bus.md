@@ -89,7 +89,7 @@ When registering a new message handler, one can opt-in to add a filter on the me
 
 This can be useful when you are sending different message types on the same queue. Another use-case is being able to handle different versions of the same message type which have different contracts because you are migrating your application.
 
-Following example shows how a message handler should only process a certain message when a property's in the context is present.
+Following example shows how a message handler should only process a certain message when a property in the context has a specific value.
 
 We'll use a simple message handler implementation:
 
