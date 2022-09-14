@@ -278,7 +278,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
         }
 
-        private static EventData CreateOrderEventDataMessage(string transactionIdPropertyName, string operationParentIdPropertyName)
+        private static EventData CreateOrderEventDataMessage(
+            string transactionIdPropertyName = PropertyNames.TransactionId, 
+            string operationParentIdPropertyName = PropertyNames.OperationParentId)
         {
             Order order = OrderGenerator.Generate();
             var eventData = new EventData(JsonConvert.SerializeObject(order));
@@ -293,8 +295,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private static void AssertReceivedOrderEventData(
             EventData message,
             OrderCreatedEventData receivedEventData,
-            string transactionIdPropertyName,
-            string operationParentIdPropertyName,
+            string transactionIdPropertyName = PropertyNames.TransactionId,
+            string operationParentIdPropertyName = PropertyNames.OperationParentId,
             Encoding encoding = null)
         {
             encoding = encoding ?? Encoding.UTF8;
