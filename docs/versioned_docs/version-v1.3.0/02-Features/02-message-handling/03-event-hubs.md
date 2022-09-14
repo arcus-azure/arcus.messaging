@@ -21,33 +21,33 @@ PM > Install-Package Arcus.Messaging.Pumps.EventHubs
 ```
 
 ## Message handler example
-Here is an example of a message handler that expects messages of type `Order`:
+Here is an example of a message handler that expects messages of type `SensorReading`:
 
 ```csharp
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.EventHubs;
 using Microsoft.Extensions.Logging;
 
-public class OrdersMessageHandler : IAzureEventHubsMessageHandler<Order>
+public class SensorReadingMessageHandler : IAzureEventHubsMessageHandler<SensorReading>
 {
     private readonly ILogger _logger;
 
-    public OrdersMessageHandler(ILogger<OrdersMessageHandler> logger)
+    public SensorReadingMessageHandler(ILogger<SensorReadingMessageHandler> logger)
     {
         _logger = logger;
     }
 
     public async Task ProcessMessageAsync(
-        Order orderMessage, 
+        SensorReading message, 
         AzureEventHubsMessageContext messageContext, 
         MessageCorrelationInfo correlationInfo, 
         CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", orderMessage.Id, orderMessage.Amount, orderMessage.ArticleNumber, orderMessage.Customer.FirstName, orderMessage.Customer.LastName);
+        _logger.LogInformation("Processing sensor reading {SensorId} for ", message.Id);
 
         // Process the message.
 
-        _logger.LogInformation("Order {OrderId} processed", orderMessage.Id);
+        _logger.LogInformation("Sensor reading {SensorId} processed", message.Id);
     }
 }
 ```
@@ -68,7 +68,7 @@ public class Program
 
         // Add Azure EventHubs message pump and use OrdersMessageHandler to process the messages.
         services.AddEventHubsMessagePump("<my-eventhubs-name>", "Arcus_EventHubs_ConnectionString", "<my-eventhubs-blob-storage-container-name>", "Arcus_EventHubs_Blob_ConnectionString")
-                .WithEventHubsMessageHandler<OrdersMessageHandler, Order>();
+                .WithEventHubsMessageHandler<SensorReadingMessageHandler, SensorReading>();
 
         // Note, that only a single call to the `.WithEventHubsMessageHandler` has to be made when the handler should be used across message pumps.
     }
@@ -83,6 +83,8 @@ In this example, we are using the Azure EventHubs message pump to process event 
 - Azure EventHubs Blob storage container name: The name of the Azure Blob storage container in the storage account to reference where the event checkpoints will be stored. The events will be streamed to this storage so that the client only has to worry about event processing, not event capturing.
 - Azure EventHubs Blob storage account connection string secret name: The name of the secret to retrieve the Azure EventHubs connection string using your registered Arcus secret store implementation.
 
+> ⚠ The order in which the message handlers are registered matters when a message is processed. If the first one can't handle the message, the second will be checked, and so forth.
+
 ### Filter messages based on message context
 When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.
 
@@ -96,16 +98,16 @@ We'll use a simple message handler implementation:
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.MessagingHandling;
 
-public class OrderMessageHandler : IAzureEventHubsMessageHandler<Order>
+public class SensorReadingMessageHandler : IAzureEventHubsMessageHandler<Order>
 {
-    public async Task ProcessMessageAsync(Order order, AzureEventHubsMessageContext context, ...)
+    public async Task ProcessMessageAsync(SensorReading message, AzureEventHubsMessageContext context, ...)
     {
         // Do some processing...
     }
 }
 ```
 
-We would like that this handler only processed the message when the context contains `MessageType` equals `Order`.
+We would like that this handler only processed the message when the context contains `Location` equals `Room`.
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -114,7 +116,8 @@ public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithEventHubsMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+        services.AddEventHubsMessagePump(...)
+                .WithEventHubsMessageHandler<SensorReadingMessageHandler, SensorReading>(context => context.Properties["Location"].ToString() == "Room");
     }
 }
 ```
@@ -127,20 +130,20 @@ You can also choose to extend the built-in message deserialization with a custom
 This allows you to easily deserialize into different message formats or reuse existing (de)serialization capabilities that you already have without altering the message router. 
 
 You start by implementing an `IMessageBodySerializer`. The following example shows how an expected type can be transformed to something else. 
-The result type (in this case `OrderBatch`) will then be used to check if there is an `IAzureEventHubsMessageHandler` registered for that message type.
+The result type (in this case `SensorReadingBatch`) will then be used to check if there is an `IAzureEventHubsMessageHandler` registered for that message type.
 
 ```csharp
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 
-public class OrderBatchMessageBodySerializer : IMessageBodySerializer
+public class SensorReadingBatchMessageBodySerializer : IMessageBodySerializer
 {
     public async Task<MessageResult> DeserializeMessageAsync(string messageBody)
     {
-        var serializer = new XmlSerializer(typeof(Order[]));
+        var serializer = new XmlSerializer(typeof(SensorReading[]));
         using (var contents = new MemoryStream(Encoding.UTF8.GetBytes(messageBody)))
         {
-            var orders = (Order[]) serializer.Deserialize(contents);
-            return MessageResult.Success(new OrderBatch(orders));
+            var messages = (SensorReading[]) serializer.Deserialize(contents);
+            return MessageResult.Success(new SensorReadingBatch(messages));
         }
     }
 }
@@ -156,14 +159,16 @@ public class Program
     public void ConfigureServices(IServiceCollection services)
     {
         // Register the message body serializer in the dependency container where the dependent services will be injected.
-        services.WithEventHubsMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
+        services.AddEventHubsMessagePump(...)
+                .WithEventHubsMessageHandler<SensorReadingBatchMessageHandler, SensorReading>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
 
         // Register the message body serializer  in the dependency container where the dependent services are manually injected.
-        services.WithEventHubsMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
-        {
-            var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
-            return new OrderBatchMessageHandler(logger);
-        });
+        services.AddEventHubsMessagePump(...)
+                .WithEventHubsMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
+                {
+                    var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
+                    return new SensorReadingBatchMessageHandler(logger);
+                });
     }
 }
 ```
@@ -175,25 +180,25 @@ public class Program
 When registering a new message handler, one can opt-in to add a filter on the incoming message body which filters out messages that are not needed to be processed by this message handler.
 This can be useful when you want to route messages based on the message content itself instead of the messaging context.
 
-Following example shows how a message handler should only process a certain message when the status is 'Sales'; meaning only `Order` for the sales division will be processed.
+Following example shows how a message handler should only process a certain message when the status is 'Active'; meaning only `SensorReading` with active sensors will be processed.
 
 ```csharp
 // Message to be sent:
-public enum Department { Sales, Marketing, Operations }
+public enum SensorStatus { Active, Idle }
 
-public class Order
+public class SensorReading
 {
-    public string Id { get; set; }
-    public Department Type { get; set; }
+    public string SensorId { get; set; }
+    public SensorStatus Status { get; set; }
 }
 
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
 
 // Message handler
-public class OrderMessageHandler : IAzureEventHubsMessageHandler<Order>
+public class SensorReadingMessageHandler : IAzureEventHubsMessageHandler<SensorReading>
 {
-    public async Task ProcessMessageAsync(Order order, AzureEventHubsMessageContext context, ...)
+    public async Task ProcessMessageAsync(SensorReading message, AzureEventHubsMessageContext context, ...)
     {
         // Do some processing...
     }
@@ -206,13 +211,14 @@ public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithEventHubsMessageHandler<OrderMessageHandler, Order>((Order order) => order.Type == Department.Sales);
+        services.AddEventHubsMessagePump(...)
+                .WithEventHubsMessageHandler<SensorReadingMessageHandler, SensorReading>((SensorReading sensor) => sensor.Status == SensorStatus.Active);
     }
 }
 ```
 
 ### Fallback message handling
-When receiving a message on the message pump and none of the registered `IAureEventHubsMessageHandler`'s can correctly process the message, the message pump normally throws and logs an exception.
+When receiving a message on the message pump and none of the registered `IAzureEventHubsMessageHandler`'s can correctly process the message, the message pump normally throws and logs an exception.
 It could also happen in a scenario that's to be expected that some received messages will not be processed correctly (or you don't want them to).
 
 In such a scenario, you can choose to register a `IFallbackMessageHandler` in the dependency container. 

@@ -84,6 +84,9 @@ In this example, we are using the Azure Service Bus message pump to process a qu
 
 > 💡 We support **connection strings that are scoped on the Service Bus namespace and entity** allowing you to choose the required security model for your applications. If you are using namespace-scoped connection strings you'll have to pass your queue/topic name as well.
 
+
+> ⚠ The order in which the message handlers are registered matters when a message is processed. If the first one can't handle the message, the second will be checked, and so forth.
+
 ### Filter messages based on message context
 When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.
 
