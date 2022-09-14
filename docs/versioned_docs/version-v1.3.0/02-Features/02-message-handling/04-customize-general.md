@@ -5,9 +5,6 @@ layout: default
 
 # Customize general message handling
 
-While the message processing is handled by the `IMessageHandler<>` implementations, the message router controls in what format the message is received.
-We allow several customizations while using a built-in or implementing your own message router.
-
 ## Filter messages based on message context
 
 When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.

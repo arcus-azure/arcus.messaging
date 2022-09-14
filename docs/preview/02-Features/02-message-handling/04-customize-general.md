@@ -5,9 +5,6 @@ layout: default
 
 # Customize general message handling
 
-While the message processing is handled by the `IMessageHandler<>` implementations, the message router controls in what format the message is received.
-We allow several customizations while using a built-in or implementing your own message router.
-
 ## Filter messages based on message context
 
 When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.
@@ -40,7 +37,8 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+        services.AddYourMessagePump(...)
+                .WithMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
     }
 }
 ```
@@ -255,5 +253,3 @@ public class Startup
     }
 }
 ```
-
-[&larr; back](/)
