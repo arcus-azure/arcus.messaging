@@ -16,7 +16,7 @@ These features require to install our NuGet package:
 PM > Install-Package Arcus.Messaging.EventHubs.Core
 ```
 
-## Automatic tracked and correlated EventHubs messages
+## Automatic tracking and correlating of EventHubs messages
 
 The Arcus message pump/router automatically makes sure that received Azure EventHubs event messages are tracked as request telemetry in Application Insights. 
 If you also want the sender (dependency tracking) to be linked to the request, we provide a set of easy extensions on the `EventHubProducerClient` to make this happen.
