@@ -123,7 +123,7 @@ public class Program
 ```
 
 > Note that the order in which the message handlers are registered is important in the message processing.
-> In the example, when a message handler above this one is registered that could also handle the message (same message type) than that handler may be chosen instead of the one with the specific filter.
+> In the example, when a message handler above this one is registered that could also handle the message (same message type) then that handler may be chosen instead of the one with the specific filter.
 
 ### Bring your own deserialization
 You can also choose to extend the built-in message deserialization with a custom deserializer to meet your needs. 
