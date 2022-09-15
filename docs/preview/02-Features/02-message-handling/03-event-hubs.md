@@ -174,7 +174,7 @@ public class Program
 ```
 
 > Note that the order in which the message handlers are registered is important in the message processing.
-> In the example, when a message handler above this one is registered that could also handle the message (same message type) than that handler may be chosen instead of the one with the specific filter.
+> In the example, when a message handler above this one is registered that could also handle the message (same message type) then that handler may be chosen instead of the one with the specific filter.
 
 ### Filter messages based on message body
 When registering a new message handler, one can opt-in to add a filter on the incoming message body which filters out messages that are not needed to be processed by this message handler.
