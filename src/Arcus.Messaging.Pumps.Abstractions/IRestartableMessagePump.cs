@@ -12,7 +12,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <summary>
         /// Gets the unique message pump ID to identify the pump that needs to be restarted.
         /// </summary>
-        public string JobId { get; }
+        string JobId { get; }
 
         /// <summary>
         /// Programmatically restart the message pump.
