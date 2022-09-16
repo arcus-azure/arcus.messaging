@@ -34,3 +34,20 @@ ID = "48a8adb4-6837-44ba-a9c4-267b56de8212"
 # inherit these settings.
 # [context.deploy-preview]
   # publish = "dist/"
+
+[[redirects]]
+from = "/features/message-pumps/service-bus"
+to = "/features/message-handling/service-bus"
+
+[[redirects]]
+from = "/features/message-pumps/customization"
+to = "/features/message-handling/customize-general"
+
+[[redirects]]
+from = "/features/message-pumps/service-bus-azure-functions"
+to = "/features/message-handling/service-bus-azure-functions"
+
+[[redirects]]
+from = "/features/service-bus"
+to = "/features/service-bus-extensions"
+

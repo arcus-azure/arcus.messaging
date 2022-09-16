@@ -84,6 +84,7 @@ In this example, we are using the Azure Service Bus message pump to process a qu
 
 > 💡 We support **connection strings that are scoped on the Service Bus namespace and entity** allowing you to choose the required security model for your applications. If you are using namespace-scoped connection strings you'll have to pass your queue/topic name as well.
 
+
 > ⚠ The order in which the message handlers are registered matters when a message is processed. If the first one can't handle the message, the second will be checked, and so forth.
 
 ### Filter messages based on message context
@@ -117,8 +118,7 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddServiceBusTopicMessagePump(...)
-                .WithServiceBusMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+        services.WithServiceBusMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
     }
 }
 ```
@@ -161,16 +161,14 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         // Register the message body serializer in the dependency container where the dependent services will be injected.
-        services.AddServiceBusTopicMessagePump(...)
-                .WitServiceBusMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
+        services.WitServiceBusMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
 
         // Register the message body serializer  in the dependency container where the dependent services are manually injected.
-        services.AddServiceBusTopicMessagePump(...)
-                .WithServiceBusMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
-                {
-                    var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
-                    return new OrderBatchMessageHandler(logger);
-                });
+        services.WithServiceBusMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
+        {
+            var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
+            return new OrderBatchMessageHandler(logger);
+        });
     }
 }
 ```
@@ -213,8 +211,7 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddServiceBusTopicMessagePump(...)
-                .WithServiceMessageHandler<OrderMessageHandler, Order>((Order order) => order.Type == Department.Sales);
+        services.WithServiceMessageHandler<OrderMessageHandler, Order>((Order order) => order.Type == Department.Sales);
     }
 }
 ```
