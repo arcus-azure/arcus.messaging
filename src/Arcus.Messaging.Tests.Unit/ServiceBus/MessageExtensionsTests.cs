@@ -4,7 +4,6 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Azure.ServiceBus;
 using Xunit;
 
 namespace Arcus.Messaging.Tests.Unit.ServiceBus

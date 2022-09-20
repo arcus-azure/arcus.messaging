@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using Arcus.Messaging.Abstractions;
-using Azure.Messaging.ServiceBus;
 using GuardNet;
 
 // ReSharper disable once CheckNamespace
-namespace Microsoft.Azure.ServiceBus
+namespace Azure.Messaging.ServiceBus
 {
     /// <summary>
     /// Extensions on the <see cref="ServiceBusReceivedMessage"/> to more easily retrieve user and system-related information in a more consumer-friendly manner.
     /// </summary>
-    public static class MessageExtensions
+    public static class ServiceBusReceivedMessageExtensions
     {
         /// <summary>
         ///     Gets the application property with a given <paramref name="key"/> for a given <paramref name="message"/>.
@@ -22,7 +21,6 @@ namespace Microsoft.Azure.ServiceBus
         /// <exception cref="ArgumentException">Thrown when the <paramref name="key"/> is blank.</exception>
         /// <exception cref="KeyNotFoundException">Thrown when there's no application property for the provided <paramref name="key"/>.</exception>
         /// <exception cref="InvalidCastException">Thrown when the application property's value cannot be cast to the provided <typeparamref name="TProperty"/> type.</exception>
-        [Obsolete("Use the 'GetApplicationProperty' extension in the 'Azure.Messaging.ServiceBus' namespace, remove the 'Microsoft.Azure.ServiceBus' namespace from your using statements")]
         public static TProperty GetApplicationProperty<TProperty>(this ServiceBusReceivedMessage message, string key)
         {
             Guard.NotNull(message, nameof(message), "Requires an received Azure Service Bus message to retrieve the application property");
@@ -53,7 +51,6 @@ namespace Microsoft.Azure.ServiceBus
         ///     otherwise both will be generated GUID's.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
-        [Obsolete("Use the 'GetCorrelationInfo' extension in the 'Azure.Messaging.ServiceBus' namespace, remove the 'Microsoft.Azure.ServiceBus' namespace from your using statements")]
         public static MessageCorrelationInfo GetCorrelationInfo(this ServiceBusReceivedMessage message)
         {
             Guard.NotNull(message, nameof(message), "Requires an received Azure Service Bus message to retrieve the correlation information");
@@ -73,7 +70,6 @@ namespace Microsoft.Azure.ServiceBus
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionIdPropertyName"/> is blank.</exception>
-        [Obsolete("Use the 'GetCorrelationInfo' extension in the 'Azure.Messaging.ServiceBus' namespace, remove the 'Microsoft.Azure.ServiceBus' namespace from your using statements")]
         public static MessageCorrelationInfo GetCorrelationInfo(this ServiceBusReceivedMessage message, string transactionIdPropertyName)
         {
             Guard.NotNull(message, nameof(message), "Requires an received Azure Service Bus message to retrieve the correlation information");
@@ -100,7 +96,6 @@ namespace Microsoft.Azure.ServiceBus
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="transactionIdPropertyName"/> or the <paramref name="operationParentIdPropertyName"/> is blank.
         /// </exception>
-        [Obsolete("Use the 'GetCorrelationInfo' extension in the 'Azure.Messaging.ServiceBus' namespace, remove the 'Microsoft.Azure.ServiceBus' namespace from your using statements")]
         public static MessageCorrelationInfo GetCorrelationInfo(
             this ServiceBusReceivedMessage message,
             string transactionIdPropertyName,
@@ -120,7 +115,7 @@ namespace Microsoft.Azure.ServiceBus
 
         private static string DetermineTransactionId(ServiceBusReceivedMessage message, string transactionIdPropertyName)
         {
-            string transactionId = GetOptionalUserProperty(message, transactionIdPropertyName);
+            string transactionId = GetTransactionId(message, transactionIdPropertyName);
             if (string.IsNullOrWhiteSpace(transactionId))
             {
                 string generatedTransactionId = Guid.NewGuid().ToString();
@@ -149,7 +144,6 @@ namespace Microsoft.Azure.ServiceBus
         ///     The correlation transaction ID for message if an application property could be found with the key <see cref="PropertyNames.TransactionId"/>; <c>null</c> otherwise.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
-        [Obsolete("Use the 'GetTransactionId' extension in the 'Azure.Messaging.ServiceBus' namespace, remove the 'Microsoft.Azure.ServiceBus' namespace from your using statements")]
         public static string GetTransactionId(this ServiceBusReceivedMessage message)
         {
             Guard.NotNull(message,nameof(message), "Requires an received Azure Service Bus message to retrieve the correlation transaction ID");
@@ -167,7 +161,6 @@ namespace Microsoft.Azure.ServiceBus
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionIdPropertyName"/> is blank.</exception>
-        [Obsolete("Use the 'GetTransactionId' extension in the 'Azure.Messaging.ServiceBus' namespace, remove the 'Microsoft.Azure.ServiceBus' namespace from your using statements")]
         public static string GetTransactionId(this ServiceBusReceivedMessage message, string transactionIdPropertyName)
         {
             Guard.NotNull(message, nameof(message), "Requires an received Azure Service Bus message to retrieve the correlation transaction ID");
