@@ -22,8 +22,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         }
 
         /// <summary>
-        /// Gets or sets the unique message pump ID to identify the message pump throughout the application.
-        /// This ID can be used to get a reference of the previously registered message pump for which a message handler is registered.
+        /// Gets or sets the unique ID to identify the job that runs a message pump during the lifetime of the application.
+        /// This ID can be used to get a reference of the previously registered message pump while registering message handlers and other functionality related to the message pump.
         /// </summary>
         public string JobId { get; set; }
         
