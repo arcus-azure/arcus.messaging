@@ -64,9 +64,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
         private string ConsumerGroup => _eventProcessor?.ConsumerGroup;
         private string Namespace => _eventProcessor?.FullyQualifiedNamespace;
 
-        /// <summary>
-        /// Gets the unique message pump ID to identify the pump that needs to be restarted.
-        /// </summary>
+        /// <inheritdoc/>
         public string JobId { get; }
 
         /// <summary>
