@@ -17,7 +17,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// <summary>
     ///     Message pump for processing messages on an Azure Service Bus entity
     /// </summary>
-    public class AzureServiceBusMessagePump : MessagePump
+    public class AzureServiceBusMessagePump : MessagePump, IRestartableMessagePump
     {
         private readonly IAzureServiceBusMessageRouter _messageRouter;
         private readonly IDisposable _loggingScope;

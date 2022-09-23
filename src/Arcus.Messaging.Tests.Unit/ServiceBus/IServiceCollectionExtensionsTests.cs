@@ -44,6 +44,31 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         }
 
         [Fact]
+        public void AddServiceBusTopicMessagePump_WithCustomJobId_Succeeds()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var spySecretProvider = new Mock<ISecretProvider>();
+            services.AddSingleton(serviceProvider => spySecretProvider.Object);
+            services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
+            services.AddLogging();
+            string jobId = Guid.NewGuid().ToString();
+
+            // Act
+            ServiceBusMessageHandlerCollection result = 
+                services.AddServiceBusTopicMessagePump(
+                    "topic name", "subscription name", "secret name", options => options.JobId = jobId);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+
+            var messagePump = provider.GetService<IHostedService>();
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
+            Assert.Equal(jobId, result.JobId);
+        }
+
+        [Fact]
         public async Task AddServiceBusTopicMessagePump_WithTopicNameAndSubscriptionNameIndirectSecretProvider_WiresUpCorrectly()
         {
             // Arrange
@@ -416,6 +441,27 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
+        }
+
+        [Fact]
+        public void AddServiceBusQueueMessagePump_WithCustomId_Succeeds()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            string jobId = Guid.NewGuid().ToString();
+
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusQueueMessagePump("queue-name", "secret-name", options => options.JobId = jobId);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.IsType<AzureServiceBusMessagePump>(provider.GetRequiredService<IHostedService>());
+            Assert.Equal(jobId, result.JobId);
         }
         
         [Fact]

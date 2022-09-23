@@ -74,7 +74,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _jobId;
             set
             {
-                Guard.NotNullOrEmpty(value, nameof(value), "Unique identifier for background job cannot be empty");
+                Guard.NotNullOrWhitespace(value, nameof(value), "Requires a non-blank job identifier for the Azure Service Bus message pump");
                 _jobId = value;
             }
         }

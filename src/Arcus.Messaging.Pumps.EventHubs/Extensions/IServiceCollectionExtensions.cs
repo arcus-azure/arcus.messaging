@@ -112,7 +112,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 var logger = provider.GetService<ILogger<AzureEventHubsMessageRouter>>();
                 return new AzureEventHubsMessageRouter(provider, options.Routing, logger);
             });
-            
+            collection.JobId = options.JobId;
+
             services.AddHostedService(serviceProvider =>
             {
                 ISecretProvider secretProvider = DetermineSecretProvider(serviceProvider);
