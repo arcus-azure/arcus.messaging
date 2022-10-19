@@ -51,6 +51,7 @@ steps:
       EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
       EventHubsConnectionString=$(Arcus.EventHubs.ConnectionString)
       AzureWebJobsStorage=$(Arcus.EventHubs.BlobStorage.StorageAccountConnectionString)
+      FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
 - template: build-and-run-worker-container.yml
   parameters:
     projectName: 'Arcus.Messaging.Tests.Workers.EventHubs'
