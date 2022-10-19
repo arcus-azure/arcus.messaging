@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -7,24 +8,37 @@ using System.Threading.Tasks;
 using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.EventHubs;
 using Arcus.Messaging.Pumps.EventHubs.Configuration;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
+using Arcus.Messaging.Tests.Integration.Fixture.Logging;
 using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs;
+using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
+using Arcus.Messaging.Tests.Workers.EventHubs.Core.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
+using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Arcus.Testing.Logging;
 using Azure.Messaging.EventHubs;
+using Bogus;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Polly;
+using Polly.Retry;
+using Serilog;
 using Xunit;
 using Xunit.Abstractions;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
@@ -34,6 +48,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     {
         private readonly TestConfig _config;
         private readonly ILogger _logger;
+
+        private static readonly Faker BogusGenerator = new Faker();
 
         private TemporaryBlobStorageContainer _blobStorageContainer;
 
@@ -58,16 +74,29 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Fact]
-        public async Task EventHubsMessagePump_PublishMessage_MessageSuccessfullyProcessed()
+        public async Task EventHubsMessagePump_PublishMessageForHierarchical_MessageSuccessfullyProcessed()
         {
             // Arrange
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
             var options = new WorkerOptions();
-            AddEventHubsMessagePump(options, eventHubs)
+            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical)
                .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
 
             // Act / Assert
-            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+            await TestEventHubsMessageHandlingForHierarchicalAsync(options, eventHubs);
+        }
+
+        [Fact]
+        public async Task EventHubsMessagePump_PublishMessageForW3C_MessageSuccessfullyProcessed()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Correlation.Format = MessageCorrelationFormat.W3C)
+                .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+
+            // Act / Assert
+            await TestEventHubsMessageHandlingForW3CAsync(options, eventHubs);
         }
 
         [Fact]
@@ -81,7 +110,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
 
             // Act / Assert
-            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+            await TestEventHubsMessageHandlingForW3CAsync(options, eventHubs);
         }
 
         [Fact]
@@ -95,7 +124,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
 
             // Act / Assert
-            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+            await TestEventHubsMessageHandlingForW3CAsync(options, eventHubs);
         }
 
         [Fact]
@@ -109,7 +138,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
 
             // Act / Assert
-            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+            await TestEventHubsMessageHandlingForW3CAsync(options, eventHubs);
         }
 
         [Fact]
@@ -126,7 +155,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 });
 
             // Act / Assert
-            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+            await TestEventHubsMessageHandlingForW3CAsync(options, eventHubs);
         }
 
         [Fact]
@@ -140,7 +169,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 .WithFallbackMessageHandler<OrderEventHubsFallbackMessageHandler>();
 
             // Act / Assert
-            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+            await TestEventHubsMessageHandlingForW3CAsync(options, eventHubs);
         }
 
         [Fact]
@@ -152,7 +181,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             AddEventHubsMessagePump(options, eventHubs)
                 .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
 
-            EventData expected = CreateOrderEventDataMessage();
+            var traceParent = TraceParent.Generate();
+            EventData expected = CreateOrderEventDataMessageForW3C(traceParent);
             string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
             var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
 
@@ -172,8 +202,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(expected);
 
                 // Assert
-                OrderCreatedEventData actual = consumer.ConsumeOrderEvent(expected.CorrelationId);
-                AssertReceivedOrderEventData(expected, actual);
+                OrderCreatedEventData actual = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                AssertReceivedOrderEventDataForW3C(expected, actual, traceParent);
             }
         }
 
@@ -209,7 +239,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     });
 
             // Act / Assert
-            await TestEventHubsMessageHandlingAsync(options, eventHubs);
+            await TestEventHubsMessageHandlingForW3CAsync(options, eventHubs);
         }
 
         [Fact]
@@ -219,11 +249,15 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
             var customTransactionIdPropertyName = "MyTransactionId";
             var options = new WorkerOptions();
-            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Correlation.TransactionIdPropertyName = customTransactionIdPropertyName)
+            AddEventHubsMessagePump(options, eventHubs, opt =>
+                {
+                    opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+                    opt.Routing.Correlation.TransactionIdPropertyName = customTransactionIdPropertyName;
+                })
                 .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
 
             // Act / Assert
-            await TestEventHubsMessageHandlingAsync(options, eventHubs, customTransactionIdPropertyName);
+            await TestEventHubsMessageHandlingForHierarchicalAsync(options, eventHubs, customTransactionIdPropertyName);
         }
 
         [Fact]
@@ -233,11 +267,109 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
             var customOperationParentIdPropertyName = "MyOperationParentId";
             var options = new WorkerOptions();
-            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Correlation.OperationParentIdPropertyName = customOperationParentIdPropertyName)
+            AddEventHubsMessagePump(options, eventHubs, opt =>
+                {
+                    opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+                    opt.Routing.Correlation.OperationParentIdPropertyName = customOperationParentIdPropertyName;
+                })
                 .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
 
             // Act / Assert
-            await TestEventHubsMessageHandlingAsync(options, eventHubs, operationParentIdPropertyName: customOperationParentIdPropertyName);
+            await TestEventHubsMessageHandlingForHierarchicalAsync(options, eventHubs, operationParentIdPropertyName: customOperationParentIdPropertyName);
+        }
+
+        [Fact]
+        public async Task EventHubsMessagePump_WithW3CCorrelationFormat_AutomaticallyTracksMicrosoftDependencies()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var spySink = new InMemoryApplicationInsightsTelemetryConverter();
+            var spyChannel = new InMemoryTelemetryChannel();
+
+            var options = new WorkerOptions();
+            options.Configure(host => host.UseSerilog((context, config) =>
+            {
+                config.MinimumLevel.Debug()
+                      .Enrich.FromLogContext()
+                      .WriteTo.ApplicationInsights(spySink);
+            }));
+            AddEventHubsMessagePump(options, eventHubs)
+                .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
+            options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
+
+            Order order = OrderGenerator.Generate();
+            var traceParent = TraceParent.Generate();
+            var eventData = new EventData(BinaryData.FromObjectAsJson(order)).WithDiagnosticId(traceParent);
+
+            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
+            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
+
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
+            {
+                // Act
+                await producer.ProduceAsync(eventData);
+
+                // Assert
+                AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
+                {
+                    RequestTelemetry requestViaArcusEventHubs = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process" && r.Context.Operation.Id == traceParent.TransactionId);
+                    DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault" && d.Context.Operation.Id == traceParent.TransactionId);
+                    DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL" && d.Context.Operation.Id == traceParent.TransactionId);
+                    
+                    Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaArcusKeyVault.Context.Operation.ParentId);
+                    Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaMicrosoftSql.Context.Operation.ParentId);
+                }, timeout: TimeSpan.FromMinutes(1), _logger);
+            }
+        }
+
+         [Fact]
+        public async Task EventHubsMessagePump_WithW3CCorrelationFormatForNewParent_AutomaticallyTracksMicrosoftDependencies()
+        {
+            // Arrange
+            var spySink = new InMemoryApplicationInsightsTelemetryConverter();
+            var options = new WorkerOptions();
+            options.Configure(host => host.UseSerilog((context, config) =>
+            {
+                config.MinimumLevel.Debug()
+                      .Enrich.FromLogContext()
+                      .WriteTo.ApplicationInsights(spySink);
+            }));
+
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            AddEventHubsMessagePump(options, eventHubs)
+                .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
+
+            var spyChannel = new InMemoryTelemetryChannel();
+            options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
+
+            Order order = OrderGenerator.Generate();
+            var eventData = new EventData(BinaryData.FromObjectAsJson(order));
+
+            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
+            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
+
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
+            {
+                // Act
+                await producer.ProduceAsync(eventData);
+
+                // Assert
+                AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
+                {
+                    IEnumerable<DependencyTelemetry> dependenciesViaArcusKeyVault = spySink.Telemetries.OfType<DependencyTelemetry>().Where(d => d.Type == "Azure key vault");
+                    IEnumerable<DependencyTelemetry> dependenciesViaMicrosoftSql = spyChannel.Telemetries.OfType<DependencyTelemetry>().Where(d => d.Type == "SQL");
+
+                    bool correlationSuccess = spySink.Telemetries.Any(t =>
+                    {
+                        return t is RequestTelemetry r && r.Name == "Process" 
+                               && dependenciesViaArcusKeyVault.SingleOrDefault(d => d.Context.Operation.ParentId == r.Id) != null
+                               && dependenciesViaMicrosoftSql.SingleOrDefault(d => d.Context.Operation.ParentId == r.Id) != null;
+                    });
+                    Assert.True(correlationSuccess);
+                }, timeout: TimeSpan.FromMinutes(1), _logger);
+            }
         }
 
         private EventHubsMessageHandlerCollection AddEventHubsMessagePump(WorkerOptions options, EventHubsConfig eventHubs, Action<AzureEventHubsMessagePumpOptions> configureOptions = null)
@@ -256,13 +388,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                           .AddEventHubsMessagePump(eventHubsName, eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName, configureOptions);
         }
 
-        private async Task TestEventHubsMessageHandlingAsync(
+        private async Task TestEventHubsMessageHandlingForHierarchicalAsync(
             WorkerOptions options, 
             EventHubsConfig eventHubs, 
             string transactionIdPropertyName = PropertyNames.TransactionId, 
             string operationParentIdPropertyName = PropertyNames.OperationParentId)
         {
-            EventData expected = CreateOrderEventDataMessage(transactionIdPropertyName, operationParentIdPropertyName);
+            EventData expected = CreateOrderEventDataMessageForHierarchical(transactionIdPropertyName, operationParentIdPropertyName);
             string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
             var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
 
@@ -273,12 +405,34 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(expected);
 
                 // Assert
-                OrderCreatedEventData actual = consumer.ConsumeOrderEvent(expected.CorrelationId);
-                AssertReceivedOrderEventData(expected, actual, transactionIdPropertyName, operationParentIdPropertyName);
+                OrderCreatedEventData actual = consumer.ConsumeOrderEventForHierarchical(expected.CorrelationId);
+                AssertReceivedOrderEventDataForHierarchical(expected, actual, transactionIdPropertyName, operationParentIdPropertyName);
             }
         }
 
-        private static EventData CreateOrderEventDataMessage(
+        private async Task TestEventHubsMessageHandlingForW3CAsync(
+            WorkerOptions options,
+            EventHubsConfig eventHubs)
+        {
+            var traceParent = TraceParent.Generate();
+            EventData expected = CreateOrderEventDataMessageForW3C(traceParent);
+            
+            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
+            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
+
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
+            {
+                // Act
+                await producer.ProduceAsync(expected);
+
+                // Assert
+                OrderCreatedEventData actual = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                AssertReceivedOrderEventDataForW3C(expected, actual, traceParent);
+            }
+        }
+
+        private static EventData CreateOrderEventDataMessageForHierarchical(
             string transactionIdPropertyName = PropertyNames.TransactionId, 
             string operationParentIdPropertyName = PropertyNames.OperationParentId)
         {
@@ -292,7 +446,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             return eventData;
         }
 
-        private static void AssertReceivedOrderEventData(
+        private static EventData CreateOrderEventDataMessageForW3C(TraceParent traceParent)
+        {
+            Order order = OrderGenerator.Generate();
+            return new EventData(JsonConvert.SerializeObject(order)).WithDiagnosticId(traceParent);
+        }
+
+        private static void AssertReceivedOrderEventDataForHierarchical(
             EventData message,
             OrderCreatedEventData receivedEventData,
             string transactionIdPropertyName = PropertyNames.TransactionId,
@@ -315,6 +475,26 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Assert.Equal(transactionId, receivedEventData.CorrelationInfo.TransactionId);
             Assert.Equal(operationId, receivedEventData.CorrelationInfo.OperationId);
             Assert.Equal(operationParentId, receivedEventData.CorrelationInfo.OperationParentId);
+        }
+
+        private static void AssertReceivedOrderEventDataForW3C(
+            EventData message,
+            OrderCreatedEventData receivedEventData,
+            TraceParent traceParent,
+            Encoding encoding = null)
+        {
+            encoding = encoding ?? Encoding.UTF8;
+            string json = encoding.GetString(message.EventBody);
+            var order = JsonConvert.DeserializeObject<Order>(json);
+
+            Assert.NotNull(receivedEventData);
+            Assert.NotNull(receivedEventData.CorrelationInfo);
+            Assert.Equal(order.Id, receivedEventData.Id);
+            Assert.Equal(order.Amount, receivedEventData.Amount);
+            Assert.Equal(order.ArticleNumber, receivedEventData.ArticleNumber);
+            Assert.Equal(traceParent.TransactionId, receivedEventData.CorrelationInfo.TransactionId);
+            Assert.NotNull(receivedEventData.CorrelationInfo.OperationId);
+            Assert.Equal(traceParent.OperationParentId, receivedEventData.CorrelationInfo.OperationParentId);
         }
 
         /// <summary>

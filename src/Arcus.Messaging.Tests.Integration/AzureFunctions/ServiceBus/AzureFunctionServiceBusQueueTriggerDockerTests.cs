@@ -5,6 +5,7 @@ using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Azure.Messaging.ServiceBus;
+using Bogus;
 using Microsoft.Azure.ServiceBus;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,6 +18,8 @@ namespace Arcus.Messaging.Tests.Integration.AzureFunctions.ServiceBus
     {
         private const string QueueConnectionString = "Arcus:ServiceBus:Docker:AzureFunctions:ConnectionStringWithQueue";
 
+        private static readonly Faker BogusGenerator = new Faker();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureFunctionServiceBusQueueTriggerDockerTests" /> class.
         /// </summary>
@@ -28,27 +31,24 @@ namespace Arcus.Messaging.Tests.Integration.AzureFunctions.ServiceBus
         public async Task ServiceBusQueueTrigger_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
-            var operationId = Guid.NewGuid().ToString();
-            var transactionId = Guid.NewGuid().ToString();
+            string transactionId = BogusGenerator.Random.Hexadecimal(32, prefix: null);
+            string operationParentId = BogusGenerator.Random.Hexadecimal(16, prefix: null);
             
             Order order = OrderGenerator.Generate();
-            ServiceBusMessage orderMessage =
-                ServiceBusMessageBuilder.CreateForBody(order)
-                                        .WithOperationId(operationId)
-                                        .WithTransactionId(transactionId)
-                                        .Build();
+            var orderMessage = new ServiceBusMessage(BinaryData.FromObjectAsJson(order));
+            orderMessage.ApplicationProperties["Diagnostic-Id"] = $"00-{transactionId}-{operationParentId}-00";
 
             // Act
             await SenderOrderToServiceBusAsync(orderMessage, QueueConnectionString);
             
             // Assert
-            OrderCreatedEventData orderEventData = ReceiveOrderFromEventGrid(operationId);
+            OrderCreatedEventData orderEventData = ReceiveOrderFromEventGrid(transactionId);
             Assert.NotNull(orderEventData.CorrelationInfo);
             Assert.Equal(order.Id, orderEventData.Id);
             Assert.Equal(order.Amount, orderEventData.Amount);
             Assert.Equal(order.ArticleNumber, orderEventData.ArticleNumber);
             Assert.Equal(transactionId, orderEventData.CorrelationInfo.TransactionId);
-            Assert.Equal(operationId, orderEventData.CorrelationInfo.OperationId);
+            Assert.NotNull(orderEventData.CorrelationInfo.OperationId);
         }
     }
 }

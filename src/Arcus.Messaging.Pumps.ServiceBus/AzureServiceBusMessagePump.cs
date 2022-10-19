@@ -2,14 +2,18 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Messaging.ServiceBus.Core;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using GuardNet;
+using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.ServiceBus
@@ -348,15 +352,30 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus message pump '{JobId}'", message.MessageId, JobId);
             }
 
-            AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId);
+            using (MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message))
+            {
+                AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId);
+                ServiceBusReceiver receiver = args.GetServiceBusReceiver();
+
+                await _messageRouter.RouteMessageAsync(receiver, args.Message, messageContext, correlationResult.CorrelationInfo, args.CancellationToken); 
+            }
+        }
+
+        private MessageCorrelationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message)
+        {
+            if (Settings.Options.Routing.Correlation.Format is MessageCorrelationFormat.W3C)
+            {
+                (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
+                var client = ServiceProvider.GetRequiredService<TelemetryClient>();
+                return MessageCorrelationResult.Create(client, transactionId, operationParentId);
+            }
+
             MessageCorrelationInfo correlationInfo = 
                 message.GetCorrelationInfo(
                     Settings.Options.Routing.Correlation?.TransactionIdPropertyName ?? PropertyNames.TransactionId,
                     Settings.Options.Routing.Correlation?.OperationParentIdPropertyName ?? PropertyNames.OperationParentId);
-            
-            ServiceBusReceiver receiver = args.GetServiceBusReceiver();
 
-            await _messageRouter.RouteMessageAsync(receiver, args.Message, messageContext, correlationInfo, args.CancellationToken);
+            return MessageCorrelationResult.Create(correlationInfo);
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)

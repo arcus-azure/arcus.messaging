@@ -32,6 +32,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         }
 
         /// <summary>
+        /// Gets or sets the message correlation format of the received Azure Service Bus message.
+        /// </summary>
+        public MessageCorrelationFormat Format
+        {
+            get => _correlationOptions.Format;
+            set => _correlationOptions.Format = value;
+        }
+
+        /// <summary>
         /// Gets or sets the name of the Azure Service Bus message property to retrieve the transaction ID.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
