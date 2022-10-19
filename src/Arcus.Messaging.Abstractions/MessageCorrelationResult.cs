@@ -32,7 +32,6 @@ namespace Arcus.Messaging.Abstractions
             CorrelationInfo = correlationInfo;
         }
 
-
         /// <summary>
         /// Gets the correlation information of the current received Azure Service Bus message.
         /// </summary>

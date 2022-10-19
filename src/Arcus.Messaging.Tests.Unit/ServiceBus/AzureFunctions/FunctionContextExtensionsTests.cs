@@ -103,16 +103,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.AzureFunctions
             Assert.ThrowsAny<InvalidOperationException>(() => context.GetCorrelationInfo());
         }
 
-        [Fact]
-        public void GetCorrelationInfo_WithoutBindingData_Fails()
-        {
-            // Arrange
-            FunctionContext context = CreateFunctionContext(bindingData: null);
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => context.GetCorrelationInfo());
-        }
-
         [Theory]
         [InlineData(MessageCorrelationFormat.Hierarchical)]
         [InlineData(MessageCorrelationFormat.W3C)]
@@ -123,18 +113,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.AzureFunctions
 
             // Act / Assert
             Assert.ThrowsAny<InvalidOperationException>(() => context.GetCorrelationInfo(format));
-        }
-
-        [Theory]
-        [InlineData(MessageCorrelationFormat.Hierarchical)]
-        [InlineData(MessageCorrelationFormat.W3C)]
-        public void GetCorrelationInfoWithFormat_WithoutBindingData_Fails(MessageCorrelationFormat format)
-        {
-            // Arrange
-            FunctionContext context = CreateFunctionContext(bindingData: null);
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => context.GetCorrelationInfo(format));
         }
 
         private FunctionContext CreateFunctionContext(

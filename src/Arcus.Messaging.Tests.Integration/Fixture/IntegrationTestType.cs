@@ -3,6 +3,7 @@
     public enum IntegrationTestType
     {
         SelfContained,
-        Docker
+        DockerWorker,
+        DockerAzureFunctions
     }
 }

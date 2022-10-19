@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Diagnostics;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Tests.Core.Correlation;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
@@ -10,29 +11,29 @@ using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs;
 using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
-using Arcus.Testing.Logging;
 using Azure.Messaging.EventHubs;
-using Bogus;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Arcus.Messaging.Tests.Integration.MessagePump
+namespace Arcus.Messaging.Tests.Integration.AzureFunctions.EventHubs
 {
     [Collection("Docker")]
     [Trait("Category", "Docker")]
-    public class EventHubsMessagePumpDockerTests : DockerServiceBusIntegrationTest
+    public class AzureFunctionsEventHubsTriggerDockerTests : DockerServiceBusIntegrationTest
     {
         private readonly TestConfig _config;
 
-        public EventHubsMessagePumpDockerTests(ITestOutputHelper outputWriter) : base(outputWriter)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureFunctionsEventHubsTriggerDockerTests" /> class.
+        /// </summary>
+        public AzureFunctionsEventHubsTriggerDockerTests(ITestOutputHelper outputWriter) : base(outputWriter)
         {
             _config = TestConfig.Create();
         }
 
         [Fact]
-        public async Task EventHubsMessagePump_PublishEventDataMessage_MessageSuccessfullyProcessed()
+        public async Task EventHubsMessageFunction_PublishesEventDataMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
             var traceParent = TraceParent.Generate();
@@ -40,7 +41,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             EventData expected = new EventData(JsonConvert.SerializeObject(order)).WithDiagnosticId(traceParent);
 
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
-            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.DockerWorker);
+            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.DockerAzureFunctions);
             var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
 
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, Logger))

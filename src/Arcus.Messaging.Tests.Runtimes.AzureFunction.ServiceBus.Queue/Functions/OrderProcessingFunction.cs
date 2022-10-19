@@ -37,7 +37,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.Function
         {
             log.LogInformation($"C# ServiceBus queue trigger function processed message: {message.MessageId}");
 
-            var context = new AzureServiceBusMessageContext(message.MessageId, _jobId, AzureServiceBusSystemProperties.CreateFrom(message), message.ApplicationProperties);
+            AzureServiceBusMessageContext context = message.GetMessageContext(_jobId);
             (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
 
             using (var result = MessageCorrelationResult.Create(_telemetryClient, transactionId, operationParentId))
