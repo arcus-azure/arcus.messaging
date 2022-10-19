@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Arcus.Messaging.Tests.Core.Correlation;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
 using Azure.Messaging.ServiceBus;

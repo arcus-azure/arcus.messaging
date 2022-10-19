@@ -5,6 +5,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Azure.Messaging.ServiceBus;
+using Microsoft.ApplicationInsights;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 
@@ -13,14 +14,18 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.Function
     public class OrderProcessingFunction
     {
         private readonly IAzureServiceBusMessageRouter _messageRouter;
+        private readonly TelemetryClient _telemetryClient;
         private readonly string _jobId;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OrderProcessingFunction" /> class.
         /// </summary>
-        public OrderProcessingFunction(IAzureServiceBusMessageRouter messageRouter)
+        public OrderProcessingFunction(
+            IAzureServiceBusMessageRouter messageRouter,
+            TelemetryClient telemetryClient)
         {
             _messageRouter = messageRouter;
+            _telemetryClient = telemetryClient;
             _jobId = Guid.NewGuid().ToString();
         }
 
@@ -31,10 +36,14 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.Function
             CancellationToken cancellationToken)
         {
             log.LogInformation($"C# ServiceBus queue trigger function processed message: {message.MessageId}");
-            
+
             var context = new AzureServiceBusMessageContext(message.MessageId, _jobId, AzureServiceBusSystemProperties.CreateFrom(message), message.ApplicationProperties);
-            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
-            await _messageRouter.RouteMessageAsync(message, context, correlationInfo, cancellationToken);
+            (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
+
+            using (var result = MessageCorrelationResult.Create(_telemetryClient, transactionId, operationParentId))
+            {
+                await _messageRouter.RouteMessageAsync(message, context, result.CorrelationInfo, cancellationToken);
+            }
         }
     }
 }

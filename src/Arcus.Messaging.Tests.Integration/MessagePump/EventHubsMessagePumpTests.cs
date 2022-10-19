@@ -11,6 +11,7 @@ using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.EventHubs;
 using Arcus.Messaging.Pumps.EventHubs.Configuration;
+using Arcus.Messaging.Tests.Core.Correlation;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;

@@ -4,6 +4,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.ServiceBus.Core;
 using GuardNet;
+using Microsoft.ApplicationInsights;
 
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.ServiceBus

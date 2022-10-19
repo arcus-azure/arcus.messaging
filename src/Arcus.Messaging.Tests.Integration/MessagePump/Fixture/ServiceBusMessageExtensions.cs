@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Arcus.Messaging.Tests.Core.Correlation;
 using Azure.Messaging.ServiceBus;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture

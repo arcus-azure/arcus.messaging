@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Bogus;
+﻿using Bogus;
 
-namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
+namespace Arcus.Messaging.Tests.Core.Correlation
 {
     public class TraceParent
     {
