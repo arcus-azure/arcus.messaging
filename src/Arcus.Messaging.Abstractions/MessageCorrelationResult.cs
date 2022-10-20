@@ -13,15 +13,18 @@ namespace Arcus.Messaging.Abstractions
     /// </summary>
     public class MessageCorrelationResult : IDisposable
     {
+        private readonly TelemetryClient _telemetryClient;
         private readonly IOperationHolder<RequestTelemetry> _operationHolder;
 
         private MessageCorrelationResult(
             MessageCorrelationInfo correlationInfo,
+            TelemetryClient client,
             IOperationHolder<RequestTelemetry> operationHolder)
         {
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a hierarchical message correlation information instance for the received message");
             Guard.NotNull(operationHolder, nameof(operationHolder), "Requires an operation holder to manage the scope where dependencies are automatically tracked");
 
+            _telemetryClient = client;
             _operationHolder = operationHolder;
             CorrelationInfo = correlationInfo;
         }
@@ -70,7 +73,7 @@ namespace Arcus.Messaging.Abstractions
             IOperationHolder<RequestTelemetry> operationHolder = client.StartOperation(telemetry);
             var correlationInfo = new MessageCorrelationInfo(telemetry.Id, transactionId, operationParentId);
 
-            return new MessageCorrelationResult(correlationInfo, operationHolder);
+            return new MessageCorrelationResult(correlationInfo, client, operationHolder);
         }
 
         /// <summary>
@@ -78,7 +81,17 @@ namespace Arcus.Messaging.Abstractions
         /// </summary>
         public void Dispose()
         {
+            if (_telemetryClient != null)
+            {
+                _telemetryClient.TelemetryConfiguration.DisableTelemetry = true;
+            }
+
             _operationHolder?.Dispose();
+
+            if (_telemetryClient != null)
+            {
+                _telemetryClient.TelemetryConfiguration.DisableTelemetry = false;
+            }
         }
     }
 }
