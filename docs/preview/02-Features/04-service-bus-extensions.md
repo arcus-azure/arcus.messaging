@@ -15,7 +15,7 @@ This features requires to install our NuGet package:
 PM > Install-Package Arcus.Messaging.ServiceBus.Core
 ```
 
-## Automatic tracking and correlating of Service Bus messages
+## Automatic tracking and Hierarchical correlating of Service Bus messages
 
 The Arcus message pump/router automatically makes sure that received Azure Service Bus messages are tracked as request telemetry in Application Insights. 
 If you also want the sender (dependency tracking) to be linked to the request, we provide a set of easy extensions on the `ServiceBusSender` to make this happen.

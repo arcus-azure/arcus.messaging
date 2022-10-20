@@ -429,11 +429,17 @@ public class Startup
                 // this job instance in a multi-instance deployment (default: guid).
                 options.JobId = Guid.NewGuid().ToString();
 
+                // The format of the message correlation used when receiving Azure Service Bus messages.
+                // (default: W3C).
+                options.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+
                 // The name of the Azure Service Bus message property that has the transaction ID.
+                // ⚠ Only used when the correlation format is configured as Hierarchical.
                 // (default: Transaction-Id).
                 options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
 
                 // The name of the Azure Service Bus message property that has the upstream service ID.
+                // ⚠ Only used when the correlation format is configured as Hierarchical.
                 // (default: Operation-Parent-Id).
                 options.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
 
@@ -469,11 +475,17 @@ public class Startup
                 // this job instance in a multi-instance deployment (default: guid).
                 options.JobId = Guid.NewGuid().ToString();
 
+                // The format of the message correlation used when receiving Azure Service Bus messages.
+                // (default: W3C).
+                options.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+
                 // The name of the Azure Service Bus message property that has the transaction ID.
+                // ⚠ Only used when the correlation format is configured as Hierarchical.
                 // (default: Transaction-Id).
                 options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
 
                 // The name of the Azure Service Bus message property that has the upstream service ID.
+                // ⚠ Only used when the correlation format is configured as Hierarchical.
                 // (default: Operation-Parent-Id).
                 options.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
 
@@ -553,25 +565,6 @@ public void ConfigureServices(IServiceCollection services)
 ## Message Correlation
 The message correlation of the received messages is set automatically. All the message handlers will have access to the current `MessageCorrelationInfo` correlation model for the specific currently processed message.
 
-The correlation information of Azure Service Bus messages can also be retrieved from an extension that wraps all correlation information.
-
-```csharp
-using Arcus.Messaging.Abstractions;
-using Azure.Messaging.ServiceBus;
-
-ServiceBusReceivedMessage message = ...
-MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
-
-// Unique identifier that indicates an attempt to process a given message.
-string cycleId = correlationInfo.CycleId;
-
-// Unique identifier that relates different requests together.
-string transactionId = correlationInfo.TransactionId;
-
-// Unique identifier that distinguishes the request.
-string operationId = correlationInfo.OperationId;
-```
-
 To retrieve the correlation information in other application code, you can use a dedicated marker interface called `IMessageCorrelationInfoAccessor`.
 Note that this is a scoped dependency and so will be the same instance across a scoped operation.
 
@@ -596,10 +589,28 @@ public class DependencyService
 }
 ```
 
+### Hierarchical correlation
+When using the Hierarchical correlation system, the correlation information of Azure Service Bus messages can also be retrieved from an extension that wraps all correlation information.
+
+```csharp
+using Arcus.Messaging.Abstractions;
+using Azure.Messaging.ServiceBus;
+
+ServiceBusReceivedMessage message = ...
+MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+
+// Unique identifier that indicates an attempt to process a given message.
+string cycleId = correlationInfo.CycleId;
+
+// Unique identifier that relates different requests together.
+string transactionId = correlationInfo.TransactionId;
+
+// Unique identifier that distinguishes the request.
+string operationId = correlationInfo.OperationId;
+```
+
 ## Want to get started easy? Use our templates!
 We provide templates to get started easily:
 
 - Azure Service Bus Queue Worker Template ([docs](https://templates.arcus-azure.net/features/servicebus-queue-worker-template))
 - Azure Service Bus Topic Worker Template ([docs](https://templates.arcus-azure.net/features/servicebus-topic-worker-template))
-
-[&larr; back](/)
