@@ -6,6 +6,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
