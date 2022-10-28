@@ -44,37 +44,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", 
-                                   order.Id, order.Amount, order.ArticleNumber, order.Customer.FirstName, order.Customer.LastName);
-
-            await PublishEventToEventGridAsync(order, correlationInfo.OperationId, correlationInfo);
-
-            _logger.LogInformation("Order {OrderId} processed", order.Id);
-        }
-
-        private async Task PublishEventToEventGridAsync(OrderV2 orderMessage, string operationId, MessageCorrelationInfo correlationInfo)
-        {
-            var eventData = new OrderCreatedEventData(
-                orderMessage.Id,
-                orderMessage.Amount,
-                orderMessage.ArticleNumber,
-                $"{orderMessage.Customer.FirstName} {orderMessage.Customer.LastName}",
-                correlationInfo);
-
-            var orderCreatedEvent = new CloudEvent(
-                CloudEventsSpecVersion.V1_0,
-                "OrderCreatedEvent",
-                new Uri("http://test-host"),
-                operationId,
-                DateTime.UtcNow)
-            {
-                Data = eventData,
-                DataContentType = new ContentType("application/json")
-            };
-
-            await _eventGridPublisher.PublishAsync(orderCreatedEvent);
-
-            _logger.LogInformation("Event {EventId} was published with subject {EventSubject}", orderCreatedEvent.Id, orderCreatedEvent.Subject);
+            await _eventGridPublisher.PublishOrderAsync(order, correlationInfo, _logger);
         }
     }
 }
