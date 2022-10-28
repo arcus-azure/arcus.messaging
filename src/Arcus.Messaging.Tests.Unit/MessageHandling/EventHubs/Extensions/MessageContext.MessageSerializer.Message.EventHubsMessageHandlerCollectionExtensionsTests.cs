@@ -29,7 +29,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs.Extensions
             var expectedBody = $"test-message-body-{Guid.NewGuid()}";
             var expectedMessage = new TestMessage();
             var eventData = new EventData(JsonConvert.SerializeObject(expectedMessage));
-            var expectedContext = AzureEventHubsMessageContext.CreateFrom(eventData, "namespace", "consumer-group", "eventhubs name");
+            AzureEventHubsMessageContext expectedContext = eventData.GetMessageContext("namespace", "consumergroup", "name");
             var serializer = new TestMessageBodySerializer(expectedBody, expectedMessage);
 
             // Act
@@ -113,7 +113,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs.Extensions
             var expectedBody = $"test-message-body-{Guid.NewGuid()}";
             var expectedMessage = new TestMessage();
             var eventData = new EventData(JsonConvert.SerializeObject(expectedMessage));
-            var expectedContext = AzureEventHubsMessageContext.CreateFrom(eventData, "namespace", "consumer-group", "eventhubs name");
+            AzureEventHubsMessageContext expectedContext = eventData.GetMessageContext("namespace", "consumergroup", "name");
             var serializer = new TestMessageBodySerializer(expectedBody, expectedMessage);
 
             // Act
@@ -199,7 +199,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs.Extensions
             var expectedBody = $"test-message-body-{Guid.NewGuid()}";
             var expectedMessage = new TestMessage();
             var eventData = new EventData(JsonConvert.SerializeObject(expectedMessage));
-            var expectedContext = AzureEventHubsMessageContext.CreateFrom(eventData, "namespace", "consumer-group", "eventhubs name");
+            AzureEventHubsMessageContext expectedContext = eventData.GetMessageContext("namespace", "consumergroup", "name");
             var serializer = new TestMessageBodySerializer(expectedBody, expectedMessage);
             var expectedHandler = new TestEventHubsMessageHandler();
 
@@ -306,7 +306,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs.Extensions
             var expectedBody = $"test-message-body-{Guid.NewGuid()}";
             var expectedMessage = new TestMessage();
             var eventData = new EventData(JsonConvert.SerializeObject(expectedMessage));
-            var expectedContext = AzureEventHubsMessageContext.CreateFrom(eventData, "namespace", "consumer-group", "eventhubs name");
+            AzureEventHubsMessageContext expectedContext = eventData.GetMessageContext("namespace", "consumergroup", "name");
             var serializer = new TestMessageBodySerializer(expectedBody, expectedMessage);
             var expectedHandler = new TestEventHubsMessageHandler();
 

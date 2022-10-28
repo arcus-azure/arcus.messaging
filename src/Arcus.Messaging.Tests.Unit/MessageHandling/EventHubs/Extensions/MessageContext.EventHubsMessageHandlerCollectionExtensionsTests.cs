@@ -25,7 +25,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs.Extensions
             var collection = new EventHubsMessageHandlerCollection(new ServiceCollection());
             var order = OrderGenerator.Generate();
             var eventData = new EventData(JsonConvert.SerializeObject(order));
-            var expectedContext = AzureEventHubsMessageContext.CreateFrom(eventData, "namespace", "consumer-group", "eventhubs name");
+            AzureEventHubsMessageContext expectedContext = eventData.GetMessageContext("namespace", "consumergroup", "name");
             var expectedHandler = new TestEventHubsMessageHandler();
 
             // Act
@@ -67,7 +67,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs.Extensions
             var collection = new EventHubsMessageHandlerCollection(new ServiceCollection());
             var order = OrderGenerator.Generate();
             var eventData = new EventData(JsonConvert.SerializeObject(order));
-            var expectedContext = AzureEventHubsMessageContext.CreateFrom(eventData, "namespace", "consumer-group", "eventhubs name");
+            AzureEventHubsMessageContext expectedContext = eventData.GetMessageContext("namespace", "consumergroup", "name");
             var expectedHandler = new TestEventHubsMessageHandler();
 
             // Act
