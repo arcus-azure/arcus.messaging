@@ -15,11 +15,13 @@ This features requires to install our NuGet package:
 PM > Install-Package Arcus.Messaging.ServiceBus.Core
 ```
 
-## Automatic tracking and correlating of Service Bus messages
+## Automatic tracking and Hierarchical correlating of Service Bus messages
 
 The Arcus message pump/router automatically makes sure that received Azure Service Bus messages are tracked as request telemetry in Application Insights. 
 If you also want the sender (dependency tracking) to be linked to the request, we provide a set of easy extensions on the `ServiceBusSender` to make this happen.
 For more information on dependency tracking, see the [Arcus Observability feature documentation on telemetry tracking](https://observability.arcus-azure.net/features/writing-different-telemetry-types/).
+
+> 🚩 By default, the Service Bus message pump is using W3C correlation, not Hierarchical, which already allows automatic dependency tracking upon sending without additional configuration. If you want to use Hierarchical, please configure the correlation format in the [message pump configuration](./02-message-handling/01-service-bus.md).
 
 Internally, we enrich the `ServiceBusMessage` with the message correlation and track the entire operation as an Azure Service Bus dependency.
 The result of this operation will result in a parent-child relationship between the dependency-request.

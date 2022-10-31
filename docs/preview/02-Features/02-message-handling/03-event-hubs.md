@@ -281,11 +281,17 @@ public class Program
             // (default: Transaction-Id).
             options.Routing.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
 
+            // The format of the message correlation used when receiving Azure EventHubs messages.
+            // (default: W3C).
+            options.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+
             // The name of the Azure EventHubs message property that has the upstream service ID.
+            // ⚠ Only used when the correlation format is configured as Hierarchical.
             // (default: Operation-Parent-Id).
             options.Routing.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
 
             // The property name to enrich the log event with the correlation information cycle ID.
+            // ⚠ Only used when the correlation format is configured as Hierarchical.
             // (default: CycleId)
             options.Routing.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
 

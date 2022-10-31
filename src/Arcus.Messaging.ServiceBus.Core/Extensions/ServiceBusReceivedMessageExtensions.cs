@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.ServiceBus.Core;
 using GuardNet;
+using Microsoft.ApplicationInsights;
 
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.ServiceBus
@@ -44,6 +47,10 @@ namespace Azure.Messaging.ServiceBus
         /// <summary>
         ///     Gets the correlation information for a given <paramref name="message"/>.
         /// </summary>
+        /// <remarks>
+        ///     This uses the hierarchical correlation system. To use the W3C correlation system,
+        ///     use <see cref="IDictionaryExtensions.GetTraceParent(IReadOnlyDictionary{string,object})"/> and <see cref="MessageCorrelationResult"/>.
+        /// </remarks>
         /// <param name="message">The received message.</param>
         /// <returns>
         ///     The correlation information wrapped inside an <see cref="MessageCorrelationInfo"/>,
@@ -61,6 +68,10 @@ namespace Azure.Messaging.ServiceBus
         /// <summary>
         ///     Gets the correlation information for a given <paramref name="message"/>.
         /// </summary>
+        /// <remarks>
+        ///     This uses the hierarchical correlation system. To use the W3C correlation system,
+        ///     use <see cref="IDictionaryExtensions.GetTraceParent(IReadOnlyDictionary{string,object})"/> and <see cref="MessageCorrelationResult"/>.
+        /// </remarks>
         /// <param name="message">The received message.</param>
         /// <param name="transactionIdPropertyName">The name of the property to retrieve the transaction ID.</param>
         /// <returns>
@@ -82,8 +93,12 @@ namespace Azure.Messaging.ServiceBus
         }
 
         /// <summary>
-        ///     Gets the correlation information for a given <paramref name="message"/>.
+        ///     Gets the hierarchical correlation information for a given <paramref name="message"/>.
         /// </summary>
+        /// <remarks>
+        ///     This uses the hierarchical correlation system. To use the W3C correlation system,
+        ///     use <see cref="IDictionaryExtensions.GetTraceParent(IReadOnlyDictionary{string,object})"/> and <see cref="MessageCorrelationResult"/>.
+        /// </remarks>
         /// <param name="message">The received message.</param>
         /// <param name="transactionIdPropertyName">The name of the user property to retrieve the transaction ID.</param>
         /// <param name="operationParentIdPropertyName">The name of the user property to retrieve the operation parent ID</param>
@@ -136,9 +151,13 @@ namespace Azure.Messaging.ServiceBus
             return messageCorrelationId;
         }
 
-        /// <summary>	
+        /// <summary>
         ///     Gets the transaction ID that is linked to this <paramref name="message"/>	
-        /// </summary>	
+        /// </summary>
+        /// <remarks>
+        ///     This uses the hierarchical correlation system. To use the W3C correlation system,
+        ///     use <see cref="IDictionaryExtensions.GetTraceParent(IReadOnlyDictionary{string,object})"/> and <see cref="MessageCorrelationResult"/>.
+        /// </remarks>
         /// <param name="message">The received message.</param>
         /// <returns>
         ///     The correlation transaction ID for message if an application property could be found with the key <see cref="PropertyNames.TransactionId"/>; <c>null</c> otherwise.
@@ -154,6 +173,10 @@ namespace Azure.Messaging.ServiceBus
         /// <summary>
         ///     Gets the optional transaction ID that is linked to this <paramref name="message"/>	
         /// </summary>
+        /// <remarks>
+        ///     This uses the hierarchical correlation system. To use the W3C correlation system,
+        ///     use <see cref="IDictionaryExtensions.GetTraceParent(IReadOnlyDictionary{string,object})"/> and <see cref="MessageCorrelationResult"/>.
+        /// </remarks>
         /// <param name="message">The received message.</param>
         /// <param name="transactionIdPropertyName">Name of the property to determine the transaction id.</param>
         /// <returns>

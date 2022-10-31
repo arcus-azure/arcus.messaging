@@ -4,12 +4,15 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.EventHubs;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.EventHubs.Configuration;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Processor;
 using GuardNet;
+using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.EventHubs
@@ -141,12 +144,27 @@ namespace Arcus.Messaging.Pumps.EventHubs
             }
 
             AzureEventHubsMessageContext context = args.Data.GetMessageContext(_eventProcessor);
-            MessageCorrelationInfo correlation = args.Data.GetCorrelationInfo(
+            using (MessageCorrelationResult result = DetermineMessageCorrelation(args.Data))
+            {
+                await _messageRouter.RouteMessageAsync(args.Data, context, result.CorrelationInfo, args.CancellationToken);
+                await args.UpdateCheckpointAsync(args.CancellationToken);
+            }
+        }
+
+        private MessageCorrelationResult DetermineMessageCorrelation(EventData message)
+        {
+            if (_eventHubsConfig.Options.Routing.Correlation.Format is MessageCorrelationFormat.W3C)
+            {
+                (string transactionId, string operationParentId) = message.Properties.GetTraceParent();
+                var client = ServiceProvider.GetRequiredService<TelemetryClient>();
+                return MessageCorrelationResult.Create(client, transactionId, operationParentId);
+            }
+
+            MessageCorrelationInfo correlation = message.GetCorrelationInfo(
                 transactionIdPropertyName: _eventHubsConfig.Options.Routing.Correlation.TransactionIdPropertyName,
                 operationParentIdPropertyName: _eventHubsConfig.Options.Routing.Correlation.OperationParentIdPropertyName);
 
-            await _messageRouter.RouteMessageAsync(args.Data, context, correlation, args.CancellationToken);
-            await args.UpdateCheckpointAsync(args.CancellationToken);
+            return MessageCorrelationResult.Create(correlation);
         }
 
         private Task ProcessErrorAsync(ProcessErrorEventArgs args)

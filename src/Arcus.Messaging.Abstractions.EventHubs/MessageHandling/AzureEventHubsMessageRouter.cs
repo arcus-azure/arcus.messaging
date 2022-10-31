@@ -2,10 +2,13 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.Telemetry;
 using Arcus.Observability.Telemetry.Core;
 using Azure.Messaging.EventHubs;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Serilog.Context;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
@@ -106,26 +109,8 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            bool isSuccessful = false;
-            using (var measurement = DurationMeasurement.Start())
-            {
-                try
-                {
-                    string messageBody = message.Data.ToString();
-                    await base.RouteMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-                    isSuccessful = true;
-                }
-                finally
-                {
-                    Logger.LogEventHubsRequest(
-                        messageContext.EventHubsNamespace, 
-                        messageContext.ConsumerGroup, 
-                        messageContext.EventHubsName,
-                        operationName: null,
-                        isSuccessful,
-                        measurement);
-                }
-            }
+            string messageBody = message.Data.ToString();
+            await RouteMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
         }
 
         /// <summary>
@@ -146,12 +131,17 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            bool isSuccessful = false;
-            using (var measurement = DurationMeasurement.Start())
+            var isSuccessful = false;
+            using (DurationMeasurement measurement = DurationMeasurement.Start())
+            using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
             {
                 try
                 {
-                    await base.RouteMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+                    var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
+                    accessor?.SetCorrelationInfo(correlationInfo);
+
+                    await RouteMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
                     isSuccessful = true;
                 }
                 finally

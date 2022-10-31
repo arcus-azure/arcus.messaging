@@ -7,6 +7,7 @@ using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Azure.Messaging.ServiceBus;
+using CloudNative.CloudEvents;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
@@ -69,26 +70,24 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <summary>
         /// Receives the previously send <see cref="Order"/> message as an published event on Azure Event Grid.
         /// </summary>
-        /// <param name="operationId">The operation ID to identity the correct published <see cref="Order"/>.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="operationId"/> is blank.</exception>
+        /// <param name="transactionId">The transaction ID to identity the correct published <see cref="Order"/>.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionId"/> is blank.</exception>
         /// <exception cref="XunitException">
         ///     Thrown when the received <see cref="Order"/> message event doesn't conform with the expected structure of an published <see cref="Order"/> event.
         /// </exception>
-        public OrderCreatedEventData ReceiveOrderFromEventGrid(string operationId)
+        public OrderCreatedEventData ReceiveOrderFromEventGrid(string transactionId)
         {
-            Guard.NotNullOrWhitespace(operationId, nameof(operationId), "Requires an operation ID to uniquely identity the published 'Order' message");
-            
-            string receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent(operationId);
-            Assert.NotEmpty(receivedEvent);
+            Guard.NotNullOrWhitespace(transactionId, nameof(transactionId), "Requires an operation ID to uniquely identity the published 'Order' message");
 
-            EventBatch<Event> deserializedEventGridMessage = EventParser.Parse(receivedEvent);
-            Assert.NotNull(deserializedEventGridMessage);
-            
-            Event orderCreatedEvent = Assert.Single(deserializedEventGridMessage.Events);
-            Assert.NotNull(orderCreatedEvent);
+            CloudEvent cloudEvent = _serviceBusEventConsumerHost.GetReceivedEvent((CloudEvent ev) =>
+            {
+                string json = ev.Data.ToString();
+                var eventData = JsonConvert.DeserializeObject<OrderCreatedEventData>(json, new MessageCorrelationInfoJsonConverter());
 
-            Assert.NotNull(orderCreatedEvent.Data);
-            var json = orderCreatedEvent.Data.ToString();
+                return eventData.CorrelationInfo.TransactionId == transactionId;
+            }, timeout: TimeSpan.FromMinutes(1));
+
+            var json = cloudEvent.Data.ToString();
             Assert.NotNull(json);
             var orderCreatedEventData = JsonConvert.DeserializeObject<OrderCreatedEventData>(json, new MessageCorrelationInfoJsonConverter());
             Assert.NotNull(orderCreatedEventData);
