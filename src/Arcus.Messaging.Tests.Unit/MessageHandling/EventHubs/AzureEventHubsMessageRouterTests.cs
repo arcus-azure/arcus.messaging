@@ -41,7 +41,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs
 
             var order = OrderGenerator.Generate();
             var eventData = new EventData(JsonConvert.SerializeObject(order));
-            var context = AzureEventHubsMessageContext.CreateFrom(eventData, "namespace", "consumer-group", "eventhubs name");
+            AzureEventHubsMessageContext context = eventData.GetMessageContext("namespace", "consumergroup", "name");
             var correlation = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             await router.RouteMessageAsync(eventData, context, correlation, CancellationToken.None);
@@ -64,7 +64,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs
 
             var order = OrderGenerator.Generate();
             var eventData = new EventData(JsonConvert.SerializeObject(order));
-            var context = AzureEventHubsMessageContext.CreateFrom(eventData, "namespace", "consumer-group", "eventhubs name");
+            AzureEventHubsMessageContext context = eventData.GetMessageContext("namespace", "consumergroup", "name");
             var correlation = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             await Assert.ThrowsAsync<InvalidOperationException>(
@@ -91,7 +91,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs
             var order = OrderGenerator.Generate();
             string json = JsonConvert.SerializeObject(order);
             var eventData = new EventData(json);
-            var context = AzureEventHubsMessageContext.CreateFrom(eventData, "namespace", "consumer-group", "eventhubs name");
+            AzureEventHubsMessageContext context = eventData.GetMessageContext("namespace", "consumergroup", "name");
             var correlation = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             await router.RouteMessageAsync(json, context, correlation, CancellationToken.None);
@@ -115,7 +115,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs
             var order = OrderGenerator.Generate();
             string json = JsonConvert.SerializeObject(order);
             var eventData = new EventData(json);
-            var context = AzureEventHubsMessageContext.CreateFrom(eventData, "namespace", "consumer-group", "eventhubs name");
+            AzureEventHubsMessageContext context = eventData.GetMessageContext("namespace", "consumergroup", "name");
             var correlation = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             await Assert.ThrowsAsync<InvalidOperationException>(
