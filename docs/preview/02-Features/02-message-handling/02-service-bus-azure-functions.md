@@ -113,8 +113,61 @@ This extension will register an `IAzureServiceBusMessageRouter` interface allows
 It also registers an more general `IMessageRouter` you can use if the general message routing (with the message raw message body as `string` as incoming message) will suffice.
 
 We can now inject the message router in our Azure Function and process all messages with it.
-This will determine what the matching message handler is and process it accordingly:
+This will determine what the matching message handler is and process it accordingly.
+Upon receival of an Azure Service Bus message, the message will be either routed to one of the two previously registered message handlers.
 
+### Isolated Azure Functions
+```csharp
+using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.AzureFunctions.ServiceBus;
+using Azure.Messaging.ServiceBus;
+
+public class MessageProcessingFunction
+{
+    private readonly IAzureServiceBusMessageRouter _messageRouter;
+    private readonly string _jobId;
+
+    public MessageProcessingFunction(IAzureServiceBusMessageRouter messageRouter)
+    {
+        _jobId = $"job-{Guid.NewGuid()}";
+        _messageRouter = messageRouter;
+    }
+
+    [Function("message-processor")]
+    public void Run(
+        [ServiceBusTrigger("%TopicName%", "%SubscriptionName%", Connection = "ServiceBusConnectionString")] byte[] messageBody, 
+        FunctionContext executionContext)
+    {
+        ServiceBusReceivedMessage message = ConvertToServiceBusMessage(messageBody, executionContext);
+
+        AzureServiceBusMessageContext messageContext = message.GetMessageContext(_jobId);
+        using (MessageCorrelationResult result = executionContext.GetCorrelationInfo())
+        {
+            _messageRouter.ProcessMessageAsync(message, messageContext, result.CorrelationInfo, cancellationToken);
+        }
+    }
+
+     private static ServiceBusReceivedMessage ConvertToServiceBusMessage(byte[] messageBody, FunctionContext context)
+     {
+         var applicationProperties = new Dictionary<string, object>();
+         if (context.BindingContext.BindingData.TryGetValue("ApplicationProperties", out object applicationPropertiesObj))
+         {
+             var json = applicationPropertiesObj.ToString();
+             applicationProperties = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+         }
+
+         var message = ServiceBusModelFactory.ServiceBusReceivedMessage(
+             body: BinaryData.FromBytes(messageBody),
+             messageId: context.BindingContext.BindingData["MessageId"]?.ToString(),
+             correlationId: context.BindingContext.BindingData["CorrelationId"]?.ToString(),
+             properties: applicationProperties);
+
+         return message;
+     }
+}
+```
+
+### In-Process Azure Functions
 ```csharp
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Azure.Messaging.ServiceBus;
@@ -136,6 +189,14 @@ public class MessageProcessingFunction
         ILogger log,
         CancellationToken cancellationToken)
     {
+        // W3C message correlation (with automatic tracking of built-in Microsoft dependencies)
+        AzureServiceBusMessageContext messageContext = message.GetMessageContext(_jobId);
+        using (var result = AzureFunctionsMessageCorrelation.CorrelateMessage(message))
+        {
+            _messageRouter.ProcessMessageAsync(message, messageContext, result.CorrelationInfo, cancellationToken);
+        }
+
+        // Hierarchical message correlation (without automatic tracking of built-in Microsoft dependencies))
         AzureServiceBusMessageContext messageContext = message.GetMessageContext(_jobId);
         MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
 
@@ -143,7 +204,3 @@ public class MessageProcessingFunction
     }
 }
 ```
-
-Upon receival of an Azure Service Bus message, the message will be either routed to one of the two previously registered message handlers.
-
-[&larr; back](/)
