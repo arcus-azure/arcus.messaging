@@ -50,6 +50,7 @@ steps:
       ARCUS_EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
       ARCUS_EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
       ARCUS_SERVICEBUS_CONNECTIONSTRING=$(Arcus.ServiceBus.Docker.AzureFunctions.NamespaceConnectionString)
+      FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
 - template: build-and-run-az-func-container.yml
   parameters:
     projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs'
