@@ -102,6 +102,12 @@ steps:
     script: 'docker logs $(Images.AzureFunction.ServiceBus.Queue)'
   condition: failed()
 - task: PowerShell@2
+  displayName: 'Get Docker container logs for Azure Functions Service Bus Topic project'
+  inputs:
+    targetType: 'inline'
+    script: 'docker logs $(Images.AzureFunction.ServiceBus.Topic)'
+  condition: failed()
+- task: PowerShell@2
   displayName: 'Get Docker container logs for Azure Functions EventHubs project'
   inputs:
     targetType: 'inline'
