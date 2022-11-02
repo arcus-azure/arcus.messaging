@@ -1,13 +1,22 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0.100-bullseye-slim AS publish
+#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
+
+FROM mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated6.0 AS base
+WORKDIR /home/site/wwwroot
+EXPOSE 80
+
+FROM mcr.microsoft.com/dotnet/sdk:6.0.400-bullseye-slim AS build
 WORKDIR /src
 COPY ["Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic/Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic.csproj", "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic/"]
 RUN dotnet restore "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic/Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic.csproj"
 COPY . .
-RUN dotnet publish "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic/Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic.csproj" -c Release -o /app/publish
+WORKDIR "/src/Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic"
+RUN dotnet build "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic.csproj" -c Release -o /app/build
 
-FROM mcr.microsoft.com/azure-functions/dotnet:4 AS runtime
+FROM build AS publish
+RUN dotnet publish "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic.csproj" -c Release -o /app/publish
+
+FROM base AS final
 WORKDIR /home/site/wwwroot
-EXPOSE 80
 COPY --from=publish /app/publish .
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true
