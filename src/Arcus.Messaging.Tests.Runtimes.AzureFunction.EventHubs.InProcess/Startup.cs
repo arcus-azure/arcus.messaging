@@ -29,7 +29,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs.InProcess
                        .Build();
             });
             
-            builder.Services.AddEventHubsMessageRouting()
+            builder.AddEventHubsMessageRouting()
                    .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
         }
     }
