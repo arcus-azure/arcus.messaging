@@ -20,8 +20,8 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs.InProcess
         {
             builder.Services.AddTransient(serviceProvider =>
             {
-                var eventGridTopic = Environment.GetEnvironmentVariable("ARCUS_EVENTGRID_TOPIC_URI");
-                var eventGridKey = Environment.GetEnvironmentVariable("ARCUS_EVENTGRID_AUTH_KEY");
+                var eventGridTopic = Environment.GetEnvironmentVariable("EVENTGRID_TOPIC_URI");
+                var eventGridKey = Environment.GetEnvironmentVariable("EVENTGRID_AUTH_KEY");
 
                 return EventGridPublisherBuilder
                        .ForTopic(eventGridTopic)
