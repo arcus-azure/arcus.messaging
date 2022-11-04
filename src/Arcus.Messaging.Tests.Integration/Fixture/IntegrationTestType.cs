@@ -4,6 +4,7 @@
     {
         SelfContained,
         DockerWorker,
-        DockerAzureFunctions
+        DockerAzureFunctionsIsolated,
+        DockerAzureFunctionsInProcess
     }
 }

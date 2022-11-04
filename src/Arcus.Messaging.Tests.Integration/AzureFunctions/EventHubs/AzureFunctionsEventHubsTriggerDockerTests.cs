@@ -32,8 +32,10 @@ namespace Arcus.Messaging.Tests.Integration.AzureFunctions.EventHubs
             _config = TestConfig.Create();
         }
 
-        [Fact]
-        public async Task EventHubsMessageFunction_PublishesEventDataMessage_MessageSuccessfullyProcessed()
+        [Theory]
+        [InlineData(IntegrationTestType.DockerAzureFunctionsInProcess)]
+        [InlineData(IntegrationTestType.DockerAzureFunctionsIsolated)]
+        public async Task EventHubsMessageFunction_PublishesEventDataMessage_MessageSuccessfullyProcessed(IntegrationTestType integrationType)
         {
             // Arrange
             var traceParent = TraceParent.Generate();
@@ -41,7 +43,7 @@ namespace Arcus.Messaging.Tests.Integration.AzureFunctions.EventHubs
             EventData expected = new EventData(JsonConvert.SerializeObject(order)).WithDiagnosticId(traceParent);
 
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
-            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.DockerAzureFunctions);
+            string eventHubsName = eventHubs.GetEventHubsName(integrationType);
             var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
 
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, Logger))
