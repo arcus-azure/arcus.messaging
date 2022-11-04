@@ -37,7 +37,7 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
         {
             Guard.NotNull(builder, nameof(builder), "Requires a set of builder to register the Azure Service Bus message routing");
 
-            return builder.Services.AddSingleton<AzureFunctionsMessageCorrelation>()
+            return builder.Services.AddSingleton<AzureFunctionsInProcessMessageCorrelation>()
                                    .AddServiceBusMessageRouting(configureOptions);
         }
 
@@ -76,7 +76,7 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
             Guard.NotNull(builder, nameof(builder), "Requires a set of builder to register the Azure Service Bus message routing");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure Service Bus message router");
 
-            return builder.Services.AddSingleton<AzureFunctionsMessageCorrelation>()
+            return builder.Services.AddSingleton<AzureFunctionsInProcessMessageCorrelation>()
                                    .AddServiceBusMessageRouting(implementationFactory, configureOptions);
         }
     }

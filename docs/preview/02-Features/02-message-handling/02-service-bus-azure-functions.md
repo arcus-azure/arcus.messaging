@@ -1,4 +1,4 @@
----
+﻿---
 title: "Azure Service Bus message handling for Azure Functions"
 layout: default
 ---
@@ -18,6 +18,12 @@ That's why we extracted our message routing functionality so you can call it dir
 ![Azure Functions message handling](/media/az-func-message-handling.png)
 
 We will walk you through the process of using message handlers with Azure Functions:
+
+## Installation
+To use the following described features, install the following package:
+```shell
+PM > Install-Package -Name Arcus.Messaging.AzureFunctions.ServiceBus
+```
 
 ## Receive Azure Service Bus message in an Azure Function
 Here's an example of how an Azure Function receives an Azure Service Bus message from a topic:
@@ -80,7 +86,7 @@ public class OrderServiceBusMessageHandler : IAzureServiceBusMessageHandler<Orde
         MessageCorrelationInfo correlationInfo,
         CancellationToken cancellationToken)
     {
-        log.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", order.Id, order.Amount, order.ArticleNumber, order.Customer.
+        _logger.LogInformation("Processing order {OrderId} for {OrderAmount} units of {OrderArticle} bought by {CustomerFirstName} {CustomerLastName}", order.Id, order.Amount, order.ArticleNumber, order.Customer.
     }
 }
 ```
@@ -92,6 +98,22 @@ Now that everything is setup, we need to actually use the declared message handl
 
 To achieve that, we need to add message routing with the `.AddServiceBusMessageRouting` extension:
 
+### Isolated Azure Functions
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+var host = new HostBuilder()
+    .ConfigureFunctionsWorkerDefaults(builder =>
+    {
+        builder.Services.AddServiceBusMessageRouting()
+                        .WithServiceBusMessageHandler<OrderServiceBusMessageHandler, Order>()
+                        .WithServiceBusMessageHandler<ShipmentServiceBusMessageHandler, Shipment>();
+    })
+    .Build();
+host.Run();
+```
+
+### In-Process Azure Functions
 ```csharp
 [assembly: FunctionsStartup(typeof(Startup))]
 namespace MessageProcessing
@@ -101,8 +123,8 @@ namespace MessageProcessing
         public override void Configure(IFunctionsHostBuilder builder)
         {
             builder.AddServiceBusMessageRouting()
-                   .WithServiceBusMessageHandler<OrderV1ServiceBusMessageHandler, OrderV1>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.OrderV1)
-                   .WithServiceBusMessageHandler<OrderV2ServiceBusMessageHandler, OrderV2>(messageContext => messageContext.UserProperties["MessageType"] == MessageType.OrderV2);
+                   .WithServiceBusMessageHandler<OrderServiceBusMessageHandler, Order>()
+                   .WithServiceBusMessageHandler<ShipmentServiceBusMessageHandler, Shipment>();
         }
     }
 }
@@ -110,7 +132,7 @@ namespace MessageProcessing
 
 This extension will register an `IAzureServiceBusMessageRouter` interface allows you access to message handling with specific Service Bus operations during the message processing (like dead lettering and abandoning).
 
-It also registers an more general `IMessageRouter` you can use if the general message routing (with the message raw message body as `string` as incoming message) will suffice.
+> ⚡ It also registers an more general `IMessageRouter` you can use if the general message routing (with the message raw message body as `string` as incoming message) will suffice.
 
 We can now inject the message router in our Azure Function and process all messages with it.
 This will determine what the matching message handler is and process it accordingly.
@@ -175,12 +197,16 @@ using Azure.Messaging.ServiceBus;
 public class MessageProcessingFunction
 {
     private readonly IAzureServiceBusMessageRouter _messageRouter;
+    private readonly AzureFunctionsInProcessMessageCorrelation _messageCorrelation;
     private readonly string _jobId;
 
-    public MessageProcessingFunction(IAzureServiceBusMessageRouter messageRouter)
+    public MessageProcessingFunction(
+        IAzureServiceBusMessageRouter messageRouter,
+        AzureFunctionsInProcessMessageCorrelation messageCorrelation)
     {
         _jobId = $"job-{Guid.NewGuid()}";
         _messageRouter = messageRouter;
+        _messageCorrelation = messageCorrelation;
     }
 
     [FunctionName("message-processor")]
@@ -189,15 +215,15 @@ public class MessageProcessingFunction
         ILogger log,
         CancellationToken cancellationToken)
     {
-        // W3C message correlation (with automatic tracking of built-in Microsoft dependencies)
         AzureServiceBusMessageContext messageContext = message.GetMessageContext(_jobId);
-        using (var result = AzureFunctionsMessageCorrelation.CorrelateMessage(message))
+
+        // W3C message correlation (with automatic tracking of built-in Microsoft dependencies, recommended)
+        using (MessageCorrelationResult result = _messageCorrelation.CorrelateMessage(message))
         {
             _messageRouter.ProcessMessageAsync(message, messageContext, result.CorrelationInfo, cancellationToken);
         }
 
         // Hierarchical message correlation (without automatic tracking of built-in Microsoft dependencies))
-        AzureServiceBusMessageContext messageContext = message.GetMessageContext(_jobId);
         MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
 
         _messageRouter.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);

@@ -14,7 +14,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.Function
     public class OrderProcessingFunction
     {
         private readonly IAzureServiceBusMessageRouter _messageRouter;
-        private readonly AzureFunctionsMessageCorrelation _messageCorrelation;
+        private readonly AzureFunctionsInProcessMessageCorrelation _messageCorrelation;
         private readonly string _jobId;
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.Function
         /// </summary>
         public OrderProcessingFunction(
             IAzureServiceBusMessageRouter messageRouter,
-            AzureFunctionsMessageCorrelation messageCorrelation)
+            AzureFunctionsInProcessMessageCorrelation messageCorrelation)
         {
             _messageRouter = messageRouter;
             _messageCorrelation = messageCorrelation;
