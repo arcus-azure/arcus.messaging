@@ -51,7 +51,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Worke
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Workers.EventHubs.Core", "Arcus.Messaging.Tests.Workers.EventHubs.Core\Arcus.Messaging.Tests.Workers.EventHubs.Core.csproj", "{0D6C38A7-B684-43BA-9BCF-1EF4C1A943CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs", "Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs\Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs.csproj", "{6FE22274-0A2D-4AAE-BF64-968987AD7435}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs", "Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs\Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs.csproj", "{6FE22274-0A2D-4AAE-BF64-968987AD7435}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic", "Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic\Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic.csproj", "{728C9611-3B33-4751-8D75-5ABB44041531}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -147,6 +149,10 @@ Global
 		{6FE22274-0A2D-4AAE-BF64-968987AD7435}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6FE22274-0A2D-4AAE-BF64-968987AD7435}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6FE22274-0A2D-4AAE-BF64-968987AD7435}.Release|Any CPU.Build.0 = Release|Any CPU
+		{728C9611-3B33-4751-8D75-5ABB44041531}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{728C9611-3B33-4751-8D75-5ABB44041531}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{728C9611-3B33-4751-8D75-5ABB44041531}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{728C9611-3B33-4751-8D75-5ABB44041531}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -171,6 +177,7 @@ Global
 		{F1B24FD4-099E-489D-B45D-A1A992CA5C3A} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
 		{0D6C38A7-B684-43BA-9BCF-1EF4C1A943CD} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
 		{6FE22274-0A2D-4AAE-BF64-968987AD7435} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
+		{728C9611-3B33-4751-8D75-5ABB44041531} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {066FD85A-3DDE-4615-B550-BF67ACCDAA51}
