@@ -23,6 +23,8 @@ PM > Install-Package Arcus.Messaging.Pumps.EventHubs
 ## Message handler example
 Here is an example of a message handler that expects messages of type `SensorReading`:
 
+> ⚡ You can use the same message handlers in an a .NET Worker message pump and an Azure Functions scenario.
+
 ```csharp
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Pumps.EventHubs;

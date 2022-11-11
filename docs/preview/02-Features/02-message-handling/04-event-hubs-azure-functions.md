@@ -6,14 +6,12 @@ layout: default
 This article describes how you can use Arcus' message handler concept with Azure Functions; allowing you to more easily port your business logic from/to Azure Functions.
 
 # Azure EventHubs message handling for Azure Functions
-While our default message pump system provides a way to receive, route, and handle incoming EventHubs messages which are, unfortunately, not supported in Azure Functions.
-Today, Azure Functions acts as a message receiver meaning that the function is triggered when a message is available but does not handle message routing and handling. However, in this case, it acts as the message pump.
+Our EventHubs message pump system provides a way to receive, route, and handle incoming events, but this is not needed in an Azure Functions environment.
+Today, Azure Functions acts as a message receiver meaning that the function is triggered when an event is available but does not handle message routing and handling. In this case, it acts as the message pump.
 
 Following terms are used:
-- **Message handler**: implementation that processes the received message from an Azure EventHubs subscription. Message handlers are created by implementing the `IAzureEventHubsMessageHandler<TMessage>`. This message handler will be called upon when a message is available on the Azure EventHubs subscription.
-- **Message router**: implementation that delegates the received Azure EventHubs message to the correct message handler.
-
-That's why we extracted our message routing functionality so you can call it directly from your Azure Function.
+- **Message handler**: implementation that processes the received event from an Azure EventHubs subscription. Message handlers are created by implementing the `IAzureEventHubsMessageHandler<TMessage>`. This message handler will be called upon when an event is available on the Azure EventHubs subscription.
+- **Message router**: implementation that delegates the received Azure EventHubs event to the correct message handler.
 
 ![Azure Functions message handling](/media/az-func-eventhubs-message-handling.png)
 
@@ -43,8 +41,9 @@ public class SensorReadingFunction
 ```
 
 ## Declaring our Azure EventHubs message handlers
-Registering message handlers to process the EventHubs message happens just the same as using a message pump.
-Here is an example of two message handlers that are being registered during startup:
+Registering message handlers to process the EventHubs events is fairly easy to do.
+
+> ⚡ You can use the same message handlers in an Azure Functions an a .NET Worker message pump scenario.
 
 Processing sensor reading updates:
 
@@ -95,11 +94,11 @@ public class SensorConfigUpdateMessageHandler : IAzureEventHubsMessageHandler<Se
 Now that we have created our message handlers, we can declare when we should use them by registering them with our router.
 
 ## Processing received messages through the message router
-Now that everything is setup, we need to actually use the declared message handlers by routing the messages from the Azure Function into the correct message handler.
+Now that everything is setup, we need to actually use the declared message handlers by routing the events from the Azure Function into the correct message handler.
 
 To achieve that, we need to add message routing with the `.AddEventHubsMessageRouting` extension:
 
-### Isolated Azure Funcions
+### Isolated Azure Functions
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -138,9 +137,9 @@ namespace SensorReading
 
 This extension will register an `IAzureEventHubsMessageRouter` interface that allows you to interact with the registered message handlers in a easy manner.
 
-> ⚡ It also registers an more general `IMessageRouter` you can use if the general message routing (with the message raw message body as `string` as incoming message) will suffice.
+> ⚡ It also registers an more general `IMessageRouter` you can use if the general message routing (with the event' raw body as `string` as input) will suffice.
 
-We can now inject the message router in our Azure Function and process all messages with it.
+We can now inject the message router in our Azure Function and process all events with it.
 This will determine what the matching message handler is and process it accordingly:
 
 ### Isolated
@@ -239,4 +238,4 @@ public class SensorReadingFunction
 }
 ```
 
-Upon receival of an Azure EventHubs message, the message will be either routed to one of the two previously registered message handlers.
+Upon receival of an Azure EventHubs event, the event will be either routed to one of the two previously registered message handlers.
