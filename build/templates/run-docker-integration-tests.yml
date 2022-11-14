@@ -41,6 +41,18 @@ steps:
       ARCUS_SERVICEBUS_CONNECTIONSTRING=$(Arcus.ServiceBus.Docker.AzureFunctions.NamespaceConnectionString)
 - template: build-and-run-az-func-container.yml
   parameters:
+    projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic'
+    containerName: '$(Images.AzureFunction.ServiceBus.Topic)'
+    imageName: '$(Images.AzureFunction.ServiceBus.Topic)'
+    imageTag: '$(Build.BuildId)'
+    port: '$(Arcus.AzureFunctions.Topic.Port)'
+    envVars: |
+      ARCUS_EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
+      ARCUS_EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
+      ARCUS_SERVICEBUS_CONNECTIONSTRING=$(Arcus.ServiceBus.Docker.AzureFunctions.ConnectionStringWithTopic)
+      FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
+- template: build-and-run-az-func-container.yml
+  parameters:
     projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs'
     containerName: '$(Images.AzureFunction.Isolated.EventHubs)'
     imageName: '$(Images.AzureFunction.Isolated.EventHubs)'
@@ -103,14 +115,20 @@ steps:
     script: 'docker logs $(Images.AzureFunction.ServiceBus.Queue)'
   condition: failed()
 - task: PowerShell@2
+  displayName: 'Get Docker container logs for Azure Functions Service Bus Topic project'
+  inputs:
+    targetType: 'inline'
+    script: 'docker logs $(Images.AzureFunction.ServiceBus.Topic)'
+  condition: failed()
+- task: PowerShell@2
+  displayName: 'Get Docker container logs for Azure Functions EventHubs project'
+  inputs:
+    targetType: 'inline'
+    script: 'docker logs $(Images.AzureFunction.InProcess.EventHubs)'
+  condition: failed()
+- task: PowerShell@2
   displayName: 'Get Docker container logs for Azure Functions EventHubs (isolated) project'
   inputs:
     targetType: 'inline'
     script: 'docker logs $(Images.AzureFunction.Isolated.EventHubs)'
-  condition: failed()
-- task: PowerShell@2
-  displayName: 'Get Docker container logs for Azure Functions EventHubs (in-process) project'
-  inputs:
-    targetType: 'inline'
-    script: 'docker logs $(Images.AzureFunction.InProcess.EventHubs)'
   condition: failed()

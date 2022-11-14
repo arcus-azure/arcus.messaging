@@ -2,6 +2,7 @@ variables:
   Images.ServiceBus.Queue: 'workers-service-bus-queue'
   Images.ServiceBus.Topic: 'workers-service-bus-topic'
   Images.AzureFunction.ServiceBus.Queue: 'runtimes-az-func-service-bus-queue'
+  Images.AzureFunction.ServiceBus.Topic: 'runtimes-az-func-service-bus-topic'
   Images.AzureFunction.Isolated.EventHubs: 'runtimes-az-func-eventhubs-isolated'
   Images.AzureFunction.InProcess.EventHubs: 'runtimes-az-func-eventhubs-inprocess'
   Images.EventHubs: 'workers-eventhubs'
