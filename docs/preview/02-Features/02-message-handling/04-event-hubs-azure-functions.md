@@ -7,7 +7,7 @@ This article describes how you can use Arcus' message handler concept with Azure
 
 # Azure EventHubs message handling for Azure Functions
 Our EventHubs message pump system provides a way to receive, route, and handle incoming events, but this is not needed in an Azure Functions environment.
-Today, Azure Functions acts as a message receiver meaning that the function is triggered when an event is available but does not handle message routing and handling. In this case, it acts as the message pump.
+Today, Azure Functions acts as a message receiver meaning that the function is triggered when an event is available.  Azure Functions has no out-of-the-box way to provide a clean implementation for handling different types of messages that are received.  If you want to do that, you'll need to write all plumbing code yourself.  With `Arcus.Messaging`, we provide this for you so that you can focus on writing the actual business logic.
 
 Following terms are used:
 - **Message handler**: implementation that processes the received event from an Azure EventHubs subscription. Message handlers are created by implementing the `IAzureEventHubsMessageHandler<TMessage>`. This message handler will be called upon when an event is available on the Azure EventHubs subscription.
