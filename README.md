@@ -6,21 +6,6 @@ Messaging development in a breeze.
 
 ![Arcus](https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png)
 
-# Installation
-Easy to install it via NuGet:
-
-- **Service Bus message pump**
-```shell
-PM > Install-Package Arcus.Messaging.Pumps.ServiceBus
-```
-
-- **Health Probing**
-```shell
-PM > Install-Package Arcus.Messaging.Health
-```
-
-For a more thorough overview, we recommend reading [our documentation](#documentation).
-
 # Documentation
 All documentation can be found on [here](https://messaging.arcus-azure.net/).
 
