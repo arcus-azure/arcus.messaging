@@ -9,6 +9,7 @@ variables:
   Arcus.Health.Port.Queue: '42063'
   Arcus.Health.Port.Topic: '42064'
   Arcus.AzureFunctions.Queue.Port: '42065'
+  Arcus.AzureFunctions.Topic.Port: '42068'
   Arcus.AzureFunctions.Isolated.EventHubs.Port: '42067'
   Arcus.AzureFunctions.InProcess.EventHubs.Port: '42069'
   Arcus.Health.Port.EventHubs: '42066'
