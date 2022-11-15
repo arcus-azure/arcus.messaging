@@ -147,7 +147,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             return new EventHubsConfig(
                 _config.GetValue<string>("Arcus:EventHubs:SelfContained:EventHubsName"),
                 _config.GetValue<string>("Arcus:EventHubs:Docker:EventHubsName"),
-                _config.GetValue<string>("Arcus:EventHubs:Docker:AzureFunctions:EventHubsName"),
+                _config.GetValue<string>("Arcus:EventHubs:Docker:AzureFunctions:Isolated:EventHubsName"),
+                _config.GetValue<string>("Arcus:EventHubs:Docker:AzureFunctions:InProcess:EventHubsName"),
                 _config.GetValue<string>("Arcus:EventHubs:ConnectionString"),
                 _config.GetValue<string>("Arcus:EventHubs:BlobStorage:StorageAccountConnectionString"));
         }

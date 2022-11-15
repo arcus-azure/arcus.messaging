@@ -54,16 +54,28 @@ steps:
 - template: build-and-run-az-func-container.yml
   parameters:
     projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs'
-    containerName: '$(Images.AzureFunction.EventHubs)'
-    imageName: '$(Images.AzureFunction.EventHubs)'
+    containerName: '$(Images.AzureFunction.Isolated.EventHubs)'
+    imageName: '$(Images.AzureFunction.Isolated.EventHubs)'
     imageTag: '$(Build.BuildId)'
-    port: '$(Arcus.AzureFunctions.EventHubs.Port)'
+    port: '$(Arcus.AzureFunctions.Isolated.EventHubs.Port)'
     envVars: |
       EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
       EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
       EventHubsConnectionString=$(Arcus.EventHubs.ConnectionString)
       AzureWebJobsStorage=$(Arcus.EventHubs.BlobStorage.StorageAccountConnectionString)
       FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
+- template: build-and-run-az-func-container.yml
+  parameters:
+    projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs.InProcess'
+    containerName: '$(Images.AzureFunction.InProcess.EventHubs)'
+    imageName: '$(Images.AzureFunction.InProcess.EventHubs)'
+    imageTag: '$(Build.BuildId)'
+    port: '$(Arcus.AzureFunctions.InProcess.EventHubs.Port)'
+    envVars: |
+      EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
+      EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
+      EventHubsConnectionString=$(Arcus.EventHubs.ConnectionString)
+      AzureWebJobsStorage=$(Arcus.EventHubs.BlobStorage.StorageAccountConnectionString)
 - template: build-and-run-worker-container.yml
   parameters:
     projectName: 'Arcus.Messaging.Tests.Workers.EventHubs'
@@ -112,5 +124,11 @@ steps:
   displayName: 'Get Docker container logs for Azure Functions EventHubs project'
   inputs:
     targetType: 'inline'
-    script: 'docker logs $(Images.AzureFunction.EventHubs)'
+    script: 'docker logs $(Images.AzureFunction.InProcess.EventHubs)'
+  condition: failed()
+- task: PowerShell@2
+  displayName: 'Get Docker container logs for Azure Functions EventHubs (isolated) project'
+  inputs:
+    targetType: 'inline'
+    script: 'docker logs $(Images.AzureFunction.Isolated.EventHubs)'
   condition: failed()
