@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net6.0;netstandard2.1;netcoreapp3.1</TargetFrameworks>
@@ -26,7 +26,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Arcus.Security.Core" Version="[1.7.0,2.0.0)" />
     <PackageReference Include="Azure.Messaging.EventHubs.Processor" Version="5.7.1" />
+    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup>
