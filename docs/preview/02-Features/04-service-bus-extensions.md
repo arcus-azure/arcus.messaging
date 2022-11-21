@@ -15,6 +15,32 @@ This features requires to install our NuGet package:
 PM > Install-Package Arcus.Messaging.ServiceBus.Core
 ```
 
+## Using Arcus secret store when registering the Service Bus client
+
+When registering a `ServiceBusClient` via [Azure's client registration process](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/messaging.servicebus-readme), the library provides an extension to pass-in a secret name instead of directly passing the Azure Service Bus connection string.
+This secret name will correspond with a registered secret in the [Arcus secret store](https://security.arcus-azure.net/features/secret-store) that holds the Azure Service Bus connection string.
+
+Following example shows how the secret name is passed to this extension overload:
+
+```csharp
+using Microsoft.Extensions.Azure;
+using Microsoft.Extensions.DependencyInjection;
+
+public class Program
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // Adding Arcus secret store, more info: https://security.arcus-azure.net/features/secret-store
+        services.AddSecretStore(stores => stores.AddAzureKeyVaultWithManagedIdentity("https://my.vault.azure.net");
+
+        // Adding Service Bus client with secret in Arcus secret store.
+        services.AddAzureClients(clients => clients.AddServiceBusClient(connectionStringSecretName: "<your-secret-name>"));
+    }
+}
+```
+
+🥇 Adding your Azure Service Bus client this way helps separating application configuration from sensitive secrets. For more information on the added-values of the Arcus secret store, see [our dedicated documentation page](https://security.arcus-azure.net/features/secret-store).
+
 ## Automatic tracking and Hierarchical correlating of Service Bus messages
 
 The Arcus message pump/router automatically makes sure that received Azure Service Bus messages are tracked as request telemetry in Application Insights. 

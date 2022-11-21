@@ -360,7 +360,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var expectedOrders = BogusGenerator.Make(5, () => OrderGenerator.Generate());
             var messages = expectedOrders.Select(order => ServiceBusMessageBuilder.CreateForBody(order).Build());
             string key1 = BogusGenerator.Lorem.Word(), value1 = BogusGenerator.Lorem.Word();
-            string key2 = BogusGenerator.Lorem.Word(), value2 = BogusGenerator.Lorem.Word();
+            string key2 = BogusGenerator.Lorem.Word(), value2 = BogusGenerator.Lorem.Letter();
 
             MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
             var logger = new InMemoryLogger();
