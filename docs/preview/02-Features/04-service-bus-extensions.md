@@ -15,7 +15,7 @@ This features requires to install our NuGet package:
 PM > Install-Package Arcus.Messaging.ServiceBus.Core
 ```
 
-## Using Arcus secret store when Service Bus client
+## Using Arcus secret store when registering the Service Bus client
 
 When registering a `ServiceBusClient` via [Azure's client registration process](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/messaging.servicebus-readme), the library provides an extension to pass-in a secret name instead of directly passing the Azure Service Bus connection string.
 This secret name will correspond with a registered secret in the [Arcus secret store](https://security.arcus-azure.net/features/secret-store) that holds the Azure Service Bus connection string.
