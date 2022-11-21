@@ -26,6 +26,7 @@ namespace Microsoft.Extensions.Azure
         /// <param name="connectionStringSecretName">The secret name that corresponds with the Azure Service Bus connection string that is registered in the Arcus secret store.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
         public static IAzureClientBuilder<ServiceBusClient, ServiceBusClientOptions> AddServiceBusClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName)
@@ -49,6 +50,7 @@ namespace Microsoft.Extensions.Azure
         /// <param name="configureOptions">The function to configure additional user option that alters the behavior of the Azure Service Bus interaction.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
         public static IAzureClientBuilder<ServiceBusClient, ServiceBusClientOptions> AddServiceBusClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName,
