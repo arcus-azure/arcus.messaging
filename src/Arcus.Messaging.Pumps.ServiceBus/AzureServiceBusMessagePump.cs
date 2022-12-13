@@ -181,10 +181,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 await OpenNewMessageReceiverAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
             }
-            catch (Exception exception) when (exception is not TaskCanceledException && exception is not OperationCanceledException)
+            catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
             {
-                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages");
-                await HandleReceiveExceptionAsync(exception);
+                Logger.LogDebug("Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' was cancelled", JobId, EntityPath, Namespace);
+            }
+            catch (Exception exception)
+            {
+                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", JobId, EntityPath, Namespace);
             }
             finally
             {
@@ -202,11 +205,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             RegisterClientInformation(JobId, _messageProcessor.EntityPath);
             
-            Logger.LogTrace("Starting message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", JobId, EntityPath, Namespace);
+            Logger.LogTrace("Starting Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", JobId, EntityPath, Namespace);
             _messageProcessor.ProcessErrorAsync += ProcessErrorAsync;
             _messageProcessor.ProcessMessageAsync += ProcessMessageAsync;
             await _messageProcessor.StartProcessingAsync(cancellationToken);
-            Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", JobId, EntityPath, Namespace);
+            Logger.LogInformation("Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", JobId, EntityPath, Namespace);
         }
 
         private async Task CloseMessageReceiverAsync()
@@ -218,16 +221,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                Logger.LogTrace("Closing message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'", JobId, EntityPath, Namespace);
+                Logger.LogTrace("Closing Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'", JobId, EntityPath, Namespace);
                 await _messageProcessor.CloseAsync();
                 _messageProcessor.ProcessMessageAsync -= ProcessMessageAsync;
                 _messageProcessor.ProcessErrorAsync -= ProcessErrorAsync;
                
-                Logger.LogInformation("Message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}", JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
+                Logger.LogInformation("Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}", JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
             }
             catch (Exception exception) when (exception is not TaskCanceledException && exception is not OperationCanceledException)
             {
-                Logger.LogWarning(exception, "Cannot correctly close the message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}': {Message}",  JobId, EntityPath, Namespace, exception.Message);
+                Logger.LogWarning(exception, "Cannot correctly close the Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}': {Message}",  JobId, EntityPath, Namespace, exception.Message);
             }
         }
 

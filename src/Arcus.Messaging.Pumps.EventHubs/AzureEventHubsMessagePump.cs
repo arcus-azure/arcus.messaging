@@ -83,16 +83,13 @@ namespace Arcus.Messaging.Pumps.EventHubs
                 await StartEventProcessingAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
             }
+            catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
+            {
+                Logger.LogDebug("Azure EventHubs message pump '{JobId}' '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' is cancelled", JobId, ConsumerGroup, EventHubName, Namespace);
+            }
             catch (Exception exception)
             {
-                if (exception is TaskCanceledException || exception is OperationCanceledException)
-                {
-                    Logger.LogDebug("Azure EventHubs message pump '{JobId}' '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' is cancelled", JobId, ConsumerGroup, EventHubName, Namespace);
-                }
-                else
-                {
-                    Logger.LogCritical(exception, "Failed to start Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}': {Message}", JobId, ConsumerGroup, EventHubName, Namespace, exception.Message); 
-                }
+                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}': {Message}", JobId, ConsumerGroup, EventHubName, Namespace, exception.Message); 
             }
             finally
             {
