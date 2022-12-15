@@ -4,6 +4,8 @@ using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Azure.Messaging.EventGrid;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -11,17 +13,17 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class OrderEventHubsFallbackMessageHandler : IFallbackMessageHandler
     {
-        private readonly IEventGridPublisher _eventGridPublisher;
+        private readonly EventGridPublisherClient _eventGridPublisher;
         private readonly ILogger<OrderEventHubsMessageHandler> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OrderEventHubsFallbackMessageHandler" /> class.
         /// </summary>
         public OrderEventHubsFallbackMessageHandler(
-            IEventGridPublisher eventGridPublisher,
+            IAzureClientFactory<EventGridPublisherClient> clientFactory,
             ILogger<OrderEventHubsMessageHandler> logger)
         {
-            _eventGridPublisher = eventGridPublisher;
+            _eventGridPublisher = clientFactory.CreateClient("Default");
             _logger = logger;
         }
 

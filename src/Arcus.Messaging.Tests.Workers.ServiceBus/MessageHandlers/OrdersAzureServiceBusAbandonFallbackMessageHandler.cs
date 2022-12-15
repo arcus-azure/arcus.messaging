@@ -6,8 +6,10 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Azure.Messaging.EventGrid;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -15,14 +17,16 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class OrdersAzureServiceBusAbandonFallbackMessageHandler : AzureServiceBusFallbackMessageHandler
     {
-        private readonly IEventGridPublisher _eventGridPublisher;
+        private readonly EventGridPublisherClient _eventGridPublisher;
 
-        public OrdersAzureServiceBusAbandonFallbackMessageHandler(IEventGridPublisher eventGridPublisher, ILogger<OrdersAzureServiceBusMessageHandler> logger)
+        public OrdersAzureServiceBusAbandonFallbackMessageHandler(
+            IAzureClientFactory<EventGridPublisherClient> clientFactory, 
+            ILogger<OrdersAzureServiceBusMessageHandler> logger)
             : base(logger)
         {
-            Guard.NotNull(eventGridPublisher, nameof(eventGridPublisher));
+            Guard.NotNull(clientFactory, nameof(clientFactory));
 
-            _eventGridPublisher = eventGridPublisher;
+            _eventGridPublisher = clientFactory.CreateClient("Default");
         }
 
         /// <summary>

@@ -5,23 +5,27 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Azure.Messaging.EventGrid;
 using GuardNet;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class OrdersAzureServiceBusAbandonMessageHandler : AzureServiceBusMessageHandler<Order>
     {
-        private readonly IEventGridPublisher _eventGridPublisher;
+        private readonly EventGridPublisherClient _eventGridPublisher;
 
         private static int _deliveryCount;
 
-        public OrdersAzureServiceBusAbandonMessageHandler(IEventGridPublisher eventGridPublisher, ILogger<OrdersAzureServiceBusAbandonMessageHandler> logger)
+        public OrdersAzureServiceBusAbandonMessageHandler(
+            IAzureClientFactory<EventGridPublisherClient> clientFactory, 
+            ILogger<OrdersAzureServiceBusAbandonMessageHandler> logger)
             : base(logger)
         {
-            Guard.NotNull(eventGridPublisher, nameof(eventGridPublisher));
+            Guard.NotNull(clientFactory, nameof(clientFactory));
 
-            _eventGridPublisher = eventGridPublisher;
+            _eventGridPublisher = clientFactory.CreateClient("Default");
         }
 
         /// <summary>

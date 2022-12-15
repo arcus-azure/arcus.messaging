@@ -8,23 +8,27 @@ using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v2;
+using Azure.Messaging.EventGrid;
 using CloudNative.CloudEvents;
 using GuardNet;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class OrderV2AzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<OrderV2>
     {
-        private readonly IEventGridPublisher _eventGridPublisher;
+        private readonly EventGridPublisherClient _eventGridPublisher;
         private readonly ILogger<OrderV2AzureServiceBusMessageHandler> _logger;
 
-        public OrderV2AzureServiceBusMessageHandler(IEventGridPublisher eventGridPublisher, ILogger<OrderV2AzureServiceBusMessageHandler> logger)
+        public OrderV2AzureServiceBusMessageHandler(
+            IAzureClientFactory<EventGridPublisherClient> clientFactory, 
+            ILogger<OrderV2AzureServiceBusMessageHandler> logger)
         {
-            Guard.NotNull(eventGridPublisher, nameof(eventGridPublisher));
+            Guard.NotNull(clientFactory, nameof(clientFactory));
             Guard.NotNull(logger, nameof(logger));
 
-            _eventGridPublisher = eventGridPublisher;
+            _eventGridPublisher = clientFactory.CreateClient("Default");
             _logger = logger;
         }
 

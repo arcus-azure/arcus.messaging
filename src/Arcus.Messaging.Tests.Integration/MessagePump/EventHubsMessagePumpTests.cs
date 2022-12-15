@@ -25,11 +25,13 @@ using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Arcus.Testing.Logging;
+using Azure.Messaging.EventGrid;
 using Azure.Messaging.EventHubs;
 using Bogus;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -234,7 +236,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     messageHandlerImplementationFactory: provider =>
                     {
                         return new OrderEventHubsMessageHandler(
-                            provider.GetRequiredService<IEventGridPublisher>(),
+                            provider.GetRequiredService<IAzureClientFactory<EventGridPublisherClient>>(),
                             provider.GetRequiredService<IMessageCorrelationInfoAccessor>(),
                             provider.GetRequiredService<ILogger<OrderEventHubsMessageHandler>>());
                     });

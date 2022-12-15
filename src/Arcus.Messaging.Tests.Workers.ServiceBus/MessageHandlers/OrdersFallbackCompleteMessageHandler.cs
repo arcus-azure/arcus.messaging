@@ -4,7 +4,9 @@ using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Azure.Messaging.EventGrid;
 using Azure.Messaging.ServiceBus;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
@@ -17,10 +19,10 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         /// Initializes a new instance of the <see cref="AzureServiceBusFallbackMessageHandler"/> class.
         /// </summary>
         public OrdersFallbackCompleteMessageHandler(
-            IEventGridPublisher eventGridPublisher,
+            IAzureClientFactory<EventGridPublisherClient> clientFactory,
             ILogger<OrdersAzureServiceBusMessageHandler> logger) : base(logger)
         {
-            _fallbackMessageHandler = new OrdersServiceBusFallbackMessageHandler(eventGridPublisher, logger);
+            _fallbackMessageHandler = new OrdersServiceBusFallbackMessageHandler(clientFactory, logger);
         }
 
         /// <summary>

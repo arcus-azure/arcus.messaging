@@ -5,6 +5,8 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Azure.Messaging.EventGrid;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
@@ -17,12 +19,12 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         /// Initializes a new instance of the <see cref="OrdersAzureServiceBusCompleteMessageHandler"/> class.
         /// </summary>
         public OrdersAzureServiceBusCompleteMessageHandler(
-            IEventGridPublisher eventGridPublisher, 
+            IAzureClientFactory<EventGridPublisherClient> clientFactory, 
             IMessageCorrelationInfoAccessor correlationAccessor,
             ILogger<OrdersAzureServiceBusMessageHandler> logger) 
             : base(logger)
         {
-            _orderMessageHandler = new OrdersAzureServiceBusMessageHandler(eventGridPublisher, correlationAccessor, logger);
+            _orderMessageHandler = new OrdersAzureServiceBusMessageHandler(clientFactory, correlationAccessor, logger);
         }
 
         /// <summary>

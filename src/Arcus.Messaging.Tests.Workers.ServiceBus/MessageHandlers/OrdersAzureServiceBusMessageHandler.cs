@@ -5,7 +5,9 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Azure.Messaging.EventGrid;
 using GuardNet;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -13,19 +15,19 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class OrdersAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<Order>
     {
-        private readonly IEventGridPublisher _eventGridPublisher;
+        private readonly EventGridPublisherClient _eventGridPublisher;
         private readonly IMessageCorrelationInfoAccessor _correlationAccessor;
         private readonly ILogger<OrdersAzureServiceBusMessageHandler> _logger;
 
         public OrdersAzureServiceBusMessageHandler(
-            IEventGridPublisher eventGridPublisher, 
+            IAzureClientFactory<EventGridPublisherClient> clientFactory, 
             IMessageCorrelationInfoAccessor correlationAccessor,
             ILogger<OrdersAzureServiceBusMessageHandler> logger)
         {
-            Guard.NotNull(eventGridPublisher, nameof(eventGridPublisher));
+            Guard.NotNull(clientFactory, nameof(clientFactory));
             Guard.NotNull(logger, nameof(logger));
 
-            _eventGridPublisher = eventGridPublisher;
+            _eventGridPublisher = clientFactory.CreateClient("Default");
             _correlationAccessor = correlationAccessor;
             _logger = logger;
         }

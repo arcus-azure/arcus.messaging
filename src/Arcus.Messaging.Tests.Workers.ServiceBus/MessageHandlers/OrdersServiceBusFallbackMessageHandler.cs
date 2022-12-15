@@ -6,8 +6,10 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Azure.Messaging.EventGrid;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -15,20 +17,22 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class OrdersServiceBusFallbackMessageHandler : IAzureServiceBusFallbackMessageHandler
     {
-        private readonly IEventGridPublisher _eventGridPublisher;
+        private readonly EventGridPublisherClient _eventGridPublisher;
         private readonly ILogger<OrdersAzureServiceBusMessageHandler> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OrdersAzureServiceBusMessageHandler"/> class.
         /// </summary>
-        /// <param name="eventGridPublisher">The publisher instance to send event messages to Azure Event Grid.</param>
+        /// <param name="clientFactory">The publisher instance to send event messages to Azure Event Grid.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the interaction with Azure Event Grid.</param>
-        public OrdersServiceBusFallbackMessageHandler(IEventGridPublisher eventGridPublisher, ILogger<OrdersAzureServiceBusMessageHandler> logger)
+        public OrdersServiceBusFallbackMessageHandler(
+            IAzureClientFactory<EventGridPublisherClient> clientFactory, 
+            ILogger<OrdersAzureServiceBusMessageHandler> logger)
         {
-            Guard.NotNull(eventGridPublisher, nameof(eventGridPublisher));
+            Guard.NotNull(clientFactory, nameof(clientFactory));
             Guard.NotNull(logger, nameof(logger));
 
-            _eventGridPublisher = eventGridPublisher;
+            _eventGridPublisher = clientFactory.CreateClient("Default");
             _logger = logger;
         }
 
