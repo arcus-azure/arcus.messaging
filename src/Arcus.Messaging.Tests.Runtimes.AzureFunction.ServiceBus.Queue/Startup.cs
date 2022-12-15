@@ -22,8 +22,8 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue
         {
             builder.Services.AddAzureClients(clients =>
             {
-                var eventGridTopic = Environment.GetEnvironmentVariable("EVENTGRID_TOPIC_URI");
-                var eventGridKey = Environment.GetEnvironmentVariable("EVENTGRID_AUTH_KEY");
+                var eventGridTopic = Environment.GetEnvironmentVariable("ARCUS_EVENTGRID_TOPIC_URI");
+                var eventGridKey = Environment.GetEnvironmentVariable("ARCUS_EVENTGRID_AUTH_KEY");
                 clients.AddEventGridPublisherClient(new Uri(eventGridTopic), new AzureKeyCredential(eventGridKey));
             });
             
