@@ -34,6 +34,7 @@ namespace  Microsoft.Extensions.Azure
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
+        /// <exception cref="NotSupportedException">Thrown when the registered Arcus secret store does not have a synchronous secret provider registered.</exception>
         public static IAzureClientBuilder<EventHubProducerClient, EventHubProducerClientOptions> AddEventHubProducerClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName)
@@ -66,6 +67,7 @@ namespace  Microsoft.Extensions.Azure
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
+        /// <exception cref="NotSupportedException">Thrown when the registered Arcus secret store does not have a synchronous secret provider registered.</exception>
         public static IAzureClientBuilder<EventHubProducerClient, EventHubProducerClientOptions> AddEventHubProducerClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName,
@@ -105,6 +107,7 @@ namespace  Microsoft.Extensions.Azure
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
+        /// <exception cref="NotSupportedException">Thrown when the registered Arcus secret store does not have a synchronous secret provider registered.</exception>
         public static IAzureClientBuilder<EventHubProducerClient, EventHubProducerClientOptions> AddEventHubProducerClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName,
@@ -140,6 +143,7 @@ namespace  Microsoft.Extensions.Azure
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
+        /// <exception cref="NotSupportedException">Thrown when the registered Arcus secret store does not have a synchronous secret provider registered.</exception>
         public static IAzureClientBuilder<EventHubProducerClient, EventHubProducerClientOptions> AddEventHubProducerClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName,
