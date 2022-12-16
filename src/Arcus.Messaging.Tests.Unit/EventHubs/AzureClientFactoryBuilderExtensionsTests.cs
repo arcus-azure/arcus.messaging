@@ -1,4 +1,5 @@
 ﻿using System;
+using Arcus.Messaging.Tests.Unit.Fixture;
 using Azure.Messaging.EventHubs.Producer;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +19,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Arrange
             var services = new ServiceCollection();
             var secretName = "MyConnectionString";
-            services.AddSecretStore(stores => stores.AddInMemory(secretName, ExampleEventHubsConnectionStringWithEntityPath));
+            services.AddSecretStore(stores => stores.AddProvider(new StaticInMemorySecretProvider(secretName, ExampleEventHubsConnectionStringWithEntityPath)));
 
             // Act
             services.AddAzureClients(clients => clients.AddEventHubProducerClient(secretName));
@@ -35,7 +36,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Arrange
             var services = new ServiceCollection();
             var secretName = "MyConnectionString";
-            services.AddSecretStore(stores => stores.AddInMemory(secretName, ExampleEventHubsConnectionStringWithoutEntityPath));
+            services.AddSecretStore(stores => stores.AddProvider(new StaticInMemorySecretProvider(secretName, ExampleEventHubsConnectionStringWithoutEntityPath)));
 
             // Act
             services.AddAzureClients(clients => clients.AddEventHubProducerClient(secretName, "eventhubs-name"));
