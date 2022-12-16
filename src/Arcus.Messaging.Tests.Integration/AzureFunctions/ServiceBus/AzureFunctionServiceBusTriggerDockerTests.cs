@@ -26,7 +26,7 @@ namespace Arcus.Messaging.Tests.Integration.AzureFunctions.ServiceBus
         [Theory]
         [InlineData("Arcus:ServiceBus:Docker:AzureFunctions:ConnectionStringWithQueue")]
         [InlineData("Arcus:ServiceBus:Docker:AzureFunctions:ConnectionStringWithTopic")]
-        public async Task ServiceBusQueueTrigger_PublishServiceBusMessage_MessageSuccessfullyProcessed(string connectionStringKey)
+        public async Task ServiceBusTrigger_PublishServiceBusMessage_MessageSuccessfullyProcessed(string connectionStringKey)
         {
             // Arrange
             var traceParent = TraceParent.Generate();

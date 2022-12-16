@@ -359,8 +359,8 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var spySender = new InMemoryServiceBusSender();
             var expectedOrders = BogusGenerator.Make(5, () => OrderGenerator.Generate());
             var messages = expectedOrders.Select(order => ServiceBusMessageBuilder.CreateForBody(order).Build());
-            string key1 = BogusGenerator.Lorem.Word(), value1 = BogusGenerator.Lorem.Word();
-            string key2 = BogusGenerator.Lorem.Word(), value2 = BogusGenerator.Lorem.Letter();
+            string key1 = Guid.NewGuid().ToString(), value1 = Guid.NewGuid().ToString();
+            string key2 = Guid.NewGuid().ToString(), value2 = Guid.NewGuid().ToString();
 
             MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
             var logger = new InMemoryLogger();

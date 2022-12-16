@@ -1,8 +1,8 @@
 ﻿using System;
-using Arcus.EventGrid.Publishing;
-using Arcus.EventGrid.Publishing.Interfaces;
+using Azure;
+using Azure.Messaging.EventGrid;
 using GuardNet;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Azure;
 
 // ReSharper disable once CheckNamespace
 namespace Arcus.Messaging.Tests.Integration.Fixture
@@ -13,7 +13,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     public static class WorkerOptionsExtensions
     {
         /// <summary>
-        /// Adds an <see cref="IEventGridPublisher"/> instance to the <paramref name="options"/>.
+        /// Adds an <see cref="EventGridPublisherClient"/> instance to the <paramref name="options"/>.
         /// </summary>
         /// <param name="options">The options to add the publisher to.</param>
         /// <param name="config">The test configuration which will be used to retrieve the Azure Event Grid authentication information.</param>
@@ -23,14 +23,11 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             Guard.NotNull(options, nameof(options), "Requires a set of worker options to add the Azure Event Grid publisher to");
             Guard.NotNull(config, nameof(config), "Requires a test configuration instance to retrieve the Azure Event Grid authentication inforation");
             
-            options.Services.AddTransient(svc =>
+            options.Services.AddAzureClients(clients =>
             {
-                string eventGridTopic = config.GetTestInfraEventGridTopicUri();
-                string eventGridKey = config.GetTestInfraEventGridAuthKey();
-                return EventGridPublisherBuilder
-                       .ForTopic(eventGridTopic)
-                       .UsingAuthenticationKey(eventGridKey)
-                       .Build();
+                string topicEndpoint = config.GetTestInfraEventGridTopicUri();
+                string authenticationKey = config.GetTestInfraEventGridAuthKey();
+                clients.AddEventGridPublisherClient(new Uri(topicEndpoint), new AzureKeyCredential(authenticationKey));
             });
 
             return options;

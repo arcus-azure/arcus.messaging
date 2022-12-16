@@ -4,21 +4,25 @@ using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Azure.Messaging.EventGrid;
 using GuardNet;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers 
 {
     public class OrdersMessageHandler : IMessageHandler<Order>
     {
-        private readonly IEventGridPublisher _eventGridPublisher;
+        private readonly EventGridPublisherClient _eventGridPublisher;
 
-        public OrdersMessageHandler(IEventGridPublisher eventGridPublisher, ILogger<OrdersMessageHandler> logger)
+        public OrdersMessageHandler(
+            IAzureClientFactory<EventGridPublisherClient> clientFactory, 
+            ILogger<OrdersMessageHandler> logger)
         {
-            Guard.NotNull(eventGridPublisher, nameof(eventGridPublisher));
+            Guard.NotNull(clientFactory, nameof(clientFactory));
             Guard.NotNull(logger, nameof(logger));
 
-            _eventGridPublisher = eventGridPublisher;
+            _eventGridPublisher = clientFactory.CreateClient("Default");
             Logger = logger;
         }
 

@@ -1,28 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mime;
-using System.Text;
 using System.Threading.Tasks;
-using Arcus.EventGrid.Publishing;
-using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Core.Messages.v2;
-using Arcus.Observability.Correlation;
-using CloudNative.CloudEvents;
+using Azure.Messaging;
+using Azure.Messaging.EventGrid;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 
 // ReSharper disable once CheckNamespace
 namespace Arcus.EventGrid.Publishing.Interfaces
 {
     // ReSharper disable once InconsistentNaming
-    public static class IEventGridPublisherExtensions
+    public static class EventGridPublisherClientExtensions
     {
         public static async Task PublishOrderAsync(
-            this IEventGridPublisher publisher, 
+            this EventGridPublisherClient publisher, 
             Order message, 
             MessageCorrelationInfo correlationInfo,
             ILogger logger)
@@ -36,23 +29,21 @@ namespace Arcus.EventGrid.Publishing.Interfaces
                 correlationInfo);
 
             var orderCreatedEvent = new CloudEvent(
-                CloudEventsSpecVersion.V1_0,
+                "http://test-host",
                 "OrderCreatedEvent",
-                new Uri("http://test-host"),
-                correlationInfo.OperationId,
-                DateTime.UtcNow)
+                jsonSerializableData: eventData)
             {
-                Data = eventData,
-                DataContentType = new ContentType("application/json")
+                Id = correlationInfo.OperationId,
+                Time = DateTimeOffset.UtcNow
             };
 
-            await publisher.PublishAsync(orderCreatedEvent);
+            await publisher.SendEventAsync(orderCreatedEvent);
             logger.LogInformation("Event {EventId} was published with subject {EventSubject}", orderCreatedEvent.Id, orderCreatedEvent.Subject); 
             logger.LogInformation("Order {OrderId} processed", message.Id);
         }
 
         public static async Task PublishOrderAsync(
-            this IEventGridPublisher publisher,
+            this EventGridPublisherClient publisher,
             OrderV2 message, 
             MessageCorrelationInfo correlationInfo, 
             ILogger logger)
@@ -66,17 +57,15 @@ namespace Arcus.EventGrid.Publishing.Interfaces
                 correlationInfo);
 
             var orderCreatedEvent = new CloudEvent(
-                CloudEventsSpecVersion.V1_0,
+                "http://test-host",
                 "OrderCreatedEvent",
-                new Uri("http://test-host"),
-                correlationInfo.OperationId,
-                DateTime.UtcNow)
+                jsonSerializableData: eventData)
             {
-                Data = eventData,
-                DataContentType = new ContentType("application/json")
+                Id = correlationInfo.OperationId,
+                Time = DateTimeOffset.UtcNow
             };
 
-            await publisher.PublishAsync(orderCreatedEvent);
+            await publisher.SendEventAsync(orderCreatedEvent);
 
             logger.LogInformation("Event {EventId} was published with subject {EventSubject}", orderCreatedEvent.Id, orderCreatedEvent.Subject);
         }

@@ -6,6 +6,8 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.EventHubs;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Azure.Messaging.EventGrid;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -13,7 +15,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class OrderEventHubsMessageHandler : IAzureEventHubsMessageHandler<Order>
     {
-        private readonly IEventGridPublisher _eventGridPublisher;
+        private readonly EventGridPublisherClient _eventGridPublisher;
         private readonly IMessageCorrelationInfoAccessor _correlationAccessor;
         private readonly ILogger<OrderEventHubsMessageHandler> _logger;
 
@@ -21,11 +23,11 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         /// Initializes a new instance of the <see cref="OrderEventHubsMessageHandler" /> class.
         /// </summary>
         public OrderEventHubsMessageHandler(
-            IEventGridPublisher eventGridPublisher, 
+            IAzureClientFactory<EventGridPublisherClient> clientFactory, 
             IMessageCorrelationInfoAccessor correlationAccessor,
             ILogger<OrderEventHubsMessageHandler> logger)
         {
-            _eventGridPublisher = eventGridPublisher;
+            _eventGridPublisher = clientFactory.CreateClient("Default");
             _correlationAccessor = correlationAccessor;
             _logger = logger;
         }
