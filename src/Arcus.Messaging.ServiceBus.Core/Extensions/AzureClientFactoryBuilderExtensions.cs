@@ -20,7 +20,7 @@ namespace Microsoft.Extensions.Azure
         /// </summary>
         /// <remarks>
         ///     Make sure that the Arcus secret store is registered in the application before using this extension (<a href="https://security.arcus-azure.net/features/secret-store">more info</a>)
-        ///     as the Azure Service Bus connection string will be retrieved via the <paramref name="connectionStringSecretName"/>.
+        ///     as the Azure Service Bus connection string will be synchronously retrieved via the <paramref name="connectionStringSecretName"/>.
         /// </remarks>
         /// <param name="builder">The Azure client factory builder to add the Azure Service Bus client.</param>
         /// <param name="connectionStringSecretName">The secret name that corresponds with the Azure Service Bus connection string that is registered in the Arcus secret store.</param>
@@ -43,7 +43,7 @@ namespace Microsoft.Extensions.Azure
         /// </summary>
         /// <remarks>
         ///     Make sure that the Arcus secret store is registered in the application before using this extension (<a href="https://security.arcus-azure.net/features/secret-store">more info</a>)
-        ///     as the Azure Service Bus connection string will be retrieved via the <paramref name="connectionStringSecretName"/>.
+        ///     as the Azure Service Bus connection string will be synchronously retrieved via the <paramref name="connectionStringSecretName"/>.
         /// </remarks>
         /// <param name="builder">The Azure client factory builder to add the Azure Service Bus client.</param>
         /// <param name="connectionStringSecretName">The secret name that corresponds with the Azure Service Bus connection string that is registered in the Arcus secret store.</param>
@@ -69,7 +69,7 @@ namespace Microsoft.Extensions.Azure
                         + "please use the 'services.AddSecretStore(...)' or 'host.ConfigureSecretStore(...)' (https://security.arcus-azure.net/features/secret-store)");
                 }
 
-                string connectionString = secretProvider.GetRawSecretAsync(connectionStringSecretName).GetAwaiter().GetResult();
+                string connectionString = secretProvider.GetRawSecret(connectionStringSecretName);
                 configureOptions?.Invoke(options);
 
                 return new ServiceBusClient(connectionString, options);

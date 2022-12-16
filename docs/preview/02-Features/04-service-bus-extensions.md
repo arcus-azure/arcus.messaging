@@ -20,6 +20,8 @@ PM > Install-Package Arcus.Messaging.ServiceBus.Core
 When registering a `ServiceBusClient` via [Azure's client registration process](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/messaging.servicebus-readme), the library provides an extension to pass-in a secret name instead of directly passing the Azure Service Bus connection string.
 This secret name will correspond with a registered secret in the [Arcus secret store](https://security.arcus-azure.net/features/secret-store) that holds the Azure Service Bus connection string.
 
+> ⚠ The Azure Service Bus connection string will be retrieved synchronously, so make sure that you register your connection string secret in a secret provider that supports synchronous secret retrieval ([more info](https://security.arcus-azure.net/Features/secrets/general)).
+
 Following example shows how the secret name is passed to this extension overload:
 
 ```csharp
