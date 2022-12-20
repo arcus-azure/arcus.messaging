@@ -23,7 +23,7 @@ namespace  Microsoft.Extensions.Azure
         /// <remarks>
         ///   <para>
         ///     Make sure that the Arcus secret store is registered in the application before using this extension (<a href="https://security.arcus-azure.net/features/secret-store">more info</a>)
-        ///     as the Azure EventHubs connection string will be synchronously retrieved via the <paramref name="connectionStringSecretName"/>.
+        ///     as the Azure EventHubs connection string will be retrieved via the <paramref name="connectionStringSecretName"/>.
         ///   </para>
         ///   <para>
         ///     If the connection string is copied from the Event Hubs namespace, it will likely not contain the name of the desired Event Hub, which is needed.
