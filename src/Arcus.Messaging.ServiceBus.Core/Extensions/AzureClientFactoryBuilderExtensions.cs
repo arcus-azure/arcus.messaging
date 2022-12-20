@@ -4,6 +4,8 @@ using Azure.Core.Extensions;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.Azure
@@ -61,19 +63,38 @@ namespace Microsoft.Extensions.Azure
             
             return builder.AddClient<ServiceBusClient, ServiceBusClientOptions>((options, serviceProvider) =>
             {
-                var secretProvider = serviceProvider.GetService<ISecretProvider>();
-                if (secretProvider is null)
-                {
-                    throw new InvalidOperationException(
-                        "Requires an Arcus secret store registration to retrieve the connection string to authenticate with Azure Service Bus while creating an Service Bus client instance," 
-                        + "please use the 'services.AddSecretStore(...)' or 'host.ConfigureSecretStore(...)' (https://security.arcus-azure.net/features/secret-store)");
-                }
-
-                string connectionString = secretProvider.GetRawSecret(connectionStringSecretName);
+                string connectionString = GetServiceBusConnectionString(connectionStringSecretName, serviceProvider);
                 configureOptions?.Invoke(options);
 
                 return new ServiceBusClient(connectionString, options);
             });
+        }
+
+        private static string GetServiceBusConnectionString(string connectionStringSecretName, IServiceProvider serviceProvider)
+        {
+            var secretProvider = serviceProvider.GetService<ISecretProvider>();
+            if (secretProvider is null)
+            {
+                throw new InvalidOperationException(
+                    "Requires an Arcus secret store registration to retrieve the connection string to authenticate with Azure Service Bus while creating an Service Bus client instance," 
+                    + "please use the 'services.AddSecretStore(...)' or 'host.ConfigureSecretStore(...)' (https://security.arcus-azure.net/features/secret-store)");
+            }
+
+            try
+            {
+                string connectionString = secretProvider.GetRawSecret(connectionStringSecretName);
+                return connectionString;
+            }
+            catch (Exception exception)
+            {
+                ILogger logger = 
+                    serviceProvider.GetService<ILogger<ServiceBusClient>>() 
+                    ?? NullLogger<ServiceBusClient>.Instance;
+
+                logger.LogWarning(exception, "Cannot synchronously retrieve Azure Service Bus connection string secret for '{SecretName}', fallback on asynchronously", connectionStringSecretName);
+                string connectionString = secretProvider.GetRawSecretAsync(connectionStringSecretName).GetAwaiter().GetResult();
+                return connectionString;
+            }
         }
     }
 }

@@ -22,7 +22,6 @@ When registering an `EventHubsProducerClient` via [Azure's client registration p
 This secret name will correspond with a registered secret in the [Arcus secret store](https://security.arcus-azure.net/features/secret-store) that holds the Azure EventHubs connection string.
 
 > ⚠ An Azure EventHubs connection string can either contain the `EntityPath` or not if it was copied from the EventHubs namespace or from the EventHub itself. In either case, make sure that you either pass in the EventHub name separately, or that the connection string contains this name. For more information, see: [How to get an Event Hubs connection string](https://docs.microsoft.com/azure/event-hubs/event-hubs-get-connection-string).
-> ⚠ The Azure EventHubs connection string will be retrieved synchronously, so make sure that you register your connection string secret in a secret provider that supports synchronous secret retrieval ([more info](https://security.arcus-azure.net/Features/secrets/general)).
 
 Following example shows how the secret name is passed to this extension overload:
 

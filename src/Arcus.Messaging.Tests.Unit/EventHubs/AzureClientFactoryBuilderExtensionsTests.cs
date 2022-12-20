@@ -48,6 +48,23 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
         }
 
         [Fact]
+        public void AddEventHubProducerClientFromEntity_WithoutSyncSecretProvider_FallbackOnAsyncSecretProvider()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var secretName = "MyConnectionString";
+            services.AddSecretStore(stores => stores.AddProvider(new AsyncInMemorySecretProvider(secretName, ExampleEventHubsConnectionStringWithoutEntityPath)));
+
+            // Act
+            services.AddAzureClients(clients => clients.AddEventHubProducerClient(secretName, "eventhubs-name"));
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var factory = provider.GetRequiredService<IAzureClientFactory<EventHubProducerClient>>();
+            Assert.NotNull(factory.CreateClient("Default"));
+        }
+
+        [Fact]
         public void AddEventHubProducerClientFromEntity_WithoutSecretStore_Fails()
         {
             // Arrange
@@ -60,6 +77,23 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             IServiceProvider provider = services.BuildServiceProvider();
             var factory = provider.GetRequiredService<IAzureClientFactory<EventHubProducerClient>>();
             Assert.Throws<InvalidOperationException>(() => factory.CreateClient("Default"));
+        }
+
+        [Fact]
+        public void AddEventHubProducerClientFromNamespace_WithoutSyncSecretProvider_FallbackOnAsyncSecretProvider()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var secretName = "MyConnectionString";
+            services.AddSecretStore(stores => stores.AddProvider(new AsyncInMemorySecretProvider(secretName, ExampleEventHubsConnectionStringWithEntityPath)));
+
+            // Act
+            services.AddAzureClients(clients => clients.AddEventHubProducerClient(secretName));
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var factory = provider.GetRequiredService<IAzureClientFactory<EventHubProducerClient>>();
+            Assert.NotNull(factory.CreateClient("Default"));
         }
 
         [Fact]
