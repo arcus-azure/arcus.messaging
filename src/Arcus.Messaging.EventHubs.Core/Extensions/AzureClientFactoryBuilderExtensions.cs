@@ -6,7 +6,6 @@ using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Serilog.Core;
 
 // ReSharper disable once CheckNamespace
 namespace  Microsoft.Extensions.Azure
@@ -37,7 +36,7 @@ namespace  Microsoft.Extensions.Azure
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
-        /// <exception cref="NotSupportedException">Thrown when the registered Arcus secret store does not have a synchronous secret provider registered.</exception>
+        /// <exception cref="SecretNotFoundException">Thrown when no Azure EventHubs connection string secret was found in the Arcus secret store.</exception>
         public static IAzureClientBuilder<EventHubProducerClient, EventHubProducerClientOptions> AddEventHubProducerClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName)
@@ -70,7 +69,7 @@ namespace  Microsoft.Extensions.Azure
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
-        /// <exception cref="NotSupportedException">Thrown when the registered Arcus secret store does not have a synchronous secret provider registered.</exception>
+        /// <exception cref="SecretNotFoundException">Thrown when no Azure EventHubs connection string secret was found in the Arcus secret store.</exception>
         public static IAzureClientBuilder<EventHubProducerClient, EventHubProducerClientOptions> AddEventHubProducerClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName,
@@ -110,7 +109,7 @@ namespace  Microsoft.Extensions.Azure
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
-        /// <exception cref="NotSupportedException">Thrown when the registered Arcus secret store does not have a synchronous secret provider registered.</exception>
+        /// <exception cref="SecretNotFoundException">Thrown when no Azure EventHubs connection string secret was found in the Arcus secret store.</exception>
         public static IAzureClientBuilder<EventHubProducerClient, EventHubProducerClientOptions> AddEventHubProducerClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName,
@@ -146,7 +145,7 @@ namespace  Microsoft.Extensions.Azure
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
-        /// <exception cref="NotSupportedException">Thrown when the registered Arcus secret store does not have a synchronous secret provider registered.</exception>
+        /// <exception cref="SecretNotFoundException">Thrown when no Azure EventHubs connection string secret was found in the Arcus secret store.</exception>
         public static IAzureClientBuilder<EventHubProducerClient, EventHubProducerClientOptions> AddEventHubProducerClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName,
@@ -187,7 +186,7 @@ namespace  Microsoft.Extensions.Azure
                     serviceProvider.GetService<ILogger<EventHubProducerClient>>() 
                     ?? NullLogger<EventHubProducerClient>.Instance;
 
-                logger.LogWarning(exception, "Cannot synchronously retrieve Azure EventHubs connection string secret for '{SecretName}', fallback on asynchronously", connectionStringSecretName);
+                logger.LogTrace(exception, "Cannot synchronously retrieve Azure EventHubs connection string secret for '{SecretName}', fallback on asynchronously", connectionStringSecretName);
                 string connectionString = secretProvider.GetRawSecretAsync(connectionStringSecretName).GetAwaiter().GetResult();
                 return connectionString;
             }
