@@ -1,4 +1,5 @@
 ﻿using System;
+using Arcus.Messaging.Tests.Unit.Fixture;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +18,24 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Arrange
             var services = new ServiceCollection();
             var secretName = "MyConnectionString";
-            services.AddSecretStore(stores => stores.AddInMemory(secretName, ExampleServiceBusConnectionString));
+            services.AddSecretStore(stores => stores.AddProvider(new StaticInMemorySecretProvider(secretName, ExampleServiceBusConnectionString)));
+
+            // Act
+            services.AddAzureClients(clients => clients.AddServiceBusClient(secretName));
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var client = provider.GetRequiredService<IAzureClientFactory<ServiceBusClient>>();
+            Assert.NotNull(client.CreateClient("Default"));
+        }
+
+        [Fact]
+        public void AddServiceBusClient_WithoutSyncSecretProviderWithConnectionString_FallbackOnAsyncSecretProvider()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var secretName = "MyConnectionString";
+            services.AddSecretStore(stores => stores.AddProvider(new AsyncInMemorySecretProvider(secretName, ExampleServiceBusConnectionString)));
 
             // Act
             services.AddAzureClients(clients => clients.AddServiceBusClient(secretName));
@@ -34,7 +52,24 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Arrange
             var services = new ServiceCollection();
             var secretName = "MyConnectionString";
-            services.AddSecretStore(stores => stores.AddInMemory(secretName, ExampleServiceBusConnectionString));
+            services.AddSecretStore(stores => stores.AddProvider(new StaticInMemorySecretProvider(secretName, ExampleServiceBusConnectionString)));
+
+            // Act
+            services.AddAzureClients(clients => clients.AddServiceBusClient(secretName, configureOptions: options => { }));
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var client = provider.GetRequiredService<IAzureClientFactory<ServiceBusClient>>();
+            Assert.NotNull(client.CreateClient("Default"));
+        }
+
+        [Fact]
+        public void AddServiceBusClient_WithoutAsyncSecretProviderWithConnectionStringWithOptions_FallbackOnAsyncSecretProvider()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var secretName = "MyConnectionString";
+            services.AddSecretStore(stores => stores.AddProvider(new AsyncInMemorySecretProvider(secretName, ExampleServiceBusConnectionString)));
 
             // Act
             services.AddAzureClients(clients => clients.AddServiceBusClient(secretName, configureOptions: options => { }));

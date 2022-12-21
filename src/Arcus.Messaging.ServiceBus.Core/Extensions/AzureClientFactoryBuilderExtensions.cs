@@ -4,6 +4,8 @@ using Azure.Core.Extensions;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.Azure
@@ -27,6 +29,7 @@ namespace Microsoft.Extensions.Azure
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
+        /// <exception cref="SecretNotFoundException">Thrown when no Azure EventHubs connection string secret was found in the Arcus secret store.</exception>
         public static IAzureClientBuilder<ServiceBusClient, ServiceBusClientOptions> AddServiceBusClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName)
@@ -51,6 +54,7 @@ namespace Microsoft.Extensions.Azure
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
+        /// <exception cref="SecretNotFoundException">Thrown when no Azure EventHubs connection string secret was found in the Arcus secret store.</exception>
         public static IAzureClientBuilder<ServiceBusClient, ServiceBusClientOptions> AddServiceBusClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName,
@@ -61,19 +65,38 @@ namespace Microsoft.Extensions.Azure
             
             return builder.AddClient<ServiceBusClient, ServiceBusClientOptions>((options, serviceProvider) =>
             {
-                var secretProvider = serviceProvider.GetService<ISecretProvider>();
-                if (secretProvider is null)
-                {
-                    throw new InvalidOperationException(
-                        "Requires an Arcus secret store registration to retrieve the connection string to authenticate with Azure Service Bus while creating an Service Bus client instance," 
-                        + "please use the 'services.AddSecretStore(...)' or 'host.ConfigureSecretStore(...)' (https://security.arcus-azure.net/features/secret-store)");
-                }
-
-                string connectionString = secretProvider.GetRawSecretAsync(connectionStringSecretName).GetAwaiter().GetResult();
+                string connectionString = GetServiceBusConnectionString(connectionStringSecretName, serviceProvider);
                 configureOptions?.Invoke(options);
 
                 return new ServiceBusClient(connectionString, options);
             });
+        }
+
+        private static string GetServiceBusConnectionString(string connectionStringSecretName, IServiceProvider serviceProvider)
+        {
+            var secretProvider = serviceProvider.GetService<ISecretProvider>();
+            if (secretProvider is null)
+            {
+                throw new InvalidOperationException(
+                    "Requires an Arcus secret store registration to retrieve the connection string to authenticate with Azure Service Bus while creating an Service Bus client instance," 
+                    + "please use the 'services.AddSecretStore(...)' or 'host.ConfigureSecretStore(...)' (https://security.arcus-azure.net/features/secret-store)");
+            }
+
+            try
+            {
+                string connectionString = secretProvider.GetRawSecret(connectionStringSecretName);
+                return connectionString;
+            }
+            catch (Exception exception)
+            {
+                ILogger logger = 
+                    serviceProvider.GetService<ILogger<ServiceBusClient>>() 
+                    ?? NullLogger<ServiceBusClient>.Instance;
+
+                logger.LogTrace(exception, "Cannot synchronously retrieve Azure Service Bus connection string secret for '{SecretName}', fallback on asynchronously", connectionStringSecretName);
+                string connectionString = secretProvider.GetRawSecretAsync(connectionStringSecretName).GetAwaiter().GetResult();
+                return connectionString;
+            }
         }
     }
 }
