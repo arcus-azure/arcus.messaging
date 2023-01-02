@@ -15,7 +15,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump.Fixture
             ILogger logger) 
             : base(configuration, serviceProvider, logger)
         {
-            Id = jobId;
+            JobId = jobId;
             IsRunning = false;
         }
 
