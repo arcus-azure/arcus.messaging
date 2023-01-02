@@ -21,7 +21,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump.Fixture
 
         public bool IsRunning { get; private set; }
 
-        public override async Task StartAsync(CancellationToken cancellationToken)
+        public override async Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
         {
             Logger.LogInformation("Start test message pump");
             await base.StartAsync(cancellationToken);
@@ -34,7 +34,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump.Fixture
             return Task.CompletedTask;
         }
 
-        public override async Task StopAsync(CancellationToken cancellationToken)
+        public override async Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
             Logger.LogInformation("Stop test message pump");
             await base.StopAsync(cancellationToken);

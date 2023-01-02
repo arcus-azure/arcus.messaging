@@ -45,12 +45,12 @@ public class RateLimitService
     public async Task CantKeepUpAnymoreAsync(CancellationToken cancellationToken)
     {
         var duration = TimeSpan.FromSeconds(30);
-        await _pumpLifetime.PauseMessageProcessingAsync("abc-123", duration, cancellationToken);
+        await _pumpLifetime.PauseProcessingMessagesAsync("abc-123", duration, cancellationToken);
     }
 }
 ```
 
-⚡ Besides the `PauseMessageProcessingAsync` method, there also exists `Stop...`/`Start...` variants so that you can control the time dynamically when the pump is allowed to run again.
+⚡ Besides the `PauseProcessingMessagesAsync` method, there also exists `Stop...`/`Start...` variants so that you can control the time dynamically when the pump is allowed to run again.
 
 For more information on message pumps:
 - [Azure Service Bus message pump](./02-message-handling/01-service-bus.md)

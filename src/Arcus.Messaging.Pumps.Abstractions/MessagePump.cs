@@ -100,7 +100,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// Start with receiving messages on this message pump.
         /// </summary>
         /// <param name="cancellationToken">The token to indicate the start process should no longer be graceful.</param>
-        public virtual Task StartReceivingMessagesAsync(CancellationToken cancellationToken)
+        public virtual Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }
@@ -109,7 +109,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// Stop with receiving messages on this message pump.
         /// </summary>
         /// <param name="cancellationToken">The token to indicate the stop process should no longer be graceful.</param>
-        public virtual Task StopReceivingMessagesAsync(CancellationToken cancellationToken)
+        public virtual Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
         }
