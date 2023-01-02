@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Correlation;
 using Arcus.Messaging.Tests.Core.Events.v1;
@@ -774,6 +776,40 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             
             // Act / Assert
             await TestServiceBusTopicMessageHandlingForW3CAsync(options);
+        }
+
+        [Fact]
+        public async Task ServiceBusMessagePump_PauseViaLifetime_RestartsAgain()
+        {
+            // Arrange
+            string connectionString = _config.GetServiceBusTopicConnectionString();
+            string jobId = Guid.NewGuid().ToString();
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(_config)
+                   .AddServiceBusTopicMessagePump(
+                       "Test-Receive-All-Topic-Only", 
+                       configuration => connectionString, 
+                       opt => opt.JobId = jobId)
+                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>((AzureServiceBusMessageContext context) => true);
+
+            var traceParent = TraceParent.Generate();
+            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(traceParent);
+
+            var producer = TestServiceBusMessageProducer.CreateFor(_config, ServiceBusEntityType.Topic);
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
+            {
+                var lifetime = worker.Services.GetRequiredService<IMessagePumpLifetime>();
+                await lifetime.PauseReceivingMessagesAsync(jobId, TimeSpan.FromSeconds(5), CancellationToken.None);
+
+                // Act
+                await producer.ProduceAsync(message);
+
+                // Assert
+                OrderCreatedEventData eventData = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                AssertReceivedOrderEventDataForW3C(message, eventData, traceParent);
+            }
         }
 
         [Fact]

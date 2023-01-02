@@ -71,12 +71,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         public string Namespace { get; private set; }
 
         /// <summary>
-        /// Gets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
-        /// </summary>
-        public string JobId { get; }
-
-        /// <summary>
-        /// Gets the name of the topic subscription; combined from the <see cref="AzureServiceBusMessagePumpSettings.SubscriptionName"/> and the <see cref="JobId"/>.
+        /// Gets the name of the topic subscription; combined from the <see cref="AzureServiceBusMessagePumpSettings.SubscriptionName"/> and the <see cref="MessagePump.JobId"/>.
         /// </summary>
         protected string SubscriptionName { get; }
 
@@ -178,7 +173,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             try
             {
-                await OpenNewMessageReceiverAsync(stoppingToken);
+                await StartReceivingMessagesAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
             }
             catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
@@ -191,11 +186,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             finally
             {
-                await CloseMessageReceiverAsync();
+                await StopReceivingMessagesAsync(CancellationToken.None);
             }
         }
 
-        private async Task OpenNewMessageReceiverAsync(CancellationToken cancellationToken = default)
+        /// <inheritdoc />
+        public override async Task StartReceivingMessagesAsync(CancellationToken cancellationToken)
         {
             _messageProcessor = await Settings.CreateMessageProcessorAsync();
             Namespace = _messageProcessor.FullyQualifiedNamespace;
@@ -212,7 +208,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Logger.LogInformation("Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", JobId, EntityPath, Namespace);
         }
 
-        private async Task CloseMessageReceiverAsync()
+        /// <inheritdoc />
+        public override async Task StopReceivingMessagesAsync(CancellationToken cancellationToken)
         {
             if (_messageProcessor is null)
             {
@@ -222,7 +219,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             try
             {
                 Logger.LogTrace("Closing Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'", JobId, EntityPath, Namespace);
-                await _messageProcessor.CloseAsync();
+                await _messageProcessor.CloseAsync(cancellationToken);
                 _messageProcessor.ProcessMessageAsync -= ProcessMessageAsync;
                 _messageProcessor.ProcessErrorAsync -= ProcessErrorAsync;
                
@@ -272,8 +269,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Interlocked.Exchange(ref _unauthorizedExceptionCount, 0);
 
             Logger.LogTrace("Restarting Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' ...", JobId, EntityPath, Namespace);
-            await CloseMessageReceiverAsync();
-            await OpenNewMessageReceiverAsync();
+            await StopReceivingMessagesAsync(CancellationToken.None);
+            await StartReceivingMessagesAsync(CancellationToken.None);
             Logger.LogInformation("Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' restarted!", JobId, EntityPath, Namespace);
         }
 
@@ -285,8 +282,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Interlocked.Exchange(ref _unauthorizedExceptionCount, 0);
 
             Logger.LogTrace("Restarting Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' ...", JobId, EntityPath, Namespace);
-            await CloseMessageReceiverAsync();
-            await OpenNewMessageReceiverAsync(cancellationToken);
+            await StopReceivingMessagesAsync(cancellationToken);
+            await StartReceivingMessagesAsync(cancellationToken);
             Logger.LogInformation("Azure Service Bus message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' restarted!", JobId, EntityPath, Namespace);
         }
 

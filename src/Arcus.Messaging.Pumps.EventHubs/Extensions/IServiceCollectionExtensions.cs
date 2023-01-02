@@ -114,7 +114,7 @@ namespace Microsoft.Extensions.DependencyInjection
             });
             collection.JobId = options.JobId;
 
-            services.AddHostedService(serviceProvider =>
+            services.AddMessagePump(serviceProvider =>
             {
                 ISecretProvider secretProvider = DetermineSecretProvider(serviceProvider);
                 var eventHubsConfig = new AzureEventHubsMessagePumpConfig(
