@@ -42,7 +42,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
             var lifetime = new DefaultMessagePumpLifetime(provider);
 
             // Act
-            await lifetime.StopReceivingMessagesAsync(jobId, CancellationToken.None);
+            await lifetime.StopProcessingMessagesAsync(jobId, CancellationToken.None);
 
             // Assert
             var pump = Assert.IsType<TestMessagePump>(hostedService);
@@ -63,7 +63,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
             var lifetime = new DefaultMessagePumpLifetime(provider);
 
             // Act
-            await lifetime.StartReceivingMessagesAsync(jobId, CancellationToken.None);
+            await lifetime.PauseProcessingMessagesAsync(jobId, CancellationToken.None);
 
             // Assert
             var pump = Assert.IsType<TestMessagePump>(hostedService);
@@ -85,7 +85,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
             var duration = TimeSpan.FromSeconds(5);
 
             // Act
-            await lifetime.PauseReceivingMessagesAsync(jobId, duration, CancellationToken.None);
+            await lifetime.PauseProcessingMessagesAsync(jobId, duration, CancellationToken.None);
 
             // Assert
             var pump = Assert.IsType<TestMessagePump>(hostedService);

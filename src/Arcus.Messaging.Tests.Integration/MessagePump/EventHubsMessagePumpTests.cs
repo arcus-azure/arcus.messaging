@@ -302,7 +302,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
             {
                 var lifetime = worker.Services.GetRequiredService<IMessagePumpLifetime>();
-                await lifetime.PauseReceivingMessagesAsync(jobId, TimeSpan.FromSeconds(5), CancellationToken.None);
+                await lifetime.PauseProcessingMessagesAsync(jobId, TimeSpan.FromSeconds(5), CancellationToken.None);
 
                 // Act
                 await producer.ProduceAsync(expected);

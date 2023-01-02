@@ -36,14 +36,14 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="jobId">The uniquely defined identifier of the registered message pump.</param>
         /// <param name="cancellationToken">The token to indicate that the start process has been aborted.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        public async Task StartReceivingMessagesAsync(string jobId, CancellationToken cancellationToken)
+        public async Task PauseProcessingMessagesAsync(string jobId, CancellationToken cancellationToken)
         {
             Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a message pump job ID to retrieve the registered message pump in the application services");
 
             MessagePump messagePump = GetMessagePump(jobId);
             
             _logger.LogTrace("Starting message pump '{JobId}' via message pump lifetime...", jobId);
-            await messagePump.StartReceivingMessagesAsync(cancellationToken);
+            await messagePump.StartProcessingMessagesAsync(cancellationToken);
             _logger.LogTrace("Started message pump '{JobId}' via message pump lifetime", jobId);
         }
 
@@ -55,20 +55,20 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="cancellationToken">The token to indicate that the shutdown and start process should no longer be graceful.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="duration"/> is a negative time range.</exception>
-        public async Task PauseReceivingMessagesAsync(string jobId, TimeSpan duration, CancellationToken cancellationToken)
+        public async Task PauseProcessingMessagesAsync(string jobId, TimeSpan duration, CancellationToken cancellationToken)
         {
             Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a message pump job ID to retrieve the registered message pump in the application services");
 
             MessagePump messagePump = GetMessagePump(jobId);
             _logger.LogTrace("Stopping message pump '{JobId}' via message pump lifetime...", jobId);
-            await messagePump.StopReceivingMessagesAsync(cancellationToken);
+            await messagePump.StopProcessingMessagesAsync(cancellationToken);
             _logger.LogTrace("Stopped message pump '{JobId}' via message pump lifetime", jobId);
 
             _ = Task.Delay(duration, cancellationToken)
                     .ContinueWith(async t =>
                     {
                         _logger.LogTrace("Starting message pump '{JobId}' via message pump lifetime...", jobId);
-                        await messagePump.StartReceivingMessagesAsync(cancellationToken);
+                        await messagePump.StartProcessingMessagesAsync(cancellationToken);
                         _logger.LogTrace("Started message pump '{JobId}' via message pump lifetime", jobId);
                     }, cancellationToken);
         }
@@ -79,14 +79,14 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="jobId">The uniquely defined identifier of the registered message pump.</param>
         /// <param name="cancellationToken">The token to indicate that the shutdown process should no longer be graceful.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        public async Task StopReceivingMessagesAsync(string jobId, CancellationToken cancellationToken)
+        public async Task StopProcessingMessagesAsync(string jobId, CancellationToken cancellationToken)
         {
             Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a message pump job ID to retrieve the registered message pump in the application services");
 
             MessagePump messagePump = GetMessagePump(jobId);
 
             _logger.LogTrace("Stopping message pump '{JobId}' via message pump lifetime...", jobId);
-            await messagePump.StopReceivingMessagesAsync(cancellationToken);
+            await messagePump.StopProcessingMessagesAsync(cancellationToken);
             _logger.LogTrace("Stopped message pump '{JobId}' via message pump lifetime", jobId);
         }
 

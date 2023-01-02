@@ -77,7 +77,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
         {
             try
             {
-                await StartReceivingMessagesAsync(stoppingToken);
+                await StartProcessingMessagesAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
             }
             catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
@@ -90,7 +90,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
             }
             finally
             {
-                await StopReceivingMessagesAsync(CancellationToken.None);
+                await StopProcessingMessagesAsync(CancellationToken.None);
             }
         }
 
@@ -101,13 +101,13 @@ namespace Arcus.Messaging.Pumps.EventHubs
         public async Task RestartAsync(CancellationToken cancellationToken)
         {
             Logger.LogTrace("Restarting Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' ...", JobId, ConsumerGroup, EventHubName, Namespace);
-            await StopReceivingMessagesAsync(cancellationToken);
-            await StartReceivingMessagesAsync(cancellationToken);
+            await StopProcessingMessagesAsync(cancellationToken);
+            await StartProcessingMessagesAsync(cancellationToken);
             Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' restarted!", JobId, ConsumerGroup, EventHubName, Namespace);
         }
 
         /// <inheritdoc />
-        public override async Task StartReceivingMessagesAsync(CancellationToken stoppingToken)
+        public override async Task StartProcessingMessagesAsync(CancellationToken stoppingToken)
         {
             _eventProcessor = await _eventHubsConfig.CreateEventProcessorClientAsync();
             _eventProcessor.ProcessEventAsync += ProcessMessageAsync;
@@ -181,7 +181,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
         }
 
         /// <inheritdoc />
-        public override async Task StopReceivingMessagesAsync(CancellationToken cancellationToken)
+        public override async Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
             try
             {
