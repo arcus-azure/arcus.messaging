@@ -11,7 +11,7 @@ Both and future systems also support some general functionality that will be exp
 
 ⚡ If you use one of the message-type specific packages like `Arcus.Messaging.Pumps.EventHubs`, you will automatically get this functionality. If you implement your own message pump, please use the `services.AddMessagePump(...)` extension which makes sure that you also registers this functionality.
 
-When messages are being processed by a system that works slower than the rate that messages are being received by the message pump, a rate problem could occur . 
+When messages are being processed by a system that works slower than the rate that messages are being received by the message pump, a rate problem could occur. 
 As a solution to this problem, the Arcus Messaging library registers an `IMessagePumpLifetime` instance in the application services that lets you control the message receiving process and pauses if necessary for the downstream dependency system to keep up.
 
 The following example below shows how a 'rate limit' service gets injected with the `IMessagePumpLifetime` instance and pauses.
