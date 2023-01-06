@@ -9,6 +9,7 @@ using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.EventHubs;
 using Arcus.Messaging.Pumps.EventHubs.Configuration;
 using Arcus.Messaging.Tests.Core.Correlation;
@@ -279,6 +280,37 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             // Act / Assert
             await TestEventHubsMessageHandlingForHierarchicalAsync(options, eventHubs, operationParentIdPropertyName: customOperationParentIdPropertyName);
+        }
+
+        [Fact]
+        public async Task EventHubsMessagePump_PausesViaLifetime_RestartsAgain()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            string jobId = Guid.NewGuid().ToString();
+            var options = new WorkerOptions();
+            AddEventHubsMessagePump(options, eventHubs, opt => opt.JobId = jobId)
+                .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+
+            var traceParent = TraceParent.Generate();
+            EventData expected = CreateOrderEventDataMessageForW3C(traceParent);
+            
+            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
+            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
+
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
+            {
+                var lifetime = worker.Services.GetRequiredService<IMessagePumpLifetime>();
+                await lifetime.PauseProcessingMessagesAsync(jobId, TimeSpan.FromSeconds(5), CancellationToken.None);
+
+                // Act
+                await producer.ProduceAsync(expected);
+
+                // Assert
+                OrderCreatedEventData actual = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                AssertReceivedOrderEventDataForW3C(expected, actual, traceParent);
+            }
         }
 
         [Fact]

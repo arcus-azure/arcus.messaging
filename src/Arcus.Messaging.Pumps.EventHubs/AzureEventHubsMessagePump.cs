@@ -67,9 +67,6 @@ namespace Arcus.Messaging.Pumps.EventHubs
         private string ConsumerGroup => _eventProcessor?.ConsumerGroup;
         private string Namespace => _eventProcessor?.FullyQualifiedNamespace;
 
-        /// <inheritdoc/>
-        public string JobId { get; }
-
         /// <summary>
         /// This method is called when the <see cref="T:Microsoft.Extensions.Hosting.IHostedService" /> starts. The implementation should return a task that represents
         /// the lifetime of the long running operation(s) being performed.
@@ -80,7 +77,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
         {
             try
             {
-                await StartEventProcessingAsync(stoppingToken);
+                await StartProcessingMessagesAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
             }
             catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
@@ -93,7 +90,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
             }
             finally
             {
-                await StopEventProcessingAsync();
+                await StopProcessingMessagesAsync(CancellationToken.None);
             }
         }
 
@@ -104,12 +101,13 @@ namespace Arcus.Messaging.Pumps.EventHubs
         public async Task RestartAsync(CancellationToken cancellationToken)
         {
             Logger.LogTrace("Restarting Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' ...", JobId, ConsumerGroup, EventHubName, Namespace);
-            await StopEventProcessingAsync();
-            await StartEventProcessingAsync(cancellationToken);
+            await StopProcessingMessagesAsync(cancellationToken);
+            await StartProcessingMessagesAsync(cancellationToken);
             Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' restarted!", JobId, ConsumerGroup, EventHubName, Namespace);
         }
 
-        private async Task StartEventProcessingAsync(CancellationToken stoppingToken)
+        /// <inheritdoc />
+        public override async Task StartProcessingMessagesAsync(CancellationToken stoppingToken)
         {
             _eventProcessor = await _eventHubsConfig.CreateEventProcessorClientAsync();
             _eventProcessor.ProcessEventAsync += ProcessMessageAsync;
@@ -182,12 +180,13 @@ namespace Arcus.Messaging.Pumps.EventHubs
             return Task.CompletedTask;
         }
 
-        private async Task StopEventProcessingAsync()
+        /// <inheritdoc />
+        public override async Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
             try
             {
                 Logger.LogTrace("Stopping Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}'",  JobId, ConsumerGroup, EventHubName , Namespace);
-                await _eventProcessor.StopProcessingAsync();
+                await _eventProcessor.StopProcessingAsync(cancellationToken);
                 _eventProcessor.ProcessEventAsync -= ProcessMessageAsync;
                 _eventProcessor.ProcessErrorAsync -= ProcessErrorAsync;
                 Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' stopped: {Time}",  JobId, ConsumerGroup, EventHubName , Namespace, DateTimeOffset.UtcNow);

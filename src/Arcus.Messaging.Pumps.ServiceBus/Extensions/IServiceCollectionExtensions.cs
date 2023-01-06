@@ -871,7 +871,7 @@ namespace Microsoft.Extensions.DependencyInjection
             });
             collection.JobId = options.JobId;
 
-            services.AddHostedService(serviceProvider =>
+            services.AddMessagePump(serviceProvider =>
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
                 if (subscriptionName != null && subscriptionName.Length > 50)
