@@ -3,15 +3,15 @@ using Arcus.Security.Core;
 
 namespace Arcus.Messaging.Tests.Unit.Fixture
 {
-    internal class AsyncInMemorySecretProvider : ISecretProvider
+    internal class AsyncOnlyInMemorySecretProvider : ISecretProvider
     {
         private readonly string _secretName;
         private readonly string _secretValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AsyncInMemorySecretProvider" /> class.
+        /// Initializes a new instance of the <see cref="AsyncOnlyInMemorySecretProvider" /> class.
         /// </summary>
-        public AsyncInMemorySecretProvider(string secretName, string secretValue)
+        public AsyncOnlyInMemorySecretProvider(string secretName, string secretValue)
         {
             _secretName = secretName;
             _secretValue = secretValue;

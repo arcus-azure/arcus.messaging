@@ -19,7 +19,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Arrange
             var services = new ServiceCollection();
             var secretName = "MyConnectionString";
-            services.AddSecretStore(stores => stores.AddProvider(new StaticInMemorySecretProvider(secretName, ExampleEventHubsConnectionStringWithEntityPath)));
+            services.AddSecretStore(stores => stores.AddInMemory(secretName, ExampleEventHubsConnectionStringWithEntityPath));
 
             // Act
             services.AddAzureClients(clients => clients.AddEventHubProducerClient(secretName));
@@ -36,7 +36,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Arrange
             var services = new ServiceCollection();
             var secretName = "MyConnectionString";
-            services.AddSecretStore(stores => stores.AddProvider(new StaticInMemorySecretProvider(secretName, ExampleEventHubsConnectionStringWithoutEntityPath)));
+            services.AddSecretStore(stores => stores.AddInMemory(secretName, ExampleEventHubsConnectionStringWithoutEntityPath));
 
             // Act
             services.AddAzureClients(clients => clients.AddEventHubProducerClient(secretName, "eventhubs-name"));
@@ -53,7 +53,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Arrange
             var services = new ServiceCollection();
             var secretName = "MyConnectionString";
-            services.AddSecretStore(stores => stores.AddProvider(new AsyncInMemorySecretProvider(secretName, ExampleEventHubsConnectionStringWithoutEntityPath)));
+            services.AddSecretStore(stores => stores.AddInMemory(secretName, ExampleEventHubsConnectionStringWithoutEntityPath));
 
             // Act
             services.AddAzureClients(clients => clients.AddEventHubProducerClient(secretName, "eventhubs-name"));
@@ -85,7 +85,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Arrange
             var services = new ServiceCollection();
             var secretName = "MyConnectionString";
-            services.AddSecretStore(stores => stores.AddProvider(new AsyncInMemorySecretProvider(secretName, ExampleEventHubsConnectionStringWithEntityPath)));
+            services.AddSecretStore(stores => stores.AddInMemory(secretName, ExampleEventHubsConnectionStringWithEntityPath));
 
             // Act
             services.AddAzureClients(clients => clients.AddEventHubProducerClient(secretName));
