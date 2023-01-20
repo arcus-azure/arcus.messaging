@@ -28,7 +28,7 @@ jobs:
       uses: b3b00/coverlet-action@1.2.4
       with:
         testProject: 'src/Arcus.Messaging.Tests.Unit/Arcus.Messaging.Tests.Unit.csproj'
-        excludes: '[Arcus.Messaging.Tests.*]*'
+        excludes: '[Arcus.Messaging.Tests.*]*,[Arcus.Messaging.Pumps.*]*'
         threshold: 80
         output: 'coverage.xml'
         outputFormat: 'opencover'
