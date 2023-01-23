@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Core.Correlation;
+using Bogus;
 using Microsoft.ApplicationInsights;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,8 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.AzureFunctions
 {
     public class FunctionContextExtensionsTests
     {
+        private static readonly Faker BogusGenerator = new Faker();
+
         [Fact]
         public void GetCorrelationInfo_WithDiagnosticId_Succeeds()
         {
@@ -55,6 +58,26 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.AzureFunctions
                 // Assert
                 Assert.Equal(transactionId, result.CorrelationInfo.TransactionId);
                 Assert.Equal(operationParentId, result.CorrelationInfo.OperationParentId);
+            }
+        }
+
+        [Fact]
+        public void GetCorrelationInfo_WithBlankCorrelationProperties_Succeeds()
+        {
+            // Arrange
+            FunctionContext context = CreateFunctionContext(
+                CreateBindingDataWithUserProperties(new Dictionary<string, string>
+                {
+                    [PropertyNames.TransactionId] = null,
+                    [PropertyNames.OperationParentId] = null
+                }));
+
+            // Act
+            using (MessageCorrelationResult result = context.GetCorrelationInfo(MessageCorrelationFormat.Hierarchical))
+            {
+                // Assert
+                Assert.False(string.IsNullOrWhiteSpace(result.CorrelationInfo.TransactionId));
+                Assert.Null(result.CorrelationInfo.OperationParentId);
             }
         }
 
@@ -113,6 +136,22 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.AzureFunctions
 
             // Act / Assert
             Assert.ThrowsAny<InvalidOperationException>(() => context.GetCorrelationInfo(format));
+        }
+
+        [Fact]
+        public void GetCorrelationInfo_WithInvalidCorrelationFormat_Fails()
+        {
+            // Arrange
+            var traceParent = TraceParent.Generate();
+            FunctionContext context = CreateFunctionContext(
+                CreateBindingDataWithUserProperties(new Dictionary<string, string> { ["Diagnostic-Id"] = traceParent.DiagnosticId }),
+                services => services.AddSingleton<TelemetryClient>());
+
+            int format = BogusGenerator.Random.Int(min: 2);
+
+            // Act / Assert
+            Assert.Throws<ArgumentOutOfRangeException>(()
+                => context.GetCorrelationInfo(correlationFormat: (MessageCorrelationFormat) format));
         }
 
         private FunctionContext CreateFunctionContext(

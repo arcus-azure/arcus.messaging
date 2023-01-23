@@ -201,9 +201,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         }
 
         [Theory]
-        [InlineData(AdditionalMemberHandling.Ignore)]
-        [InlineData(AdditionalMemberHandling.Error)]
-        public async Task WithMessageRouting_WithIgnoreMissingMembers_GoesThroughDifferentMessageHandler(AdditionalMemberHandling additionalMemberHandling)
+        [InlineData(AdditionalMemberHandling.Ignore, true, false)]
+        [InlineData(AdditionalMemberHandling.Error, false, true)]
+        [InlineData((AdditionalMemberHandling) 12354, false, true)]
+        public async Task WithMessageRouting_WithIgnoreMissingMembers_GoesThroughDifferentMessageHandler(AdditionalMemberHandling memberHandling, bool processedV1, bool processedV2)
         {
             // Arrange
             var services = new ServiceCollection();
@@ -215,7 +216,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
                       .WithMessageHandler<OrderV2MessageHandler, OrderV2>(provider => messageHandlerV2);
             
             // Act
-            services.AddMessageRouting(options => options.Deserialization.AdditionalMembers = additionalMemberHandling);
+            services.AddMessageRouting(options => options.Deserialization.AdditionalMembers = memberHandling);
             
             // Assert
             IServiceProvider serviceProvider = services.BuildServiceProvider();
@@ -227,8 +228,28 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             string json = JsonConvert.SerializeObject(order);
 
             await router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None);
-            Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Ignore, messageHandlerV1.IsProcessed);
-            Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Error, messageHandlerV2.IsProcessed);
+            Assert.Equal(processedV1, messageHandlerV1.IsProcessed);
+            Assert.Equal(processedV2, messageHandlerV2.IsProcessed);
+        }
+
+        [Fact]
+        public async Task WithMessageRouting_WithInvalidJson_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            
+            // Act
+            services.AddMessageRouting()
+                    .WithMessageHandler<OrderV1MessageHandler, Order>();
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IMessageRouter>();
+
+            string xml = "<Root></Root>";
+            var context = new MessageContext("message-id", new Dictionary<string, object>());
+            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
+            await Assert.ThrowsAsync<InvalidOperationException>(() => router.RouteMessageAsync(xml, context, correlationInfo, CancellationToken.None));
         }
 
         [Fact]
