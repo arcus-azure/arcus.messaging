@@ -435,6 +435,29 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
+        public async Task Route_WithMessageHandlerFromTemplate_Succeeds()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act
+            services.AddServiceBusMessageRouting()
+                    .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandlerFromTemplate, Order>();
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            Order order = OrderGenerator.Generate();
+            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage();
+            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
+            var receiver = new TestServiceBusReceiver();
+            await router.RouteMessageAsync(receiver, message, context, correlationInfo, CancellationToken.None);
+            Assert.True(receiver.HasCompletedMessage);
+        }
+
+        [Fact]
         public void CreateWithoutOptionsAndLogger_WithoutServiceProvider_Fails()
         {
             Assert.ThrowsAny<ArgumentException>(

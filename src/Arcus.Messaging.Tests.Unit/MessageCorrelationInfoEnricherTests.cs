@@ -5,6 +5,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Arcus.Messaging.Tests.Unit.Fixture;
+using Arcus.Observability.Correlation;
 using Bogus;
 using Bogus.Extensions;
 using Serilog.Events;
@@ -158,6 +159,22 @@ namespace Arcus.Messaging.Tests.Unit
         private static void AssertLogPropertyNotBlank(IReadOnlyDictionary<string, LogEventPropertyValue> properties, string key)
         {
             Assert.Contains(properties, prop => prop.Key == key && !string.IsNullOrWhiteSpace(prop.Value.ToDecentString()));
+        }
+
+        [Fact]
+        public void Enrich_WithoutCorrelationInfo_EarlyReturn()
+        {
+            // Arrange
+            var accessor = new DefaultCorrelationInfoAccessor<MessageCorrelationInfo>();
+            var enricher = new MessageCorrelationInfoEnricher(accessor);
+            LogEvent logEvent = GenerateLogEvent();
+            var factory = new TestLogEventPropertyFactory();
+
+            // Act
+            enricher.Enrich(logEvent, factory);
+
+            // Assert
+            Assert.Empty(logEvent.Properties);
         }
     }
 }

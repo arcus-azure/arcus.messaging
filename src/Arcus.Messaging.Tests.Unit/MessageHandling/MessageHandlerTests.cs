@@ -422,5 +422,39 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
                 handler => Assert.True(handler.CanProcessMessageBasedOnMessage(new TestMessage { TestProperty = "Some value" })),
                 handler => Assert.True(handler.CanProcessMessageBasedOnMessage(new TestMessage { TestProperty = "Some other value" })));
         }
+
+        [Fact]
+        public void CanProcessMessageBasedOnContext_WithInvalidImplementation_ReturnsFalse()
+        {
+            // Arrange
+            var services = new MessageHandlerCollection(new ServiceCollection());
+
+            // Act
+            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
+                messageContextFilter: ctx => throw new UnauthorizedAccessException("Sabotage this context filter"));
+
+            // Assert
+            IServiceProvider provider = services.Services.BuildServiceProvider();
+            MessageHandler handler = Assert.Single(MessageHandler.SubtractFrom(provider, NullLogger.Instance));
+            var context = TestMessageContext.Generate();
+            Assert.False(handler.CanProcessMessageBasedOnContext(context));
+        }
+
+        [Fact]
+        public void CanProcessMessageBasedOnMessage_WithInvalidImplementation_ReturnsFalse()
+        {
+            // Arrange
+            var services = new MessageHandlerCollection(new ServiceCollection());
+
+            // Act
+            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
+                messageBodyFilter: body => throw new UnauthorizedAccessException("Sabotage this message body filter"));
+
+            // Assert
+            IServiceProvider provider = services.Services.BuildServiceProvider();
+            MessageHandler handler = Assert.Single(MessageHandler.SubtractFrom(provider, NullLogger.Instance));
+            var context = TestMessageContext.Generate();
+            Assert.False(handler.CanProcessMessageBasedOnMessage(context));
+        }
     }
 }
