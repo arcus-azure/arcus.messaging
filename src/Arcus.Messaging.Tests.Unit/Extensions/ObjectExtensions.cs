@@ -34,6 +34,7 @@ namespace Azure.Messaging.ServiceBus
 
             return ServiceBusModelFactory.ServiceBusReceivedMessage(
                 body: BinaryData.FromObjectAsJson(messageBody),
+                correlationId: operationId,
                 properties: applicationProperties);
         }
     }
