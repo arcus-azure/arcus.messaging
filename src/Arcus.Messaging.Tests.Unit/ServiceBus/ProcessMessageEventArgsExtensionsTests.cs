@@ -34,7 +34,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Arrange
             Order order = OrderGenerator.Generate();
             ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage();
-            var args = new TestProcessMessageEventArgs(message, receiver: null, CancellationToken.None);
+            var args = new ProcessMessageEventArgs(message, receiver: null, CancellationToken.None);
 
             // Act / Assert
             Assert.Throws<InvalidOperationException>(() => args.GetServiceBusReceiver());
