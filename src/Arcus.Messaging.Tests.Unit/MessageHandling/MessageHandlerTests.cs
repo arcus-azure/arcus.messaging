@@ -453,8 +453,8 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             // Assert
             IServiceProvider provider = services.Services.BuildServiceProvider();
             MessageHandler handler = Assert.Single(MessageHandler.SubtractFrom(provider, NullLogger.Instance));
-            var context = TestMessageContext.Generate();
-            Assert.False(handler.CanProcessMessageBasedOnMessage(context));
+            var message = new TestMessage();
+            Assert.False(handler.CanProcessMessageBasedOnMessage(message));
             
         }
     }
