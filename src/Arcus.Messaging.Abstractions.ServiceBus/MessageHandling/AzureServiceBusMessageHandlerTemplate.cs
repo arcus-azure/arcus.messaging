@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
     /// <summary>
     /// Represents the default template when handling Azure Service Bus messages and controlling how the message is being handled by Azure Service Bus.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public abstract class AzureServiceBusMessageHandlerTemplate
     {
         /// <summary>

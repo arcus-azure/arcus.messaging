@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
@@ -11,6 +12,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
     /// <summary>
     /// Represents a <see cref="IAzureServiceBusFallbackMessageHandler"/> template to control the Azure Service Bus message operations during the fallback handling of the message.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public abstract class AzureServiceBusFallbackMessageHandler : AzureServiceBusMessageHandlerTemplate, IAzureServiceBusFallbackMessageHandler
     {
         /// <summary>
