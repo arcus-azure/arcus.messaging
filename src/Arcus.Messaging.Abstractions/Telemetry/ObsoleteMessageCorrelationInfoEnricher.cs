@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using Arcus.Messaging.Abstractions;
 using Arcus.Observability.Correlation;
 using Arcus.Observability.Telemetry.Serilog.Enrichers;
@@ -13,7 +12,6 @@ namespace Arcus.Messaging.Pumps.Abstractions.Telemetry
     /// Logger enrichment of the <see cref="MessageCorrelationInfo" /> model.
     /// </summary>
     [Obsolete("Use the message correlation enricher in a different namespace instead: " +  nameof(Messaging.Abstractions.Telemetry.MessageCorrelationInfoEnricher) + " without 'Pumps'")]
-    [ExcludeFromCodeCoverage]
     public class MessageCorrelationInfoEnricher : CorrelationInfoEnricher<MessageCorrelationInfo>
     {
         private const string CycleId = "CycleId";

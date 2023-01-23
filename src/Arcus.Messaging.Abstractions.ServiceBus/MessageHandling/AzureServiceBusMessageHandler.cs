@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using GuardNet;
@@ -11,7 +10,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
     /// <summary>
     /// Represents a <see cref="IAzureServiceBusMessageHandler{TMessage}"/> template to control the Azure Service Bus message operations during the handling of the deserialized message.
     /// </summary>
-    [ExcludeFromCodeCoverage]
     public abstract class AzureServiceBusMessageHandler<TMessage> : AzureServiceBusMessageHandlerTemplate, IAzureServiceBusMessageHandler<TMessage>
     {
         /// <summary>
