@@ -31,38 +31,10 @@ namespace Azure.Messaging.ServiceBus
             IDictionary<string, object> applicationProperties = null)
         {
             Guard.NotNull(messageBody, nameof(messageBody), "Requires a message body to wrap in an received Azure Service Bus message");
-            
-            string serializedMessageBody = JsonConvert.SerializeObject(messageBody);
-            byte[] rawMessage = Encoding.UTF8.GetBytes(serializedMessageBody);
-            var amqp = new AmqpAnnotatedMessage(new AmqpMessageBody(new[] {new ReadOnlyMemory<byte>(rawMessage)}));
-            amqp.Header.DeliveryCount = BogusGenerator.Random.UInt();
-            
-            if (operationId is null)
-            {
-                amqp.Properties.CorrelationId = new AmqpMessageId();
-            }
-            else
-            {
-                amqp.Properties.CorrelationId = new AmqpMessageId(operationId);
-            }
 
-            if (applicationProperties != null)
-            {
-                foreach (KeyValuePair<string, object> applicationProperty in applicationProperties)
-                {
-                    amqp.ApplicationProperties[applicationProperty.Key] = applicationProperty.Value;
-                }
-            }
-
-            var serviceBusMessage = (ServiceBusReceivedMessage) Activator.CreateInstance(
-                type: typeof(ServiceBusReceivedMessage),
-                bindingAttr: BindingFlags.NonPublic | BindingFlags.Instance,
-                binder: null,
-                args: new object[] {amqp},
-                culture: null,
-                activationAttributes: null);
-            
-            return serviceBusMessage;
+            return ServiceBusModelFactory.ServiceBusReceivedMessage(
+                body: BinaryData.FromObjectAsJson(messageBody),
+                properties: applicationProperties);
         }
     }
 }

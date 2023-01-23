@@ -10,6 +10,7 @@ namespace Microsoft.Azure.ServiceBus
     /// <summary>
     /// Extensions on the <see cref="ServiceBusReceivedMessage"/> to more easily retrieve user and system-related information in a more consumer-friendly manner.
     /// </summary>
+    [Obsolete("Use new Azure SDK's " + nameof(ServiceBusReceivedMessage) + " extensions in the 'Azure.Messaging.ServiceBus' namespace instead")]
     public static class MessageExtensions
     {
         /// <summary>
