@@ -25,7 +25,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Coverlet coverage test
-      run: dotnet test -c Debug -p:coverletOutput=coverage.xml -p:CollectCoverage=true -p:CoverletOutputFormat=opencover -p:Threshold=80 -p:ExcludeByAttribute=\"Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute\" -p:Exclude=\"[Arcus.Messaging.Tests.*]*,[Arcus.Messaging.Pumps.*]*\" src/Arcus.Messaging.Tests.Unit/Arcus.Messaging.Tests.Unit.csproj
+      run: dotnet test -c Debug -p:coverletOutput=coverage.xml -p:CollectCoverage=true -p:CoverletOutputFormat=opencover -p:Threshold=80 -p:ExcludeByAttribute=\"Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute\" -p:Exclude=\"[Arcus.Messaging.Tests.*]*\" src/Arcus.Messaging.Tests.Unit/Arcus.Messaging.Tests.Unit.csproj
 
     - name: Codecov
       uses: codecov/codecov-action@v3.1.1
