@@ -36,7 +36,21 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="jobId">The uniquely defined identifier of the registered message pump.</param>
         /// <param name="cancellationToken">The token to indicate that the start process has been aborted.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
+        [Obsolete("Use the 'StartProcessingMessageAsync' instead to start the message pump")]
         public async Task PauseProcessingMessagesAsync(string jobId, CancellationToken cancellationToken)
+        {
+            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a message pump job ID to retrieve the registered message pump in the application services");
+
+            await StartProcessingMessagesAsync(jobId, cancellationToken);
+        }
+
+        /// <summary>
+        /// Starts a message pump with the given <paramref name="jobId"/>.
+        /// </summary>
+        /// <param name="jobId">The uniquely defined identifier of the registered message pump.</param>
+        /// <param name="cancellationToken">The token to indicate that the start process has been aborted.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
+        public async Task StartProcessingMessagesAsync(string jobId, CancellationToken cancellationToken)
         {
             Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a message pump job ID to retrieve the registered message pump in the application services");
 
