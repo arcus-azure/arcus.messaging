@@ -21,7 +21,7 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
         /// </summary>
         /// <param name="messageId">Unique identifier of the message</param>
         /// <param name="properties">Contextual properties provided on the message</param>
-        public TestMessageContext(string messageId, IDictionary<string, object> properties) : base(messageId, properties) { }
+        public TestMessageContext(string messageId, IDictionary<string, object> properties) : base(messageId, "job-id", properties) { }
 
         /// <summary>
         /// Generate a new <see cref="TestMessageContext"/> instance with random values.

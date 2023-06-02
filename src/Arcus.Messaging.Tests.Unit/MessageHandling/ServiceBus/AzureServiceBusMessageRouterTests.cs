@@ -15,11 +15,9 @@ using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs;
 using Arcus.Testing.Logging;
 using Azure.Messaging.ServiceBus;
-using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Xunit;
 using Order = Arcus.Messaging.Tests.Core.Messages.v1.Order;
@@ -28,6 +26,85 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 {
     public class AzureServiceBusMessageRouterTests
     {
+        [Fact]
+        public async Task Add_WithDifferentMessageContext_SucceedsWithSameJobId()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting();
+            var jobId = Guid.NewGuid().ToString();
+            collection.JobId = jobId;
+
+            // Act
+            collection.WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>();
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            var order = OrderGenerator.Generate();
+            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
+            AzureServiceBusMessageContext context = message.GetMessageContext(jobId);
+            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+
+            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
+        }
+
+        [Fact]
+        public async Task Add_WithDifferentMessageContext_FailsWithDifferentJobId()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting();
+            collection.JobId = Guid.NewGuid().ToString();
+
+            // Act
+            collection.WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>();
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            var order = OrderGenerator.Generate();
+            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
+            AzureServiceBusMessageContext context = message.GetMessageContext("other-job-id");
+            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Add_WithMultipleFallbackHandlers_UsesCorrectHandlerByJobId()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            ServiceBusMessageHandlerCollection collection1 = services.AddServiceBusMessageRouting();
+            collection1.JobId = Guid.NewGuid().ToString();
+
+            ServiceBusMessageHandlerCollection collection2 = services.AddServiceBusMessageRouting();
+            collection2.JobId = Guid.NewGuid().ToString();
+
+            var handler1 = new PassThruServiceBusFallbackMessageHandler();
+            var handler2 = new PassThruServiceBusFallbackMessageHandler();
+            collection1.WithServiceBusFallbackMessageHandler(provider => handler1);
+            collection2.WithServiceBusFallbackMessageHandler(provider => handler2);
+
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            var order = OrderGenerator.Generate();
+            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
+            AzureServiceBusMessageContext context = message.GetMessageContext(collection1.JobId);
+            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+
+            // Act
+            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
+
+            // Assert
+            Assert.True(handler1.IsProcessed);
+            Assert.False(handler2.IsProcessed);
+        }
+
         [Fact]
         public async Task WithServiceBusMessageRouting_WithGeneralRouting_GoesThroughRegisteredMessageHandler()
         {
@@ -45,7 +122,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             // Act
             services.AddServiceBusMessageRouting();
 
-            // Assert
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
             var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
@@ -386,6 +462,31 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             
             Assert.Equal(messageCount, spyOrderV1MessageHandler.ProcessedMessages.Length);
             Assert.Equal(messageCount, spyOrderV2MessageHandler.ProcessedMessages.Length);
+        }
+
+        [Fact]
+        public async Task WithServiceBusRouting_WithMessageHandlerWithDifferentJobId_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var collection = new ServiceBusMessageHandlerCollection(services) { JobId = Guid.NewGuid().ToString() };
+            collection.WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>();
+
+            // Act
+            services.AddServiceBusMessageRouting();
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            Order order = OrderGenerator.Generate();
+            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: Guid.NewGuid().ToString());
+            AzureServiceBusMessageContext context = message.GetMessageContext(jobId: Guid.NewGuid().ToString());
+            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None));
+            Assert.Contains("because none", exception.Message);
         }
 
         [Fact]

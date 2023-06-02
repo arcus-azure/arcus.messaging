@@ -822,12 +822,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var spyChannel = new InMemoryTelemetryChannel();
 
             var options = new WorkerOptions();
-            options.Configure(host => host.UseSerilog((context, config) =>
+            options.ConfigureSerilog(config =>
             {
-                config.MinimumLevel.Debug()
-                      .Enrich.FromLogContext()
-                      .WriteTo.ApplicationInsights(spySink);
-            }));
+                config.WriteTo.ApplicationInsights(spySink);
+            });
             options.AddServiceBusQueueMessagePump(conf => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
@@ -865,12 +863,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var spyChannel = new InMemoryTelemetryChannel();
 
             var options = new WorkerOptions();
-            options.Configure(host => host.UseSerilog((context, config) =>
+            options.ConfigureSerilog(config =>
             {
-                config.MinimumLevel.Debug()
-                      .Enrich.FromLogContext()
-                      .WriteTo.ApplicationInsights(spySink);
-            }));
+                config.WriteTo.ApplicationInsights(spySink);
+            });
             options.AddServiceBusQueueMessagePump(conf => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
@@ -905,16 +901,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             var spySink = new InMemoryLogSink();
             var options = new WorkerOptions();
-            options.Configure(host => host.UseSerilog((context, currentConfig) =>
+            options.ConfigureSerilog(config =>
             {
-                currentConfig
-                    .MinimumLevel.Debug()
-                    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                    .Enrich.FromLogContext()
-                    .Enrich.WithVersion()
-                    .Enrich.WithComponentName("Service Bus Queue Worker")
-                    .WriteTo.Sink(spySink);
-            }));
+                config.WriteTo.Sink(spySink);
+            });
             options.AddServiceBusQueueMessagePump(configuration => connectionString, opt =>
                    {
                        opt.AutoComplete = true;

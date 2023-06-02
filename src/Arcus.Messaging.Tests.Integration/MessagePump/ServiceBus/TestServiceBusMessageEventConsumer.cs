@@ -77,10 +77,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         /// Receives an event produced on the Azure Service Bus.
         /// </summary>
         /// <param name="transactionId">The ID to identity the produced event.</param>
+        /// <param name="timeoutInSeconds">The optional time-out in seconds for the event to be arrived.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="transactionId"/> is blank.</exception>
-        public OrderCreatedEventData ConsumeOrderEventForW3C(string transactionId)
+        public OrderCreatedEventData ConsumeOrderEventForW3C(string transactionId, int timeoutInSeconds = 60)
         {
             Guard.NotNullOrWhitespace(transactionId, nameof(transactionId), "Requires a non-blank transaction ID to identity the produced event on the Azure Service Bus");
+            Guard.NotLessThan(timeoutInSeconds, 0, nameof(timeoutInSeconds), "Requires a time-out in seconds of at least 1 second");
 
             // TODO: will be simplified, once all the message handlers are using the same event publishing (https://github.com/arcus-azure/arcus.messaging/issues/343).
             CloudEvent receivedEvent = _serviceBusEventConsumerHost.GetReceivedEvent((CloudEvent ev) =>
@@ -89,7 +91,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
                 var eventData = JsonConvert.DeserializeObject<OrderCreatedEventData>(data, new MessageCorrelationInfoJsonConverter());
 
                 return eventData.CorrelationInfo.TransactionId == transactionId;
-            }, timeout: TimeSpan.FromMinutes(1));
+            }, timeout: TimeSpan.FromSeconds(timeoutInSeconds));
             
             var data = receivedEvent.Data.ToString();
 

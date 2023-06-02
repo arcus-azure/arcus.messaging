@@ -138,7 +138,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure EventHubs message pump '{JobId}'", message.MessageId, JobId);
             }
 
-            AzureEventHubsMessageContext context = args.Data.GetMessageContext(_eventProcessor);
+            AzureEventHubsMessageContext context = args.Data.GetMessageContext(_eventProcessor, JobId);
             using (MessageCorrelationResult result = DetermineMessageCorrelation(args.Data))
             {
                 await _messageRouter.RouteMessageAsync(args.Data, context, result.CorrelationInfo, args.CancellationToken);
