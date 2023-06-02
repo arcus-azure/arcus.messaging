@@ -36,7 +36,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.True(await handler.ProcessMessageAsync(message, correctContext, correlationInfo, CancellationToken.None));
 
             var incorrectContext = new MessageContext("message-id", "other-job-id", new Dictionary<string, object>());
-            Assert.True(await handler.ProcessMessageAsync(message, incorrectContext, correlationInfo, CancellationToken.None));
+            Assert.False(await handler.ProcessMessageAsync(message, incorrectContext, correlationInfo, CancellationToken.None));
         }
 
         [Fact]
@@ -54,16 +54,16 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
 
             // Assert
             IServiceProvider provider = services.Services.BuildServiceProvider();
-            var handler = provider.GetRequiredService<FallbackMessageHandler<string, MessageContext>>();
+            var handler = provider.GetRequiredService<FallbackMessageHandler<string, TestMessageContext>>();
 
             var message = "message-body";
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
-            var correctContext = new MessageContext("message-id", jobId, new Dictionary<string, object>());
+            var correctContext = new TestMessageContext("message-id", jobId, new Dictionary<string, object>());
             Assert.True(await handler.ProcessMessageAsync(message, correctContext, correlationInfo, CancellationToken.None));
 
-            var incorrectContext = new MessageContext("message-id", "other-job-id", new Dictionary<string, object>());
-            Assert.True(await handler.ProcessMessageAsync(message, incorrectContext, correlationInfo, CancellationToken.None));
+            var incorrectContext = new TestMessageContext("message-id", "other-job-id", new Dictionary<string, object>());
+            Assert.False(await handler.ProcessMessageAsync(message, incorrectContext, correlationInfo, CancellationToken.None));
         }
 
         [Fact]
