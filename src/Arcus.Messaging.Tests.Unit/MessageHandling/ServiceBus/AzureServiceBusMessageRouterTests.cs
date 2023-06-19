@@ -86,8 +86,8 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             var handler1 = new PassThruServiceBusFallbackMessageHandler();
             var handler2 = new PassThruServiceBusFallbackMessageHandler();
-            collection1.WithServiceBusFallbackMessageHandler(provider => handler1);
             collection2.WithServiceBusFallbackMessageHandler(provider => handler2);
+            collection1.WithServiceBusFallbackMessageHandler(provider => handler1);
 
             IServiceProvider provider = services.BuildServiceProvider();
             var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
