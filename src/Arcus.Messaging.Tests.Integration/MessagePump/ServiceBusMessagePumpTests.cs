@@ -57,6 +57,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     {
         private readonly TestConfig _config;
         private readonly ILogger _logger;
+        private readonly ITestOutputHelper _outputWriter;
 
         private static readonly Faker BogusGenerator = new Faker();
 
@@ -66,6 +67,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public ServiceBusMessagePumpTests(ITestOutputHelper outputWriter)
         {
             _config = TestConfig.Create();
+            _outputWriter = outputWriter;
             _logger = new XunitTestLogger(outputWriter);
         }
 
@@ -600,22 +602,24 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusQueueMessageHandlingForW3CAsync(options);
         }
 
-        [Fact]
+        [Fact(Skip = ".NET application cannot start multiple blocking background tasks, see https://github.com/dotnet/runtime/issues/36063")]
         public async Task ServiceBusMessagePumpWithQueueAndTopic_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
-            options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true);
-            options.AddServiceBusTopicMessagePump(
-                       "Test-Receive-All-Topic-And-Queue", 
-                       configuration => _config.GetServiceBusConnectionString(ServiceBusEntityType.Topic), 
-                       opt => opt.AutoComplete = true)
+            options.AddEventGridPublisher(_config);
+            options.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
-            
+            options.AddServiceBusTopicMessagePump(
+                "Test-Receive-All-Topic-And-Queue",
+                configuration => _config.GetServiceBusConnectionString(ServiceBusEntityType.Topic),
+                opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+
             // Act / Assert
             await TestServiceBusQueueMessageHandlingForW3CAsync(options);
+            await TestServiceBusTopicMessageHandlingForW3CAsync(options);
         }
 
         [Fact]
@@ -1022,6 +1026,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             WorkerOptions options,
             ServiceBusEntityType entityType)
         {
+            options.AddXunitTestLogging(_outputWriter);
             var traceParent = TraceParent.Generate();
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(traceParent);
 
