@@ -433,6 +433,10 @@ public class Startup
                 // (default: W3C).
                 options.Correlation.Format = MessageCorrelationFormat.Hierarchical;
 
+                // The name of the operation used when tracking the request telemetry.
+                // (default: Process)
+                options.Correlation.OperationName = "Order";
+
                 // The name of the Azure Service Bus message property that has the transaction ID.
                 // ⚠ Only used when the correlation format is configured as Hierarchical.
                 // (default: Transaction-Id).
@@ -478,6 +482,10 @@ public class Startup
                 // The format of the message correlation used when receiving Azure Service Bus messages.
                 // (default: W3C).
                 options.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+
+                // The name of the operation used when tracking the request telemetry.
+                // (default: Process)
+                options.Correlation.OperationName = "Order";
 
                 // The name of the Azure Service Bus message property that has the transaction ID.
                 // ⚠ Only used when the correlation format is configured as Hierarchical.

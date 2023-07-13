@@ -93,5 +93,32 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             Assert.Equal(operationParentId, options.Correlation.OperationParentIdPropertyName);
         }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void OperationName_ValueIsBlank_Throws(string operationName)
+        {
+            // Arrange
+            var options = new AzureServiceBusMessagePumpOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() =>
+                options.Correlation.OperationName = operationName);
+        }
+
+        [Fact]
+        public void OperationName_ValueNotBlank_Succeeds()
+        {
+            // Arrange
+            var options = new AzureServiceBusMessagePumpOptions();
+            var operationName = $"operation-name-{Guid.NewGuid()}";
+
+            // Act
+            options.Correlation.OperationName = operationName;
+
+            // Assert
+            Assert.Equal(operationName, options.Correlation.OperationName);
+        }
+
     }
 }

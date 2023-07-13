@@ -8,7 +8,6 @@ using Arcus.Observability.Telemetry.Core;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
-using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -141,7 +140,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     Logger.LogServiceBusRequest(
                         serviceBusNamespace: "<not-available>", 
                         entityName: "<not-available>", 
-                        operationName: null, 
+                        Options.Correlation.OperationName, 
                         isSuccessful, 
                         measurement, 
                         ServiceBusEntityType.Unknown);
@@ -262,7 +261,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 {
                     string entityName = messageReceiver?.EntityPath ?? "<not-available>";
                     string serviceBusNamespace = messageReceiver?.FullyQualifiedNamespace ?? "<not-available>";
-                    Logger.LogServiceBusRequest(serviceBusNamespace, entityName, operationName: null, isSuccessful, measurement, ServiceBusEntityType.Unknown);
+                    Logger.LogServiceBusRequest(serviceBusNamespace, entityName, Options.Correlation.OperationName, isSuccessful, measurement, ServiceBusEntityType.Unknown);
                 }
             }
         }

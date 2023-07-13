@@ -828,7 +828,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                       .Enrich.FromLogContext()
                       .WriteTo.ApplicationInsights(spySink);
             }));
-            options.AddServiceBusQueueMessagePump(conf => connectionString, opt => opt.AutoComplete = true)
+            string operationName = BogusGenerator.Lorem.Word();
+            options.AddServiceBusQueueMessagePump(conf => connectionString, opt =>
+                   {
+                       opt.Correlation.OperationName = operationName;
+                       opt.AutoComplete = true;
+                   })
                    .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
 
@@ -845,7 +850,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 // Assert
                 AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
                 {
-                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process" && r.Context.Operation.Id == traceParent.TransactionId);
+                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName && r.Context.Operation.Id == traceParent.TransactionId);
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault" && d.Context.Operation.Id == traceParent.TransactionId);
                     DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL" && d.Context.Operation.Id == traceParent.TransactionId);
                     
@@ -871,7 +876,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                       .Enrich.FromLogContext()
                       .WriteTo.ApplicationInsights(spySink);
             }));
-            options.AddServiceBusQueueMessagePump(conf => connectionString, opt => opt.AutoComplete = true)
+            string operationName = BogusGenerator.Lorem.Word();
+            options.AddServiceBusQueueMessagePump(conf => connectionString, opt =>
+                   {
+                       opt.Correlation.OperationName = operationName;
+                       opt.AutoComplete = true;
+                   })
                    .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
 
@@ -887,7 +897,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 // Assert
                 AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
                 {
-                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process");
+                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName);
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault");
                     DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL");
                     

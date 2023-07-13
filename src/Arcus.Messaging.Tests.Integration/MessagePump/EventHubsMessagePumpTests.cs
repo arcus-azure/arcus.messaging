@@ -328,7 +328,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                       .Enrich.FromLogContext()
                       .WriteTo.ApplicationInsights(spySink);
             }));
-            AddEventHubsMessagePump(options, eventHubs)
+            string operationName = BogusGenerator.Lorem.Word();
+            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Correlation.OperationName = operationName)
                 .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
 
@@ -348,7 +349,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 // Assert
                 AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
                 {
-                    RequestTelemetry requestViaArcusEventHubs = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process" && r.Context.Operation.Id == traceParent.TransactionId);
+                    RequestTelemetry requestViaArcusEventHubs = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName && r.Context.Operation.Id == traceParent.TransactionId);
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault" && d.Context.Operation.Id == traceParent.TransactionId);
                     DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL" && d.Context.Operation.Id == traceParent.TransactionId);
                     
@@ -358,7 +359,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
         }
 
-         [Fact]
+        [Fact]
         public async Task EventHubsMessagePump_WithW3CCorrelationFormatForNewParent_AutomaticallyTracksMicrosoftDependencies()
         {
             // Arrange
@@ -372,7 +373,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }));
 
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
-            AddEventHubsMessagePump(options, eventHubs)
+            string operationName = BogusGenerator.Lorem.Word();
+            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Correlation.OperationName = operationName)
                 .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
 
             var spyChannel = new InMemoryTelemetryChannel();
@@ -398,7 +400,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
                     bool correlationSuccess = spySink.Telemetries.Any(t =>
                     {
-                        return t is RequestTelemetry r && r.Name == "Process" 
+                        return t is RequestTelemetry r && r.Name == operationName 
                                && dependenciesViaArcusKeyVault.SingleOrDefault(d => d.Context.Operation.ParentId == r.Id) != null
                                && dependenciesViaMicrosoftSql.SingleOrDefault(d => d.Context.Operation.ParentId == r.Id) != null;
                     });

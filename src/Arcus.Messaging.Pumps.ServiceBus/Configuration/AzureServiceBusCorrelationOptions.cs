@@ -9,6 +9,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// Represents the user-configurable options to control the correlation information tracking
     /// during the receiving of the Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
     /// </summary>
+    [Obsolete("Will use the " + nameof(MessageCorrelationOptions) + " in the future")]
     public class AzureServiceBusCorrelationOptions
     {
         private readonly MessageCorrelationOptions _correlationOptions;
@@ -38,6 +39,20 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         {
             get => _correlationOptions.Format;
             set => _correlationOptions.Format = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the name of the operation that is used when a request telemetry is tracked - default 'Process' is used as operation name.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
+        public string OperationName
+        {
+            get => _correlationOptions.OperationName;
+            set
+            {
+                Guard.NotNullOrWhitespace(value, nameof(value), "Operation name for the message cannot be blank");
+                _correlationOptions.OperationName = value;
+            }
         }
 
         /// <summary>

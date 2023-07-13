@@ -9,7 +9,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     public class MessageCorrelationOptions
     {
         private string _transactionIdPropertyName = PropertyNames.TransactionId,
-                       _operationParentIdPropertyName = PropertyNames.OperationParentId;
+                       _operationParentIdPropertyName = PropertyNames.OperationParentId,
+                       _operationName;
 
         /// <summary>
         /// Gets or sets the message correlation format of the received message.
@@ -47,6 +48,20 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             {
                 Guard.NotNullOrWhitespace(value, nameof(value), "Operation parent ID message property name for the message cannot be blank");
                 _operationParentIdPropertyName = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the name of the operation that is used when a request telemetry is tracked - default 'Process' is used as operation name.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
+        public string OperationName
+        {
+            get => _operationName;
+            set
+            {
+                Guard.NotNullOrWhitespace(value, nameof(value), "Operation name for the message cannot be blank");
+                _operationName = value;
             }
         }
     }

@@ -28,5 +28,16 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => options.OperationParentIdPropertyName = operationParentIdPropertyName);
         }
+
+        [Theory]
+        [ClassData(typeof(Blanks))]
+        public void Set_BlankOperationName_Fails(string operationName)
+        {
+            // Arrange
+            var options = new MessageCorrelationOptions();
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(() => options.OperationName = operationName);
+        }
     }
 }
