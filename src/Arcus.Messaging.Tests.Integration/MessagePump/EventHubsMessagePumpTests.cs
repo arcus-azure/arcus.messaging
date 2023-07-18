@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -27,6 +28,7 @@ using Arcus.Testing.Logging;
 using Azure.Messaging.EventGrid;
 using Azure.Messaging.EventHubs;
 using Bogus;
+using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Azure;
@@ -337,8 +339,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var spyChannel = new InMemoryTelemetryChannel();
 
             var options = new WorkerOptions();
-            options.ConfigureSerilog(config => config.WriteTo.ApplicationInsights(spySink))
-                   .Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
+            options.ConfigureSerilog(config => config.WriteTo.ApplicationInsights(spySink));
 
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
             AddEventHubsMessagePump(options, eventHubs)
@@ -354,6 +355,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await using (var worker = await Worker.StartNewAsync(options))
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
             {
+                worker.Services.GetRequiredService<TelemetryConfiguration>().TelemetryChannel = spyChannel;
+
                 // Act
                 await producer.ProduceAsync(eventData);
 
@@ -378,8 +381,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var spyChannel = new InMemoryTelemetryChannel();
 
             var options = new WorkerOptions();
-            options.ConfigureSerilog(config => config.WriteTo.ApplicationInsights(spySink))
-                   .Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
+            options.ConfigureSerilog(config => config.WriteTo.ApplicationInsights(spySink));
 
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
             AddEventHubsMessagePump(options, eventHubs)
@@ -393,6 +395,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await using (var worker = await Worker.StartNewAsync(options))
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
             {
+                worker.Services.GetRequiredService<TelemetryConfiguration>().TelemetryChannel = spyChannel;
+
                 // Act
                 await producer.ProduceAsync(eventData);
 
