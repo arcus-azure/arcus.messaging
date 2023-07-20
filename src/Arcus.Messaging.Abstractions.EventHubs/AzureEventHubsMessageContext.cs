@@ -16,7 +16,8 @@ namespace Arcus.Messaging.Abstractions.EventHubs
             EventData eventData, 
             string eventHubsName,
             string consumerGroup,
-            string eventHubsNamespace) : base(eventData.MessageId ?? Guid.NewGuid().ToString(), eventData.Properties)
+            string eventHubsNamespace,
+            string jobId) : base(eventData.MessageId ?? Guid.NewGuid().ToString(), jobId, eventData.Properties)
         {
             EventHubsName = eventHubsName;
             ConsumerGroup = consumerGroup;
@@ -119,6 +120,7 @@ namespace Arcus.Messaging.Abstractions.EventHubs
         /// <param name="message">The consumed Azure EventHubs event to describe the messaging context.</param>
         /// <param name="eventProcessor">The Azure EventHubs processor that received the <paramref name="message"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> or <paramref name="eventProcessor"/> is <c>null</c>.</exception>
+        [Obsolete("Use the other factory method with the job ID to link this message context to a message pump")]
         public static AzureEventHubsMessageContext CreateFrom(
             EventData message,
             EventProcessorClient eventProcessor)
@@ -130,7 +132,8 @@ namespace Arcus.Messaging.Abstractions.EventHubs
                 message,
                 eventProcessor.FullyQualifiedNamespace,
                 eventProcessor.ConsumerGroup,
-                eventProcessor.EventHubName);
+                eventProcessor.EventHubName,
+                "<not-defined>");
         }
 
         /// <summary>
@@ -147,6 +150,7 @@ namespace Arcus.Messaging.Abstractions.EventHubs
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="eventHubsNamespace"/>, <paramref name="consumerGroup"/>, or <paramref name="eventHubsName"/> is blank.
         /// </exception>
+        [Obsolete("Use the other factory method with the job ID to link this message context to a message pump")]
         public static AzureEventHubsMessageContext CreateFrom(
             EventData message,
             string eventHubsNamespace,
@@ -158,11 +162,64 @@ namespace Arcus.Messaging.Abstractions.EventHubs
             Guard.NotNullOrWhitespace(consumerGroup, nameof(consumerGroup), "Requires a non-blank Azure EventHubs consumer group to relate the messaging context to the event message");
             Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank Azure EventHubs name to relate the messaging context to the event message");
 
-            return new AzureEventHubsMessageContext(
+            return CreateFrom(message, eventHubsNamespace, consumerGroup, eventHubsName, "<not-defined>");
+        }
+
+        /// <summary>
+        /// Creates an <see cref="AzureEventHubsMessageContext"/> instance based on the information from the Azure EventHubs <paramref name="message"/>
+        /// and <paramref name="eventProcessor"/> from where the message originates from.
+        /// </summary>
+        /// <param name="message">The consumed Azure EventHubs event to describe the messaging context.</param>
+        /// <param name="eventProcessor">The Azure EventHubs processor that received the <paramref name="message"/>.</param>
+        /// <param name="jobId">The unique identifier of the message pump that processes the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> or <paramref name="eventProcessor"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
+        public static AzureEventHubsMessageContext CreateFrom(
+            EventData message,
+            EventProcessorClient eventProcessor,
+            string jobId)
+        {
+            Guard.NotNull(message, nameof(message), "Requires an Azure EventHubs event data message to retrieve the information to create a messaging context for this message");
+            Guard.NotNull(eventProcessor, nameof(eventProcessor), "Requires an Azure EventHubs event processor to retrieve the information to create a messaging context for the consumed event");
+            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a non-blank job ID to link this message context to a message pump that processes the event message");
+
+            return CreateFrom(
                 message,
-                eventHubsName,
-                consumerGroup,
-                eventHubsNamespace);
+                eventProcessor.FullyQualifiedNamespace,
+                eventProcessor.ConsumerGroup,
+                eventProcessor.EventHubName,
+                jobId);
+        }
+
+        /// <summary>
+        /// Creates an <see cref="AzureEventHubsMessageContext"/> instance based on the information from the Azure EventHubs <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The consumed Azure EventHubs event to describe the messaging context.</param>
+        /// <param name="eventHubsNamespace">
+        ///     The fully qualified Event Hubs namespace that the processor is associated with.
+        ///     This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        /// </param>
+        /// <param name="consumerGroup">The name of the consumer group this event processor is associated with.</param>
+        /// <param name="eventHubsName"> The name of the Event Hub that the processor is connected to, specific to the EventHubs namespace that contains it.</param>
+        /// <param name="jobId">The unique identifier of the message pump that processes the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="eventHubsNamespace"/>, <paramref name="consumerGroup"/>, <paramref name="eventHubsName"/>, or <paramref name="jobId"/> is blank.
+        /// </exception>
+        public static AzureEventHubsMessageContext CreateFrom(
+            EventData message,
+            string eventHubsNamespace,
+            string consumerGroup,
+            string eventHubsName,
+            string jobId)
+        {
+            Guard.NotNull(message, nameof(message), "Requires an Azure EventHubs event data message to retrieve the information to create a messaging context for this message");
+            Guard.NotNullOrWhitespace(eventHubsNamespace, nameof(eventHubsNamespace), "Requires a non-blank Azure EventHubs fully qualified namespace to relate the messaging context to the event message");
+            Guard.NotNullOrWhitespace(consumerGroup, nameof(consumerGroup), "Requires a non-blank Azure EventHubs consumer group to relate the messaging context to the event message");
+            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank Azure EventHubs name to relate the messaging context to the event message");
+            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a non-blank job ID to link this message context to a message pump that processes the event message");
+
+            return new AzureEventHubsMessageContext(message, eventHubsName, consumerGroup, eventHubsNamespace, jobId);
         }
     }
 }

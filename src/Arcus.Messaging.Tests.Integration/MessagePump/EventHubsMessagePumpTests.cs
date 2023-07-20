@@ -5,8 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Abstractions.EventHubs;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions;
@@ -24,12 +24,11 @@ using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.EventHubs.Core.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
-using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Arcus.Testing.Logging;
 using Azure.Messaging.EventGrid;
 using Azure.Messaging.EventHubs;
 using Bogus;
-using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Azure;
@@ -37,8 +36,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Polly;
-using Polly.Retry;
 using Serilog;
 using Xunit;
 using Xunit.Abstractions;
@@ -50,10 +47,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     [Trait("Category", "Integration")]
     public class EventHubsMessagePumpTests : IAsyncLifetime
     {
+        private readonly ITestOutputHelper _outputWriter;
         private readonly TestConfig _config;
         private readonly ILogger _logger;
-
-        private static readonly Faker BogusGenerator = new Faker();
 
         private TemporaryBlobStorageContainer _blobStorageContainer;
 
@@ -62,6 +58,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         /// </summary>
         public EventHubsMessagePumpTests(ITestOutputHelper outputWriter)
         {
+            _outputWriter = outputWriter;
             _config = TestConfig.Create();
             _logger = new XunitTestLogger(outputWriter);
         }
@@ -101,6 +98,25 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             // Act / Assert
             await TestEventHubsMessageHandlingForW3CAsync(options, eventHubs);
+        }
+
+        [Fact]
+        public async Task EventHubsMessagePumpWithoutSameJobId_PublishesMessage_MessageFailsToBeProcessed()
+        {
+            // Arrange
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            var options = new WorkerOptions();
+            EventHubsMessageHandlerCollection collection = AddEventHubsMessagePump(options, eventHubs);
+            Assert.False(string.IsNullOrWhiteSpace(collection.JobId));
+
+            var otherCollection = new EventHubsMessageHandlerCollection(new ServiceCollection());
+            otherCollection.JobId = Guid.NewGuid().ToString();
+
+            otherCollection.WithEventHubsMessageHandler<TestEventHubsMessageHandler<Order>, Order>(messageContextFilter: context => false)
+                           .WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+
+            // Act / Assert
+            await TestFailedEventHubsMessageHandlingForW3CAsync(options, eventHubs);
         }
 
         [Fact]
@@ -170,6 +186,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             AddEventHubsMessagePump(options, eventHubs)
                 .WithEventHubsMessageHandler<TestEventHubsMessageHandler<Shipment>, Shipment>()
+                .WithFallbackMessageHandler<SabotageEventHubsFallbackMessageHandler, AzureEventHubsMessageContext>()
                 .WithFallbackMessageHandler<OrderEventHubsFallbackMessageHandler>();
 
             // Act / Assert
@@ -294,9 +311,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             var traceParent = TraceParent.Generate();
             EventData expected = CreateOrderEventDataMessageForW3C(traceParent);
-            
-            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
-            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
+
+            var producer = new TestEventHubsMessageProducer(
+                eventHubs.EventHubsConnectionString, 
+                eventHubs.GetEventHubsName(IntegrationTestType.SelfContained));
 
             await using (var worker = await Worker.StartNewAsync(options))
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
@@ -317,31 +335,28 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task EventHubsMessagePump_WithW3CCorrelationFormat_AutomaticallyTracksMicrosoftDependencies()
         {
             // Arrange
-            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
             var spySink = new InMemoryApplicationInsightsTelemetryConverter();
             var spyChannel = new InMemoryTelemetryChannel();
 
             var options = new WorkerOptions();
-            options.Configure(host => host.UseSerilog((context, config) =>
-            {
-                config.MinimumLevel.Debug()
-                      .Enrich.FromLogContext()
-                      .WriteTo.ApplicationInsights(spySink);
-            }));
+            options.ConfigureSerilog(config => config.WriteTo.ApplicationInsights(spySink));
+
+            EventHubsConfig eventHubs = _config.GetEventHubsConfig();
             AddEventHubsMessagePump(options, eventHubs)
                 .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
-            options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
 
-            Order order = OrderGenerator.Generate();
             var traceParent = TraceParent.Generate();
-            var eventData = new EventData(BinaryData.FromObjectAsJson(order)).WithDiagnosticId(traceParent);
+            var eventData = new EventData(BinaryData.FromObjectAsJson(OrderGenerator.Generate())).WithDiagnosticId(traceParent);
 
-            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
-            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
+            var producer = new TestEventHubsMessageProducer(
+                eventHubs.EventHubsConnectionString, 
+                eventHubs.GetEventHubsName(IntegrationTestType.SelfContained));
 
             await using (var worker = await Worker.StartNewAsync(options))
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
             {
+                worker.Services.GetRequiredService<TelemetryConfiguration>().TelemetryChannel = spyChannel;
+
                 // Act
                 await producer.ProduceAsync(eventData);
 
@@ -363,30 +378,25 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var spySink = new InMemoryApplicationInsightsTelemetryConverter();
+            var spyChannel = new InMemoryTelemetryChannel();
+
             var options = new WorkerOptions();
-            options.Configure(host => host.UseSerilog((context, config) =>
-            {
-                config.MinimumLevel.Debug()
-                      .Enrich.FromLogContext()
-                      .WriteTo.ApplicationInsights(spySink);
-            }));
+            options.ConfigureSerilog(config => config.WriteTo.ApplicationInsights(spySink));
 
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
             AddEventHubsMessagePump(options, eventHubs)
                 .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
 
-            var spyChannel = new InMemoryTelemetryChannel();
-            options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
-
-            Order order = OrderGenerator.Generate();
-            var eventData = new EventData(BinaryData.FromObjectAsJson(order));
-
-            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
-            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
+            var eventData = new EventData(BinaryData.FromObjectAsJson(OrderGenerator.Generate()));
+            var producer = new TestEventHubsMessageProducer(
+                eventHubs.EventHubsConnectionString, 
+                eventHubs.GetEventHubsName(IntegrationTestType.SelfContained));
 
             await using (var worker = await Worker.StartNewAsync(options))
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
             {
+                worker.Services.GetRequiredService<TelemetryConfiguration>().TelemetryChannel = spyChannel;
+
                 // Act
                 await producer.ProduceAsync(eventData);
 
@@ -414,7 +424,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    storageAccountConnectionStringSecretName = "Arcus_StorageAccount_ConnectionString";
 
             return options.AddEventGridPublisher(_config)
-                          .ConfigureLogging(_logger)
+                          .AddXunitTestLogging(_outputWriter)
                           .AddSecretStore(stores => stores.AddInMemory(new Dictionary<string, string>
                           {
                               [eventHubsConnectionStringSecretName] = eventHubs.EventHubsConnectionString,
@@ -430,8 +440,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string operationParentIdPropertyName = PropertyNames.OperationParentId)
         {
             EventData expected = CreateOrderEventDataMessageForHierarchical(transactionIdPropertyName, operationParentIdPropertyName);
-            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
-            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
+            var producer = new TestEventHubsMessageProducer(
+                eventHubs.EventHubsConnectionString, 
+                eventHubs.GetEventHubsName(IntegrationTestType.SelfContained));
 
             await using (var worker = await Worker.StartNewAsync(options))
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
@@ -451,9 +462,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             var traceParent = TraceParent.Generate();
             EventData expected = CreateOrderEventDataMessageForW3C(traceParent);
-            
-            string eventHubsName = eventHubs.GetEventHubsName(IntegrationTestType.SelfContained);
-            var producer = new TestEventHubsMessageProducer(eventHubs.EventHubsConnectionString, eventHubsName);
+
+            var producer = new TestEventHubsMessageProducer(
+                eventHubs.EventHubsConnectionString, 
+                eventHubs.GetEventHubsName(IntegrationTestType.SelfContained));
 
             await using (var worker = await Worker.StartNewAsync(options))
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
@@ -464,6 +476,28 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 // Assert
                 OrderCreatedEventData actual = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
                 AssertReceivedOrderEventDataForW3C(expected, actual, traceParent);
+            }
+        }
+
+        private async Task TestFailedEventHubsMessageHandlingForW3CAsync(
+            WorkerOptions options,
+            EventHubsConfig eventHubs)
+        {
+            var traceParent = TraceParent.Generate();
+            EventData expected = CreateOrderEventDataMessageForW3C(traceParent);
+
+            var producer = new TestEventHubsMessageProducer(
+                eventHubs.EventHubsConnectionString, 
+                eventHubs.GetEventHubsName(IntegrationTestType.SelfContained));
+
+            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
+            {
+                // Act
+                await producer.ProduceAsync(expected);
+
+                // Assert
+                Assert.Throws<TimeoutException>(() => consumer.ConsumeOrderEventForW3C(traceParent.TransactionId, timeoutInSeconds: 30));
             }
         }
 

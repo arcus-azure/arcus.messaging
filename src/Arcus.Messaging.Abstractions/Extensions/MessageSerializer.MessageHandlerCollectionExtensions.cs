@@ -2,7 +2,6 @@
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using GuardNet;
-using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -100,13 +99,9 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
             Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
 
-            services.Services.AddTransient(
-                serviceProvider => MessageHandler.Create(
-                    messageHandler: implementationFactory(arg: serviceProvider),
-                    messageBodySerializer: messageBodySerializer,
-                    logger: serviceProvider.GetService<ILogger<IMessageHandler<TMessage, TMessageContext>>>()));
-
-            return services;
+            return services.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+                messageBodySerializerImplementationFactory: _ => messageBodySerializer, 
+                messageHandlerImplementationFactory: implementationFactory);
         }
 
         /// <summary>
@@ -199,12 +194,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer instance to deserialize incoming message for the message handler");
             Guard.NotNull(messageHandlerImplementationFactory, nameof(messageHandlerImplementationFactory), "Requires a function to create the message handler with dependent services");
 
-            services.Services.AddTransient(
-                serviceProvider => MessageHandler.Create(
-                    messageHandler: messageHandlerImplementationFactory(serviceProvider),
-                    messageBodySerializer: messageBodySerializerImplementationFactory(serviceProvider),
-                    logger: serviceProvider.GetService<ILogger<IMessageHandler<TMessage, TMessageContext>>>()));
-
+            services.AddMessageHandler(messageHandlerImplementationFactory, implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory);
             return services;
         }
     }

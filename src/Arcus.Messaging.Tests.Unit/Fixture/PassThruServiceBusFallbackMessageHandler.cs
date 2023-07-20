@@ -14,6 +14,11 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
     public class PassThruServiceBusFallbackMessageHandler : IAzureServiceBusFallbackMessageHandler
     {
         /// <summary>
+        /// Gets the flag indicating whether this fallback message handler has processed a message.
+        /// </summary>
+        public bool IsProcessed { get; private set; }
+
+        /// <summary>
         ///     Process a new message that was received
         /// </summary>
         /// <param name="message">Message that was received</param>
@@ -29,6 +34,7 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
+            IsProcessed = true;
             return Task.CompletedTask;
         }
     }

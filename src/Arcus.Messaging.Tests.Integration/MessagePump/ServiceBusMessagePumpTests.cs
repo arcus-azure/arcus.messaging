@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,23 +29,17 @@ using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Azure.Security.KeyVault.Secrets;
-using Bogus;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.ApplicationInsights.WorkerService;
 using Microsoft.Azure.Management.ServiceBus.Models;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Polly;
 using Serilog;
 using Serilog.Events;
 using Xunit;
 using Xunit.Abstractions;
-using RetryPolicy = Polly.Retry.RetryPolicy;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
-using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
@@ -57,8 +50,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     {
         private readonly TestConfig _config;
         private readonly ILogger _logger;
-
-        private static readonly Faker BogusGenerator = new Faker();
+        private readonly ITestOutputHelper _outputWriter;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessagePumpTests"/> class.
@@ -66,6 +58,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public ServiceBusMessagePumpTests(ITestOutputHelper outputWriter)
         {
             _config = TestConfig.Create();
+            _outputWriter = outputWriter;
             _logger = new XunitTestLogger(outputWriter);
         }
 
@@ -89,14 +82,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
             var traceParent = TraceParent.Generate();
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(traceParent, encoding);
 
             var producer = TestServiceBusMessageProducer.CreateForQueue(_config);
-            await using (var worker = await Worker.StartNewAsync(options))
+            await using (var _ = await Worker.StartNewAsync(options))
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
             {
                 // Act
@@ -117,8 +110,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
                    .AddServiceBusTopicMessagePump(
-                       "Test-Receive-All-Topic-Only",
-                       configuration => connectionString,
+                       subscriptionName: Guid.NewGuid().ToString(),
+                       _ => connectionString,
                        opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
@@ -126,7 +119,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(traceParnet, encoding);
 
             var producer = TestServiceBusMessageProducer.CreateForTopic(_config);
-            await using (var worker = await Worker.StartNewAsync(options)) 
+            await using (var _ = await Worker.StartNewAsync(options)) 
             await using (var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
             {
                 // Act
@@ -145,7 +138,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt =>
+                   .AddServiceBusQueueMessagePump(_ => connectionString, opt =>
                    {
                        opt.AutoComplete = true;
                        opt.Correlation.Format = MessageCorrelationFormat.Hierarchical;
@@ -163,7 +156,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
             // Act / Assert
@@ -180,7 +173,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(properties.EntityPath, configuration => namespaceConnectionString, opt => opt.AutoComplete = true)
+                   .AddServiceBusQueueMessagePump(properties.EntityPath, _ => namespaceConnectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
             
             // Act / Assert
@@ -195,8 +188,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
                    .AddServiceBusTopicMessagePump(
-                        "Test-Receive-All-Topic-Only", 
-                        configuration => connectionString, 
+                        subscriptionName: Guid.NewGuid().ToString(),
+                        _ => connectionString, 
                         opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
             
@@ -218,7 +211,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddEventGridPublisher(_config)
                    .AddServiceBusTopicMessagePump(
                        subscriptionName, 
-                       configuration => connectionString, 
+                       _ => connectionString, 
                        opt => opt.TopicSubscription = topicSubscription)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
             
@@ -248,7 +241,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddEventGridPublisher(_config)
                    .AddServiceBusTopicMessagePump(
                        $"MySubscription-{Guid.NewGuid():N}",
-                       configuration => _config.GetServiceBusConnectionString(entityType),
+                       _ => _config.GetServiceBusConnectionString(entityType),
                        opt =>
                        {
                            opt.AutoComplete = true;
@@ -281,7 +274,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddEventGridPublisher(_config)
                    .AddServiceBusTopicMessagePump(
                        "Test-Receive-All-Topic-Only-with-an-azure-servicebus-topic-subscription-name-over-50-characters", 
-                       configuration => connectionString, 
+                       _ => connectionString, 
                        opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
             
@@ -301,8 +294,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddEventGridPublisher(_config)
                    .AddServiceBusTopicMessagePump(
                        topicName: properties.EntityPath,
-                       subscriptionName: "Test-Receive-All-Topic-Only",
-                       getConnectionStringFromConfigurationFunc: configuration => namespaceConnectionString,
+                       subscriptionName: Guid.NewGuid().ToString(),
+                       getConnectionStringFromConfigurationFunc: _ => namespaceConnectionString,
                        configureMessagePump: opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
@@ -319,7 +312,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
                    .AddServiceBusQueueMessagePump(
-                       configuration => connectionString, 
+                       _ => connectionString, 
                        opt => opt.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore)
                    .WithServiceBusMessageHandler<OrderV2AzureServiceBusMessageHandler, OrderV2>();
 
@@ -345,7 +338,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 options.AddEventGridPublisher(_config)
                        .AddServiceBusTopicMessagePumpUsingManagedIdentity(
                            topicName: properties.EntityPath,
-                           subscriptionName: "Test-Receive-All-Topic-Only", 
+                           subscriptionName: Guid.NewGuid().ToString(),
                            serviceBusNamespace: properties.FullyQualifiedNamespace,
                            clientId: servicePrincipal.ClientId,
                            configureMessagePump: opt => opt.AutoComplete = true)
@@ -364,8 +357,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
                    .AddServiceBusTopicMessagePump(
-                       "Test-Receive-All-Topic-Only", 
-                       configuration => connectionString, 
+                       subscriptionName: Guid.NewGuid().ToString(), 
+                       _ => connectionString, 
                        opt => opt.AutoComplete = false)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusCompleteMessageHandler, Order>();
             
@@ -381,7 +374,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
                    .AddServiceBusQueueMessagePump(
-                       configuration => connectionString, 
+                       _ => connectionString, 
                        opt => opt.AutoComplete = false)
                    .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
                    .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
@@ -399,7 +392,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
                    .AddServiceBusQueueMessagePump(
-                       configuration => connectionString,
+                       _ => connectionString,
                        opt =>
                        {
                            opt.AutoComplete = true;
@@ -460,7 +453,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
                    .AddServiceBusQueueMessagePump(
-                        configuration => connectionString, 
+                        _ => connectionString, 
                         opt => opt.AutoComplete = false)
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
                    .WithServiceBusFallbackMessageHandler<OrdersFallbackCompleteMessageHandler>();
@@ -476,7 +469,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
                     .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(messageBodySerializerImplementationFactory: serviceProvider =>
                     {
                         var logger = serviceProvider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
@@ -494,7 +487,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
+                   .AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
@@ -509,8 +502,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.ContainsKey("NotExisting"), body => false)
+                   .AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.ContainsKey("NotExisting"), _ => false)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>(
                         context => context.Properties["Topic"].ToString() == "Orders", 
                         body => body.Id != null);
@@ -539,10 +532,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => connectionString, opt => opt.AutoComplete = true)
+                   .AddServiceBusTopicMessagePump(subscriptionName: Guid.NewGuid().ToString(), _ => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Customers")
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Orders")
-                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext context) => false);
+                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
 
             var traceParent = TraceParent.Generate();
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(traceParent);
@@ -568,10 +561,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only", configuration => connectionString, opt => opt.AutoComplete = true)
+                   .AddServiceBusTopicMessagePump(subscriptionName: Guid.NewGuid().ToString(), _ => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>((Customer body) => body is null)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>((Order body) => body.Id != null)
-                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order body) => false);
+                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order _) => false);
 
             // Act / Assert
             await TestServiceBusTopicMessageHandlingForW3CAsync(options);
@@ -584,9 +577,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(messageContextFilter: context => false)
-                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(messageBodyFilter: message => true)
+                   .AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(messageContextFilter: _ => false)
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(messageBodyFilter: _ => true)
                    .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(
                        messageContextFilter: context => context != null,
                        messageBodySerializerImplementationFactory: serviceProvider =>
@@ -600,22 +593,24 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusQueueMessageHandlingForW3CAsync(options);
         }
 
-        [Fact]
+        [Fact(Skip = ".NET application cannot start multiple blocking background tasks, see https://github.com/dotnet/runtime/issues/36063")]
         public async Task ServiceBusMessagePumpWithQueueAndTopic_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
-            options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true);
-            options.AddServiceBusTopicMessagePump(
-                       "Test-Receive-All-Topic-And-Queue", 
-                       configuration => _config.GetServiceBusConnectionString(ServiceBusEntityType.Topic), 
-                       opt => opt.AutoComplete = true)
+            options.AddEventGridPublisher(_config);
+            options.AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
-            
+            options.AddServiceBusTopicMessagePump(
+                subscriptionName: Guid.NewGuid().ToString(),
+                _ => _config.GetServiceBusConnectionString(ServiceBusEntityType.Topic),
+                opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+
             // Act / Assert
             await TestServiceBusQueueMessageHandlingForW3CAsync(options);
+            await TestServiceBusTopicMessageHandlingForW3CAsync(options);
         }
 
         [Fact]
@@ -625,8 +620,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
+                   .AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
                    .WithFallbackMessageHandler<OrdersFallbackMessageHandler>();
             
             // Act / Assert
@@ -640,8 +635,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
+                   .AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
                    .WithServiceBusFallbackMessageHandler<OrdersServiceBusFallbackMessageHandler>();
 
             // Act / Assert
@@ -654,7 +649,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = false)
+            options.AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = false)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusDeadLetterMessageHandler, Order>();
 
             var traceParent = TraceParent.Generate();
@@ -680,9 +675,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
             options.AddServiceBusQueueMessagePump(
-                       configuration => connectionString, 
+                       _ => connectionString, 
                        opt => opt.AutoComplete = false)
-                   .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>((AzureServiceBusMessageContext context) => true)
+                   .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>((AzureServiceBusMessageContext _) => true)
                    .WithServiceBusFallbackMessageHandler<OrdersAzureServiceBusDeadLetterFallbackMessageHandler>();
 
             var traceParent = TraceParent.Generate();
@@ -706,10 +701,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(configuration => connectionString, opt => opt.AutoComplete = false)
+            options.AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = false)
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties["Topic"].ToString() == "Customers")
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusDeadLetterMessageHandler, Order>(context => context.Properties["Topic"].ToString() == "Orders")
-                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext context) => false);
+                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
 
             var traceParent = TraceParent.Generate();
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(traceParent);
@@ -733,8 +728,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusTopicMessagePump("Test-Receive-All-Topic-Only",
-                       configuration => connectionString,
+                   .AddServiceBusTopicMessagePump(
+                       subscriptionName: Guid.NewGuid().ToString(), 
+                       _ => connectionString,
                        opt => opt.AutoComplete = false)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>();
             
@@ -750,8 +746,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
                    .AddServiceBusTopicMessagePump(
-                       "Test-Receive-All-Topic-Only", 
-                       configuration => connectionString, 
+                       subscriptionName: Guid.NewGuid().ToString(), 
+                       _ => connectionString, 
                        opt => opt.AutoComplete = false)
                    .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
                    .WithServiceBusFallbackMessageHandler<OrdersAzureServiceBusAbandonFallbackMessageHandler>();
@@ -768,11 +764,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
                    .AddServiceBusTopicMessagePump(
-                       "Test-Receive-All-Topic-Only", 
-                       configuration => connectionString, 
+                       subscriptionName: Guid.NewGuid().ToString(), 
+                       _ => connectionString, 
                        options => options.AutoComplete = false)
-                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
-                   .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>((AzureServiceBusMessageContext context) => true);
+                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>((AzureServiceBusMessageContext _) => true);
             
             // Act / Assert
             await TestServiceBusTopicMessageHandlingForW3CAsync(options);
@@ -787,11 +783,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
                    .AddServiceBusTopicMessagePump(
-                       "Test-Receive-All-Topic-Only", 
-                       configuration => connectionString, 
+                       subscriptionName: Guid.NewGuid().ToString(), 
+                       _ => connectionString, 
                        opt => opt.JobId = jobId)
-                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext context) => false)
-                   .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>((AzureServiceBusMessageContext context) => true);
+                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>((AzureServiceBusMessageContext _) => true);
 
             var traceParent = TraceParent.Generate();
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(traceParent);
@@ -822,13 +818,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var spyChannel = new InMemoryTelemetryChannel();
 
             var options = new WorkerOptions();
-            options.Configure(host => host.UseSerilog((context, config) =>
+            options.ConfigureSerilog(config =>
             {
-                config.MinimumLevel.Debug()
-                      .Enrich.FromLogContext()
-                      .WriteTo.ApplicationInsights(spySink);
-            }));
-            options.AddServiceBusQueueMessagePump(conf => connectionString, opt => opt.AutoComplete = true)
+                config.WriteTo.ApplicationInsights(spySink);
+            });
+            options.AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
 
@@ -865,13 +859,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var spyChannel = new InMemoryTelemetryChannel();
 
             var options = new WorkerOptions();
-            options.Configure(host => host.UseSerilog((context, config) =>
+            options.ConfigureSerilog(config =>
             {
-                config.MinimumLevel.Debug()
-                      .Enrich.FromLogContext()
-                      .WriteTo.ApplicationInsights(spySink);
-            }));
-            options.AddServiceBusQueueMessagePump(conf => connectionString, opt => opt.AutoComplete = true)
+                config.WriteTo.ApplicationInsights(spySink);
+            });
+            options.AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
 
@@ -905,17 +897,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             var spySink = new InMemoryLogSink();
             var options = new WorkerOptions();
-            options.Configure(host => host.UseSerilog((context, currentConfig) =>
+            options.ConfigureSerilog(config =>
             {
-                currentConfig
-                    .MinimumLevel.Debug()
-                    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                    .Enrich.FromLogContext()
-                    .Enrich.WithVersion()
-                    .Enrich.WithComponentName("Service Bus Queue Worker")
-                    .WriteTo.Sink(spySink);
-            }));
-            options.AddServiceBusQueueMessagePump(configuration => connectionString, opt =>
+                config.WriteTo.Sink(spySink);
+            });
+            options.AddServiceBusQueueMessagePump(_ => connectionString, opt =>
                    {
                        opt.AutoComplete = true;
                        opt.Correlation.Format = MessageCorrelationFormat.Hierarchical;
@@ -1032,6 +1018,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             WorkerOptions options,
             ServiceBusEntityType entityType)
         {
+            options.AddXunitTestLogging(_outputWriter);
             var traceParent = TraceParent.Generate();
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(traceParent);
 
@@ -1073,7 +1060,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             Order order = OrderGenerator.Generate();
             string json = JsonConvert.SerializeObject(order);
-            encoding = encoding ?? Encoding.UTF8;
+            encoding ??= Encoding.UTF8;
             byte[] raw = encoding.GetBytes(json);
 
             var message = new ServiceBusMessage(raw)
@@ -1147,21 +1134,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private static async Task SetConnectionStringInKeyVaultAsync(SecretClient keyVaultClient, KeyRotationConfig keyRotationConfig, string rotatedConnectionString)
         {
             await keyVaultClient.SetSecretAsync(keyRotationConfig.KeyVault.SecretName, rotatedConnectionString);
-        }
-
-        private void RetryAssertUntilTelemetryShouldBeAvailable(System.Action assertion, TimeSpan timeout)
-        {
-            RetryPolicy retryPolicy =
-                Policy.Handle<Exception>(exception =>
-                      {
-                          _logger.LogError(exception, "Failed assertion. Reason: {Message}", exception.Message);
-                          return true;
-                      })
-                      .WaitAndRetryForever(index => TimeSpan.FromSeconds(5));
-
-            Policy.Timeout(timeout)
-                  .Wrap(retryPolicy)
-                  .Execute(assertion);
         }
     }
 }
