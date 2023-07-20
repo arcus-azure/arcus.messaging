@@ -7,10 +7,8 @@ using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Xunit.Abstractions;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
@@ -55,31 +53,21 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write diagnostic trace messages to the test output");
 
-            //Services.AddSingleton<ILogger<AzureServiceBusMessagePump>>(_ => new LoggerProxy<AzureServiceBusMessagePump>(logger));
-            //Services.AddSingleton<ILogger<AzureEventHubsMessagePump>>(_ => new LoggerProxy<AzureEventHubsMessagePump>(logger));
-
            _outputWriter = logger;
            return this;
         }
 
+        /// <summary>
+        /// Add a function to configure the Serilog logging in the test worker.
+        /// </summary>
+        /// <param name="configure">The function to configure the Serilog configuration.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configure"/> is <c>null</c>.</exception>
         public WorkerOptions ConfigureSerilog(Action<LoggerConfiguration> configure)
         {
+            Guard.NotNull(configure, nameof(configure));
+
             _additionalSerilogConfigOptions.Add(configure);
             return this;
-        }
-
-        internal class LoggerProxy<T> : ILogger<T>
-        {
-            private readonly ILogger _implementation;
-
-            internal LoggerProxy(ILogger implementation)
-            {
-                _implementation = implementation;
-            }
-
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter) => _implementation.Log(logLevel, eventId, state, exception, formatter);
-            public bool IsEnabled(LogLevel logLevel) => _implementation.IsEnabled(logLevel);
-            public IDisposable BeginScope<TState>(TState state) => _implementation.BeginScope(state);
         }
 
         /// <summary>
