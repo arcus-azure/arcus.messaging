@@ -87,14 +87,14 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         }
 
         /// <summary>
-        /// Gets the service principal that can authenticate with the Azure Service Bus used in these integration tests.
+        /// Gets the service principal that can authenticate with the Azure resources used in these integration tests.
         /// </summary>
         /// <returns></returns>
-        public ServicePrincipal GetServiceBusServicePrincipal()
+        public ServicePrincipal GetServicePrincipal()
         {
             var servicePrincipal = new ServicePrincipal(
-                clientId: _config.GetValue<string>("Arcus:ServiceBus:SelfContained:ServicePrincipal:ClientId"),
-                clientSecret: _config.GetValue<string>("Arcus:ServiceBus:SelfContained:ServicePrincipal:ClientSecret"));
+                clientId: _config.GetValue<string>("Arcus:Infra:ServicePrincipal:ClientId"),
+                clientSecret: _config.GetValue<string>("Arcus:Infra:ServicePrincipal:ClientSecret"));
 
             return servicePrincipal;
         }
@@ -104,7 +104,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         public string GetTenantId()
         {
-            const string tenantIdKey = "Arcus:ServiceBus:SelfContained:TenantId";
+            const string tenantIdKey = "Arcus:Infra:TenantId";
             var tenantId = _config.GetValue<string>(tenantIdKey);
             Guard.For<KeyNotFoundException>(() => tenantId is null, $"Requires a non-blank 'TenantId' at '{tenantIdKey}'");
 

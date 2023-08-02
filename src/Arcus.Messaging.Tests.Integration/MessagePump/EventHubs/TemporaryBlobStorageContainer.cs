@@ -25,12 +25,18 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.EventHubs
             _logger = logger;
 
             ContainerName = containerName;
+            ContainerUri = client.Uri.OriginalString;
         }
 
         /// <summary>
         /// Gets the container name used during this temporary Azure Blob storage container.
         /// </summary>
         public string ContainerName { get; }
+
+        /// <summary>
+        /// Gets the container primary endpoint used during this temporary Azure Blob storage container.
+        /// </summary>
+        public string ContainerUri { get; }
 
         /// <summary>
         /// Creates an <see cref="TemporaryBlobStorageContainer"/> instance that creates an Azure Blob container on the Azure storage account

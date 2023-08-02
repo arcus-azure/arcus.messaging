@@ -69,7 +69,7 @@ public class Program
         services.AddSecretStore(stores => ...);
 
         // Add Azure EventHubs message pump and use OrdersMessageHandler to process the messages.
-        services.AddEventHubsMessagePump("<my-eventhubs-name>", "Arcus_EventHubs_ConnectionString", "<my-eventhubs-blob-storage-container-name>", "Arcus_EventHubs_Blob_ConnectionString")
+        services.AddEventHubsMessagePumpUsingManagedIdentity("<my-eventhubs-name>", "Arcus_EventHubs_ConnectionString", "<my-eventhubs-blob-storage-container-name>", "Arcus_EventHubs_Blob_ConnectionString")
                 .WithEventHubsMessageHandler<SensorReadingMessageHandler, SensorReading>();
 
         // Note, that only a single call to the `.WithEventHubsMessageHandler` has to be made when the handler should be used across message pumps.
@@ -118,7 +118,7 @@ public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddEventHubsMessagePump(...)
+        services.AddEventHubsMessagePumpUsingManagedIdentity(...)
                 .WithEventHubsMessageHandler<SensorReadingMessageHandler, SensorReading>(context => context.Properties["Location"].ToString() == "Room");
     }
 }
@@ -161,11 +161,11 @@ public class Program
     public void ConfigureServices(IServiceCollection services)
     {
         // Register the message body serializer in the dependency container where the dependent services will be injected.
-        services.AddEventHubsMessagePump(...)
+        services.AddEventHubsMessagePumpUsingManagedIdentity(...)
                 .WithEventHubsMessageHandler<SensorReadingBatchMessageHandler, SensorReading>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
 
         // Register the message body serializer  in the dependency container where the dependent services are manually injected.
-        services.AddEventHubsMessagePump(...)
+        services.AddEventHubsMessagePumpUsingManagedIdentity(...)
                 .WithEventHubsMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
                 {
                     var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
@@ -213,7 +213,7 @@ public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddEventHubsMessagePump(...)
+        services.AddEventHubsMessagePumpUsingManagedIdentity(...)
                 .WithEventHubsMessageHandler<SensorReadingMessageHandler, SensorReading>((SensorReading sensor) => sensor.Status == SensorStatus.Active);
     }
 }
@@ -273,6 +273,13 @@ public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
+        // Uses managed identity to authenticate with Azure EventHubs.
+        // 🎖️ Recommended.
+        services.AddEventHubsMessagePumpUsingManagedIdentity(
+            eventHubsName: "<my-eventhubs-name>",
+            fullyQualifiedNamespace: "<my-eventhubs-namespace>",
+            blobContainerUri: "<my-eventhubs-blob-storage-endpoint>");
+
         services.AddEventHubsMessagePump(..., options =>
         {
             // The name of the consumer group this processor is associated with. Events are read in the context of this group. 
