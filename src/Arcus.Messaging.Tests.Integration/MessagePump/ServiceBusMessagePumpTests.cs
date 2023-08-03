@@ -839,7 +839,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 // Assert
                 AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
                 {
-                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process" && r.Context.Operation.Id == traceParent.TransactionId);
+                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process" && r.Context.Operation.Id == traceParent.TransactionId && r.Properties[ContextProperties.RequestTracking.ServiceBus.EntityType] == ServiceBusEntityType.Queue.ToString());
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault" && d.Context.Operation.Id == traceParent.TransactionId);
                     DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL" && d.Context.Operation.Id == traceParent.TransactionId);
                     
@@ -879,7 +879,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 // Assert
                 AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
                 {
-                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process");
+                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process" && r.Properties[ContextProperties.RequestTracking.ServiceBus.EntityType] == ServiceBusEntityType.Queue.ToString());
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault");
                     DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL");
                     
