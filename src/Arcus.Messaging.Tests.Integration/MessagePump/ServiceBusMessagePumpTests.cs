@@ -9,6 +9,7 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Messaging.Tests.Core.Correlation;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
@@ -831,7 +832,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string operationName = BogusGenerator.Lorem.Word();
             options.AddServiceBusQueueMessagePump(conf => connectionString, opt =>
                    {
-                       opt.Correlation.OperationName = operationName;
+                       ((AzureServiceBusMessagePumpOptions) opt).Routing.Telemetry.OperationName = operationName;
                        opt.AutoComplete = true;
                    })
                    .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
@@ -879,7 +880,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string operationName = BogusGenerator.Lorem.Word();
             options.AddServiceBusQueueMessagePump(conf => connectionString, opt =>
                    {
-                       opt.Correlation.OperationName = operationName;
+                       ((AzureServiceBusMessagePumpOptions) opt).Routing.Telemetry.OperationName = operationName;
                        opt.AutoComplete = true;
                    })
                    .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();

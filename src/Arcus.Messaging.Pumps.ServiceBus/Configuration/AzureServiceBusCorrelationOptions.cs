@@ -42,20 +42,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         }
 
         /// <summary>
-        /// Gets or sets the name of the operation that is used when a request telemetry is tracked - default 'Process' is used as operation name.
-        /// </summary>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
-        public string OperationName
-        {
-            get => _correlationOptions.OperationName;
-            set
-            {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Operation name for the message cannot be blank");
-                _correlationOptions.OperationName = value;
-            }
-        }
-
-        /// <summary>
         /// Gets or sets the name of the Azure Service Bus message property to retrieve the transaction ID.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>

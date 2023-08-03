@@ -329,7 +329,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                       .WriteTo.ApplicationInsights(spySink);
             }));
             string operationName = BogusGenerator.Lorem.Word();
-            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Correlation.OperationName = operationName)
+            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Telemetry.OperationName = operationName)
                 .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
 
@@ -374,7 +374,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
             string operationName = BogusGenerator.Lorem.Word();
-            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Correlation.OperationName = operationName)
+            AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Telemetry.OperationName = operationName)
                 .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
 
             var spyChannel = new InMemoryTelemetryChannel();

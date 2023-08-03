@@ -103,7 +103,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() =>
-                options.Correlation.OperationName = operationName);
+                options.Routing.Telemetry.OperationName = operationName);
         }
 
         [Fact]
@@ -114,10 +114,10 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var operationName = $"operation-name-{Guid.NewGuid()}";
 
             // Act
-            options.Correlation.OperationName = operationName;
+            options.Routing.Telemetry.OperationName = operationName;
 
             // Assert
-            Assert.Equal(operationName, options.Correlation.OperationName);
+            Assert.Equal(operationName, options.Routing.Telemetry.OperationName);
         }
 
     }

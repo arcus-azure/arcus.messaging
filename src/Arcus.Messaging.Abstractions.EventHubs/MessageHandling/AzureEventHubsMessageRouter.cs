@@ -161,7 +161,7 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
                         eventHubsNamespace, 
                         consumerGroup, 
                         eventHubsName,
-                        Options.Correlation.OperationName,
+                        Options.Telemetry.OperationName,
                         isSuccessful,
                         measurement);
                 }
