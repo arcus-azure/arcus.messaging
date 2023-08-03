@@ -342,6 +342,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.ConfigureSerilog(config => config.WriteTo.ApplicationInsights(spySink));
 
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
+            string operationName = Guid.NewGuid().ToString();
             AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Telemetry.OperationName = operationName)
                 .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
 
@@ -384,7 +385,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.ConfigureSerilog(config => config.WriteTo.ApplicationInsights(spySink));
 
             EventHubsConfig eventHubs = _config.GetEventHubsConfig();
-            string operationName = BogusGenerator.Lorem.Word();
+            string operationName = Guid.NewGuid().ToString();
             AddEventHubsMessagePump(options, eventHubs, opt => opt.Routing.Telemetry.OperationName = operationName)
                 .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
 

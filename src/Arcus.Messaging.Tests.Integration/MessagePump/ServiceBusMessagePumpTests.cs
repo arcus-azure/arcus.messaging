@@ -823,6 +823,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 config.WriteTo.ApplicationInsights(spySink);
             });
+            string operationName = Guid.NewGuid().ToString();
             options.AddServiceBusQueueMessagePump(_ => connectionString, opt => 
             {
                 opt.AutoComplete = true;
@@ -868,6 +869,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 config.WriteTo.ApplicationInsights(spySink);
             });
+            string operationName = Guid.NewGuid().ToString();
             options.AddServiceBusQueueMessagePump(_ => connectionString, opt =>
             {
                 ((AzureServiceBusMessagePumpOptions) opt).Routing.Telemetry.OperationName = operationName;
