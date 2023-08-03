@@ -166,12 +166,13 @@ This information can be access in a more simplified way:
 
 ```csharp
 using Arcus.Messaging.Abstractions;
+using Azure.Messaging.EventHubs;
 
 EventProcessorClient processor = ... // Client that receives the message.
 EventData message = ... // The received message.
 
-// Creates a new messaging context from the message <> processor
-AzureEventHubsMessageContext messageContext = message.GetMessageContext(processor);
+// Creates a new messaging context from the message and processor, using an unique job ID to identify all message handlers that can handle this specific context.
+AzureEventHubsMessageContext messageContext = message.GetMessageContext(processor, "my-job-id");
 
 // Extract the encoding information from the `.Properties` and wrapped inside a valid `Encoding` type.
 Encoding encoding = messageContext.GetMessageEncodingProperty();

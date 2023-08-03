@@ -8,7 +8,8 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
     /// <summary>
     /// Test version of the <see cref="IFallbackMessageHandler"/> to have a solid implementation.
     /// </summary>
-    public class PassThruFallbackMessageHandler : IFallbackMessageHandler
+    public class PassThruFallbackMessageHandler<TMessageContext> : IFallbackMessageHandler<string, TMessageContext> 
+        where TMessageContext : MessageContext
     {
         /// <summary>
         /// Gets the flag indicating whether the fallback handler has processed the message.
@@ -27,7 +28,7 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
         /// <param name="cancellationToken">Cancellation token</param>
         public Task ProcessMessageAsync(
             string message,
-            MessageContext messageContext,
+            TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
