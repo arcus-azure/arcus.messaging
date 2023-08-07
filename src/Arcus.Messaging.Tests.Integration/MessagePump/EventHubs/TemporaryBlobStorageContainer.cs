@@ -25,7 +25,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.EventHubs
             _logger = logger;
 
             ContainerName = containerName;
-            ContainerUri = client.Uri.OriginalString;
+            ContainerUri = new Uri(client.Uri, new Uri(containerName, UriKind.Relative)).OriginalString;
         }
 
         /// <summary>

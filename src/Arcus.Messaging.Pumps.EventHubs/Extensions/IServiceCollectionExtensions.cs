@@ -272,7 +272,8 @@ namespace Microsoft.Extensions.DependencyInjection
             return services.AddMessagePump((_, options) =>
             {
                return AzureEventHubsMessagePumpConfig.CreateByTokenCredential(
-                   eventHubsName, fullyQualifiedNamespace,
+                   eventHubsName,
+                   fullyQualifiedNamespace,
                    new Uri(blobContainerUri),
                    new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId }),
                    options);

@@ -190,10 +190,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task EventHubsMessagePumpUsingManagedIdentity_PublishesMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
-            var options = new WorkerOptions();
             using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
             
+            var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
+                   .AddXunitTestLogging(_outputWriter)
                    .AddEventHubsMessagePumpUsingManagedIdentity(
                        eventHubsName: EventHubsName,
                        fullyQualifiedNamespace: FullyQualifiedEventHubsNamespace,

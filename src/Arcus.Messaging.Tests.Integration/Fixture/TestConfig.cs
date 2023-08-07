@@ -106,7 +106,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             const string tenantIdKey = "Arcus:Infra:TenantId";
             var tenantId = _config.GetValue<string>(tenantIdKey);
-            Guard.For<KeyNotFoundException>(() => tenantId is null, $"Requires a non-blank 'TenantId' at '{tenantIdKey}'");
+            Guard.For<KeyNotFoundException>(() => string.IsNullOrWhiteSpace(tenantId), $"Requires a non-blank 'TenantId' at '{tenantIdKey}'");
 
             return tenantId;
         }
