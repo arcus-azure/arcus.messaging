@@ -87,7 +87,7 @@ namespace Arcus.Messaging.Pumps.EventHubs.Configuration
             if (getConnectionStringTask is null)
             {
                 throw new InvalidOperationException(
-                    $"Cannot retrieve {connectionStringType} connection string via calling the {nameof(ISecretProvider)} because the operation resulted in 'null'");
+                    $"Cannot retrieve {connectionStringType} connection string via calling the '{secretProvider.GetType().Name}' because the operation resulted in 'null'");
             }
 
             return await getConnectionStringTask;
