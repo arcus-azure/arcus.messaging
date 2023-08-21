@@ -64,12 +64,8 @@ public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        // Arcus secret store will be used to lookup the connection strings, 
-        // for more information about the Arcus secret store see: https://security.arcus-azure.net/features/secret-store
-        services.AddSecretStore(stores => ...);
-
         // Add Azure EventHubs message pump and use OrdersMessageHandler to process the messages.
-        services.AddEventHubsMessagePumpUsingManagedIdentity("<my-eventhubs-name>", "Arcus_EventHubs_ConnectionString", "<my-eventhubs-blob-storage-container-name>", "Arcus_EventHubs_Blob_ConnectionString")
+        services.AddEventHubsMessagePumpUsingManagedIdentity("<my-eventhubs-name>", "<my-eventhubs-namespace>", "<my-eventhubs-blob-storage-endpoint>")
                 .WithEventHubsMessageHandler<SensorReadingMessageHandler, SensorReading>();
 
         // Note, that only a single call to the `.WithEventHubsMessageHandler` has to be made when the handler should be used across message pumps.
@@ -280,6 +276,11 @@ public class Program
             fullyQualifiedNamespace: "<my-eventhubs-namespace>",
             blobContainerUri: "<my-eventhubs-blob-storage-endpoint>");
 
+        // 🚩 Arcus secret store will be used to lookup the connection strings (non-managed identity variants), 
+        // for more information about the Arcus secret store see: https://security.arcus-azure.net/features/secret-store
+        services.AddSecretStore(stores => ...);
+
+        // Options available across all variants:
         services.AddEventHubsMessagePump(..., options =>
         {
             // The name of the consumer group this processor is associated with. Events are read in the context of this group. 
