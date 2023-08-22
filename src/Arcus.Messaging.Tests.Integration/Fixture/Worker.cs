@@ -62,7 +62,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             }
             catch (OperationCanceledException)
             {
-                // Ignore.
+                // Ignore: cancellation is to be expected when the test runs to its end.
             }
         }
     }
