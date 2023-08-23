@@ -4,6 +4,7 @@ using Arcus.Messaging.Pumps.EventHubs;
 using Arcus.Messaging.Pumps.EventHubs.Configuration;
 using Arcus.Security.Core;
 using Arcus.Security.Core.Caching;
+using Azure.Identity;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -20,7 +21,7 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class IServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds a message pump to consume messages from Azure EventHubs.
+        /// Adds a message pump to consume events from Azure EventHubs.
         /// </summary>
         /// <remarks>
         ///    Make sure that the application has the Arcus secret store configured correctly.
@@ -56,17 +57,16 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNullOrWhitespace(blobContainerName, nameof(blobContainerName), "Requires a non-blank Azure Blob storage container name to store event checkpoints and load balance the consumed event messages send to the message pump");
             Guard.NotNullOrWhitespace(storageAccountConnectionStringSecretName, nameof(storageAccountConnectionStringSecretName), "Requires a non-blank secret name to retrieve the connection string to the Azure Blob storage where the event checkpoints will be stored and events will be load balanced during the event processing of the message pump");
 
-            return AddEventHubsMessagePump(
-                services,
-                eventHubsName,
-                eventHubsConnectionStringSecretName,
-                blobContainerName,
-                storageAccountConnectionStringSecretName,
+            return services.AddEventHubsMessagePump(
+                eventHubsName: eventHubsName,
+                eventHubsConnectionStringSecretName: eventHubsConnectionStringSecretName,
+                blobContainerName: blobContainerName,
+                storageAccountConnectionStringSecretName: storageAccountConnectionStringSecretName,
                 configureOptions: null);
         }
 
         /// <summary>
-        /// Adds a message pump to consume messages from Azure EventHubs.
+        /// Adds a message pump to consume events from Azure EventHubs.
         /// </summary>
         /// <remarks>
         ///    Make sure that the application has the Arcus secret store configured correctly.
@@ -103,30 +103,227 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNullOrWhitespace(eventHubsConnectionStringSecretName, nameof(eventHubsConnectionStringSecretName), "Requires a non-blank secret name to retrieve the connection string to the Azure EventHubs where the message pump will retrieve its event messages");
             Guard.NotNullOrWhitespace(blobContainerName, nameof(blobContainerName), "Requires a non-blank Azure Blob storage container name to store event checkpoints and load balance the consumed event messages send to the message pump");
             Guard.NotNullOrWhitespace(storageAccountConnectionStringSecretName, nameof(storageAccountConnectionStringSecretName), "Requires a non-blank secret name to retrieve the connection string to the Azure Blob storage where the event checkpoints will be stored and events will be load balanced during the event processing of the message pump");
-            
+
+            return services.AddMessagePump((serviceProvider, options) =>
+            {
+                ISecretProvider secretProvider = DetermineSecretProvider(serviceProvider);
+
+                return AzureEventHubsMessagePumpConfig.CreateByConnectionString(
+                    eventHubsName, eventHubsConnectionStringSecretName, 
+                    blobContainerName, storageAccountConnectionStringSecretName, 
+                    secretProvider, options);
+
+            }, configureOptions);
+        }
+
+        /// <summary>
+        /// Adds a message pump to consume events from Azure EventHubs.
+        /// </summary>
+        /// <param name="services">The collection of services to add the message pump to.</param>
+        /// <param name="eventHubsName">The name of the Event Hub that the processor is connected to, specific to the EventHubs namespace that contains it.</param>
+        /// <param name="fullyQualifiedNamespace">
+        ///     The fully qualified Event Hubs namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        /// </param>
+        /// <param name="blobContainerUri">
+        ///     The <see cref="Uri" /> referencing the blob container that includes the
+        ///     name of the account and the name of the container.
+        ///     This is likely to be similar to "https://{account_name}.blob.core.windows.net/{container_name}".
+        /// </param>
+        /// <returns>A collection where the <see cref="IAzureEventHubsMessageHandler{TMessage}"/>s can be configured.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="eventHubsName"/> or the <paramref name="fullyQualifiedNamespace"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        /// <exception cref="UriFormatException">Thrown when the <paramref name="blobContainerUri"/> is not an absolute URI.</exception>
+        public static EventHubsMessageHandlerCollection AddEventHubsMessagePumpUsingManagedIdentity(
+            this IServiceCollection services,
+            string eventHubsName,
+            string fullyQualifiedNamespace,
+            string blobContainerUri)
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure EventHubs message pump");
+            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank Azure EventHubs name where the events will be sent to when adding an Azure EvenHubs message pump");
+            Guard.NotNullOrWhitespace(fullyQualifiedNamespace, nameof(fullyQualifiedNamespace), "Requires a non-blank Azure EventHubs namespace to connect to");
+            Guard.NotNullOrWhitespace(blobContainerUri, nameof(blobContainerUri), "Requires a non-blank Azure Blob storage container endpoint to store event checkpoints and load balance the consumed event messages send to the message pump");
+            Guard.For<UriFormatException>(() => !Uri.IsWellFormedUriString(blobContainerUri, UriKind.Absolute), "Requires a valid absolute URI endpoint for the Azure Blob container to store event checkpoints and load balance the consumed event messages send to the message pump");
+
+            return services.AddEventHubsMessagePumpUsingManagedIdentity(
+                eventHubsName: eventHubsName,
+                fullyQualifiedNamespace: fullyQualifiedNamespace,
+                blobContainerUri: blobContainerUri,
+                configureOptions: null);
+        }
+
+        /// <summary>
+        /// Adds a message pump to consume events from Azure EventHubs.
+        /// </summary>
+        /// <param name="services">The collection of services to add the message pump to.</param>
+        /// <param name="eventHubsName">The name of the Event Hub that the processor is connected to, specific to the EventHubs namespace that contains it.</param>
+        /// <param name="fullyQualifiedNamespace">
+        ///     The fully qualified Event Hubs namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        /// </param>
+        /// <param name="blobContainerUri">
+        ///     The <see cref="Uri" /> referencing the blob container that includes the
+        ///     name of the account and the name of the container.
+        ///     This is likely to be similar to "https://{account_name}.blob.core.windows.net/{container_name}".
+        /// </param>
+        /// <param name="configureOptions">The function to configure additional options to influence the behavior of the message pump.</param>
+        /// <returns>A collection where the <see cref="IAzureEventHubsMessageHandler{TMessage}"/>s can be configured.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="eventHubsName"/> or the <paramref name="fullyQualifiedNamespace"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        /// <exception cref="UriFormatException">Thrown when the <paramref name="blobContainerUri"/> is not an absolute URI.</exception>
+        public static EventHubsMessageHandlerCollection AddEventHubsMessagePumpUsingManagedIdentity(
+            this IServiceCollection services,
+            string eventHubsName,
+            string fullyQualifiedNamespace,
+            string blobContainerUri,
+            Action<AzureEventHubsMessagePumpOptions> configureOptions)
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure EventHubs message pump");
+            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank Azure EventHubs name where the events will be sent to when adding an Azure EvenHubs message pump");
+            Guard.NotNullOrWhitespace(fullyQualifiedNamespace, nameof(fullyQualifiedNamespace), "Requires a non-blank Azure EventHubs namespace to connect to");
+            Guard.NotNullOrWhitespace(blobContainerUri, nameof(blobContainerUri), "Requires a non-blank Azure Blob storage container endpoint to store event checkpoints and load balance the consumed event messages send to the message pump");
+            Guard.For<UriFormatException>(() => !Uri.IsWellFormedUriString(blobContainerUri, UriKind.Absolute), "Requires a valid absolute URI endpoint for the Azure Blob container to store event checkpoints and load balance the consumed event messages send to the message pump");
+
+            return services.AddEventHubsMessagePumpUsingManagedIdentity(
+                eventHubsName: eventHubsName,
+                fullyQualifiedNamespace: fullyQualifiedNamespace,
+                blobContainerUri: blobContainerUri,
+                clientId: null,
+                configureOptions: configureOptions);
+        }
+
+         /// <summary>
+        /// Adds a message pump to consume events from Azure EventHubs.
+        /// </summary>
+        /// <param name="services">The collection of services to add the message pump to.</param>
+        /// <param name="eventHubsName">The name of the Event Hub that the processor is connected to, specific to the EventHubs namespace that contains it.</param>
+        /// <param name="fullyQualifiedNamespace">
+        ///     The fully qualified Event Hubs namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        /// </param>
+        /// <param name="blobContainerUri">
+        ///     The <see cref="Uri" /> referencing the blob container that includes the
+        ///     name of the account and the name of the container.
+        ///     This is likely to be similar to "https://{account_name}.blob.core.windows.net/{container_name}".
+        /// </param>
+        /// <param name="clientId">
+        ///     The client ID to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
+        ///     <see href="https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm" />.
+        /// </param>
+        /// <returns>A collection where the <see cref="IAzureEventHubsMessageHandler{TMessage}"/>s can be configured.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="eventHubsName"/> or the <paramref name="fullyQualifiedNamespace"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        /// <exception cref="UriFormatException">Thrown when the <paramref name="blobContainerUri"/> is not an absolute URI.</exception>
+        public static EventHubsMessageHandlerCollection AddEventHubsMessagePumpUsingManagedIdentity(
+            this IServiceCollection services,
+            string eventHubsName,
+            string fullyQualifiedNamespace,
+            string blobContainerUri,
+            string clientId)
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure EventHubs message pump");
+            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank Azure EventHubs name where the events will be sent to when adding an Azure EvenHubs message pump");
+            Guard.NotNullOrWhitespace(fullyQualifiedNamespace, nameof(fullyQualifiedNamespace), "Requires a non-blank Azure EventHubs namespace to connect to");
+            Guard.NotNullOrWhitespace(blobContainerUri, nameof(blobContainerUri), "Requires a non-blank Azure Blob storage container endpoint to store event checkpoints and load balance the consumed event messages send to the message pump");
+            Guard.For<UriFormatException>(() => !Uri.IsWellFormedUriString(blobContainerUri, UriKind.Absolute), "Requires a valid absolute URI endpoint for the Azure Blob container to store event checkpoints and load balance the consumed event messages send to the message pump");
+
+            return services.AddEventHubsMessagePumpUsingManagedIdentity(
+                eventHubsName: eventHubsName,
+                fullyQualifiedNamespace: fullyQualifiedNamespace,
+                blobContainerUri: blobContainerUri,
+                clientId: clientId,
+                configureOptions: null);
+        }
+
+        /// <summary>
+        /// Adds a message pump to consume events from Azure EventHubs.
+        /// </summary>
+        /// <param name="services">The collection of services to add the message pump to.</param>
+        /// <param name="eventHubsName">The name of the Event Hub that the processor is connected to, specific to the EventHubs namespace that contains it.</param>
+        /// <param name="fullyQualifiedNamespace">
+        ///     The fully qualified Event Hubs namespace to connect to.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
+        /// </param>
+        /// <param name="blobContainerUri">
+        ///     The <see cref="Uri" /> referencing the blob container that includes the
+        ///     name of the account and the name of the container.
+        ///     This is likely to be similar to "https://{account_name}.blob.core.windows.net/{container_name}".
+        /// </param>
+        /// <param name="clientId">
+        ///     The client ID to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
+        ///     <see href="https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm" />.
+        /// </param>
+        /// <param name="configureOptions">The function to configure additional options to influence the behavior of the message pump.</param>
+        /// <returns>A collection where the <see cref="IAzureEventHubsMessageHandler{TMessage}"/>s can be configured.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="eventHubsName"/> or the <paramref name="fullyQualifiedNamespace"/> is blank.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        /// <exception cref="UriFormatException">Thrown when the <paramref name="blobContainerUri"/> is not an absolute URI.</exception>
+        public static EventHubsMessageHandlerCollection AddEventHubsMessagePumpUsingManagedIdentity(
+            this IServiceCollection services,
+            string eventHubsName,
+            string fullyQualifiedNamespace,
+            string blobContainerUri,
+            string clientId,
+            Action<AzureEventHubsMessagePumpOptions> configureOptions)
+        {
+            Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure EventHubs message pump");
+            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank Azure EventHubs name where the events will be sent to when adding an Azure EvenHubs message pump");
+            Guard.NotNullOrWhitespace(fullyQualifiedNamespace, nameof(fullyQualifiedNamespace), "Requires a non-blank Azure EventHubs namespace to connect to");
+            Guard.NotNullOrWhitespace(blobContainerUri, nameof(blobContainerUri), "Requires a non-blank Azure Blob storage container endpoint to store event checkpoints and load balance the consumed event messages send to the message pump");
+            Guard.For<UriFormatException>(() => !Uri.IsWellFormedUriString(blobContainerUri, UriKind.Absolute), "Requires a valid absolute URI endpoint for the Azure Blob container to store event checkpoints and load balance the consumed event messages send to the message pump");
+
+            return services.AddMessagePump((_, options) =>
+            {
+               return AzureEventHubsMessagePumpConfig.CreateByTokenCredential(
+                   eventHubsName,
+                   fullyQualifiedNamespace,
+                   new Uri(blobContainerUri),
+                   new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId }),
+                   options);
+
+            }, configureOptions);
+        }
+
+        private static EventHubsMessageHandlerCollection AddMessagePump(
+            this IServiceCollection services,
+            Func<IServiceProvider, AzureEventHubsMessagePumpOptions, AzureEventHubsMessagePumpConfig> createConfig,
+            Action<AzureEventHubsMessagePumpOptions> configureOptions)
+        {
+            AzureEventHubsMessagePumpOptions options = CreateOptions(configureOptions);
+            EventHubsMessageHandlerCollection collection = services.AddMessageRouter(options);
+
+            services.AddMessagePump(serviceProvider =>
+            {
+                AzureEventHubsMessagePumpConfig config = createConfig(serviceProvider, options);
+                return CreateMessagePump(serviceProvider, config);
+            });
+
+            return collection;
+        }
+
+        private static AzureEventHubsMessagePumpOptions CreateOptions(Action<AzureEventHubsMessagePumpOptions> configureOptions)
+        {
             var options = new AzureEventHubsMessagePumpOptions();
             configureOptions?.Invoke(options);
+            
+            return options;
+        }
 
+        private static AzureEventHubsMessagePump CreateMessagePump(IServiceProvider serviceProvider, AzureEventHubsMessagePumpConfig eventHubsConfig)
+        {
+            var appConfiguration = serviceProvider.GetRequiredService<IConfiguration>();
+            var router = serviceProvider.GetService<IAzureEventHubsMessageRouter>();
+            var logger = serviceProvider.GetRequiredService<ILogger<AzureEventHubsMessagePump>>();
+
+            return new AzureEventHubsMessagePump(eventHubsConfig, appConfiguration, serviceProvider, router, logger);
+        }
+
+        private static EventHubsMessageHandlerCollection AddMessageRouter(this IServiceCollection services, AzureEventHubsMessagePumpOptions options)
+        {
             EventHubsMessageHandlerCollection collection = services.AddEventHubsMessageRouting(provider =>
             {
                 var logger = provider.GetService<ILogger<AzureEventHubsMessageRouter>>();
                 return new AzureEventHubsMessageRouter(provider, options.Routing, logger);
             });
             collection.JobId = options.JobId;
-
-            services.AddMessagePump(serviceProvider =>
-            {
-                ISecretProvider secretProvider = DetermineSecretProvider(serviceProvider);
-                var eventHubsConfig = new AzureEventHubsMessagePumpConfig(
-                    eventHubsName, eventHubsConnectionStringSecretName, blobContainerName, storageAccountConnectionStringSecretName, secretProvider, options);
-
-                var appConfiguration = serviceProvider.GetRequiredService<IConfiguration>();
-                var router = serviceProvider.GetService<IAzureEventHubsMessageRouter>();
-                var logger = serviceProvider.GetRequiredService<ILogger<AzureEventHubsMessagePump>>();
-
-                return new AzureEventHubsMessagePump(eventHubsConfig, appConfiguration, serviceProvider, router, logger);
-            });
-
+            
             return collection;
         }
 

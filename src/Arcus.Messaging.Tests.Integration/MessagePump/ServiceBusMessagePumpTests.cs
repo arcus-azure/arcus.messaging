@@ -328,26 +328,20 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             ServiceBusConnectionStringProperties properties = ServiceBusConnectionStringProperties.Parse(connectionString);
 
-            ServicePrincipal servicePrincipal = _config.GetServiceBusServicePrincipal();
-            string tenantId = _config.GetTenantId();
+            using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
+            
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(_config)
+                   .AddServiceBusTopicMessagePumpUsingManagedIdentity(
+                       topicName: properties.EntityPath,
+                       subscriptionName: Guid.NewGuid().ToString(),
+                       serviceBusNamespace: properties.FullyQualifiedNamespace,
+                       clientId: auth.ClientId,
+                       configureMessagePump: opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureTenantId, tenantId))
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientId, servicePrincipal.ClientId))
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientSecret, servicePrincipal.ClientSecret))
-            {
-                var options = new WorkerOptions();
-                options.AddEventGridPublisher(_config)
-                       .AddServiceBusTopicMessagePumpUsingManagedIdentity(
-                           topicName: properties.EntityPath,
-                           subscriptionName: Guid.NewGuid().ToString(),
-                           serviceBusNamespace: properties.FullyQualifiedNamespace,
-                           clientId: servicePrincipal.ClientId,
-                           configureMessagePump: opt => opt.AutoComplete = true)
-                       .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
-
-                // Act / Assert
-                await TestServiceBusTopicMessageHandlingForW3CAsync(options);
-            }
+            // Act / Assert
+            await TestServiceBusTopicMessageHandlingForW3CAsync(options);
         }
 
         [Fact]
@@ -425,25 +419,19 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             ServiceBusConnectionStringProperties properties = ServiceBusConnectionStringProperties.Parse(connectionString);
 
-            ServicePrincipal servicePrincipal = _config.GetServiceBusServicePrincipal();
-            string tenantId = _config.GetTenantId();
+            using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
             
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureTenantId, tenantId))
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientId, servicePrincipal.ClientId))
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientSecret, servicePrincipal.ClientSecret))
-            {
-                var options = new WorkerOptions();
-                options.AddEventGridPublisher(_config)
-                       .AddServiceBusQueueMessagePumpUsingManagedIdentity(
-                           queueName: properties.EntityPath,
-                           serviceBusNamespace: properties.FullyQualifiedNamespace,
-                           clientId: servicePrincipal.ClientId,
-                           configureMessagePump: opt => opt.AutoComplete = true)
-                       .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(_config)
+                   .AddServiceBusQueueMessagePumpUsingManagedIdentity(
+                       queueName: properties.EntityPath,
+                       serviceBusNamespace: properties.FullyQualifiedNamespace,
+                       clientId: auth.ClientId,
+                       configureMessagePump: opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
-                // Act / Assert
-                await TestServiceBusQueueMessageHandlingForW3CAsync(options);
-            }
+            // Act / Assert
+            await TestServiceBusQueueMessageHandlingForW3CAsync(options);
         }
 
         [Fact]
