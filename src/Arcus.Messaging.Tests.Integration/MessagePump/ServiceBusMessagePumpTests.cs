@@ -8,6 +8,7 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Messaging.Tests.Core.Correlation;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
@@ -810,8 +811,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 config.WriteTo.ApplicationInsights(spySink);
             });
-            options.AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
+            string operationName = Guid.NewGuid().ToString();
+            options.AddServiceBusQueueMessagePump(_ => connectionString, opt => 
+            {
+                opt.AutoComplete = true;
+                ((AzureServiceBusMessagePumpOptions) opt).Routing.Telemetry.OperationName = operationName;
+            }).WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
+            
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
 
             Order order = OrderGenerator.Generate();
@@ -827,7 +833,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 // Assert
                 AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
                 {
-                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process" && r.Context.Operation.Id == traceParent.TransactionId);
+                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName && r.Context.Operation.Id == traceParent.TransactionId);
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault" && d.Context.Operation.Id == traceParent.TransactionId);
                     DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL" && d.Context.Operation.Id == traceParent.TransactionId);
                     
@@ -851,8 +857,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 config.WriteTo.ApplicationInsights(spySink);
             });
-            options.AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
+            string operationName = Guid.NewGuid().ToString();
+            options.AddServiceBusQueueMessagePump(_ => connectionString, opt =>
+            {
+                ((AzureServiceBusMessagePumpOptions) opt).Routing.Telemetry.OperationName = operationName;
+                opt.AutoComplete = true;                                      
+            }).WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
+            
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
 
             Order order = OrderGenerator.Generate();
@@ -867,7 +878,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 // Assert
                 AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
                 {
-                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process");
+                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName);
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault");
                     DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL");
                     

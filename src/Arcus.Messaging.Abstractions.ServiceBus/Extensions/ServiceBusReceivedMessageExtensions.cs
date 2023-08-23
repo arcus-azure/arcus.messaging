@@ -33,7 +33,7 @@ namespace Azure.Messaging.ServiceBus
         {
             Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus received message to construct an Azure Service Bus messaging context");
             Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires an job ID that is not blank to identify the messaging job, pump or router");
-            
+
             return new AzureServiceBusMessageContext(message.MessageId, jobId, message.GetSystemProperties(), message.ApplicationProperties);
         }
     }
