@@ -9,6 +9,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// Represents the user-configurable options to control the correlation information tracking
     /// during the receiving of the Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
     /// </summary>
+    [Obsolete("Will use the " + nameof(MessageCorrelationOptions) + " in the future")]
     public class AzureServiceBusCorrelationOptions
     {
         private readonly MessageCorrelationOptions _correlationOptions;

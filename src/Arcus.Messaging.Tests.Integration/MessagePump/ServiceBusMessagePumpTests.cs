@@ -8,6 +8,7 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Messaging.Tests.Core.Correlation;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
@@ -327,26 +328,20 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             ServiceBusConnectionStringProperties properties = ServiceBusConnectionStringProperties.Parse(connectionString);
 
-            ServicePrincipal servicePrincipal = _config.GetServiceBusServicePrincipal();
-            string tenantId = _config.GetTenantId();
+            using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
+            
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(_config)
+                   .AddServiceBusTopicMessagePumpUsingManagedIdentity(
+                       topicName: properties.EntityPath,
+                       subscriptionName: Guid.NewGuid().ToString(),
+                       serviceBusNamespace: properties.FullyQualifiedNamespace,
+                       clientId: auth.ClientId,
+                       configureMessagePump: opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureTenantId, tenantId))
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientId, servicePrincipal.ClientId))
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientSecret, servicePrincipal.ClientSecret))
-            {
-                var options = new WorkerOptions();
-                options.AddEventGridPublisher(_config)
-                       .AddServiceBusTopicMessagePumpUsingManagedIdentity(
-                           topicName: properties.EntityPath,
-                           subscriptionName: Guid.NewGuid().ToString(),
-                           serviceBusNamespace: properties.FullyQualifiedNamespace,
-                           clientId: servicePrincipal.ClientId,
-                           configureMessagePump: opt => opt.AutoComplete = true)
-                       .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
-
-                // Act / Assert
-                await TestServiceBusTopicMessageHandlingForW3CAsync(options);
-            }
+            // Act / Assert
+            await TestServiceBusTopicMessageHandlingForW3CAsync(options);
         }
 
         [Fact]
@@ -424,25 +419,19 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusQueueConnectionString();
             ServiceBusConnectionStringProperties properties = ServiceBusConnectionStringProperties.Parse(connectionString);
 
-            ServicePrincipal servicePrincipal = _config.GetServiceBusServicePrincipal();
-            string tenantId = _config.GetTenantId();
+            using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
             
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureTenantId, tenantId))
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientId, servicePrincipal.ClientId))
-            using (TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientSecret, servicePrincipal.ClientSecret))
-            {
-                var options = new WorkerOptions();
-                options.AddEventGridPublisher(_config)
-                       .AddServiceBusQueueMessagePumpUsingManagedIdentity(
-                           queueName: properties.EntityPath,
-                           serviceBusNamespace: properties.FullyQualifiedNamespace,
-                           clientId: servicePrincipal.ClientId,
-                           configureMessagePump: opt => opt.AutoComplete = true)
-                       .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
+            var options = new WorkerOptions();
+            options.AddEventGridPublisher(_config)
+                   .AddServiceBusQueueMessagePumpUsingManagedIdentity(
+                       queueName: properties.EntityPath,
+                       serviceBusNamespace: properties.FullyQualifiedNamespace,
+                       clientId: auth.ClientId,
+                       configureMessagePump: opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
-                // Act / Assert
-                await TestServiceBusQueueMessageHandlingForW3CAsync(options);
-            }
+            // Act / Assert
+            await TestServiceBusQueueMessageHandlingForW3CAsync(options);
         }
 
         [Fact]
@@ -822,8 +811,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 config.WriteTo.ApplicationInsights(spySink);
             });
-            options.AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
+            string operationName = Guid.NewGuid().ToString();
+            options.AddServiceBusQueueMessagePump(_ => connectionString, opt => 
+            {
+                opt.AutoComplete = true;
+                ((AzureServiceBusMessagePumpOptions) opt).Routing.Telemetry.OperationName = operationName;
+            }).WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
+            
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
 
             Order order = OrderGenerator.Generate();
@@ -839,7 +833,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 // Assert
                 AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
                 {
-                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process" && r.Context.Operation.Id == traceParent.TransactionId && r.Properties[ContextProperties.RequestTracking.ServiceBus.EntityType] == ServiceBusEntityType.Queue.ToString());
+                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName && r.Context.Operation.Id == traceParent.TransactionId && r.Properties[ContextProperties.RequestTracking.ServiceBus.EntityType] == ServiceBusEntityType.Queue.ToString());
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault" && d.Context.Operation.Id == traceParent.TransactionId);
                     DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL" && d.Context.Operation.Id == traceParent.TransactionId);
                     
@@ -863,8 +857,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 config.WriteTo.ApplicationInsights(spySink);
             });
-            options.AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
+            string operationName = Guid.NewGuid().ToString();
+            options.AddServiceBusQueueMessagePump(_ => connectionString, opt =>
+            {
+                ((AzureServiceBusMessagePumpOptions) opt).Routing.Telemetry.OperationName = operationName;
+                opt.AutoComplete = true;                                      
+            }).WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
+            
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = spyChannel);
 
             Order order = OrderGenerator.Generate();
@@ -879,7 +878,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 // Assert
                 AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
                 {
-                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == "Process" && r.Properties[ContextProperties.RequestTracking.ServiceBus.EntityType] == ServiceBusEntityType.Queue.ToString());
+                    RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName && r.Properties[ContextProperties.RequestTracking.ServiceBus.EntityType] == ServiceBusEntityType.Queue.ToString());
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault");
                     DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL");
                     
