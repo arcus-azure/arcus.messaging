@@ -171,7 +171,7 @@ using Arcus.Messaging.Abstractions;
 using Azure.Messaging.ServiceBus;
 
 // Creates a new messaging context from the message, using an unique job ID to identify all message handlers that can handle this specific context.
-AzureServiceBusMessageContext messageContext = message.GetMessageContext("my-job-id");
+AzureServiceBusMessageContext messageContext = message.GetMessageContext("my-job-id", ServiceBusEntityType.Topic);
 
 // Extract the encoding information from the `.ApplicationProperties` and wrapped inside a valid `Encoding` type.
 MessageContext messageContext = ...

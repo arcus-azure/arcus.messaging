@@ -353,7 +353,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             using (MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message))
             {
-                AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId);
+                AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId, Settings.ServiceBusEntity);
                 ServiceBusReceiver receiver = args.GetServiceBusReceiver();
 
                 await _messageRouter.RouteMessageAsync(receiver, args.Message, messageContext, correlationResult.CorrelationInfo, args.CancellationToken); 
