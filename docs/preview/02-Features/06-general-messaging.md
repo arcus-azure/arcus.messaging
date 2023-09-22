@@ -13,6 +13,7 @@ Both and future systems also support some general functionality that will be exp
 When your message handler interacts with a dependency on an external resource, that resource may become unavailable. In that case you want to temporarily stop processing messages.
 
 ⚠️ This functionality is currently only available for the Azure Service Bus message pump.
+
 ⚠️ This functionality is only available when interacting with message pumps, not in message router-only scenarios like Azure Functions.
 
 To interact with the message processing system within your custom message handler, you can inject the `IMessagePumpCircuitBreaker`:
