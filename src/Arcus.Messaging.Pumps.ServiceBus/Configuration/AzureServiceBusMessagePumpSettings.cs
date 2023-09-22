@@ -7,6 +7,7 @@ using Azure.Core;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using GuardNet;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -197,11 +198,38 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         internal async Task<ServiceBusProcessor> CreateMessageProcessorAsync()
         {
+            var factory = _serviceProvider.GetService<IAzureClientFactory<ServiceBusClient>>();
+            if (factory is null)
+            {
+                return await CreateServiceBusProcessorBackwardsCompatible();
+            }
+
+            ServiceBusClient client = factory.CreateClient(Options.JobId);
+            if (client is null)
+            {
+                throw new InvalidOperationException(
+                    "Cannot create an Azure Service Bus message processor based on the previously configured settings, "
+                    + "please check that the message pump was configured correctly with the necessary authentication information");
+            }
+
+            ServiceBusProcessorOptions options = DetermineMessageProcessorOptions();
+            string entityPath = DetermineEntityPath();
+
+            if (string.IsNullOrWhiteSpace(SubscriptionName))
+            {
+                return client.CreateProcessor(entityPath,  options);
+            }
+
+            return client.CreateProcessor(entityPath, SubscriptionName, options);
+        }
+
+        private async Task<ServiceBusProcessor> CreateServiceBusProcessorBackwardsCompatible()
+        {
             if (_tokenCredential is null)
             {
                 string rawConnectionString = await GetConnectionStringAsync();
                 string entityPath = DetermineEntityPath(rawConnectionString);
-                
+
                 var client = new ServiceBusClient(rawConnectionString);
                 return CreateProcessor(client, entityPath, SubscriptionName);
             }
