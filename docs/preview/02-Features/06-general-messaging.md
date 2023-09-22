@@ -53,11 +53,11 @@ await _circuitBreaker.PauseMessageProcessingAsync(
     options =>
     {
         // Sets the time period the circuit breaker should wait before retrying to receive messages.
-        // A.k.a. the time period the circuit is closed (default: 10 seconds).
+        // A.k.a. the time period the circuit is closed (default: 30 seconds).
         options.MessageRecoveryPeriod = TimeSpan.FromSeconds(15);
 
         // Sets the time period the circuit breaker should wait between each message after the circuit was closed, during recovery.
-        // A.k.a. the time interval to receive messages during which the circuit is half-open (default: 1 second).
+        // A.k.a. the time interval to receive messages during which the circuit is half-open (default: 10 seconds).
         options.MessageIntervalDuringRecovery = TimeSpan.FromSeconds(1.5);
     });
 ```
