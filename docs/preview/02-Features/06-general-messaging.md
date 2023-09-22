@@ -14,6 +14,8 @@ When your message handler interacts with a dependency on an external resource, t
 
 ⚠️ This functionality is currently only available for the Azure Service Bus message pump.
 
+⚠️ This functionality is not supported for the Azure Event Hubs message pump.
+
 ⚠️ This functionality is only available when interacting with message pumps, not in message router-only scenarios like Azure Functions.
 
 To interact with the message processing system within your custom message handler, you can inject the `IMessagePumpCircuitBreaker`:
