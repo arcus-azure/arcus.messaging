@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Arcus.Messaging.Pumps.Abstractions.Transient;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -94,6 +95,17 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Logger.LogWarning("Host is shutting down");
 
             await base.StopAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Try to process a single message after the circuit was broken, a.k.a entering the half-open state.
+        /// </summary>
+        /// <returns>
+        ///     [true] when the related message handler can again process messages and the message pump can again start receive messages in full; [false] otherwise.
+        /// </returns>
+        public virtual Task<bool> TryProcessProcessSingleMessageAsync(MessagePumpCircuitBreakerOptions options)
+        {
+            return Task.FromResult(true);
         }
 
         /// <summary>

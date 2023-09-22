@@ -1,5 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.Transient;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -28,6 +29,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a factory implementation function to create the custom message pump instance");
 
             services.TryAddSingleton<IMessagePumpLifetime, DefaultMessagePumpLifetime>();
+            services.TryAddSingleton<IMessagePumpCircuitBreaker, DefaultMessagePumpCircuitBreaker>();
             return services.AddHostedService(implementationFactory);
         }
     }

@@ -9,9 +9,12 @@ using Xunit;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 {
+    /// <summary>
+    /// Additional specific assert functionality  that aren't by default supported by xUnit.
+    /// </summary>
     public static class AssertX
     {
-        public static void RetryAssertUntilTelemetryShouldBeAvailable(System.Action assertion, TimeSpan timeout, ILogger logger)
+        public static void RetryAssertUntil(Action assertion, TimeSpan timeout, ILogger logger)
         {
             RetryPolicy retryPolicy =
                 Policy.Handle<Exception>(exception =>

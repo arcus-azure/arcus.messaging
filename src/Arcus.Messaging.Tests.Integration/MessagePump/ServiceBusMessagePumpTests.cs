@@ -42,6 +42,9 @@ using Xunit;
 using Xunit.Abstractions;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Microsoft.ApplicationInsights.DataContracts;
+using System.Linq;
+using Bogus;
+using Arcus.Messaging.Pumps.Abstractions.Transient;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
@@ -763,6 +766,85 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusTopicMessageHandlingForW3CAsync(options);
         }
 
+         [Fact]
+        public async Task ServiceBusTopicMessagePump_PauseViaCircuitBreaker_RestartsAgainWithOneMessage()
+        {
+            // Arrange
+            var options = new WorkerOptions();
+            ServiceBusMessage[] messages = GenerateShipmentMessages(3);
+            TimeSpan recoveryTime = TimeSpan.FromSeconds(5);
+            TimeSpan messageInterval = TimeSpan.FromSeconds(1);
+
+            options.AddXunitTestLogging(_outputWriter)
+                   .AddServiceBusTopicMessagePump(
+                       subscriptionName: "circuit-breaker-" + Guid.NewGuid(),
+                       _ => _config.GetServiceBusTopicConnectionString())
+                   .WithServiceBusMessageHandler<CircuitBreakerAzureServiceBusMessageHandler, Shipment>(
+                        implementationFactory: provider => new CircuitBreakerAzureServiceBusMessageHandler(
+                            targetMessageIds: messages.Select(m => m.MessageId).ToArray(),
+                            configureOptions: opt =>
+                            {
+                                opt.MessageRecoveryPeriod = recoveryTime;
+                                opt.MessageIntervalDuringRecovery = messageInterval;
+                            },
+                            provider.GetRequiredService<IMessagePumpCircuitBreaker>()));
+
+            var producer = TestServiceBusMessageProducer.CreateFor(_config, ServiceBusEntityType.Topic);
+            await using var worker = await Worker.StartNewAsync(options);
+
+            // Act
+            await producer.ProduceAsync(messages);
+
+            // Assert
+            var handler = GetMessageHandler<CircuitBreakerAzureServiceBusMessageHandler>(worker);
+            AssertX.RetryAssertUntil(() =>
+            {
+                DateTimeOffset[] arrivals = handler.GetMessageArrivals();
+                Assert.Equal(messages.Length, arrivals.Length);
+
+                TimeSpan faultMargin = TimeSpan.FromSeconds(1);
+                Assert.Collection(arrivals.SkipLast(1).Zip(arrivals.Skip(1)),
+                    dates => AssertDateDiff(dates.First, dates.Second, recoveryTime, recoveryTime.Add(faultMargin)),
+                    dates => AssertDateDiff(dates.First, dates.Second, messageInterval, messageInterval.Add(faultMargin)));
+
+            }, timeout: TimeSpan.FromMinutes(2), _logger);
+        }
+
+        private static TMessageHandler GetMessageHandler<TMessageHandler>(Worker worker)
+        {
+            return Assert.IsType<TMessageHandler>(
+                worker.Services.GetRequiredService<MessageHandler>()
+                               .GetMessageHandlerInstance());
+        }
+
+        private static void AssertDateDiff(DateTimeOffset left, DateTimeOffset right, TimeSpan expectedMin, TimeSpan expectedMax)
+        {
+            left = new DateTimeOffset(left.Year, left.Month, left.Day, left.Hour, left.Minute, left.Second, 0, left.Offset);
+            right = new DateTimeOffset(right.Year, right.Month, right.Day, right.Hour, right.Minute, right.Second, 0, right.Offset);
+
+            TimeSpan actual = right - left;
+            Assert.InRange(actual, expectedMin, expectedMax);
+        }
+
+        private static ServiceBusMessage[] GenerateShipmentMessages(int count)
+        {
+            var generator = new Faker<Shipment>()
+                .RuleFor(s => s.Id, f => f.Random.Guid().ToString())
+                .RuleFor(s => s.Code, f => f.Random.Int(1, 100))
+                .RuleFor(s => s.Date, f => f.Date.RecentOffset())
+                .RuleFor(s => s.Description, f => f.Lorem.Sentence());
+
+            return Enumerable.Repeat(generator, count).Select(g =>
+            {
+                Shipment shipment = g.Generate();
+                string json = JsonConvert.SerializeObject(shipment);
+                return new ServiceBusMessage(json)
+                {
+                    MessageId = shipment.Id
+                };
+            }).ToArray();
+        }
+
         [Fact]
         public async Task ServiceBusMessagePump_PauseViaLifetime_RestartsAgain()
         {
@@ -831,7 +913,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(message);
 
                 // Assert
-                AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
+                AssertX.RetryAssertUntil(() =>
                 {
                     RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName && r.Context.Operation.Id == traceParent.TransactionId && r.Properties[ContextProperties.RequestTracking.ServiceBus.EntityType] == ServiceBusEntityType.Queue.ToString());
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault" && d.Context.Operation.Id == traceParent.TransactionId);
@@ -876,7 +958,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(message);
 
                 // Assert
-                AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
+                AssertX.RetryAssertUntil(() =>
                 {
                     RequestTelemetry requestViaArcusServiceBus = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName && r.Properties[ContextProperties.RequestTracking.ServiceBus.EntityType] == ServiceBusEntityType.Queue.ToString());
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault");
@@ -922,7 +1004,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(orderMessage);
                 
                 // Assert
-                AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
+                AssertX.RetryAssertUntil(() =>
                 {
                     Assert.Contains(spySink.CurrentLogEmits,
                         log => log.Exception?.Message.Contains("Sabotage") is true 
