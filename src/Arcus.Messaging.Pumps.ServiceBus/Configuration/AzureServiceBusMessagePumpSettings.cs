@@ -201,29 +201,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             var factory = _serviceProvider.GetService<IAzureClientFactory<ServiceBusClient>>();
             if (factory is null)
             {
-                return await CreateServiceBusProcessorBackwardsCompatible();
+                ServiceBusProcessor processor = await CreateServiceBusProcessorBackwardsCompatibleAsync();
+                return processor;
             }
-
-            ServiceBusClient client = factory.CreateClient(Options.JobId);
-            if (client is null)
+            else
             {
-                throw new InvalidOperationException(
-                    "Cannot create an Azure Service Bus message processor based on the previously configured settings, "
-                    + "please check that the message pump was configured correctly with the necessary authentication information");
+                ServiceBusProcessor processor = CreateServiceBusProcessorWithAzureClients(factory);
+                return processor;
             }
-
-            ServiceBusProcessorOptions options = DetermineMessageProcessorOptions();
-            string entityPath = DetermineEntityPath();
-
-            if (string.IsNullOrWhiteSpace(SubscriptionName))
-            {
-                return client.CreateProcessor(entityPath,  options);
-            }
-
-            return client.CreateProcessor(entityPath, SubscriptionName, options);
         }
 
-        private async Task<ServiceBusProcessor> CreateServiceBusProcessorBackwardsCompatible()
+        private async Task<ServiceBusProcessor> CreateServiceBusProcessorBackwardsCompatibleAsync()
         {
             if (_tokenCredential is null)
             {
@@ -242,6 +230,28 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 
                 return processor;
             }
+        }
+
+        private ServiceBusProcessor CreateServiceBusProcessorWithAzureClients(IAzureClientFactory<ServiceBusClient> factory)
+        {
+            ServiceBusClient client = factory.CreateClient(Options.JobId);
+            if (client is null)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot create an Azure Service Bus message processor for message pump '{Options.JobId}' based on the previously configured settings, "
+                    + "please check that the message pump was configured correctly with the necessary authentication information "
+                    + $"and that there is an Azure Service Bus client registered in the application services with the name: '{Options.JobId}'");
+            }
+
+            ServiceBusProcessorOptions options = DetermineMessageProcessorOptions();
+            string entityPath = DetermineEntityPath();
+
+            if (string.IsNullOrWhiteSpace(SubscriptionName))
+            {
+                return client.CreateProcessor(entityPath, options);
+            }
+
+            return client.CreateProcessor(entityPath, SubscriptionName, options);
         }
 
         private string DetermineEntityPath(string connectionString = null)
