@@ -182,13 +182,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             if (_tokenCredential is null)
             {
                 string connectionString = await GetConnectionStringAsync();
-                string entityPath = DetermineEntityPath(connectionString);
+                string entityPath = await DetermineEntityPathAsync(connectionString);
 
                 return entityPath;
             }
             else
             {
-                string entityPath = DetermineEntityPath();
+                string entityPath = await DetermineEntityPathAsync();
                 return entityPath;
             }
         }
@@ -206,7 +206,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             }
             else
             {
-                ServiceBusProcessor processor = CreateServiceBusProcessorWithAzureClients(factory);
+                ServiceBusProcessor processor = await CreateServiceBusProcessorWithAzureClientsAsync(factory);
                 return processor;
             }
         }
@@ -216,7 +216,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             if (_tokenCredential is null)
             {
                 string rawConnectionString = await GetConnectionStringAsync();
-                string entityPath = DetermineEntityPath(rawConnectionString);
+                string entityPath = await DetermineEntityPathAsync(rawConnectionString);
 
                 var client = new ServiceBusClient(rawConnectionString);
                 return CreateProcessor(client, entityPath, SubscriptionName);
@@ -225,14 +225,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             {
                 var client = new ServiceBusClient(FullyQualifiedNamespace, _tokenCredential);
 
-                string entityPath = DetermineEntityPath();
+                string entityPath = await DetermineEntityPathAsync();
                 ServiceBusProcessor processor = CreateProcessor(client, entityPath, SubscriptionName);
 
                 return processor;
             }
         }
 
-        private ServiceBusProcessor CreateServiceBusProcessorWithAzureClients(IAzureClientFactory<ServiceBusClient> factory)
+        private async Task<ServiceBusProcessor> CreateServiceBusProcessorWithAzureClientsAsync(IAzureClientFactory<ServiceBusClient> factory)
         {
             ServiceBusClient client = factory.CreateClient(Options.JobId);
             if (client is null)
@@ -244,7 +244,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             }
 
             ServiceBusProcessorOptions options = DetermineMessageProcessorOptions();
-            string entityPath = DetermineEntityPath();
+            string entityPath = await DetermineEntityPathAsync();
 
             if (string.IsNullOrWhiteSpace(SubscriptionName))
             {
@@ -254,8 +254,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             return client.CreateProcessor(entityPath, SubscriptionName, options);
         }
 
-        private string DetermineEntityPath(string connectionString = null)
+        private async Task<string> DetermineEntityPathAsync(string connectionString = null)
         {
+            if (string.IsNullOrWhiteSpace(connectionString) && string.IsNullOrWhiteSpace(EntityName))
+            {
+                connectionString = await GetConnectionStringAsync();
+            }
+
             if (_tokenCredential is null && !string.IsNullOrWhiteSpace(connectionString))
             {
                 var properties = ServiceBusConnectionStringProperties.Parse(connectionString);
