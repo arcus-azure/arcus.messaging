@@ -7,6 +7,7 @@ using Azure.Core;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using GuardNet;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -181,13 +182,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             if (_tokenCredential is null)
             {
                 string connectionString = await GetConnectionStringAsync();
-                string entityPath = DetermineEntityPath(connectionString);
+                string entityPath = await DetermineEntityPathAsync(connectionString);
 
                 return entityPath;
             }
             else
             {
-                string entityPath = DetermineEntityPath();
+                string entityPath = await DetermineEntityPathAsync();
                 return entityPath;
             }
         }
@@ -197,11 +198,26 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         internal async Task<ServiceBusProcessor> CreateMessageProcessorAsync()
         {
+            var factory = _serviceProvider.GetService<IAzureClientFactory<ServiceBusClient>>();
+            if (factory is null)
+            {
+                ServiceBusProcessor processor = await CreateServiceBusProcessorBackwardsCompatibleAsync();
+                return processor;
+            }
+            else
+            {
+                ServiceBusProcessor processor = await CreateServiceBusProcessorWithAzureClientsAsync(factory);
+                return processor;
+            }
+        }
+
+        private async Task<ServiceBusProcessor> CreateServiceBusProcessorBackwardsCompatibleAsync()
+        {
             if (_tokenCredential is null)
             {
                 string rawConnectionString = await GetConnectionStringAsync();
-                string entityPath = DetermineEntityPath(rawConnectionString);
-                
+                string entityPath = await DetermineEntityPathAsync(rawConnectionString);
+
                 var client = new ServiceBusClient(rawConnectionString);
                 return CreateProcessor(client, entityPath, SubscriptionName);
             }
@@ -209,15 +225,42 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             {
                 var client = new ServiceBusClient(FullyQualifiedNamespace, _tokenCredential);
 
-                string entityPath = DetermineEntityPath();
+                string entityPath = await DetermineEntityPathAsync();
                 ServiceBusProcessor processor = CreateProcessor(client, entityPath, SubscriptionName);
 
                 return processor;
             }
         }
 
-        private string DetermineEntityPath(string connectionString = null)
+        private async Task<ServiceBusProcessor> CreateServiceBusProcessorWithAzureClientsAsync(IAzureClientFactory<ServiceBusClient> factory)
         {
+            ServiceBusClient client = factory.CreateClient(Options.JobId);
+            if (client is null)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot create an Azure Service Bus message processor for message pump '{Options.JobId}' based on the previously configured settings, "
+                    + "please check that the message pump was configured correctly with the necessary authentication information "
+                    + $"and that there is an Azure Service Bus client registered in the application services with the name: '{Options.JobId}'");
+            }
+
+            ServiceBusProcessorOptions options = DetermineMessageProcessorOptions();
+            string entityPath = await DetermineEntityPathAsync();
+
+            if (string.IsNullOrWhiteSpace(SubscriptionName))
+            {
+                return client.CreateProcessor(entityPath, options);
+            }
+
+            return client.CreateProcessor(entityPath, SubscriptionName, options);
+        }
+
+        private async Task<string> DetermineEntityPathAsync(string connectionString = null)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString) && string.IsNullOrWhiteSpace(EntityName))
+            {
+                connectionString = await GetConnectionStringAsync();
+            }
+
             if (_tokenCredential is null && !string.IsNullOrWhiteSpace(connectionString))
             {
                 var properties = ServiceBusConnectionStringProperties.Parse(connectionString);

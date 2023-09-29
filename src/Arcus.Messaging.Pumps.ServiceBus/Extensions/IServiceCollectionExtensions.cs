@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
-using Arcus.Observability.Correlation;
 using Arcus.Security.Core;
 using Azure.Core;
 using Azure.Identity;
+using Azure.Messaging.ServiceBus;
 using GuardNet;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -33,6 +33,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="getConnectionStringFromSecretFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the secret store.</param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.</exception>
+        [Obsolete("Use another overload by passing the secret name directly instead of calling the secret provider yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
@@ -106,6 +107,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName: null,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
+                secretName: secretName,
                 configureQueueMessagePump: configureMessagePump);
 
             return collection;
@@ -140,6 +142,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services,
                 entityName: queueName,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
+                secretName: secretName,
                 configureQueueMessagePump: configureMessagePump);
 
             return collection;
@@ -160,6 +163,7 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
+        [Obsolete("Use another overload by passing the secret name directly instead of calling the secret provider yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             string queueName,
@@ -249,6 +253,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string fullyQualifiedNamespace = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
+            string secretName = null,
             TokenCredential tokenCredential = null,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null)
         {
@@ -263,6 +268,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 configureQueueMessagePump: configureQueueMessagePump,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
+                secretName: secretName,
                 tokenCredential: tokenCredential);
 
             return collection;
@@ -299,6 +305,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: null,
                 subscriptionName: subscriptionName,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
+                secretName: secretName,
                 configureTopicMessagePump: configureMessagePump);
 
 
@@ -321,6 +328,7 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     Thrown when the <paramref name="services"/> or the <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
+        [Obsolete("Use another overload by passing the secret name directly instead of calling the secret provider yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string subscriptionName,
@@ -411,6 +419,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: topicName,
                 subscriptionName,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
+                secretName: secretName,
                 configureTopicMessagePump: configureMessagePump);
 
             return collection;
@@ -430,6 +439,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="topicName"/> or the <paramref name="subscriptionName"/> is blank.</exception>
+        [Obsolete("Use another overload by passing the secret name directly instead of calling the secret provider yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string topicName,
@@ -559,6 +569,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: null,
                 subscriptionPrefix,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
+                secretName: secretName,
                 configureTopicMessagePump: configureMessagePump);
 
             return collection;
@@ -580,6 +591,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or the <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionPrefix"/> is blank.</exception>
+        [Obsolete("Use another overload by passing the secret name directly instead of calling the secret provider yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithPrefix(
             this IServiceCollection services,
             string subscriptionPrefix,
@@ -674,6 +686,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 entityName: topicName,
                 subscriptionPrefix,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
+                secretName: secretName,
                 configureTopicMessagePump: configureMessagePump);
 
             return collection;
@@ -695,6 +708,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or the <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="topicName"/> or the <paramref name="subscriptionPrefix"/> is blank.</exception>
+        [Obsolete("Use another overload by passing the secret name directly instead of calling the secret provider yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithPrefix(
             this IServiceCollection services,
             string topicName,
@@ -802,6 +816,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string serviceBusNamespace = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
+            string secretName = null,
             TokenCredential tokenCredential = null,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
         {
@@ -815,6 +830,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 serviceBusNamespace: serviceBusNamespace,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
+                secretName: secretName,
                 tokenCredential: tokenCredential,
                 configureTopicMessagePump: configureTopicMessagePump);
 
@@ -828,6 +844,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string serviceBusNamespace = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
+            string secretName = null,
             TokenCredential tokenCredential = null,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
         {
@@ -841,6 +858,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 serviceBusNamespace: serviceBusNamespace,
                 configureTopicMessagePump: configureTopicMessagePump,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
+                secretName: secretName,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
                 tokenCredential: tokenCredential);
 
@@ -856,6 +874,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Action<IAzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
+            string secretName = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
             TokenCredential tokenCredential = null)
         {
@@ -864,33 +883,22 @@ namespace Microsoft.Extensions.DependencyInjection
             AzureServiceBusMessagePumpOptions options = 
                 DetermineAzureServiceBusMessagePumpOptions(serviceBusEntity, configureQueueMessagePump, configureTopicMessagePump);
 
-            ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting(provider =>
+            ServiceBusMessageHandlerCollection collection = AddMessageRouter(services, options);
+
+            services.AddAzureClients(clients =>
             {
-                var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
-                return new AzureServiceBusMessageRouter(provider, options.Routing, logger);
+                TryAddServiceBusClientViaTokenCredential(clients, serviceBusNamespace, tokenCredential, options);
+                TryAddServiceBusClientViaConfiguration(clients, getConnectionStringFromConfigurationFunc, options);
+                TryAddServiceBusClientViaSecretName(clients, secretName, options);
             });
-            collection.JobId = options.JobId;
 
             services.AddMessagePump(serviceProvider =>
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
-                if (subscriptionName != null && subscriptionName.Length > 50)
-                {
-                    logger.LogWarning("Azure Service Bus Topic subscription name was truncated to 50 characters");
-                    subscriptionName = subscriptionName.Substring(0, 50);
-                }
+                subscriptionName = DetermineSubscriptionName(subscriptionName, logger);
                 
-                AzureServiceBusMessagePumpSettings settings; 
-                if (tokenCredential is null)
-                {
-                    settings = new AzureServiceBusMessagePumpSettings(
-                        entityName, subscriptionName, serviceBusEntity, getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, options, serviceProvider); 
-                }
-                else
-                {
-                    settings = new AzureServiceBusMessagePumpSettings(
-                        entityName, subscriptionName, serviceBusEntity, serviceBusNamespace, tokenCredential, options, serviceProvider); 
-                }
+                AzureServiceBusMessagePumpSettings settings = 
+                    DetermineMessagePumpSettings(entityName, subscriptionName, serviceBusEntity, serviceBusNamespace, getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, tokenCredential, options, serviceProvider);
 
                 var configuration = serviceProvider.GetRequiredService<IConfiguration>();
                 var router = serviceProvider.GetService<IAzureServiceBusMessageRouter>();
@@ -898,6 +906,95 @@ namespace Microsoft.Extensions.DependencyInjection
             });
 
             return collection;
+        }
+
+        private static void TryAddServiceBusClientViaSecretName(AzureClientFactoryBuilder clients, string secretName, AzureServiceBusMessagePumpOptions options)
+        {
+            if (!string.IsNullOrWhiteSpace(secretName))
+            {
+                clients.AddServiceBusClient(connectionStringSecretName: secretName)
+                       .WithName(options.JobId);
+            }
+        }
+
+        private static void TryAddServiceBusClientViaConfiguration(
+            AzureClientFactoryBuilder clients,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
+            AzureServiceBusMessagePumpOptions options)
+        {
+            if (getConnectionStringFromConfigurationFunc is not null)
+            {
+                clients.AddClient<ServiceBusClient, ServiceBusClientOptions>((opt, serviceProvider) =>
+                {
+                    var config = serviceProvider.GetRequiredService<IConfiguration>();
+                    string connectionString = getConnectionStringFromConfigurationFunc(config);
+
+                    return new ServiceBusClient(connectionString);
+                }).WithName(options.JobId);
+            }
+        }
+
+        private static void TryAddServiceBusClientViaTokenCredential(
+            AzureClientFactoryBuilder clients,
+            string serviceBusNamespace,
+            TokenCredential tokenCredential,
+            AzureServiceBusMessagePumpOptions options)
+        {
+            if (tokenCredential is not null)
+            {
+                clients.AddServiceBusClientWithNamespace(serviceBusNamespace)
+                       .WithCredential(tokenCredential)
+                       .WithName(options.JobId);
+            }
+        }
+
+        private static AzureServiceBusMessagePumpSettings DetermineMessagePumpSettings(
+            string entityName,
+            string subscriptionName,
+            ServiceBusEntityType serviceBusEntity,
+            string serviceBusNamespace,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
+            TokenCredential tokenCredential,
+            AzureServiceBusMessagePumpOptions options,
+            IServiceProvider serviceProvider)
+        {
+            AzureServiceBusMessagePumpSettings settings;
+            if (tokenCredential is null)
+            {
+                settings = new AzureServiceBusMessagePumpSettings(
+                    entityName,
+                    subscriptionName,
+                    serviceBusEntity,
+                    getConnectionStringFromConfigurationFunc,
+                    getConnectionStringFromSecretFunc,
+                    options,
+                    serviceProvider);
+            }
+            else
+            {
+                settings = new AzureServiceBusMessagePumpSettings(
+                    entityName,
+                    subscriptionName,
+                    serviceBusEntity,
+                    serviceBusNamespace,
+                    tokenCredential,
+                    options,
+                    serviceProvider);
+            }
+
+            return settings;
+        }
+
+        private static string DetermineSubscriptionName(string subscriptionName, ILogger<AzureServiceBusMessagePump> logger)
+        {
+            if (subscriptionName != null && subscriptionName.Length > 50)
+            {
+                logger.LogWarning("Azure Service Bus Topic subscription name was truncated to 50 characters");
+                subscriptionName = subscriptionName.Substring(0, 50);
+            }
+
+            return subscriptionName;
         }
 
         private static AzureServiceBusMessagePumpOptions DetermineAzureServiceBusMessagePumpOptions(
@@ -922,6 +1019,20 @@ namespace Microsoft.Extensions.DependencyInjection
                 default:
                     throw new ArgumentOutOfRangeException(nameof(serviceBusEntity), serviceBusEntity, "Unknown Azure Service Bus entity");
             }
+        }
+
+        private static ServiceBusMessageHandlerCollection AddMessageRouter(
+            IServiceCollection services,
+            AzureServiceBusMessagePumpOptions options)
+        {
+            ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting(provider =>
+            {
+                var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
+                return new AzureServiceBusMessageRouter(provider, options.Routing, logger);
+            });
+            collection.JobId = options.JobId;
+            
+            return collection;
         }
     }
 }
