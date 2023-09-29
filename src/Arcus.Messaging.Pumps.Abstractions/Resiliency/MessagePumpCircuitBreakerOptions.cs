@@ -13,7 +13,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 
         /// <summary>
         /// Gets or sets the time period the circuit breaker should wait before retrying to receive messages.
-        /// A.k.a. the time period the circuit is closed.
+        /// A.k.a. the time period the circuit is open.
         /// </summary>
         /// <remarks>
         ///     Default uses 30 seconds recovery period.
