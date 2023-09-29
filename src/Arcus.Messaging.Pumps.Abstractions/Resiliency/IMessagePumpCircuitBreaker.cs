@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Arcus.Messaging.Pumps.Abstractions.Transient
+namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 {
     /// <summary>
     /// Represents an instance to pause the process of receiving messages in the message pump until the message handler can process the messages again.

@@ -2,7 +2,7 @@
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Pumps.Abstractions.Transient;
+using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;

@@ -1,6 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Pumps.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.Transient;
+using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

@@ -21,6 +21,9 @@ When your message handler interacts with a dependency on an external resource, t
 To interact with the message processing system within your custom message handler, you can inject the `IMessagePumpCircuitBreaker`:
 
 ```csharp
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Messaging.Pumps.Abstractions.Resiliency;
+
 public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
 {
     private readonly IMessagePumpCircuitBreaker _circuitBreaker;
@@ -30,7 +33,7 @@ public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
         _circuitBreaker = circuitBreaker;
     }
 
-    public async Task ProcessMessageAsync(Order message, AzureServiceBusMessageContext messageContext,...)
+    public async Task ProcessMessageAsync(Order message, AzureServiceBusMessageContext messageContext, ...)
     {
         // Determine whether your dependent system is healthy...
 

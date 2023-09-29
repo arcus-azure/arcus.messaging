@@ -43,8 +43,8 @@ using Xunit.Abstractions;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 using Microsoft.ApplicationInsights.DataContracts;
 using System.Linq;
+using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Bogus;
-using Arcus.Messaging.Pumps.Abstractions.Transient;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {

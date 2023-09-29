@@ -1,5 +1,5 @@
 ﻿using System;
-using Arcus.Messaging.Pumps.Abstractions.Transient;
+using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Bogus;
 using Xunit;
 

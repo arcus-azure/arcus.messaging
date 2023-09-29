@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Arcus.Messaging.Pumps.Abstractions.Transient;
+using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Arcus.Messaging.Tests.Unit.MessagePump.Fixture;
 using Arcus.Testing.Logging;
 using Microsoft.Extensions.Configuration;

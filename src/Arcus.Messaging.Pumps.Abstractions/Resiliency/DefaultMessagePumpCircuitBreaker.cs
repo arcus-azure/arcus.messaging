@@ -6,7 +6,7 @@ using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Arcus.Messaging.Pumps.Abstractions.Transient
+namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 {
     /// <summary>
     /// Represents a default implementation of the <see cref="IMessagePumpCircuitBreaker"/>

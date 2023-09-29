@@ -1,7 +1,7 @@
 ﻿using System;
 using GuardNet;
 
-namespace Arcus.Messaging.Pumps.Abstractions.Transient
+namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 {
     /// <summary>
     /// Represents user-configurable options to manipulate the <see cref="IMessagePumpCircuitBreaker"/> functionality.

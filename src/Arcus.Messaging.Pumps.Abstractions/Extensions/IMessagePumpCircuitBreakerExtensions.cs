@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using GuardNet;
 
 // ReSharper disable once CheckNamespace
-namespace Arcus.Messaging.Pumps.Abstractions.Transient
+namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 {
     /// <summary>
     /// Extensions on the <see cref="IMessagePumpCircuitBreaker"/> for more dev-friendly interaction.
