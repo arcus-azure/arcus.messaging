@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net6.0;netstandard2.1;netcoreapp3.1</TargetFrameworks>
@@ -47,7 +47,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.6.0" />
+    <PackageReference Include="Azure.Identity" Version="1.10.2" />
     <PackageReference Include="Microsoft.Azure.Management.ServiceBus" Version="2.1.0" />
   </ItemGroup>
 
