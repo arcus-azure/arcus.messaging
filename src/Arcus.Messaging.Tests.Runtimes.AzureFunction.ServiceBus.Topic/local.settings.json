@@ -1,8 +1,0 @@
-{
-    "IsEncrypted": false,
-  "Values": {
-    "AzureWebJobsStorage": "",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "ARCUS_SERVICEBUS_CONNECTIONSTRING": "Endpoint=sb://arcus-messaging-dev-we-integration-tests.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=Ia7RqbsWg2EY0Uk6wKWFjZ1a3YMv78GKXHthcCZ0EEk="
-  }
-}
