@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Azure.Functions.Worker
 {
-#if NET6_0
+#if !NETSTANDARD2_1
     /// <summary>
     /// Extensions on the <see cref="FunctionContext"/> related to message correlation.
     /// </summary>

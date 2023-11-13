@@ -66,6 +66,7 @@ stages:
             inputs:
               packageType: 'sdk'
               version: '$(DotNet.Sdk.PreviousVersion)'
+              includePreviewVersions: true
           - template: test/run-unit-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
@@ -106,6 +107,7 @@ stages:
             inputs:
               packageType: 'sdk'
               version: '$(DotNet.Sdk.PreviousVersion)'
+              includePreviewVersions: true
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
