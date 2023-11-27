@@ -31,7 +31,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
             var services = new ServiceCollection();
             IServiceProvider provider = services.BuildServiceProvider();
 
-            var breaker = new DefaultMessagePumpCircuitBreaker(provider);
+            DefaultMessagePumpCircuitBreaker breaker = CreateCircuitBreaker(provider);
 
             // Act / Assert
             var exception = await Assert.ThrowsAnyAsync<InvalidOperationException>(
@@ -48,12 +48,21 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
             services.AddMessagePump(p => new TestMessagePump("same-job-id", Mock.Of<IConfiguration>(), p, _logger));
             IServiceProvider provider = services.BuildServiceProvider();
 
-            var breaker = new DefaultMessagePumpCircuitBreaker(provider);
+            DefaultMessagePumpCircuitBreaker breaker = CreateCircuitBreaker(provider);
 
             // Act / Assert
             var exception = await Assert.ThrowsAnyAsync<InvalidOperationException>(
                 () => breaker.PauseMessageProcessingAsync("same-job-id"));
             Assert.Contains("Cannot find", exception.Message);
+        }
+
+        private DefaultMessagePumpCircuitBreaker CreateCircuitBreaker(IServiceProvider provider)
+        {
+            var factory = new LoggerFactory();
+            factory.AddProvider(new CustomLoggerProvider(_logger));
+            var logger = new Logger<DefaultMessagePumpCircuitBreaker>(factory);
+
+            return new DefaultMessagePumpCircuitBreaker(provider, logger);
         }
     }
 }
