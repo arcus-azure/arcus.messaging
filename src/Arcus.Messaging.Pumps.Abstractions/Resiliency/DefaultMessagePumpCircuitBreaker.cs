@@ -2,9 +2,12 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 {
@@ -15,17 +18,20 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
     public class DefaultMessagePumpCircuitBreaker : IMessagePumpCircuitBreaker
     {
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DefaultMessagePumpCircuitBreaker" /> class.
         /// </summary>
         /// <param name="serviceProvider">The application services to retrieve the registered <see cref="MessagePump"/>.</param>
+        /// <param name="logger">The logger instance to write diagnostic messages during the inspection of healthy message pumps.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public DefaultMessagePumpCircuitBreaker(IServiceProvider serviceProvider)
+        public DefaultMessagePumpCircuitBreaker(IServiceProvider serviceProvider, ILogger<DefaultMessagePumpCircuitBreaker> logger)
         {
             Guard.NotNull(serviceProvider, nameof(serviceProvider));
 
             _serviceProvider = serviceProvider;
+            _logger = logger ?? NullLogger<DefaultMessagePumpCircuitBreaker>.Instance;
         }
 
         /// <summary>
@@ -37,6 +43,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         public virtual async Task PauseMessageProcessingAsync(string jobId,  Action<MessagePumpCircuitBreakerOptions> configureOptions)
         {
             Guard.NotNullOrWhitespace(jobId, nameof(jobId));
+
+            _logger.LogTrace("Open circuit by pausing message processing for message pump '{JobId}'...", jobId);
 
             var options = new MessagePumpCircuitBreakerOptions();
             configureOptions?.Invoke(options);
@@ -78,16 +86,24 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             return messagePumps.First();
         }
 
-        private static async Task WaitUntilRecoveredAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
+        private async Task WaitUntilRecoveredAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
         {
+            _logger.LogTrace("Wait configured recovery period ({RecoveryPeriod}) before trying to close circuit for message pump '{JobId}'", options.MessageRecoveryPeriod, messagePump.JobId);
             await Task.Delay(options.MessageRecoveryPeriod);
 
             bool isRecovered = false;
             while (!isRecovered)
             {
-                isRecovered = await messagePump.TryProcessProcessSingleMessageAsync(options);
-                if (!isRecovered)
+                MessageProcessingResult processingResult = await messagePump.TryProcessProcessSingleMessageAsync(options);
+                isRecovered = processingResult.IsSuccessful;
+
+                if (isRecovered)
                 {
+                    _logger.LogTrace("Message pump '{JobId}' successfully handled a single message, closing circuit...", messagePump.JobId);
+                }
+                else
+                {
+                    _logger.LogError(processingResult.ProcessingException, "Message pump '{JobId}' failed to handle a single message: {Message}, wait configured interval period ({IntervalPeriod}) before retrying...", messagePump.JobId, processingResult.ProcessingException.Message, options.MessageIntervalDuringRecovery);
                     await Task.Delay(options.MessageIntervalDuringRecovery);
                 }
             }

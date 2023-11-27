@@ -197,10 +197,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// Try to process a single message after the circuit was broken, a.k.a entering the half-open state.
         /// </summary>
         /// <returns>
-        ///     [true] when the related message handler can again process messages and the message pump can again start receive messages in full; [false] otherwise.
+        ///     [Success] when the related message handler can again process messages and the message pump can again start receive messages in full; [Failure] otherwise.
         /// </returns>
-        public override async Task<bool> TryProcessProcessSingleMessageAsync(MessagePumpCircuitBreakerOptions options)
+        public override async Task<MessageProcessingResult> TryProcessProcessSingleMessageAsync(MessagePumpCircuitBreakerOptions options)
         {
+            if (_messageReceiver is null)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot try process a single message in the Azure Service Bus {EntityPath} message pump '{JobId}' because there was not a message receiver set before this point, " +
+                    $"this probably happens when the message pump is used in the wrong way or manually called, please let only the circuit breaker functionality call this functionality");
+            }
+
             Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' tries to process single message during half-open circuit...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
             
             ServiceBusReceivedMessage message = null;
@@ -212,12 +219,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             try
             {
                 await ProcessMessageAsync(new ProcessMessageEventArgs(message, _messageReceiver, CancellationToken.None));
-                return true;
+                return MessageProcessingResult.Success;
             }
             catch (Exception exception)
             {
                 Logger.LogError(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to process single message during half-open circuit, retrying after circuit delay", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
-                return false;
+                return MessageProcessingResult.Failure(exception);
             }
         }
 

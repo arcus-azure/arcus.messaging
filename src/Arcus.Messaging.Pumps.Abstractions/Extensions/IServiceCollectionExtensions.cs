@@ -3,6 +3,7 @@ using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -29,7 +30,9 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a factory implementation function to create the custom message pump instance");
 
             services.TryAddSingleton<IMessagePumpLifetime, DefaultMessagePumpLifetime>();
-            services.TryAddSingleton<IMessagePumpCircuitBreaker, DefaultMessagePumpCircuitBreaker>();
+            services.TryAddSingleton<IMessagePumpCircuitBreaker>(
+                provider => new DefaultMessagePumpCircuitBreaker(provider, provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>()));
+            
             return services.AddHostedService(implementationFactory);
         }
     }

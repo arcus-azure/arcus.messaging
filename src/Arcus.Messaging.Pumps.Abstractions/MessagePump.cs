@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
@@ -101,11 +102,11 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// Try to process a single message after the circuit was broken, a.k.a entering the half-open state.
         /// </summary>
         /// <returns>
-        ///     [true] when the related message handler can again process messages and the message pump can again start receive messages in full; [false] otherwise.
+        ///     [Success] when the related message handler can again process messages and the message pump can again start receive messages in full; [Failure] otherwise.
         /// </returns>
-        public virtual Task<bool> TryProcessProcessSingleMessageAsync(MessagePumpCircuitBreakerOptions options)
+        public virtual Task<MessageProcessingResult> TryProcessProcessSingleMessageAsync(MessagePumpCircuitBreakerOptions options)
         {
-            return Task.FromResult(true);
+            return Task.FromResult(MessageProcessingResult.Success);
         }
 
         /// <summary>
