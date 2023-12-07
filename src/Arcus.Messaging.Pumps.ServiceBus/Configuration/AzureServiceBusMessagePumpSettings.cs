@@ -193,21 +193,53 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         }
 
         /// <summary>
+        /// Creates an <see cref="ServiceBusReceiver"/> instance based on the provided settings.
+        /// </summary>
+        internal async Task<ServiceBusReceiver> CreateMessageReceiverAsync()
+        {
+            ServiceBusClient client;
+            string entityPath;
+
+            if (_tokenCredential is null)
+            {
+                string rawConnectionString = await GetConnectionStringAsync();
+                entityPath = DetermineEntityPath(rawConnectionString);
+                client = new ServiceBusClient(rawConnectionString);
+            }
+            else
+            {
+                client = new ServiceBusClient(FullyQualifiedNamespace, _tokenCredential);
+                entityPath = DetermineEntityPath();
+            }
+
+            if (string.IsNullOrWhiteSpace(SubscriptionName))
+            {
+                return client.CreateReceiver(entityPath);
+            }
+
+            return client.CreateReceiver(entityPath, SubscriptionName);
+        }
+
+        /// <summary>
         /// Creates an <see cref="ServiceBusProcessor"/> instance based on the provided settings.
         /// </summary>
         internal async Task<ServiceBusProcessor> CreateMessageProcessorAsync()
         {
+            var options = new ServiceBusClientOptions
+            {
+                RetryOptions = { TryTimeout = TimeSpan.FromSeconds(5) }
+            };
             if (_tokenCredential is null)
             {
                 string rawConnectionString = await GetConnectionStringAsync();
                 string entityPath = DetermineEntityPath(rawConnectionString);
                 
-                var client = new ServiceBusClient(rawConnectionString);
+                var client = new ServiceBusClient(rawConnectionString, options);
                 return CreateProcessor(client, entityPath, SubscriptionName);
             }
             else
             {
-                var client = new ServiceBusClient(FullyQualifiedNamespace, _tokenCredential);
+                var client = new ServiceBusClient(FullyQualifiedNamespace, _tokenCredential, options);
 
                 string entityPath = DetermineEntityPath();
                 ServiceBusProcessor processor = CreateProcessor(client, entityPath, SubscriptionName);

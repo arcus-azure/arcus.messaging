@@ -358,7 +358,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(eventData);
 
                 // Assert
-                AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
+                AssertX.RetryAssertUntil(() =>
                 {
                     RequestTelemetry requestViaArcusEventHubs = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName && r.Context.Operation.Id == traceParent.TransactionId);
                     DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault" && d.Context.Operation.Id == traceParent.TransactionId);
@@ -396,7 +396,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(eventData);
 
                 // Assert
-                AssertX.RetryAssertUntilTelemetryShouldBeAvailable(() =>
+                AssertX.RetryAssertUntil(() =>
                 {
                     IEnumerable<DependencyTelemetry> dependenciesViaArcusKeyVault = spySink.Telemetries.OfType<DependencyTelemetry>().Where(d => d.Type == "Azure key vault");
                     IEnumerable<DependencyTelemetry> dependenciesViaMicrosoftSql = spyChannel.Telemetries.OfType<DependencyTelemetry>().Where(d => d.Type == "SQL");
