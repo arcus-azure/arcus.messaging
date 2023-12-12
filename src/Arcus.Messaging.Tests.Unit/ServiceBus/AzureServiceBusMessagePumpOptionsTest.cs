@@ -43,6 +43,45 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.Throws<ArgumentException>(() => options.MaxConcurrentCalls = invalidConcurrentCalls);
         }
 
+        [Fact]
+        public void TopicOptionsPrefetchCount_ValueIsAboveZero_Succeeds()
+        {
+            // Arrange
+            var options = new AzureServiceBusMessagePumpOptions();
+            var validPrefetchCount = 42;
+
+            // Act
+            options.PrefetchCount = validPrefetchCount;
+
+            // Assert
+            Assert.Equal(validPrefetchCount, options.PrefetchCount);
+        }
+
+        [Fact]
+        public void TopicOptionsPrefetchCount_ValueIsZero_Succeeds()
+        {
+            // Arrange
+            var options = new AzureServiceBusMessagePumpOptions();
+            var validPrefetchCount = 0;
+
+            // Act
+            options.PrefetchCount = validPrefetchCount;
+
+            // Assert
+            Assert.Equal(validPrefetchCount, options.PrefetchCount);
+        }
+
+        [Fact]
+        public void TopicOptionsPrefetchCount_ValueIsNegative_ThrowsException()
+        {
+            // Arrange
+            var options = new AzureServiceBusMessagePumpOptions();
+            var invalidPrefetchCount = -1;
+
+            // Act & Assert
+            Assert.Throws<ArgumentException>(() => options.PrefetchCount = invalidPrefetchCount);
+        }
+
         [Theory]
         [ClassData(typeof(Blanks))]
         public void TransactionIdPropertyName_ValueIsBlank_Throws(string transactionIdPropertyName)
