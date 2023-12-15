@@ -293,7 +293,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             var messageHandlerOptions = new ServiceBusProcessorOptions();
             if (Options != null)
             {
-                // Assign the configured defaults
                 messageHandlerOptions.AutoCompleteMessages = Options.AutoComplete;
                 messageHandlerOptions.MaxConcurrentCalls = Options.MaxConcurrentCalls;
                 messageHandlerOptions.PrefetchCount = Options.PrefetchCount;
