@@ -425,6 +425,12 @@ public class Startup
                 // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
                 options.MaxConcurrentCalls = 5;
 
+                // Specifies the amount of messages that will be eagerly requested during processing.
+                // Setting the PrefetchCount to a value higher then the MaxConcurrentCalls value helps maximizing 
+                // throughput by allowing the MessagePump to receive from a local cache rather then waiting on a 
+                // service request.
+                options.PrefetchCount = 10;
+
                 // The unique identifier for this background job to distinguish 
                 // this job instance in a multi-instance deployment (default: guid).
                 options.JobId = Guid.NewGuid().ToString();
@@ -474,6 +480,12 @@ public class Startup
                 // The amount of concurrent calls to process messages 
                 // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
                 options.MaxConcurrentCalls = 5;
+
+                // Specifies the amount of messages that will be eagerly requested during processing.
+                // Setting the PrefetchCount to a value higher then the MaxConcurrentCalls value helps maximizing 
+                // throughput by allowing the MessagePump to receive from a local cache rather then waiting on a 
+                // service request.
+                options.PrefetchCount = 10;
 
                 // The unique identifier for this background job to distinguish 
                 // this job instance in a multi-instance deployment (default: guid).
