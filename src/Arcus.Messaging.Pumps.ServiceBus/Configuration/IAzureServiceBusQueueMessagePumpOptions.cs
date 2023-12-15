@@ -19,7 +19,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Queues or Subscriptions and queued locally, intended to help maximize throughput
         /// by allowing the processor to receive from a local cache rather than waiting on a service request.
         /// </summary>
-        public int PrefetchCount { get; set; }
+        int PrefetchCount { get; set; }
 
         /// <summary>
         /// Gets or sets the indication whether or not messages should be automatically marked as completed if no exceptions occurred and processing has finished.
