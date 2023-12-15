@@ -1,5 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Bogus;
 using Xunit;
 
 namespace Arcus.Messaging.Tests.Unit.ServiceBus
@@ -37,7 +38,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         {
             // Arrange
             var options = new AzureServiceBusMessagePumpOptions();
-            var invalidConcurrentCalls = -1;
+            var invalidConcurrentCalls = new Faker().Random.Number(min: -9999, max: -1);
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() => options.MaxConcurrentCalls = invalidConcurrentCalls);
@@ -48,7 +49,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         {
             // Arrange
             var options = new AzureServiceBusMessagePumpOptions();
-            var validPrefetchCount = 42;
+            var validPrefetchCount = new Faker().Random.Number(min: 1, max: 500);
 
             // Act
             options.PrefetchCount = validPrefetchCount;
@@ -76,7 +77,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         {
             // Arrange
             var options = new AzureServiceBusMessagePumpOptions();
-            var invalidPrefetchCount = -1;
+            var invalidPrefetchCount = new Faker().Random.Number(min: -9999, max: -1); 
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() => options.PrefetchCount = invalidPrefetchCount);
@@ -99,10 +100,10 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Arrange
             var options = new AzureServiceBusMessagePumpOptions();
             const string expected = "Transaction-ID";
-            
+
             // Act
             options.Correlation.TransactionIdPropertyName = expected;
-            
+
             // Assert
             Assert.Equal(expected, options.Correlation.TransactionIdPropertyName);
         }
