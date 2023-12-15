@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus.KeyRotation;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
