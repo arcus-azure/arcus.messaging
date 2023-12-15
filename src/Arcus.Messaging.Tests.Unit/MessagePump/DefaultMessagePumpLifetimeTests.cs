@@ -96,5 +96,49 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
                               .WaitAndRetryForever(i => TimeSpan.FromMilliseconds(100)))
                   .Execute(() => Assert.True(pump.IsRunning));
         }
+
+        [Fact]
+        public async Task StartPump_WithoutPump_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            IServiceProvider provider = services.BuildServiceProvider();
+            var lifetime = new DefaultMessagePumpLifetime(provider);
+            var jobId = Guid.NewGuid().ToString();
+
+            // Act / Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => lifetime.PauseProcessingMessagesAsync(jobId, CancellationToken.None));
+        }
+
+        
+        [Fact]
+        public async Task PausePump_WithoutPump_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            IServiceProvider provider = services.BuildServiceProvider();
+            var lifetime = new DefaultMessagePumpLifetime(provider);
+            var jobId = Guid.NewGuid().ToString();
+            var duration = TimeSpan.FromMilliseconds(100);
+
+            // Act / Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => lifetime.PauseProcessingMessagesAsync(jobId, duration, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task StopPump_WithoutPump_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            IServiceProvider provider = services.BuildServiceProvider();
+            var lifetime = new DefaultMessagePumpLifetime(provider);
+            var jobId = Guid.NewGuid().ToString();
+
+            // Act / Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => lifetime.StopProcessingMessagesAsync(jobId, CancellationToken.None));
+        }
     }
 }
