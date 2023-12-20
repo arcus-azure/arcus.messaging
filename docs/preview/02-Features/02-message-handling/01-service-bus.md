@@ -483,7 +483,7 @@ public class Startup
 
                 // Specifies the amount of messages that will be eagerly requested during processing.
                 // Setting the PrefetchCount to a value higher then the MaxConcurrentCalls value helps maximizing 
-                // throughput by allowing the MessagePump to receive from a local cache rather then waiting on a 
+                // throughput by allowing the message pump to receive from a local cache rather then waiting on a 
                 // service request.
                 options.PrefetchCount = 10;
 
