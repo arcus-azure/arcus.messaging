@@ -3,14 +3,15 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using GuardNet;
 
-namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
+namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
     /// <summary>
     /// The general options that configures a <see cref="AzureServiceBusMessagePump"/> implementation.
     /// </summary>
     public class AzureServiceBusMessagePumpOptions : IAzureServiceBusQueueMessagePumpOptions, IAzureServiceBusTopicMessagePumpOptions
     {
-        private int? _maxConcurrentCalls;
+        private int _maxConcurrentCalls = 1;
+        private int _prefetchCount = 0;
         private string _jobId = Guid.NewGuid().ToString();
         private TimeSpan _keyRotationTimeout = TimeSpan.FromSeconds(5);
         private int _maximumUnauthorizedExceptionsBeforeRestart = 5;
@@ -35,22 +36,37 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         ///     Provides capability to create and delete these subscriptions. This requires 'Manage' permissions on the Azure Service Bus Topic or namespace.
         /// </remarks>
         public TopicSubscription? TopicSubscription { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the maximum concurrent calls to process messages.
         /// </summary>
+        /// <remarks>The default value is 1</remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
-        public int? MaxConcurrentCalls
+        public int MaxConcurrentCalls
         {
             get => _maxConcurrentCalls;
             set
             {
-                if (value != null)
-                {
-                    Guard.For<ArgumentException>(() => value <= 0, "Max concurrent calls has to be 1 or above.");
-                }
+                Guard.For<ArgumentException>(() => value <= 0, "Max concurrent calls has to be 1 or above.");
 
                 _maxConcurrentCalls = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the number of messages that will be eagerly requested from
+        /// Queues or Subscriptions and queued locally, intended to help maximize throughput
+        /// by allowing the processor to receive from a local cache rather than waiting on a service request.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than zero.</exception>
+        /// <remarks>The default value is 0.</remarks>
+        public int PrefetchCount
+        {
+            get => _prefetchCount;
+            set
+            {
+                Guard.For<ArgumentException>(() => value < 0, "PrefetchCount has to be 0 or above.");
+                _prefetchCount = value;
             }
         }
 
