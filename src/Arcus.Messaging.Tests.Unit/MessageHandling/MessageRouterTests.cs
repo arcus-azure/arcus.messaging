@@ -10,6 +10,7 @@ using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Observability.Telemetry.Core;
 using Arcus.Testing.Logging;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -229,6 +230,38 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             await router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None);
             Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Ignore, messageHandlerV1.IsProcessed);
             Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Error, messageHandlerV2.IsProcessed);
+        }
+
+        [Fact]
+        public async Task WithMessageRouting_WithMultipleFallbackHandlers_UsesCorrectHandlerByJobId()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            MessageHandlerCollection collection1 = services.AddMessageRouting();
+            collection1.JobId = Guid.NewGuid().ToString();
+
+            MessageHandlerCollection collection2 = services.AddMessageRouting();
+            collection2.JobId = Guid.NewGuid().ToString();
+
+            var handler1 = new PassThruFallbackMessageHandler();
+            var handler2 = new PassThruFallbackMessageHandler();
+            collection1.WithFallbackMessageHandler(provider => handler1);
+            collection2.WithFallbackMessageHandler(provider => handler2);
+
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IMessageRouter>();
+
+            Order order = OrderGenerator.Generate();
+            var message = JsonConvert.SerializeObject(order);
+            var context = new MessageContext(order.Id, collection1.JobId, new Dictionary<string, object>());
+            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
+
+            // Act
+            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
+
+            // Assert
+            Assert.True(handler1.IsProcessed);
+            Assert.False(handler2.IsProcessed);
         }
 
         [Fact]

@@ -89,14 +89,17 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <typeparam name="TMessage">The type of message the <paramref name="messageHandler"/> processes.</typeparam>
         /// <typeparam name="TMessageContext">The type of context the <paramref name="messageHandler"/> processes.</typeparam>
         /// <param name="messageHandler">The user-defined message handler instance.</param>
+        /// <param name="jobId">The job ID to link this message handler to a registered message pump.</param>
         /// <param name="messageBodyFilter">The optional function to filter on the message body before processing.</param>
         /// <param name="messageContextFilter">The optional function to filter on the message context before processing.</param>
         /// <param name="messageBodySerializer">The optional message body serializer instance to customize how the message should be deserialized.</param>
         /// <param name="logger">The logger instance to write diagnostic messages during the message handler interaction.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageHandler"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         internal static MessageHandler Create<TMessage, TMessageContext>(
             IMessageHandler<TMessage, TMessageContext> messageHandler,
             ILogger<IMessageHandler<TMessage, TMessageContext>> logger,
+            string jobId,
             Func<TMessage, bool> messageBodyFilter = null,
             Func<TMessageContext, bool> messageContextFilter = null,
             IMessageBodySerializer messageBodySerializer = null) 
@@ -109,7 +112,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Type messageHandlerType = messageHandler.GetType();
 
             Func<object, bool> messageFilter = DetermineMessageBodyFilter(messageBodyFilter, messageHandlerType, logger);
-            Func<MessageContext, bool> contextFilter = DetermineMessageContextFilter(messageContextFilter, messageHandlerType, logger);
+            Func<MessageContext, bool> contextFilter = DetermineMessageContextFilter(messageContextFilter, jobId, messageHandlerType, logger);
 
             return new MessageHandler(
                 messageHandlerInstance: messageHandler,
@@ -164,12 +167,18 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
         private static Func<MessageContext, bool> DetermineMessageContextFilter<TMessageContext>(
             Func<TMessageContext, bool> messageContextFilter,
+            string jobId,
             Type messageHandlerType,
             ILogger logger)
             where TMessageContext : MessageContext
         {
            return rawContext =>
-            {
+           {
+                if (rawContext is not null && jobId is not null && rawContext.JobId != jobId)
+                {
+                    return false;
+                }
+
                 if (messageContextFilter is null)
                 {
                     return true;
@@ -184,7 +193,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                     return canProcessMessage;
                 }
 
-                logger.LogTrace("Cannot run message context filter of message handler '{MessageHandler}' for message context '{MessageContext}' because the message is in another context '{OtherMessageContext}'", messageHandlerType, typeof(TMessageContext).Name, rawContext.GetType().Name);
+                logger.LogTrace("Cannot run message context filter of message handler '{MessageHandler}' for message context '{MessageContext}' because the message is in another context '{OtherMessageContext}'", messageHandlerType, typeof(TMessageContext).Name, rawContext?.GetType().Name);
                 return false;
             };
         }
@@ -203,22 +212,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         public Type GetMessageHandlerType()
         {
             return _messageHandlerInstanceType;
-        }
-
-        /// <summary>
-        /// Determines if the given <typeparamref name="TMessageContext"/> matches the generic parameter of this message handler.
-        /// </summary>
-        /// <param name="messageContext">The messaging context information that holds information about the currently processing message.</param>
-        /// <returns>
-        ///     [true] if the registered <typeparamref name="TMessageContext"/> predicate holds; [false] otherwise.
-        /// </returns>
-        /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
-        [Obsolete("Use the " + nameof(CanProcessMessageBasedOnContext) + " specific message context overload instead")]
-        public bool CanProcessMessage<TMessageContext>(TMessageContext messageContext)
-            where TMessageContext : MessageContext
-        {
-            bool canProcessMessageBasedOnContext = CanProcessMessageBasedOnContext(messageContext);
-            return canProcessMessageBasedOnContext;
         }
 
         /// <summary>

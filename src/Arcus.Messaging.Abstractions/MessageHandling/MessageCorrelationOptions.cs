@@ -12,8 +12,16 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                        _operationParentIdPropertyName = PropertyNames.OperationParentId;
 
         /// <summary>
+        /// Gets or sets the message correlation format of the received message.
+        /// </summary>
+        public MessageCorrelationFormat Format { get; set; } = MessageCorrelationFormat.W3C;
+
+        /// <summary>
         /// Gets or sets the name of the message property to retrieve the transaction ID.
         /// </summary>
+        /// <remarks>
+        ///     Only used when the <see cref="Format"/> is set to <see cref="MessageCorrelationFormat.Hierarchical"/>.
+        /// </remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
         public string TransactionIdPropertyName
         {
@@ -28,6 +36,9 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets or sets the name of the message property to retrieve the operation parent ID.
         /// </summary>
+        /// <remarks>
+        ///     Only used when the <see cref="Format"/> is set to <see cref="MessageCorrelationFormat.Hierarchical"/>.
+        /// </remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
         public string OperationParentIdPropertyName
         {

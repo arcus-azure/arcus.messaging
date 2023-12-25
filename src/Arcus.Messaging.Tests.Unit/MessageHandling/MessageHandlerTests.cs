@@ -33,6 +33,27 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         }
 
         [Fact]
+        public void Add_WithJobId_AdaptsMessageContextFilter()
+        {
+            // Arrange
+            var jobId = Guid.NewGuid().ToString();
+            var collection = new MessageHandlerCollection(new ServiceCollection()) { JobId = jobId };
+            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>();
+            IServiceProvider provider = collection.Services.BuildServiceProvider();
+
+            // Act
+            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(provider, _logger);
+
+            // Assert
+            Assert.NotNull(messageHandlers);
+            MessageHandler handler = Assert.Single(messageHandlers);
+            Assert.NotNull(handler);
+
+            Assert.True(handler.CanProcessMessageBasedOnContext(new MessageContext("message-id", jobId, new Dictionary<string, object>())));
+            Assert.False(handler.CanProcessMessageBasedOnContext(new MessageContext("message-id", "other-job-id", new Dictionary<string, object>())));
+        }
+
+        [Fact]
         public async Task CustomMessageHandlerConstructor_WithDefaultContext_SubtractsRegistration()
         {
             // Arrange
@@ -195,7 +216,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var context = TestMessageContext.Generate();
-            Assert.Equal(matchesContext, messageHandler.CanProcessMessage(messageContext: context));
+            Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
         }
 
         [Theory]
@@ -243,7 +264,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var context = new MessageContext("message-id", new Dictionary<string, object>());
-            Assert.Equal(matchesContext, messageHandler.CanProcessMessage(messageContext: context));
+            Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
         }
 
         [Fact]

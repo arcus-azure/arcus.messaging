@@ -2,7 +2,6 @@
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using GuardNet;
-using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -87,8 +86,8 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
 
-            return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-                services, messageContextFilter, messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return services.WithMessageHandler(
+                messageContextFilter, messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
         /// <summary>
@@ -117,13 +116,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
 
-            services.Services.AddTransient(
-                serviceProvider => MessageHandler.Create(
-                    messageHandler: implementationFactory(serviceProvider),
-                    messageContextFilter: messageContextFilter, 
-                    messageBodyFilter: messageBodyFilter,
-                    logger: serviceProvider.GetService<ILogger<IMessageHandler<TMessage, TMessageContext>>>()));
-
+            services.AddMessageHandler(implementationFactory, messageBodyFilter, messageContextFilter);
             return services;
         }
     }
