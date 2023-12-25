@@ -2,12 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Arcus.Testing.Logging;
+using Arcus.Testing.Logging.Extensions;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Serilog;
+using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
@@ -16,8 +17,10 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// </summary>
     public class WorkerOptions : IServiceCollection
     {
+        private ITestOutputHelper _outputWriter;
+        private readonly ICollection<Action<LoggerConfiguration>> _additionalSerilogConfigOptions = new Collection<Action<LoggerConfiguration>>();
         private readonly ICollection<Action<IHostBuilder>> _additionalHostOptions = new Collection<Action<IHostBuilder>>();
-        
+
         /// <summary>
         /// Gets the services that will be included in the test <see cref="Worker"/>.
         /// </summary>
@@ -46,19 +49,24 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         /// <param name="logger">The test logger to write the diagnostic trace messages to.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="logger"/> is <c>null</c>.</exception>
-        public WorkerOptions ConfigureLogging(ILogger logger)
+        public WorkerOptions AddXunitTestLogging(ITestOutputHelper logger)
         {
             Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write diagnostic trace messages to the test output");
 
-            _additionalHostOptions.Add(hostBuilder =>
-            {
-                hostBuilder.ConfigureLogging(logging =>
-                {
-                    logging.AddProvider(new CustomLoggerProvider(logger))
-                           .SetMinimumLevel(LogLevel.Trace);
-                });
-            });
-            
+           _outputWriter = logger;
+           return this;
+        }
+
+        /// <summary>
+        /// Add a function to configure the Serilog logging in the test worker.
+        /// </summary>
+        /// <param name="configure">The function to configure the Serilog configuration.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configure"/> is <c>null</c>.</exception>
+        public WorkerOptions ConfigureSerilog(Action<LoggerConfiguration> configure)
+        {
+            Guard.NotNull(configure, nameof(configure));
+
+            _additionalSerilogConfigOptions.Add(configure);
             return this;
         }
 
@@ -78,10 +86,23 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                            {
                                services.Add(service);
                            }
+                       })
+                       .UseSerilog((context, config) =>
+                       {
+                           config.MinimumLevel.Verbose()
+                                 .Enrich.FromLogContext();
+
+                           if (_outputWriter != null)
+                           {
+                               config.WriteTo.XunitTestLogging(_outputWriter);
+                           }
+
+                           foreach (Action<LoggerConfiguration> configure in _additionalSerilogConfigOptions)
+                           {
+                               configure(config);
+                           }
                        });
 
-            hostBuilder.ConfigureLogging(logging => logging.ClearProviders());
-            
             foreach (Action<IHostBuilder> additionalHostOption in _additionalHostOptions)
             {
                 additionalHostOption(hostBuilder);

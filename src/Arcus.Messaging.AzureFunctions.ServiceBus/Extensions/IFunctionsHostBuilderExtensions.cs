@@ -1,5 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Messaging.AzureFunctions.ServiceBus;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -36,7 +37,8 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
         {
             Guard.NotNull(builder, nameof(builder), "Requires a set of builder to register the Azure Service Bus message routing");
 
-            return builder.Services.AddServiceBusMessageRouting(configureOptions);
+            return builder.Services.AddSingleton<AzureFunctionsInProcessMessageCorrelation>()
+                                   .AddServiceBusMessageRouting(configureOptions);
         }
 
         /// <summary>
@@ -74,7 +76,8 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
             Guard.NotNull(builder, nameof(builder), "Requires a set of builder to register the Azure Service Bus message routing");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure Service Bus message router");
 
-            return builder.Services.AddServiceBusMessageRouting(implementationFactory, configureOptions);
+            return builder.Services.AddSingleton<AzureFunctionsInProcessMessageCorrelation>()
+                                   .AddServiceBusMessageRouting(implementationFactory, configureOptions);
         }
     }
 }

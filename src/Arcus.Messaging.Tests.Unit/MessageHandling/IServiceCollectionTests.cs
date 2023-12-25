@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Microsoft.Extensions.DependencyInjection;
@@ -150,9 +151,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
 
             // Assert
             IServiceProvider provider = services.Services.BuildServiceProvider();
-            var messageHandler = provider.GetRequiredService<IFallbackMessageHandler>();
+            var messageHandler = provider.GetRequiredService<FallbackMessageHandler<string, MessageContext>>();
 
-            Assert.IsType<PassThruFallbackMessageHandler>(messageHandler);
+            Assert.IsType<PassThruFallbackMessageHandler>(messageHandler.MessageHandlerInstance);
         }
 
         [Fact]
@@ -167,9 +168,26 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
 
             // Assert
             IServiceProvider provider = services.Services.BuildServiceProvider();
-            var actual = provider.GetRequiredService<IFallbackMessageHandler>();
+            var actual = provider.GetRequiredService<FallbackMessageHandler<string, MessageContext>>();
 
-            Assert.Same(expected, actual);
+            Assert.Same(expected, actual.MessageHandlerInstance);
+        }
+
+        [Fact]
+        public void WithFallbackMessageHandlerT_WithValidImplementationFunction_RegistersInterface()
+        {
+            // Arrange
+            var services = new MessageHandlerCollection(new ServiceCollection());
+            var expected = new PassThruFallbackMessageHandler<TestMessageContext>();
+
+            // Act
+            services.WithFallbackMessageHandler<PassThruFallbackMessageHandler<TestMessageContext>, TestMessageContext>(serviceProvider => expected);
+
+            // Assert
+            IServiceProvider provider = services.Services.BuildServiceProvider();
+            var actual = provider.GetRequiredService<FallbackMessageHandler<string, TestMessageContext>>();
+
+            Assert.Same(expected, actual.MessageHandlerInstance);
         }
 
         [Fact]
@@ -195,6 +213,17 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
                 () => services.WithFallbackMessageHandler(createImplementation: (Func<IServiceProvider, PassThruFallbackMessageHandler>) null));
+        }
+
+        [Fact]
+        public void WithFallbackMessageHandlerTImplementationFunction_WithoutImplementationFunction_Throws()
+        {
+            // Arrange
+            var services = new MessageHandlerCollection(new ServiceCollection());
+
+            // Act / Assert
+            Assert.ThrowsAny<ArgumentException>(
+                () => services.WithFallbackMessageHandler<PassThruFallbackMessageHandler<TestMessageContext>, TestMessageContext>(createImplementation: null));
         }
     }
 }

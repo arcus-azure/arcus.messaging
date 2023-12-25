@@ -12,8 +12,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the maximum concurrent calls to process messages.
         /// </summary>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
-        int? MaxConcurrentCalls { get; set; }
-        
+        int MaxConcurrentCalls { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of messages that will be eagerly requested from
+        /// Queues or Subscriptions and queued locally, intended to help maximize throughput
+        /// by allowing the processor to receive from a local cache rather than waiting on a service request.
+        /// </summary>
+        int PrefetchCount { get; set; }
+
         /// <summary>
         /// Gets or sets the indication whether or not messages should be automatically marked as completed if no exceptions occurred and processing has finished.
         /// </summary>
@@ -24,7 +31,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the flag to indicate whether or not to emit security events during the lifetime of the message pump.
         /// </summary>
         bool EmitSecurityEvents { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
         /// </summary>
@@ -47,11 +54,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets the options to control the correlation information upon the receiving of Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
         /// </summary>
+        [Obsolete("Will be moved to message routing options in the future")]
         AzureServiceBusCorrelationOptions Correlation { get; }
-        
+
         /// <summary>
         /// Gets the consumer-configurable options to change the deserialization behavior.
         /// </summary>
-         MessageDeserializationOptions Deserialization { get; }
+        [Obsolete("Will be moved to message routing options in the future")]
+        MessageDeserializationOptions Deserialization { get; }
     }
 }

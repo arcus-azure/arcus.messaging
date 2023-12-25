@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Tests.Integration.MessagePump;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -89,14 +87,14 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         }
 
         /// <summary>
-        /// Gets the service principal that can authenticate with the Azure Service Bus used in these integration tests.
+        /// Gets the service principal that can authenticate with the Azure resources used in these integration tests.
         /// </summary>
         /// <returns></returns>
-        public ServicePrincipal GetServiceBusServicePrincipal()
+        public ServicePrincipal GetServicePrincipal()
         {
             var servicePrincipal = new ServicePrincipal(
-                clientId: _config.GetValue<string>("Arcus:ServiceBus:SelfContained:ServicePrincipal:ClientId"),
-                clientSecret: _config.GetValue<string>("Arcus:ServiceBus:SelfContained:ServicePrincipal:ClientSecret"));
+                clientId: _config.GetValue<string>("Arcus:Infra:ServicePrincipal:ClientId"),
+                clientSecret: _config.GetValue<string>("Arcus:Infra:ServicePrincipal:ClientSecret"));
 
             return servicePrincipal;
         }
@@ -106,9 +104,9 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         public string GetTenantId()
         {
-            const string tenantIdKey = "Arcus:ServiceBus:SelfContained:TenantId";
+            const string tenantIdKey = "Arcus:Infra:TenantId";
             var tenantId = _config.GetValue<string>(tenantIdKey);
-            Guard.For<KeyNotFoundException>(() => tenantId is null, $"Requires a non-blank 'TenantId' at '{tenantIdKey}'");
+            Guard.For<KeyNotFoundException>(() => string.IsNullOrWhiteSpace(tenantId), $"Requires a non-blank 'TenantId' at '{tenantIdKey}'");
 
             return tenantId;
         }
@@ -139,6 +137,20 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                     _config.GetValue<string>("Arcus:KeyRotation:KeyVault:SecretNewVersionCreated:ServiceBusConnectionStringWithTopicEndpoint")));
 
             return new KeyRotationConfig(secret, servicePrincipal, azureEnv);
+        }
+
+        /// <summary>
+        /// Gets all the configuration to run the Azure EventHubs integration tests.
+        /// </summary>
+        public EventHubsConfig GetEventHubsConfig()
+        {
+            return new EventHubsConfig(
+                _config.GetValue<string>("Arcus:EventHubs:SelfContained:EventHubsName"),
+                _config.GetValue<string>("Arcus:EventHubs:Docker:EventHubsName"),
+                _config.GetValue<string>("Arcus:EventHubs:Docker:AzureFunctions:Isolated:EventHubsName"),
+                _config.GetValue<string>("Arcus:EventHubs:Docker:AzureFunctions:InProcess:EventHubsName"),
+                _config.GetValue<string>("Arcus:EventHubs:ConnectionString"),
+                _config.GetValue<string>("Arcus:EventHubs:BlobStorage:StorageAccountConnectionString"));
         }
 
         /// <summary>

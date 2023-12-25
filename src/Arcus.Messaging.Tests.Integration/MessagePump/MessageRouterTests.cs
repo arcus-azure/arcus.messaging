@@ -9,6 +9,7 @@ using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Observability.Telemetry.Core;
+using Arcus.Testing.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Serilog;
@@ -46,19 +47,15 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 var correlationInfo = new MessageCorrelationInfo(operationId, transactionId);
                 string json = JsonConvert.SerializeObject(order);
 
-                // Act
-                try
-                {
-                    await router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None);
-                }
-                catch (InvalidOperationException exception) when(exception.Message.Contains("cannot correctly process the message"))
-                {
-                    // Assert
-                    Assert.Contains(spySink.CurrentLogEmits,
-                        log => log.Exception?.Message.Contains("Sabotage") is true 
-                               && log.ContainsProperty(ContextProperties.Correlation.OperationId, operationId) 
-                               && log.ContainsProperty(ContextProperties.Correlation.TransactionId, transactionId));
-                }
+                // Act / Assert
+                var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                    () => router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None));
+                
+                Assert.Contains("cannot correctly process message", exception.Message);
+                Assert.Contains(spySink.CurrentLogEmits,
+                    log => log.Exception?.Message.Contains("Sabotage") is true 
+                           && log.ContainsProperty(ContextProperties.Correlation.OperationId, operationId) 
+                           && log.ContainsProperty(ContextProperties.Correlation.TransactionId, transactionId));
             }
         }
     }

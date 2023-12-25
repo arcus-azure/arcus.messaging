@@ -13,22 +13,6 @@ As a user, the only thing you have to do is **focus on processing messages, not 
 
 ![Message handling schema](/media/worker-message-handling.png)
 
-- [Azure Service Bus message handling](#azure-service-bus-message-handling)
-  - [Installation](#installation)
-  - [Message handler example](#message-handler-example)
-  - [Message handler registration](#message-handler-registration)
-    - [Filter messages based on message context](#filter-messages-based-on-message-context)
-    - [Bring your own deserialization](#bring-your-own-deserialization)
-    - [Filter messages based on message body](#filter-messages-based-on-message-body)
-    - [Fallback message handling](#fallback-message-handling)
-  - [Influence handling of Service Bus message in message handler](#influence-handling-of-service-bus-message-in-message-handler)
-    - [During (regular) message handling](#during-regular-message-handling)
-    - [During fallback message handling](#during-fallback-message-handling)
-  - [Pump Configuration](#pump-configuration)
-  - [Alternative Service Bus message routing](#alternative-service-bus-message-routing)
-  - [Message Correlation](#message-correlation)
-  - [Want to get started easy? Use our templates!](#want-to-get-started-easy-use-our-templates)
-
 ## Installation
 This features requires to install our NuGet package:
 
@@ -100,12 +84,14 @@ In this example, we are using the Azure Service Bus message pump to process a qu
 
 > 💡 We support **connection strings that are scoped on the Service Bus namespace and entity** allowing you to choose the required security model for your applications. If you are using namespace-scoped connection strings you'll have to pass your queue/topic name as well.
 
+> ⚠ The order in which the message handlers are registered matters when a message is processed. If the first one can't handle the message, the second will be checked, and so forth.
+
 ### Filter messages based on message context
 When registering a new message handler, one can opt-in to add a filter on the message context which filters out messages that are not needed to be processed.
 
 This can be useful when you are sending different message types on the same queue. Another use-case is being able to handle different versions of the same message type which have different contracts because you are migrating your application.
 
-Following example shows how a message handler should only process a certain message when a property's in the context is present.
+Following example shows how a message handler should only process a certain message when a property in the context has a specific value.
 
 We'll use a simple message handler implementation:
 
@@ -131,7 +117,8 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithServiceBusMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+        services.AddServiceBusTopicMessagePump(...)
+                .WithServiceBusMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
     }
 }
 ```
@@ -148,7 +135,7 @@ You start by implementing an `IMessageBodySerializer`. The following example sho
 The result type (in this case `OrderBatch`) will then be used to check if there is an `IAzureServiceBusMessageHandler` registered for that message type.
 
 ```csharp
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.MessageHandling;
 
 public class OrderBatchMessageBodySerializer : IMessageBodySerializer
 {
@@ -174,14 +161,16 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         // Register the message body serializer in the dependency container where the dependent services will be injected.
-        services.WitServiceBusMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
+        services.AddServiceBusTopicMessagePump(...)
+                .WitServiceBusMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
 
         // Register the message body serializer  in the dependency container where the dependent services are manually injected.
-        services.WithServiceMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
-        {
-            var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
-            return new OrderBatchMessageHandler(logger);
-        });
+        services.AddServiceBusTopicMessagePump(...)
+                .WithServiceBusMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
+                {
+                    var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
+                    return new OrderBatchMessageHandler(logger);
+                });
     }
 }
 ```
@@ -206,7 +195,7 @@ public class Order
 }
 
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 
 // Message handler
 public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
@@ -224,7 +213,8 @@ public class Startup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.WithServiceMessageHandler<OrderMessageHandler, Order>((Order order) => order.Type == Department.Sales);
+        services.AddServiceBusTopicMessagePump(...)
+                .WithServiceMessageHandler<OrderMessageHandler, Order>((Order order) => order.Type == Department.Sales);
     }
 }
 ```
@@ -240,7 +230,7 @@ Following example shows how such a message handler can be implemented:
 
 ```csharp
 using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 
@@ -294,7 +284,7 @@ Example:
 
 ```csharp
 using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Microsoft.Extensions.Logging;
 
 public class AbandonsUnknownOrderMessageHandler : AzureServiceBusMessageHandler<Order>
@@ -346,7 +336,7 @@ Example:
 
 ```csharp
 using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
+using Arcus.Messaging.ServiceBus.Abstractions.MessageHandling;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 
@@ -435,13 +425,37 @@ public class Startup
                 // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
                 options.MaxConcurrentCalls = 5;
 
+                // Specifies the amount of messages that will be eagerly requested during processing.
+                // Setting the PrefetchCount to a value higher then the MaxConcurrentCalls value helps maximizing 
+                // throughput by allowing the message pump to receive from a local cache rather then waiting on a 
+                // service request.
+                options.PrefetchCount = 10;
+
                 // The unique identifier for this background job to distinguish 
                 // this job instance in a multi-instance deployment (default: guid).
                 options.JobId = Guid.NewGuid().ToString();
 
+                // The format of the message correlation used when receiving Azure Service Bus messages.
+                // (default: W3C).
+                options.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+
+                // The name of the operation used when tracking the request telemetry.
+                // (default: Process)
+                options.Correlation.OperationName = "Order";
+
                 // The name of the Azure Service Bus message property that has the transaction ID.
+                // ⚠ Only used when the correlation format is configured as Hierarchical.
                 // (default: Transaction-Id).
                 options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
+
+                // The name of the Azure Service Bus message property that has the upstream service ID.
+                // ⚠ Only used when the correlation format is configured as Hierarchical.
+                // (default: Operation-Parent-Id).
+                options.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
+
+                // The property name to enrich the log event with the correlation information cycle ID.
+                // (default: CycleId)
+                options.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
 
                 // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
                 // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
@@ -467,13 +481,37 @@ public class Startup
                 // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
                 options.MaxConcurrentCalls = 5;
 
+                // Specifies the amount of messages that will be eagerly requested during processing.
+                // Setting the PrefetchCount to a value higher then the MaxConcurrentCalls value helps maximizing 
+                // throughput by allowing the message pump to receive from a local cache rather then waiting on a 
+                // service request.
+                options.PrefetchCount = 10;
+
                 // The unique identifier for this background job to distinguish 
                 // this job instance in a multi-instance deployment (default: guid).
                 options.JobId = Guid.NewGuid().ToString();
 
+                // The format of the message correlation used when receiving Azure Service Bus messages.
+                // (default: W3C).
+                options.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+
+                // The name of the operation used when tracking the request telemetry.
+                // (default: Process)
+                options.Correlation.OperationName = "Order";
+
                 // The name of the Azure Service Bus message property that has the transaction ID.
+                // ⚠ Only used when the correlation format is configured as Hierarchical.
                 // (default: Transaction-Id).
                 options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
+
+                // The name of the Azure Service Bus message property that has the upstream service ID.
+                // ⚠ Only used when the correlation format is configured as Hierarchical.
+                // (default: Operation-Parent-Id).
+                options.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
+
+                // The property name to enrich the log event with the correlation information cycle ID.
+                // (default: CycleId)
+                options.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
 
                 // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
                 // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
@@ -547,25 +585,6 @@ public void ConfigureServices(IServiceCollection services)
 ## Message Correlation
 The message correlation of the received messages is set automatically. All the message handlers will have access to the current `MessageCorrelationInfo` correlation model for the specific currently processed message.
 
-The correlation information of Azure Service Bus messages can also be retrieved from an extension that wraps all correlation information.
-
-```csharp
-using Arcus.Messaging.Abstractions;
-using Azure.Messaging.ServiceBus;
-
-ServiceBusReceivedMessage message = ...
-MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
-
-// Unique identifier that indicates an attempt to process a given message.
-string cycleId = correlationInfo.CycleId;
-
-// Unique identifier that relates different requests together.
-string transactionId = correlationInfo.TransactionId;
-
-// Unique identifier that distinguishes the request.
-string operationId = correlationInfo.OperationId;
-```
-
 To retrieve the correlation information in other application code, you can use a dedicated marker interface called `IMessageCorrelationInfoAccessor`.
 Note that this is a scoped dependency and so will be the same instance across a scoped operation.
 
@@ -590,10 +609,28 @@ public class DependencyService
 }
 ```
 
+### Hierarchical correlation
+When using the Hierarchical correlation system, the correlation information of Azure Service Bus messages can also be retrieved from an extension that wraps all correlation information.
+
+```csharp
+using Arcus.Messaging.Abstractions;
+using Azure.Messaging.ServiceBus;
+
+ServiceBusReceivedMessage message = ...
+MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+
+// Unique identifier that indicates an attempt to process a given message.
+string cycleId = correlationInfo.CycleId;
+
+// Unique identifier that relates different requests together.
+string transactionId = correlationInfo.TransactionId;
+
+// Unique identifier that distinguishes the request.
+string operationId = correlationInfo.OperationId;
+```
+
 ## Want to get started easy? Use our templates!
 We provide templates to get started easily:
 
 - Azure Service Bus Queue Worker Template ([docs](https://templates.arcus-azure.net/features/servicebus-queue-worker-template))
 - Azure Service Bus Topic Worker Template ([docs](https://templates.arcus-azure.net/features/servicebus-topic-worker-template))
-
-[&larr; back](/)

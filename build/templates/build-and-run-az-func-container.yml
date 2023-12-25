@@ -4,6 +4,7 @@ parameters:
   imageName: ''
   imageTag: ''
   port: ''
+  envVars: {}
 
 steps:
 - bash: |
@@ -60,7 +61,4 @@ steps:
     imageName: '${{ parameters.imageName }}:${{ parameters.imageTag }}'
     containerName: '${{ parameters.containerName }}'
     ports: '${{ parameters.port }}:${{ parameters.port }}'
-    envVars: |
-      ARCUS_EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
-      ARCUS_EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
-      ARCUS_SERVICEBUS_CONNECTIONSTRING=$(Arcus.ServiceBus.Docker.AzureFunctions.NamespaceConnectionString)
+    envVars: ${{ parameters.envVars }}

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Messaging.AzureFunctions.ServiceBus;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Microsoft.Azure.Functions.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +29,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.AzureFunctions
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IAzureServiceBusMessageRouter>());
+            Assert.NotNull(provider.GetService<AzureFunctionsInProcessMessageCorrelation>());
         }
 
         [Fact]
@@ -44,6 +46,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.AzureFunctions
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IAzureServiceBusMessageRouter>());
+            Assert.NotNull(provider.GetService<AzureFunctionsInProcessMessageCorrelation>());
         }
         
         [Fact]
@@ -65,6 +68,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.AzureFunctions
             var router = provider.GetService<IAzureServiceBusMessageRouter>();
             Assert.NotNull(router);
             Assert.IsType<TestAzureServiceBusMessageRouter>(router);
+            Assert.NotNull(provider.GetService<AzureFunctionsInProcessMessageCorrelation>());
         }
 
         [Fact]
@@ -90,6 +94,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus.AzureFunctions
             var router = provider.GetService<IAzureServiceBusMessageRouter>();
             Assert.NotNull(router);
             Assert.IsType<TestAzureServiceBusMessageRouter>(router);
+            Assert.NotNull(provider.GetService<AzureFunctionsInProcessMessageCorrelation>());
         }
     }
 }

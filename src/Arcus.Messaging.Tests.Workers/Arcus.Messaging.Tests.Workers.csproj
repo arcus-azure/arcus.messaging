@@ -6,17 +6,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Arcus.EventGrid.Publishing" Version="[3.1.0,4.0.0)" />
-    <PackageReference Include="Arcus.EventGrid.Testing" Version="[3.1.0,4.0.0)" />
+    <PackageReference Include="Arcus.EventGrid.Core" Version="3.3.0" />
+    <PackageReference Include="Arcus.EventGrid.Testing" Version="3.3.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
-    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.Health\Arcus.Messaging.Health.csproj" />
-    <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj" />
   </ItemGroup>
 

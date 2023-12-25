@@ -20,8 +20,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// </summary>
     public class MessageRouter : IMessageRouter
     {
-        private readonly Lazy<IFallbackMessageHandler> _fallbackMessageHandler;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
@@ -96,14 +94,17 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             ServiceProvider = serviceProvider;
             Options = options ?? new MessageRouterOptions();
             Logger = logger ?? NullLogger<MessageRouter>.Instance;
-
-            _fallbackMessageHandler = new Lazy<IFallbackMessageHandler>(() => serviceProvider.GetService<IFallbackMessageHandler>());
         }
 
         /// <summary>
         /// Gets the flag indicating whether or not the router can fallback to an <see cref="IFallbackMessageHandler"/> instance.
         /// </summary>
-        protected bool HasFallbackMessageHandler => _fallbackMessageHandler.Value != null;
+        [Obsolete("Use the " + nameof(GetAvailableFallbackMessageHandlersByContext) + " instead to determine whether a fallback message handler is available for your message context")]
+        protected bool HasFallbackMessageHandler => 
+            throw new NotImplementedException(
+                "Because the message handlers are now registered within the scope of the message pump/router, " 
+                + "determining whether a fallback message handler is available or not is only possible when providing a Job ID to identify the message pump/router, " 
+                + $"please use the {nameof(GetAvailableFallbackMessageHandlersByContext)} to determine the available fallback message handlers for your message context");
 
         /// <summary>
         /// Gets the instance that provides all the registered services in the current application.
@@ -147,7 +148,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
-            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo)))
+            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
             {
                 var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                 accessor?.SetCorrelationInfo(correlationInfo);
@@ -181,7 +182,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
-            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo)))
+            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
             {
                 var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                 accessor?.SetCorrelationInfo(correlationInfo);
@@ -215,7 +216,20 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             return LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor));
         }
 
-        private async Task RouteMessageAsync<TMessageContext>(
+        /// <summary>
+        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s
+        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
+        /// </summary>
+        /// <param name="serviceProvider">The available services from which the message handlers should be retrieved.</param>
+        /// <param name="message">The message that was received.</param>
+        /// <param name="messageContext">The context providing more information concerning the processing.</param>
+        /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
+        /// <param name="cancellationToken">The token to cancel the message processing.</param>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+        protected async Task RouteMessageAsync<TMessageContext>(
             IServiceProvider serviceProvider,
             string message,
             TMessageContext messageContext,
@@ -248,7 +262,10 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             where TMessageContext : MessageContext
         {
             MessageHandler[] handlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
-            if (handlers.Length <= 0 && _fallbackMessageHandler.Value is null)
+            FallbackMessageHandler<string, TMessageContext>[] fallbackHandlers = 
+                GetAvailableFallbackMessageHandlersByContext<string, TMessageContext>(messageContext);
+
+            if (handlers.Length <= 0 && fallbackHandlers.Length <= 0)
             {
                 throw new InvalidOperationException(
                     $"Message pump cannot correctly process the message in the '{typeof(TMessageContext).Name}' "
@@ -373,36 +390,90 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     [true] if the received <paramref name="message"/> was handled by the registered <see cref="IFallbackMessageHandler"/>; [false] otherwise.
         /// </returns>
         protected async Task<bool> TryFallbackProcessMessageAsync<TMessageContext>(
-            string message, 
-            TMessageContext messageContext, 
-            MessageCorrelationInfo correlationInfo, 
+            string message,
+            TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
             Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
 
-            if (HasFallbackMessageHandler)
+            bool isProcessedByTypedContext = await TryFallbackProcessMessageByContextAsync(message, messageContext, correlationInfo, cancellationToken);
+            if (isProcessedByTypedContext)
             {
-                string fallbackMessageHandlerTypeName = _fallbackMessageHandler.Value.GetType().Name;
-
-                Logger.LogTrace("Fallback on registered '{FallbackMessageHandlerType}' because none of the message handlers were able to process the message", fallbackMessageHandlerTypeName);
-
-                Task processMessageAsync = _fallbackMessageHandler.Value.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                if (processMessageAsync is null)
-                {
-                    throw new InvalidOperationException(
-                        $"Cannot fallback upon the fallback message handler '{fallbackMessageHandlerTypeName}' " 
-                        + "because the handler was not correctly implemented to process the message as it returns 'null' for its asynchronous operation");
-                }
-
-                await processMessageAsync;
-                Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' has processed the message", fallbackMessageHandlerTypeName);
-
                 return true;
             }
 
+            bool isProcessedByGeneralContext = await TryFallbackProcessMessageByContextAsync<MessageContext>(message, messageContext, correlationInfo, cancellationToken);
+            return isProcessedByGeneralContext;
+        }
+
+        private async Task<bool> TryFallbackProcessMessageByContextAsync<TMessageContext>(
+            string message,
+            TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellationToken)
+            where TMessageContext : MessageContext
+        {
+            FallbackMessageHandler<string, TMessageContext>[] fallbackHandlers =
+                GetAvailableFallbackMessageHandlersByContext<string, TMessageContext>(messageContext);
+
+            if (fallbackHandlers.Length <= 0)
+            {
+                Logger.LogTrace("No fallback message handlers found within message context '{Type}' (JobId: {JobId})", typeof(TMessageContext).Name, messageContext.JobId);
+                return false;
+            }
+
+            foreach (FallbackMessageHandler<string, TMessageContext> fallbackHandler in fallbackHandlers)
+            {
+                string fallbackMessageHandlerTypeName = fallbackHandler.MessageHandlerType.Name;
+
+                Logger.LogTrace("Fallback on registered '{FallbackMessageHandlerType}' because none of the general message handlers were able to process the message", fallbackMessageHandlerTypeName);
+
+                try
+                {
+                    Task<bool> processMessageAsync = fallbackHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+                    if (processMessageAsync is null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Cannot fallback upon the general fallback message handler '{fallbackMessageHandlerTypeName}' "
+                            + "because the handler was not correctly implemented to process the message as it returns 'null' for its asynchronous operation");
+                    }
+
+                    bool result = await processMessageAsync;
+                    if (result)
+                    {
+                        Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' has processed the message", fallbackMessageHandlerTypeName);
+                        return true;
+                    }
+
+                    Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' was not able to process the message", fallbackMessageHandlerTypeName);
+                }
+                catch (Exception exception)
+                {
+                    Logger.LogError(exception, "Fallback message handler '{FallbackMessageHandlerType}' was not able to process the message: {Message}", fallbackMessageHandlerTypeName, exception.Message);
+                }
+            }
+
             return false;
+        }
+
+        /// <summary>
+        /// Gets all the available fallback message handlers for this <paramref name="messageContext"/> registered in the application services.
+        /// </summary>
+        /// <param name="messageContext">The message context in which the message is received and where the fallback message handler should take up.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageContext"/> is <c>null</c>.</exception>
+        protected FallbackMessageHandler<TMessage, TMessageContext>[] GetAvailableFallbackMessageHandlersByContext<TMessage, TMessageContext>(
+            TMessageContext messageContext)
+            where TMessage : class
+            where TMessageContext : MessageContext
+        {
+            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to filter out fallback message handlers that are registered with the same message context's Job ID");
+
+            return ServiceProvider.GetServices<FallbackMessageHandler<TMessage, TMessageContext>>()
+                                  .Where(handler => handler.CanProcessMessageBasedOnContext(messageContext))
+                                  .ToArray();
         }
 
         /// <summary>

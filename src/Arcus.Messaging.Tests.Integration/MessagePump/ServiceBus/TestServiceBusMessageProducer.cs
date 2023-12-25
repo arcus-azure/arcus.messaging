@@ -60,13 +60,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         }
 
         /// <summary>
-        /// Sends the <paramref name="message"/> to the configured Azure Service Bus.
+        /// Sends the <paramref name="messages"/> to the configured Azure Service Bus.
         /// </summary>
-        /// <param name="message">The message to send.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
-        public async Task ProduceAsync(ServiceBusMessage message)
+        /// <param name="messages">The message to send.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messages"/> is <c>null</c>.</exception>
+        public async Task ProduceAsync(params ServiceBusMessage[] messages)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus message to send");
+            Guard.NotNull(messages, nameof(messages), "Requires an Azure Service Bus message to send");
 
             var connectionStringProperties = ServiceBusConnectionStringProperties.Parse(_connectionString);
             await using (var client = new ServiceBusClient(_connectionString))
@@ -75,7 +75,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
 
                 try
                 {
-                    await messageSender.SendMessageAsync(message);
+                    await messageSender.SendMessagesAsync(messages);
                 }
                 finally
                 {

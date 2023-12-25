@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Messaging.AzureFunctions.ServiceBus;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 
@@ -14,14 +14,18 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.Function
     public class OrderProcessingFunction
     {
         private readonly IAzureServiceBusMessageRouter _messageRouter;
+        private readonly AzureFunctionsInProcessMessageCorrelation _messageCorrelation;
         private readonly string _jobId;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OrderProcessingFunction" /> class.
         /// </summary>
-        public OrderProcessingFunction(IAzureServiceBusMessageRouter messageRouter)
+        public OrderProcessingFunction(
+            IAzureServiceBusMessageRouter messageRouter,
+            AzureFunctionsInProcessMessageCorrelation messageCorrelation)
         {
             _messageRouter = messageRouter;
+            _messageCorrelation = messageCorrelation;
             _jobId = Guid.NewGuid().ToString();
         }
 
@@ -32,10 +36,12 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue.Function
             CancellationToken cancellationToken)
         {
             log.LogInformation($"C# ServiceBus queue trigger function processed message: {message.MessageId}");
-            
-            var context = new AzureServiceBusMessageContext(message.MessageId, _jobId, AzureServiceBusSystemProperties.CreateFrom(message), message.ApplicationProperties);
-            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
-            await _messageRouter.RouteMessageAsync(message, context, correlationInfo, cancellationToken);
+
+            AzureServiceBusMessageContext context = message.GetMessageContext(_jobId);
+            using (MessageCorrelationResult result = _messageCorrelation.CorrelateMessage(message))
+            {
+                await _messageRouter.RouteMessageAsync(message, context, result.CorrelationInfo, cancellationToken);
+            }
         }
     }
 }
