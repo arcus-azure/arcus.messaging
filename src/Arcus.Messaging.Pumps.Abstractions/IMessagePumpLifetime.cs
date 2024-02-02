@@ -15,8 +15,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="jobId">The uniquely defined identifier of the registered message pump.</param>
         /// <param name="cancellationToken">The token to indicate that the start process has been aborted.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        [Obsolete("Will be renamed to 'StartProcessingMessageAsync' in the next major release")]
-        Task PauseProcessingMessagesAsync(string jobId, CancellationToken cancellationToken);
+        Task StartProcessingMessagesAsync(string jobId, CancellationToken cancellationToken);
 
         /// <summary>
         /// Pauses a message pump with the given <paramref name="jobId"/> for a specified <paramref name="duration"/>.
