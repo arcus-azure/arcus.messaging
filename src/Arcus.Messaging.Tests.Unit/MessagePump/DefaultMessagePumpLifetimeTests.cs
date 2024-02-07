@@ -63,7 +63,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
             var lifetime = new DefaultMessagePumpLifetime(provider);
 
             // Act
-            await lifetime.PauseProcessingMessagesAsync(jobId, CancellationToken.None);
+            await lifetime.StartProcessingMessagesAsync(jobId, CancellationToken.None);
 
             // Assert
             var pump = Assert.IsType<TestMessagePump>(hostedService);
