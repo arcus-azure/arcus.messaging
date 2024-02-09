@@ -154,7 +154,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         internal static AzureServiceBusMessagePumpOptions DefaultTopicOptions => new AzureServiceBusMessagePumpOptions()
         {
-            TopicSubscription = ServiceBus.TopicSubscription.CreateOnStart | ServiceBus.TopicSubscription.DeleteOnStop
+            TopicSubscription = ServiceBus.TopicSubscription.None
         };
     }
 }
