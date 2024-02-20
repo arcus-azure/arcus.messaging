@@ -25,7 +25,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             string jobId = BogusGenerator.Random.Guid().ToString();
 
             // Act
-            AzureEventHubsMessageContext context = data.GetMessageContext(eventHubsNamespace, consumerGroup, eventHubsName, jobId);
+            AzureEventHubsMessageContext context = data.GetMessageContext(eventHubsNamespace, eventHubsName, consumerGroup, jobId);
 
             // Assert
             Assert.Equal(eventHubsNamespace, context.EventHubsNamespace);
