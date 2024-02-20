@@ -100,16 +100,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// Gets the consumer-configurable options to change the behavior of the Azure Service Bus router.
         /// </summary>
         protected AzureServiceBusMessageRouterOptions ServiceBusOptions { get; }
-        
-        /// <summary>
-        /// Gets the flag indicating whether or not the router has an registered <see cref="IAzureServiceBusFallbackMessageHandler"/> instance.
-        /// </summary>
-        [Obsolete("Use the " + nameof(GetAvailableFallbackMessageHandlersByContext) + " instead to determine whether a fallback message handler is available for your message context")]
-        protected bool HasAzureServiceBusFallbackHandler => 
-            throw new NotImplementedException(
-                "Because the message handlers are now registered within the scope of the message pump/router, " 
-                + "determining whether a fallback message handler is available or not is only possible when providing a Job ID to identify the message pump/router, " 
-                + $"please use the {nameof(GetAvailableFallbackMessageHandlersByContext)} to determine the available fallback message handlers for your message context");
 
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s

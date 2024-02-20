@@ -42,12 +42,6 @@ namespace Arcus.Messaging.Pumps.Abstractions
         public string JobId { get; protected set; } = Guid.NewGuid().ToString();
 
         /// <summary>
-        ///     Unique id of this message pump instance
-        /// </summary>
-        [Obsolete("Use the " + nameof(JobId) + " instead to identify the message pump")]
-        protected string Id => JobId;
-
-        /// <summary>
         /// Gets hte ID of the client being used to connect to the messaging service.
         /// </summary>
         protected string ClientId { get; private set; }

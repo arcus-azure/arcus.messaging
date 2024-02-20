@@ -148,7 +148,7 @@ namespace Arcus.Messaging.Health.Tcp
             try
             {
                 _logger.LogTrace("Accepting TCP client on port {Port}...", Port);
-#if NET6_0
+#if !NETSTANDARD2_1 && !NETCOREAPP
                 using (TcpClient client = await _listener.AcceptTcpClientAsync(cancellationToken))
 #else 
                 using (TcpClient client = await _listener.AcceptTcpClientAsync())
