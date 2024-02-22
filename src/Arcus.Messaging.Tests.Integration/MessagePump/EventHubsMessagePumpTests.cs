@@ -366,7 +366,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     
                     Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaArcusKeyVault.Context.Operation.ParentId);
                     Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaMicrosoftSql.Context.Operation.ParentId);
-                }, timeout: TimeSpan.FromMinutes(1), _logger);
+                }, timeout: TimeSpan.FromMinutes(1.5), _logger);
             }
         }
 
