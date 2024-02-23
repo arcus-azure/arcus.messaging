@@ -22,14 +22,16 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             string eventHubsNamespace = BogusGenerator.Random.AlphaNumeric(20);
             string eventHubsName = BogusGenerator.Random.AlphaNumeric(5);
             string consumerGroup = BogusGenerator.Random.AlphaNumeric(10);
+            string jobId = BogusGenerator.Random.Guid().ToString();
 
             // Act
-            AzureEventHubsMessageContext context = data.GetMessageContext(eventHubsNamespace, eventHubsName, consumerGroup);
+            AzureEventHubsMessageContext context = data.GetMessageContext(eventHubsNamespace, eventHubsName, consumerGroup, jobId);
 
             // Assert
             Assert.Equal(eventHubsNamespace, context.EventHubsNamespace);
             Assert.Equal(eventHubsName, context.EventHubsName);
             Assert.Equal(consumerGroup, context.ConsumerGroup);
+            Assert.Equal(jobId, context.JobId);
             Assert.Equal(data.ContentType, context.ContentType);
             Assert.Equal(data.EnqueuedTime, context.EnqueueTime);
             Assert.Equal(data.Offset, context.Offset);

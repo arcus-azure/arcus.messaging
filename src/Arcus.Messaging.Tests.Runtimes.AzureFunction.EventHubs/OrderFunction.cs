@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
@@ -14,6 +15,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs
     public class OrderFunction
     {
         private readonly IAzureEventHubsMessageRouter _messageRouter;
+        private readonly string _jobId = Guid.NewGuid().ToString();
         private readonly ILogger _logger;
 
         public OrderFunction(
@@ -38,7 +40,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs
                 Dictionary<string, JsonElement> properties = propertiesArray[i];
                 
                 EventData eventData = CreateEventData(message, properties);
-                AzureEventHubsMessageContext messageContext = eventData.GetMessageContext("<namespace>", "$Default", "<eventhubs-name>");
+                AzureEventHubsMessageContext messageContext = eventData.GetMessageContext("<namespace>", "$Default", "<eventhubs-name>", _jobId);
 
                 using (MessageCorrelationResult result = executionContext.GetCorrelationInfo(properties))
                 {
