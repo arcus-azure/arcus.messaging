@@ -1,6 +1,6 @@
 variables:
   DotNet.Sdk.Version: '8.0.x'
   DotNet.Sdk.PreviousVersion: '6.0.100'
-  DotNet.Sdk.IncludePreviewVersions: true
+  DotNet.Sdk.IncludePreviewVersions: false
   Project: 'Arcus.Messaging'
   Vm.Image: 'ubuntu-latest'
