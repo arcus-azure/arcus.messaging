@@ -97,16 +97,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         }
 
         /// <summary>
-        /// Gets the flag indicating whether or not the router can fallback to an <see cref="IFallbackMessageHandler"/> instance.
-        /// </summary>
-        [Obsolete("Use the " + nameof(GetAvailableFallbackMessageHandlersByContext) + " instead to determine whether a fallback message handler is available for your message context")]
-        protected bool HasFallbackMessageHandler => 
-            throw new NotImplementedException(
-                "Because the message handlers are now registered within the scope of the message pump/router, " 
-                + "determining whether a fallback message handler is available or not is only possible when providing a Job ID to identify the message pump/router, " 
-                + $"please use the {nameof(GetAvailableFallbackMessageHandlersByContext)} to determine the available fallback message handlers for your message context");
-
-        /// <summary>
         /// Gets the instance that provides all the registered services in the current application.
         /// </summary>
         protected IServiceProvider ServiceProvider { get; }
@@ -192,31 +182,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         }
 
         /// <summary>
-        /// Creates a Serilog message correlation enricher on the Serilog <see cref="LogContext"/> during the the course of the returned <see cref="IDisposable"/>.
-        /// </summary>
-        /// <param name="serviceProvider">The scoped service provider to extract the <see cref="IMessageCorrelationInfoAccessor"/>.</param>
-        /// <param name="correlationInfo">The message correlation to be set on the <see cref="IMessageCorrelationInfoAccessor"/>.</param>
-        /// <returns>
-        ///     A temporary set of a Serilog message correlation enricher on the Serilog <see cref="LogContext"/>.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> or <paramref name="correlationInfo"/> is <c>null</c>.</exception>
-        [Obsolete("Use the " + nameof(MessageCorrelationInfoAccessor) + " directly with the message correlation model")]
-        protected IDisposable UsingMessageCorrelationEnricher(IServiceProvider serviceProvider, MessageCorrelationInfo correlationInfo)
-        {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a scoped service provider to extract the message correlation accessor");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to set on the message correlation accessor");
-
-            var correlationInfoAccessor = serviceProvider.GetService<IMessageCorrelationInfoAccessor>();
-            if (correlationInfoAccessor is null)
-            {
-                return null;
-            }
-
-            correlationInfoAccessor.SetCorrelationInfo(correlationInfo);
-            return LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfoAccessor));
-        }
-
-        /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s
         /// and optionally through an registered <see cref="IFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
@@ -289,16 +254,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             return false;
-        }
-
-        /// <summary>
-        /// Gets all the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances in the application.
-        /// </summary>
-        [Obsolete("Use the overload with a dedicated scoped " + nameof(IServiceProvider) + ": " + nameof(GetRegisteredMessageHandlers) + " so that the correlation information is enriched during the message routing")]
-        protected IEnumerable<MessageHandler> GetRegisteredMessageHandlers()
-        {
-            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(ServiceProvider, Logger);
-            return handlers;
         }
 
         /// <summary>

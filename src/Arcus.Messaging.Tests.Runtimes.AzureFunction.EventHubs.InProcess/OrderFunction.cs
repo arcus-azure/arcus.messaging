@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -12,6 +13,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs.InProcess
 {
     public class OrderFunction
     {
+        private readonly string _jobId = Guid.NewGuid().ToString();
         private readonly IAzureEventHubsMessageRouter _messageRouter;
         private readonly AzureFunctionsInProcessMessageCorrelation _messageCorrelation;
 
@@ -36,7 +38,7 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs.InProcess
 
             foreach (EventData eventData in events)
             {
-                AzureEventHubsMessageContext messageContext = eventData.GetMessageContext("<eventhubs-namespace>", "<eventhubs-name>");
+                AzureEventHubsMessageContext messageContext = eventData.GetMessageContext("<eventhubs-namespace>", "<eventhubs-name>", "$Default", _jobId);
                 using (MessageCorrelationResult result = _messageCorrelation.CorrelateMessage(eventData))
                 {
                     await _messageRouter.RouteMessageAsync(eventData, messageContext, result.CorrelationInfo, cancellation);

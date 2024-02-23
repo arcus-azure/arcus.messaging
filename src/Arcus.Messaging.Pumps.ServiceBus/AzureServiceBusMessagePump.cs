@@ -6,6 +6,7 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
@@ -24,9 +25,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     {
         private readonly IAzureServiceBusMessageRouter _messageRouter;
         private readonly IDisposable _loggingScope;
-        
+
         private bool _isHostShuttingDown;
         private ServiceBusProcessor _messageProcessor;
+        private ServiceBusReceiver _messageReceiver;
         private int _unauthorizedExceptionCount;
 
         /// <summary>
@@ -172,6 +174,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             try
             {
+                _messageReceiver = await Settings.CreateMessageReceiverAsync();
+
                 await StartProcessingMessagesAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
             }
@@ -189,10 +193,49 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
         }
 
+        /// <summary>
+        /// Try to process a single message after the circuit was broken, a.k.a entering the half-open state.
+        /// </summary>
+        /// <returns>
+        ///     [Success] when the related message handler can again process messages and the message pump can again start receive messages in full; [Failure] otherwise.
+        /// </returns>
+        public override async Task<MessageProcessingResult> TryProcessProcessSingleMessageAsync(MessagePumpCircuitBreakerOptions options)
+        {
+            if (_messageReceiver is null)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot try process a single message in the Azure Service Bus {EntityPath} message pump '{JobId}' because there was not a message receiver set before this point, " +
+                    $"this probably happens when the message pump is used in the wrong way or manually called, please let only the circuit breaker functionality call this functionality");
+            }
+
+            Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' tries to process single message during half-open circuit...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
+            
+            ServiceBusReceivedMessage message = null;
+            while (message is null)
+            {
+                message = await _messageReceiver.ReceiveMessageAsync();
+            }
+
+            try
+            {
+                await ProcessMessageAsync(new ProcessMessageEventArgs(message, _messageReceiver, CancellationToken.None));
+                return MessageProcessingResult.Success;
+            }
+            catch (Exception exception)
+            {
+                Logger.LogError(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to process single message during half-open circuit, retrying after circuit delay", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
+                return MessageProcessingResult.Failure(exception);
+            }
+        }
+
         /// <inheritdoc />
         public override async Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
         {
-            _messageProcessor = await Settings.CreateMessageProcessorAsync();
+            if (_messageProcessor is null)
+            {
+                _messageProcessor = await Settings.CreateMessageProcessorAsync();
+            }
+            
             Namespace = _messageProcessor.FullyQualifiedNamespace;
 
             /* TODO: we can't support Azure Service Bus plug-ins yet because the new Azure SDK doesn't yet support this:
@@ -218,10 +261,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             try
             {
                 Logger.LogTrace("Closing Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
-                await _messageProcessor.CloseAsync(cancellationToken);
                 _messageProcessor.ProcessMessageAsync -= ProcessMessageAsync;
                 _messageProcessor.ProcessErrorAsync -= ProcessErrorAsync;
-               
+                await _messageProcessor.StopProcessingAsync(cancellationToken);
+
                 Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}", Settings.ServiceBusEntity, JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
             }
             catch (Exception exception) when (exception is not TaskCanceledException && exception is not OperationCanceledException)
@@ -292,6 +335,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
+            if (_messageProcessor != null)
+            {
+                await _messageProcessor.StopProcessingAsync();
+                await _messageProcessor.CloseAsync();
+            }
+
+            if (_messageReceiver != null)
+            {
+                await _messageReceiver.CloseAsync();
+            }
+
             if (Settings.ServiceBusEntity == ServiceBusEntityType.Topic
                 && Settings.Options.TopicSubscription.HasValue
                 && Settings.Options.TopicSubscription.Value.HasFlag(TopicSubscription.DeleteOnStop))

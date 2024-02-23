@@ -35,6 +35,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var traceParent = TraceParent.Generate();
             Order order = OrderGenerator.Generate();
+
             var orderMessage = new ServiceBusMessage(BinaryData.FromObjectAsJson(order))
                 .WithDiagnosticId(traceParent);
 
