@@ -6,6 +6,9 @@
     <DockerFastModeProjectMountDirectory>/home/site/wwwroot</DockerFastModeProjectMountDirectory>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Arcus.Observability.Correlation" Version="3.0.0" />
+    <PackageReference Include="Arcus.Observability.Telemetry.Core" Version="3.0.0" />
+    <PackageReference Include="Arcus.Security.Core" Version="2.0.0" />
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.11.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus" Version="5.0.0" />

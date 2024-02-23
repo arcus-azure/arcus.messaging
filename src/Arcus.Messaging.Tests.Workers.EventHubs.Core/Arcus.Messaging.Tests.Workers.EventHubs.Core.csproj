@@ -8,6 +8,9 @@
   <ItemGroup>
     <PackageReference Include="Arcus.EventGrid.Core" Version="3.3.0" />
     <PackageReference Include="Arcus.EventGrid.Testing" Version="3.3.0" />
+    <PackageReference Include="Arcus.Observability.Correlation" Version="3.0.0" />
+    <PackageReference Include="Arcus.Observability.Telemetry.Core" Version="3.0.0" />
+    <PackageReference Include="Arcus.Security.Core" Version="2.0.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
