@@ -203,9 +203,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         [Theory]
         [InlineData(TopicSubscription.None, false)]
-        [InlineData(TopicSubscription.CreateOnStart, true)]
-        [InlineData(TopicSubscription.DeleteOnStop, false)]
-        [InlineData(TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop, true)]
+        [InlineData(TopicSubscription.Automatic, true)]
         public async Task ServiceBusTopicMessagePump_WithNoneTopicSubscription_DoesntCreateTopicSubscription(TopicSubscription topicSubscription, bool expected)
         {
             // Arrange

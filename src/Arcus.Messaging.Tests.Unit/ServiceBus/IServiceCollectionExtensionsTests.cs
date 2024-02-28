@@ -36,7 +36,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                     "topic name", "subscription name", "secret name", options =>
                     {
                         options.AutoComplete = true;
-                        options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
+                        options.TopicSubscription = TopicSubscription.Automatic;
                     });
             
             // Assert
@@ -91,7 +91,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                     "topic name", "subscription name", "secret name", configureMessagePump: options =>
                     {
                         options.AutoComplete = true;
-                        options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
+                        options.TopicSubscription = TopicSubscription.Automatic;
                     });
 
             // Assert

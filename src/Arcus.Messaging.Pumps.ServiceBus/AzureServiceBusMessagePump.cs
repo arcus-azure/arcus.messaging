@@ -128,7 +128,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             if (Settings.ServiceBusEntity == ServiceBusEntityType.Topic
                 && Settings.Options.TopicSubscription.HasValue
-                && Settings.Options.TopicSubscription.Value.HasFlag(TopicSubscription.CreateOnStart))
+                && Settings.Options.TopicSubscription.Value.HasFlag(TopicSubscription.Automatic))
             {
                 await CreateTopicSubscriptionAsync(cancellationToken);
             }
@@ -348,7 +348,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (Settings.ServiceBusEntity == ServiceBusEntityType.Topic
                 && Settings.Options.TopicSubscription.HasValue
-                && Settings.Options.TopicSubscription.Value.HasFlag(TopicSubscription.DeleteOnStop))
+                && Settings.Options.TopicSubscription.Value.HasFlag(TopicSubscription.Automatic))
             {
                 await DeleteTopicSubscriptionAsync(cancellationToken);
             }
