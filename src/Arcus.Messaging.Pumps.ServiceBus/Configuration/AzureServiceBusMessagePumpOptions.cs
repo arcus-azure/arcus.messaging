@@ -1,5 +1,4 @@
 ﻿using System;
-using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using GuardNet;
 
@@ -22,10 +21,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         public AzureServiceBusMessagePumpOptions()
         {
             Routing = new AzureServiceBusMessageRouterOptions();
-#pragma warning disable CS0618
-            Deserialization = Routing.Deserialization;
-            Correlation = new AzureServiceBusCorrelationOptions(Routing.Correlation);
-#pragma warning restore CS0618
         }
 
         /// <summary>
@@ -123,18 +118,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
                 _maximumUnauthorizedExceptionsBeforeRestart = value;
             }
         }
-
-        /// <summary>
-        /// Gets the options to control the correlation information upon the receiving of Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
-        /// </summary>
-        [Obsolete("Use the " + nameof(Routing) + "." + nameof(AzureServiceBusMessageRouterOptions.Correlation) + " instead")]
-        public AzureServiceBusCorrelationOptions Correlation { get; }
-
-        /// <summary>
-        /// Gets the consumer-configurable options to change the deserialization behavior.
-        /// </summary>
-        [Obsolete("Use the " + nameof(Routing) + "." + nameof(AzureServiceBusMessageRouterOptions.Deserialization) + " instead")]
-        public MessageDeserializationOptions Deserialization { get; }
 
         /// <summary>
         /// Gets the consumer-configurable options to change the behavior of the message router.

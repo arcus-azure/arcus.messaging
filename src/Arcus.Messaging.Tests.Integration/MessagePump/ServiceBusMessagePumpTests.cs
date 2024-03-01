@@ -145,7 +145,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .AddServiceBusQueueMessagePump(_ => connectionString, opt =>
                    {
                        opt.AutoComplete = true;
-                       opt.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+                       opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
                    })
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
@@ -249,8 +249,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        opt =>
                        {
                            opt.AutoComplete = true;
-                           opt.Correlation.Format = MessageCorrelationFormat.Hierarchical;
-                           opt.Correlation.TransactionIdPropertyName = customTransactionIdPropertyName;
+                           opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+                           opt.Routing.Correlation.TransactionIdPropertyName = customTransactionIdPropertyName;
                        })
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
@@ -317,7 +317,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddEventGridPublisher(_config)
                    .AddServiceBusQueueMessagePump(
                        _ => connectionString, 
-                       opt => opt.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore)
+                       opt => opt.Routing.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore)
                    .WithServiceBusMessageHandler<OrderV2AzureServiceBusMessageHandler, OrderV2>();
 
             // Act / Assert
@@ -394,8 +394,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        opt =>
                        {
                            opt.AutoComplete = true;
-                           opt.Correlation.Format = MessageCorrelationFormat.Hierarchical;
-                           opt.Correlation.OperationParentIdPropertyName = customOperationParentIdPropertyName;
+                           opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+                           opt.Routing.Correlation.OperationParentIdPropertyName = customOperationParentIdPropertyName;
                        })
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
@@ -985,7 +985,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddServiceBusQueueMessagePump(_ => connectionString, opt =>
                    {
                        opt.AutoComplete = true;
-                       opt.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+                       opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
                    })
                    .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
             
