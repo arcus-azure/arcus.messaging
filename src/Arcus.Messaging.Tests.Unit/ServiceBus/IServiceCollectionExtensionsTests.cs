@@ -33,7 +33,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Act
             ServiceBusMessageHandlerCollection result = 
                 services.AddServiceBusTopicMessagePump(
-                    "topic name", "subscription name", "secret name", options => options.AutoComplete = true);
+                    "topic name", "subscription name", "secret name", options =>
+                    {
+                        options.AutoComplete = true;
+                        options.TopicSubscription = TopicSubscription.Automatic;
+                    });
             
             // Assert
             Assert.NotNull(result);
@@ -84,7 +88,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Act
             ServiceBusMessageHandlerCollection result = 
                 services.AddServiceBusTopicMessagePump(
-                    "topic name", "subscription name", "secret name", configureMessagePump: options => options.AutoComplete = true);
+                    "topic name", "subscription name", "secret name", configureMessagePump: options =>
+                    {
+                        options.AutoComplete = true;
+                        options.TopicSubscription = TopicSubscription.Automatic;
+                    });
 
             // Assert
             // Assert

@@ -462,8 +462,8 @@ public class Startup
                 options.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
 
                 // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
-                // when the message pump starts/stops (default: CreateOnStart & DeleteOnStop).
-                options.TopicSubscription = TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop;
+                // when the message pump starts/stops (default: None, so no subscription will be created or deleted).
+                options.TopicSubscription = TopicSubscription.Automatic;
             });
 
         services.AddServiceBusQueueMessagePump(
