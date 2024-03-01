@@ -1,8 +1,11 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Messaging.Pumps.ServiceBus;
 using Azure;
 using Azure.Messaging.EventGrid;
 using GuardNet;
 using Microsoft.Extensions.Azure;
+using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace Arcus.Messaging.Tests.Integration.Fixture
@@ -31,6 +34,15 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             });
 
             return options;
+        }
+
+        public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(this WorkerOptions options, string connectionString)
+        {
+            return options.Services.AddServiceBusTopicMessagePump(subscriptionName: Guid.NewGuid().ToString(), _ => connectionString, opt =>
+            {
+                opt.TopicSubscription = TopicSubscription.Automatic;
+                opt.AutoComplete = true;
+            });
         }
     }
 }
