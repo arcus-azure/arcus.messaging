@@ -7,8 +7,6 @@ using Azure.Messaging.ServiceBus;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
-using Bogus;
-using Microsoft.Azure.ServiceBus;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,8 +16,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     [Trait("Category", "Docker")]
     public class ServiceBusMessagePumpDockerTests : DockerServiceBusIntegrationTest
     {
-        private static readonly Faker BogusGenerator = new Faker();
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessagePumpDockerTests" /> class.
         /// </summary>
