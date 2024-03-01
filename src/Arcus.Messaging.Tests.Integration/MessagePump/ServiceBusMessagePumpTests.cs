@@ -198,7 +198,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Theory]
         [InlineData(TopicSubscription.None, false)]
         [InlineData(TopicSubscription.Automatic, true)]
-        public async Task ServiceBusTopicMessagePump_WithNoneTopicSubscription_DoesntCreateTopicSubscription(TopicSubscription topicSubscription, bool expected)
+        public async Task ServiceBusTopicMessagePump_WithNoneTopicSubscription_DoesntCreateTopicSubscription(TopicSubscription topicSubscription, bool doesSubscriptionExists)
         {
             // Arrange
             string connectionString = _config.GetServiceBusTopicConnectionString();
@@ -218,12 +218,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 var properties = ServiceBusConnectionStringProperties.Parse(connectionString);
                 
                 Response<bool> subscriptionExistsResponse = await client.SubscriptionExistsAsync(properties.EntityPath, subscriptionName);
-                if (subscriptionExistsResponse.Value)
-                {
-                    await client.DeleteSubscriptionAsync(properties.EntityPath, subscriptionName);
-                }
-                
-                Assert.Equal(expected, subscriptionExistsResponse.Value);
+                Assert.Equal(doesSubscriptionExists, subscriptionExistsResponse.Value);
             }
         }
 
@@ -771,7 +766,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddXunitTestLogging(_outputWriter)
                    .AddServiceBusTopicMessagePump(
                        subscriptionName: "circuit-breaker-" + Guid.NewGuid(),
-                       _ => _config.GetServiceBusTopicConnectionString())
+                       _ => _config.GetServiceBusTopicConnectionString(),
+                       opt => opt.TopicSubscription = TopicSubscription.Automatic)
                    .WithServiceBusMessageHandler<CircuitBreakerAzureServiceBusMessageHandler, Shipment>(
                         implementationFactory: provider => new CircuitBreakerAzureServiceBusMessageHandler(
                             targetMessageIds: messages.Select(m => m.MessageId).ToArray(),
