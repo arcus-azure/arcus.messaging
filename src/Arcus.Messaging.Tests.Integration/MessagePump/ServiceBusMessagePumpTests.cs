@@ -113,10 +113,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusTopicMessagePump(
-                       subscriptionName: Guid.NewGuid().ToString(),
-                       _ => connectionString,
-                       opt => opt.AutoComplete = true)
+                   .AddServiceBusTopicMessagePump(connectionString)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
             var traceParnet = TraceParent.Generate();
@@ -191,10 +188,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusTopicMessagePump(
-                        subscriptionName: Guid.NewGuid().ToString(),
-                        _ => connectionString, 
-                        opt => opt.AutoComplete = true)
+                   .AddServiceBusTopicMessagePump(connectionString)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
             
             // Act / Assert
@@ -203,10 +197,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         [Theory]
         [InlineData(TopicSubscription.None, false)]
-        [InlineData(TopicSubscription.CreateOnStart, true)]
-        [InlineData(TopicSubscription.DeleteOnStop, false)]
-        [InlineData(TopicSubscription.CreateOnStart | TopicSubscription.DeleteOnStop, true)]
-        public async Task ServiceBusTopicMessagePump_WithNoneTopicSubscription_DoesntCreateTopicSubscription(TopicSubscription topicSubscription, bool expected)
+        [InlineData(TopicSubscription.Automatic, true)]
+        public async Task ServiceBusTopicMessagePump_WithNoneTopicSubscription_DoesntCreateTopicSubscription(TopicSubscription topicSubscription, bool doesSubscriptionExists)
         {
             // Arrange
             string connectionString = _config.GetServiceBusTopicConnectionString();
@@ -226,12 +218,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 var properties = ServiceBusConnectionStringProperties.Parse(connectionString);
                 
                 Response<bool> subscriptionExistsResponse = await client.SubscriptionExistsAsync(properties.EntityPath, subscriptionName);
-                if (subscriptionExistsResponse.Value)
-                {
-                    await client.DeleteSubscriptionAsync(properties.EntityPath, subscriptionName);
-                }
-                
-                Assert.Equal(expected, subscriptionExistsResponse.Value);
+                Assert.Equal(doesSubscriptionExists, subscriptionExistsResponse.Value);
             }
         }
 
@@ -249,6 +236,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        opt =>
                        {
                            opt.AutoComplete = true;
+                           opt.TopicSubscription = TopicSubscription.Automatic;
                            opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
                            opt.Routing.Correlation.TransactionIdPropertyName = customTransactionIdPropertyName;
                        })
@@ -279,7 +267,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .AddServiceBusTopicMessagePump(
                        "Test-Receive-All-Topic-Only-with-an-azure-servicebus-topic-subscription-name-over-50-characters", 
                        _ => connectionString, 
-                       opt => opt.AutoComplete = true)
+                       opt =>
+                       {
+                           opt.AutoComplete = true;
+                           opt.TopicSubscription = TopicSubscription.Automatic;
+                       })
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
             
             // Act / Assert
@@ -300,7 +292,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        topicName: properties.EntityPath,
                        subscriptionName: Guid.NewGuid().ToString(),
                        getConnectionStringFromConfigurationFunc: _ => namespaceConnectionString,
-                       configureMessagePump: opt => opt.AutoComplete = true)
+                       configureMessagePump: opt =>
+                       {
+                           opt.AutoComplete = true;
+                           opt.TopicSubscription = TopicSubscription.Automatic;
+                       })
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
             // Act / Assert
@@ -340,7 +336,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        subscriptionName: Guid.NewGuid().ToString(),
                        serviceBusNamespace: properties.FullyQualifiedNamespace,
                        clientId: auth.ClientId,
-                       configureMessagePump: opt => opt.AutoComplete = true)
+                       configureMessagePump: opt =>
+                       {
+                           opt.AutoComplete = true;
+                           opt.TopicSubscription = TopicSubscription.Automatic;
+                       })
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>();
 
             // Act / Assert
@@ -354,10 +354,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusTopicMessagePump(
-                       subscriptionName: Guid.NewGuid().ToString(), 
-                       _ => connectionString, 
-                       opt => opt.AutoComplete = false)
+                   .AddServiceBusTopicMessagePump(connectionString)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusCompleteMessageHandler, Order>();
             
             // Act / Assert
@@ -524,7 +521,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusTopicMessagePump(subscriptionName: Guid.NewGuid().ToString(), _ => connectionString, opt => opt.AutoComplete = true)
+                   .AddServiceBusTopicMessagePump(connectionString)
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Customers")
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Orders")
                    .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
@@ -553,7 +550,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusTopicMessagePump(subscriptionName: Guid.NewGuid().ToString(), _ => connectionString, opt => opt.AutoComplete = true)
+                   .AddServiceBusTopicMessagePump(connectionString)
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>((Customer body) => body is null)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusMessageHandler, Order>((Order body) => body.Id != null)
                    .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order _) => false);
@@ -720,10 +717,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusTopicMessagePump(
-                       subscriptionName: Guid.NewGuid().ToString(), 
-                       _ => connectionString,
-                       opt => opt.AutoComplete = false)
+                   .AddServiceBusTopicMessagePump(connectionString)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>();
             
             // Act / Assert
@@ -737,10 +731,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusTopicMessagePump(
-                       subscriptionName: Guid.NewGuid().ToString(), 
-                       _ => connectionString, 
-                       opt => opt.AutoComplete = false)
+                   .AddServiceBusTopicMessagePump(connectionString)
                    .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
                    .WithServiceBusFallbackMessageHandler<OrdersAzureServiceBusAbandonFallbackMessageHandler>();
             
@@ -755,10 +746,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             string connectionString = _config.GetServiceBusTopicConnectionString();
             var options = new WorkerOptions();
             options.AddEventGridPublisher(_config)
-                   .AddServiceBusTopicMessagePump(
-                       subscriptionName: Guid.NewGuid().ToString(), 
-                       _ => connectionString, 
-                       options => options.AutoComplete = false)
+                   .AddServiceBusTopicMessagePump(connectionString)
                    .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>((AzureServiceBusMessageContext _) => true);
             
@@ -778,7 +766,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddXunitTestLogging(_outputWriter)
                    .AddServiceBusTopicMessagePump(
                        subscriptionName: "circuit-breaker-" + Guid.NewGuid(),
-                       _ => _config.GetServiceBusTopicConnectionString())
+                       _ => _config.GetServiceBusTopicConnectionString(),
+                       opt => opt.TopicSubscription = TopicSubscription.Automatic)
                    .WithServiceBusMessageHandler<CircuitBreakerAzureServiceBusMessageHandler, Shipment>(
                         implementationFactory: provider => new CircuitBreakerAzureServiceBusMessageHandler(
                             targetMessageIds: messages.Select(m => m.MessageId).ToArray(),
@@ -856,7 +845,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .AddServiceBusTopicMessagePump(
                        subscriptionName: Guid.NewGuid().ToString(), 
                        _ => connectionString, 
-                       opt => opt.JobId = jobId)
+                       opt =>
+                       {
+                           opt.JobId = jobId;
+                           opt.TopicSubscription = TopicSubscription.Automatic;
+                       })
                    .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
                    .WithServiceBusMessageHandler<OrdersAzureServiceBusAbandonMessageHandler, Order>((AzureServiceBusMessageContext _) => true);
 
