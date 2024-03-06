@@ -1,5 +1,4 @@
 ﻿using System;
-using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using GuardNet;
 
@@ -22,15 +21,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         public AzureServiceBusMessagePumpOptions()
         {
             Routing = new AzureServiceBusMessageRouterOptions();
-#pragma warning disable CS0618
-            Deserialization = Routing.Deserialization;
-            Correlation = new AzureServiceBusCorrelationOptions(Routing.Correlation);
-#pragma warning restore CS0618
         }
 
         /// <summary>
         /// <para>Gets or sets the value indicating whether or not a new Azure Service Bus Topic subscription has to be created when the <see cref="AzureServiceBusMessagePump"/> starts.</para>
-        /// <para>The subscription will be deleted afterwards when the message pump stops if the options <see cref="ServiceBus.TopicSubscription.DeleteOnStop"/> is selected.</para>
+        /// <para>The subscription will be deleted afterwards when the message pump stops if the options <see cref="ServiceBus.TopicSubscription.Automatic"/> is selected.</para>
         /// </summary>
         /// <remarks>
         ///     Provides capability to create and delete these subscriptions. This requires 'Manage' permissions on the Azure Service Bus Topic or namespace.
@@ -125,18 +120,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         }
 
         /// <summary>
-        /// Gets the options to control the correlation information upon the receiving of Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
-        /// </summary>
-        [Obsolete("Use the " + nameof(Routing) + "." + nameof(AzureServiceBusMessageRouterOptions.Correlation) + " instead")]
-        public AzureServiceBusCorrelationOptions Correlation { get; }
-
-        /// <summary>
-        /// Gets the consumer-configurable options to change the deserialization behavior.
-        /// </summary>
-        [Obsolete("Use the " + nameof(Routing) + "." + nameof(AzureServiceBusMessageRouterOptions.Deserialization) + " instead")]
-        public MessageDeserializationOptions Deserialization { get; }
-
-        /// <summary>
         /// Gets the consumer-configurable options to change the behavior of the message router.
         /// </summary>
         public AzureServiceBusMessageRouterOptions Routing { get; }
@@ -154,7 +137,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         internal static AzureServiceBusMessagePumpOptions DefaultTopicOptions => new AzureServiceBusMessagePumpOptions()
         {
-            TopicSubscription = ServiceBus.TopicSubscription.CreateOnStart | ServiceBus.TopicSubscription.DeleteOnStop
+            TopicSubscription = ServiceBus.TopicSubscription.None
         };
     }
 }
