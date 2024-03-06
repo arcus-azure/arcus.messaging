@@ -65,7 +65,7 @@ public class OrderMessageHandler : IMessageHandler<Order>
     public async Task ProcessMessageAsync(Order order, MessageContext context, ...)
     {
         // Do some processing...
-	}
+    }
 }
 ```
 

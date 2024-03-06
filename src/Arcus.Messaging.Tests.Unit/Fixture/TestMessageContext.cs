@@ -17,11 +17,19 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
         private static readonly Faker BogusGenerator = new Faker();
 
         /// <summary>
-        ///     Constructor
+        /// Initializes a new instance of the <see cref="TestMessageContext"/> class.
         /// </summary>
-        /// <param name="messageId">Unique identifier of the message</param>
-        /// <param name="properties">Contextual properties provided on the message</param>
-        public TestMessageContext(string messageId, IDictionary<string, object> properties) : base(messageId, properties) { }
+        /// <param name="messageId">The unique identifier of the message.</param>
+        /// <param name="properties">The contextual properties provided on the message.</param>
+        public TestMessageContext(string messageId, IDictionary<string, object> properties) : this(messageId, "job-id", properties) { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TestMessageContext"/> class.
+        /// </summary>
+        /// <param name="messageId">The unique identifier of the message.</param>
+        /// <param name="jobId">The unique ID to identify the registered message handlers that can handle this context.</param>
+        /// <param name="properties">The contextual properties provided on the message.</param>
+        public TestMessageContext(string messageId, string jobId, IDictionary<string, object> properties) : base(messageId, jobId, properties) { }
 
         /// <summary>
         /// Generate a new <see cref="TestMessageContext"/> instance with random values.

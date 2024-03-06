@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -139,16 +141,20 @@ namespace Arcus.Messaging.Health.Tcp
             while (!stoppingToken.IsCancellationRequested)
             {
                 HealthReport report = await _healthService.CheckHealthAsync(stoppingToken);
-                await AcceptConnectionAsync(report);
+                await AcceptConnectionAsync(report, stoppingToken);
             }
         }
 
-        private async Task AcceptConnectionAsync(HealthReport report)
+        private async Task AcceptConnectionAsync(HealthReport report, CancellationToken cancellationToken)
         {
             try
             {
                 _logger.LogTrace("Accepting TCP client on port {Port}...", Port);
+#if !NETSTANDARD2_1 && !NETCOREAPP
+                using (TcpClient client = await _listener.AcceptTcpClientAsync(cancellationToken))
+#else 
                 using (TcpClient client = await _listener.AcceptTcpClientAsync())
+#endif
                 {
                     _logger.LogTrace("TCP client accepted on port {Port}!", Port);
                     using (NetworkStream clientStream = client.GetStream())
@@ -162,7 +168,7 @@ namespace Arcus.Messaging.Health.Tcp
                         }
 
                         byte[] response = SerializeHealthReport(report);
-                        clientStream.Write(response, 0, response.Length);
+                        await clientStream.WriteAsync(response, 0, response.Length, cancellationToken);
                     }
                 }
             }
@@ -177,7 +183,8 @@ namespace Arcus.Messaging.Health.Tcp
             IHealthReportSerializer reportSerializer = _tcpListenerOptions.Serializer;
             if (reportSerializer is null)
             {
-                string json = JsonConvert.SerializeObject(healthReport, SerializationSettings);
+                HealthReport updatedReport = RemoveExceptionDetails(healthReport);
+                string json = JsonConvert.SerializeObject(updatedReport, SerializationSettings);
                 byte[] response = Encoding.UTF8.GetBytes(json);
 
                 return response;
@@ -193,6 +200,19 @@ namespace Arcus.Messaging.Health.Tcp
 
                 return response;
             }
+        }
+
+        private static HealthReport RemoveExceptionDetails(HealthReport report)
+        {
+            var entries = new Dictionary<string, HealthReportEntry>();
+            foreach ((string key, HealthReportEntry entry) in report.Entries)
+            {
+                entries.Add(key, new HealthReportEntry(entry.Status, entry.Description, entry.Duration, exception: null, entry.Data, entry.Tags));
+            }
+
+            return new HealthReport(
+                new ReadOnlyDictionary<string, HealthReportEntry>(entries),
+                report.TotalDuration);
         }
 
         /// <summary>

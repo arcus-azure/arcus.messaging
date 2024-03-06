@@ -1,5 +1,7 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Observability.Correlation;
 using GuardNet;
 using Microsoft.Extensions.Logging;
 
@@ -61,6 +63,15 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the message routing");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message router");
+
+            services.AddApplicationInsightsTelemetryWorkerService();
+
+            services.AddCorrelation<MessageCorrelationInfo>()
+                    .AddScoped<IMessageCorrelationInfoAccessor>(serviceProvider =>
+                    {
+                        return new MessageCorrelationInfoAccessor(
+                            serviceProvider.GetRequiredService<ICorrelationInfoAccessor<MessageCorrelationInfo>>());
+                    });
 
             services.AddSingleton<IMessageRouter>(serviceProvider => implementationFactory(serviceProvider));
             return new MessageHandlerCollection(services);

@@ -18,9 +18,9 @@ variables:
   - group: 'Arcus Messaging - Integration Testing'
   - group: 'Arcus Security - Integration Testing'
   - group: 'Arcus - GitHub Package Registry'
-  - group: 'Arcus Messaging - .NET'
   - group: 'Build Configuration'
   - template: ./variables/build.yml
+  - template: ./variables/test.yml
   - name: 'Package.Version'
     value: ${{ parameters['Package.Version'] }}
 
@@ -61,6 +61,11 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
+          - task: UseDotNet@2
+            displayName: 'Import .NET Core SDK ($(DotNet.Sdk.PreviousVersion))'
+            inputs:
+              packageType: 'sdk'
+              version: '$(DotNet.Sdk.PreviousVersion)'
           - template: test/run-unit-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
@@ -70,15 +75,6 @@ stages:
     displayName: Docker Integration Tests
     dependsOn: Build
     condition: succeeded()
-    variables:
-      - name: 'Images.ServiceBus.Queue'
-        value: 'workers-service-bus-queue'
-      - name: 'Images.ServiceBus.Topic'
-        value: 'workers-service-bus-topic'
-      - name: 'Arcus.Health.Port.Queue'
-        value: '42063'
-      - name: 'Arcus.Health.Port.Topic'
-        value: '42064'
     jobs:
       - job: DockerIntegrationTests
         displayName: 'Run Docker integration tests'
@@ -90,33 +86,7 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
-          - template: templates/build-and-run-worker-container.yml
-            parameters:
-              projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Queue'
-              containerName: '$(Images.ServiceBus.Queue)'
-              imageName: '$(Images.ServiceBus.Queue)'
-              imageTag: $(Build.BuildId)
-              healthPort: $(Arcus.Health.Port.Queue)
-              connectionString: '$(Arcus.ServiceBus.Docker.ConnectionStringWithQueue)'
-          - template: templates/build-and-run-worker-container.yml
-            parameters:
-              projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Topic'
-              containerName: '$(Images.ServiceBus.Topic)'
-              imageName: '$(Images.ServiceBus.Topic)'
-              imageTag: $(Build.BuildId)
-              healthPort: $(Arcus.Health.Port.Topic)
-              connectionString: '$(Arcus.ServiceBus.Docker.ConnectionStringWithTopic)'
-          - template: test/run-integration-tests.yml@templates
-            parameters:
-              dotnetSdkVersion: '$(DotNet.Sdk.Version)'
-              projectName: '$(Project).Tests.Integration'
-              category: 'Docker'
-          - task: PowerShell@2
-            displayName: 'Get Docker container logs'
-            inputs:
-              targetType: 'inline'
-              script: 'docker logs $(Images.ServiceBus.Queue)'
-            condition: failed()
+          - template: templates/run-docker-integration-tests.yml
 
   - stage: SelfContainingIntegrationTests
     displayName: Self-Containing Integration Tests
@@ -131,6 +101,11 @@ stages:
         pool:
           vmImage: '$(Vm.Image)'
         steps:
+          - task: UseDotNet@2
+            displayName: 'Import .NET Core SDK ($(DotNet.Sdk.PreviousVersion))'
+            inputs:
+              packageType: 'sdk'
+              version: '$(DotNet.Sdk.PreviousVersion)'
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
@@ -157,8 +132,18 @@ stages:
             parameters:
               repositoryName: 'arcus-azure/arcus.messaging'
               releaseNotes: |
-                Install new version via [NuGet](https://www.nuget.org/packages/Arcus.Messaging.Pumps.ServiceBus/$(Build.BuildNumber))
+                Install the Arcus.Messaging packages that you need via NuGet, for instance [$(Project).Pumps.ServiceBus](https://www.nuget.org/packages/$(Project).Pumps.ServiceBus/$(Build.BuildNumber)):
                 ```shell
-                PM > Install-Package Arcus.Messaging.Pumps.ServiceBus --Version $(Build.BuildNumber)
+                PM > Install-Package $(Project).Pumps.ServiceBus --Version $(Build.BuildNumber)
                 ```
+                For a complete list of all Arcus.Messaging packages see the [documentation](https://messaging.arcus-azure.net/).
+                ## What's new?
+                ### Features
+                * Provide the capability to do something (#123)
+                ### Fixes / Changes
+                None.
+                ### Breaking Changes
+                None.
+                ### Removal
+                None.
           - template: nuget/publish-official-package.yml@templates

@@ -86,9 +86,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     "Cannot dead-letter the Azure Service Bus message because the message handler running Azure Service Bus-specific operations was not yet initialized correctly");
             }
 
-            Logger.LogTrace("Dead-lettering message '{MessageId}' using lock token '{LockToken}' because '{Reason}'...", EventArgs.Message.MessageId, deadLetterReason);
+            Logger.LogTrace("Dead-lettering message '{MessageId}' using lock token '{LockToken}' because '{Reason}'...", EventArgs.Message.MessageId, EventArgs.Message.LockToken, deadLetterReason);
             await EventArgs.DeadLetterMessageAsync(EventArgs.Message, deadLetterReason, deadLetterErrorDescription, EventArgs.CancellationToken);
-            Logger.LogTrace("Message '{MessageId}' is dead-lettered using lock token '{LockToken}' because '{Reason}'!", EventArgs.Message.MessageId, deadLetterReason);
+            Logger.LogTrace("Message '{MessageId}' is dead-lettered using lock token '{LockToken}' because '{Reason}'!", EventArgs.Message.MessageId, EventArgs.Message.LockToken, deadLetterReason);
         }
 
         /// <summary>

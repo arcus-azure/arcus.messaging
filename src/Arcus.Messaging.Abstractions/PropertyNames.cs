@@ -6,6 +6,11 @@
     public static class PropertyNames
     {
         /// <summary>
+        /// Gets the default context property name to get the operation ID of the parent operation.
+        /// </summary>
+        public const string OperationParentId = "Operation-Parent-Id";
+
+        /// <summary>
         /// Gets the context property name to get the correlation transaction ID.
         /// </summary>
         public const string TransactionId = "Transaction-Id";

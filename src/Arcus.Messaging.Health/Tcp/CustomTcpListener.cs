@@ -1,4 +1,3 @@
-using System;
 using System.Net;
 using System.Net.Sockets;
 
@@ -9,15 +8,6 @@ namespace Arcus.Messaging.Health.Tcp
     /// </summary>
     internal class CustomTcpListener : TcpListener
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CustomTcpListener"/> class.
-        /// </summary>
-        /// <param name="port">The port on which to listen for incoming connection attempts.</param>
-        [Obsolete("This method has been deprecated. Please use TcpListener(IPAddress localaddr, int port) instead. https://go.microsoft.com/fwlink/?linkid=14202")]
-        public CustomTcpListener(int port) : base(port)
-        {
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="CustomTcpListener"/> class.
         /// </summary>

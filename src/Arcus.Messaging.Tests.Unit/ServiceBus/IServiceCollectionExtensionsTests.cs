@@ -2,10 +2,13 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Security.Core;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -30,7 +33,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Act
             ServiceBusMessageHandlerCollection result = 
                 services.AddServiceBusTopicMessagePump(
-                    "topic name", "subscription name", "secret name", options => options.AutoComplete = true);
+                    "topic name", "subscription name", "secret name", options =>
+                    {
+                        options.AutoComplete = true;
+                        options.TopicSubscription = TopicSubscription.Automatic;
+                    });
             
             // Assert
             Assert.NotNull(result);
@@ -41,6 +48,31 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             await Assert.ThrowsAnyAsync<Exception>(() => messagePump.StartAsync(CancellationToken.None));
             spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
+        }
+
+        [Fact]
+        public void AddServiceBusTopicMessagePump_WithCustomJobId_Succeeds()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var spySecretProvider = new Mock<ISecretProvider>();
+            services.AddSingleton(serviceProvider => spySecretProvider.Object);
+            services.AddSingleton(serviceProvider => Mock.Of<IConfiguration>());
+            services.AddLogging();
+            string jobId = Guid.NewGuid().ToString();
+
+            // Act
+            ServiceBusMessageHandlerCollection result = 
+                services.AddServiceBusTopicMessagePump(
+                    "topic name", "subscription name", "secret name", options => options.JobId = jobId);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+
+            var messagePump = provider.GetService<IHostedService>();
+            Assert.IsType<AzureServiceBusMessagePump>(messagePump);
+            Assert.Equal(jobId, result.JobId);
         }
 
         [Fact]
@@ -56,7 +88,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Act
             ServiceBusMessageHandlerCollection result = 
                 services.AddServiceBusTopicMessagePump(
-                    "topic name", "subscription name", "secret name", configureMessagePump: options => options.AutoComplete = true);
+                    "topic name", "subscription name", "secret name", configureMessagePump: options =>
+                    {
+                        options.AutoComplete = true;
+                        options.TopicSubscription = TopicSubscription.Automatic;
+                    });
 
             // Assert
             // Assert
@@ -417,6 +453,27 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
+
+        [Fact]
+        public void AddServiceBusQueueMessagePump_WithCustomId_Succeeds()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            services.AddSingleton(Mock.Of<ISecretProvider>());
+            services.AddSingleton(Mock.Of<IConfiguration>());
+            services.AddLogging();
+            string jobId = Guid.NewGuid().ToString();
+
+            // Act
+            ServiceBusMessageHandlerCollection result =
+                services.AddServiceBusQueueMessagePump("queue-name", "secret-name", options => options.JobId = jobId);
+            
+            // Assert
+            Assert.NotNull(result);
+            IServiceProvider provider = result.Services.BuildServiceProvider();
+            Assert.IsType<AzureServiceBusMessagePump>(provider.GetRequiredService<IHostedService>());
+            Assert.Equal(jobId, result.JobId);
+        }
         
         [Fact]
         public void AddServiceBusQueueMessagePump_WithConfiguration_RegistersDedicatedCorrelation()
@@ -667,9 +724,9 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             IServiceProvider provider = collection.Services.BuildServiceProvider();
-            var messageHandler = provider.GetRequiredService<IAzureServiceBusFallbackMessageHandler>();
+            var messageHandler = provider.GetRequiredService<FallbackMessageHandler<ServiceBusReceivedMessage, AzureServiceBusMessageContext>>();
 
-            Assert.IsType<PassThruServiceBusFallbackMessageHandler>(messageHandler);
+            Assert.IsType<PassThruServiceBusFallbackMessageHandler>(messageHandler.MessageHandlerInstance);
         }
 
         [Fact]
@@ -684,9 +741,9 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             IServiceProvider provider = collection.Services.BuildServiceProvider();
-            var actual = provider.GetRequiredService<IAzureServiceBusFallbackMessageHandler>();
+            var actual = provider.GetRequiredService<FallbackMessageHandler<ServiceBusReceivedMessage, AzureServiceBusMessageContext>>();
 
-            Assert.Same(expected, actual);
+            Assert.Same(expected, actual.MessageHandlerInstance);
         }
 
         [Fact]

@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.Extensions.Logging;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using GuardNet;
@@ -105,14 +104,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
 
-            services.Services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
-                serviceProvider => new MessageHandlerRegistration<TMessage, TMessageContext>(
-                    messageContextFilter: messageContextFilter, 
-                    messageBodySerializer: null,
-                    messageBodyFilter: null,
-                    messageHandlerImplementation: implementationFactory(serviceProvider),
-                    logger: serviceProvider.GetService<ILogger<MessageHandlerRegistration<TMessage, TMessageContext>>>()));
-
+            services.AddMessageHandler(implementationFactory, messageContextFilter: messageContextFilter);
             return services;
         }
     }

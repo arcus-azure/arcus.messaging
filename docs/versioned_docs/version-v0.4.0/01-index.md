@@ -18,9 +18,9 @@ PM > Install-Package Arcus.Messaging.* -Version 0.4.0
 # Features
 
 - Support for using message pumps for the following brokers:
-    - Azure Service Bus ([docs](features/message-pumps/service-bus) | [extensions](features/service-bus))
-- Support for exposing TCP health probes to periodically check liveness/readiness of the host ([docs](features/tcp-health-probe))
-- Customize message pumps ([docs](features/message-pumps/customization))
+    - Azure Service Bus ([docs](./02-Features/message-pumps/service-bus.md) | [extensions](./02-Features/service-bus.md))
+- Support for exposing TCP health probes to periodically check liveness/readiness of the host ([docs](./02-Features/tcp-health-probe.md))
+- Customize message pumps ([docs](./02-Features/message-pumps/customization.md))
     - Fallback message handlers
 
 # License

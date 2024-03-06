@@ -1,23 +1,38 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net6.0;netstandard2.1;netcoreapp3.1</TargetFrameworks>
     <LangVersion>latest</LangVersion>
-    <PackageId>Arcus.Messaging.Abstractions.ServiceBus</PackageId>
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
     <Product>Arcus.Messaging</Product>
     <Description>Provides Azure Service Bus abstractions for message handling in both message pumps and Azure Functions triggers</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
-    <PackageLicenseUrl>https://github.com/arcus-azure/arcus.messaging/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/arcus-azure/arcus.messaging</PackageProjectUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/arcus-azure/arcus/master/media/arcus.png</PackageIconUrl>
+    <PackageProjectUrl>https://messaging.arcus-azure.net/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>Git</RepositoryType>
     <PackageTags>Azure;Messaging;ServiceBus</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+    <None Include="..\..\docs\static\img\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="Serilog" Version="2.10.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net6.0'">
+    <PackageReference Include="Serilog" Version="2.9.0" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.Abstractions\Arcus.Messaging.Abstractions.csproj" />

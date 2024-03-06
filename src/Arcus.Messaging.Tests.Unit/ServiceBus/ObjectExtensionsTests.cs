@@ -25,7 +25,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Order messagePayload = OrderGenerator.Generate();
 
             // Act
-            ServiceBusMessage serviceBusMessage = messagePayload.AsServiceBusMessage();
+            ServiceBusMessage serviceBusMessage = ServiceBusMessageBuilder.CreateForBody(messagePayload).Build();
 
             // Assert
             Assert.NotNull(serviceBusMessage);
@@ -47,7 +47,9 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var operationId = Guid.NewGuid().ToString();
 
             // Act
-            ServiceBusMessage serviceBusMessage = messagePayload.AsServiceBusMessage(operationId: operationId);
+            var serviceBusMessageBuilder = ServiceBusMessageBuilder.CreateForBody(messagePayload);
+            serviceBusMessageBuilder.WithOperationId(operationId);
+            ServiceBusMessage serviceBusMessage = serviceBusMessageBuilder.Build();
 
             // Assert
             Assert.NotNull(serviceBusMessage);
@@ -69,7 +71,9 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var expectedTransactionId = Guid.NewGuid().ToString();
 
             // Act
-            ServiceBusMessage serviceBusMessage = messagePayload.AsServiceBusMessage(transactionId: expectedTransactionId);
+            var serviceBusMessageBuilder = ServiceBusMessageBuilder.CreateForBody(messagePayload);
+            serviceBusMessageBuilder.WithTransactionId(transactionId: expectedTransactionId);
+            ServiceBusMessage serviceBusMessage = serviceBusMessageBuilder.Build();
 
             // Assert
             Assert.NotNull(serviceBusMessage);
@@ -92,7 +96,8 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Encoding expectedEncoding = Encoding.ASCII;
 
             // Act
-            ServiceBusMessage serviceBusMessage = originalMessagePayload.AsServiceBusMessage(encoding: expectedEncoding);
+            var serviceBusMessageBuilder = ServiceBusMessageBuilder.CreateForBody(originalMessagePayload, encoding: expectedEncoding);
+            ServiceBusMessage serviceBusMessage = serviceBusMessageBuilder.Build();
 
             // Assert
             Assert.NotNull(serviceBusMessage);

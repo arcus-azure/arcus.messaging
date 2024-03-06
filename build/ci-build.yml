@@ -6,7 +6,7 @@ name: $(date:yyyyMMdd)$(rev:.r)
 trigger:
   branches:
     include:
-      - master
+      - main
   paths:
     include:
       - src/*
@@ -32,9 +32,9 @@ resources:
 variables:
   - group: 'Arcus Messaging - Integration Testing'
   - group: 'Arcus - GitHub Package Registry'
-  - group: 'Arcus Messaging - .NET'
   - group: 'Build Configuration'
   - template: ./variables/build.yml
+  - template: ./variables/test.yml
 
 stages:
   - stage: Build
@@ -46,6 +46,11 @@ stages:
           - template: 'nuget/determine-pr-version.yml@templates'
             parameters:
               manualTriggerVersion: ${{ parameters['Package.Version.ManualTrigger'] }}
+          - task: UseDotNet@2
+            displayName: 'Import .NET Core SDK ($(DotNet.Sdk.PreviousVersion))'
+            inputs:
+              packageType: 'sdk'
+              version: '$(DotNet.Sdk.PreviousVersion)'
           - template: 'build/build-solution.yml@templates'
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
@@ -76,6 +81,11 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
+          - task: UseDotNet@2
+            displayName: 'Import .NET Core SDK ($(DotNet.Sdk.PreviousVersion))'
+            inputs:
+              packageType: 'sdk'
+              version: '$(DotNet.Sdk.PreviousVersion)'
           - template: test/run-unit-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
@@ -85,15 +95,6 @@ stages:
     displayName: Docker Integration Tests
     dependsOn: Build
     condition: succeeded()
-    variables:
-      - name: 'Images.ServiceBus.Queue'
-        value: 'workers-service-bus-queue'
-      - name: 'Images.ServiceBus.Topic'
-        value: 'workers-service-bus-topic'
-      - name: 'Arcus.Health.Port.Queue'
-        value: '42063'
-      - name: 'Arcus.Health.Port.Topic'
-        value: '42064'
     jobs:
       - job: DockerIntegrationTests
         displayName: 'Run Docker integration tests'
@@ -105,33 +106,7 @@ stages:
             inputs:
               artifact: 'Build'
               path: '$(Build.SourcesDirectory)'
-          - template: templates/build-and-run-worker-container.yml
-            parameters:
-              projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Queue'
-              containerName: '$(Images.ServiceBus.Queue)'
-              imageName: '$(Images.ServiceBus.Queue)'
-              imageTag: $(Build.BuildId)
-              healthPort: $(Arcus.Health.Port.Queue)
-              connectionString: '$(Arcus.ServiceBus.Docker.ConnectionStringWithQueue)'
-          - template: templates/build-and-run-worker-container.yml
-            parameters:
-              projectName: 'Arcus.Messaging.Tests.Workers.ServiceBus.Topic'
-              containerName: '$(Images.ServiceBus.Topic)'
-              imageName: '$(Images.ServiceBus.Topic)'
-              imageTag: $(Build.BuildId)
-              healthPort: $(Arcus.Health.Port.Topic)
-              connectionString: '$(Arcus.ServiceBus.Docker.ConnectionStringWithTopic)'
-          - template: test/run-integration-tests.yml@templates
-            parameters:
-              dotnetSdkVersion: '$(DotNet.Sdk.Version)'
-              projectName: '$(Project).Tests.Integration'
-              category: 'Docker'
-          - task: PowerShell@2
-            displayName: 'Get Docker container logs'
-            inputs:
-              targetType: 'inline'
-              script: 'docker logs $(Images.ServiceBus.Queue)'
-            condition: failed()
+          - template: templates/run-docker-integration-tests.yml
 
   - stage: SelfContainingIntegrationTests
     displayName: Self-Containing Integration Tests
@@ -146,6 +121,11 @@ stages:
         pool:
           vmImage: '$(Vm.Image)'
         steps:
+          - task: UseDotNet@2
+            displayName: 'Import .NET Core SDK ($(DotNet.Sdk.PreviousVersion))'
+            inputs:
+              packageType: 'sdk'
+              version: '$(DotNet.Sdk.PreviousVersion)'
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'

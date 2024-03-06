@@ -9,6 +9,7 @@ using Azure.Messaging.ServiceBus.Administration;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -44,7 +45,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             ServiceBusEntityType serviceBusEntity,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
-            AzureServiceBusMessagePumpOptions options, 
+            AzureServiceBusMessagePumpOptions options,
             IServiceProvider serviceProvider)
         {
             Guard.For<ArgumentException>(
@@ -53,11 +54,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             Guard.NotNull(options, nameof(options), "Requires message pump options that influence the behavior of the message pump");
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to get additional registered services during the lifetime of the message pump");
             Guard.For<ArgumentException>(
-                () => !Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity), 
+                () => !Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity),
                 $"Azure Service Bus entity '{serviceBusEntity}' is not defined in the '{nameof(ServiceBusEntityType)}' enumeration");
             Guard.For<ArgumentOutOfRangeException>(
                 () => serviceBusEntity is ServiceBusEntityType.Unknown, "Azure Service Bus entity type 'Unknown' is not supported here");
-            
+
             _serviceProvider = serviceProvider;
             _getConnectionStringFromConfigurationFunc = getConnectionStringFromConfigurationFunc;
             _getConnectionStringFromSecretFunc = getConnectionStringFromSecretFunc;
@@ -103,11 +104,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             Guard.NotNull(tokenCredential, nameof(tokenCredential), "Requires a token credential instance to authenticate with the Azure Service Bus");
             Guard.NotNullOrWhitespace(entityName, nameof(entityName), "Requires a non-blank entity name for the Azure Service Bus when using the token credentials");
             Guard.NotNullOrWhitespace(serviceBusNamespace, nameof(serviceBusNamespace), "Requires a non-blank fully qualified Azure Service Bus namespace when using the token credentials");
-            Guard.For<ArgumentException>(() => !Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity), 
+            Guard.For<ArgumentException>(() => !Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity),
                 $"Azure Service Bus entity '{serviceBusEntity}' is not defined in the '{nameof(ServiceBusEntityType)}' enumeration");
-            Guard.For<ArgumentOutOfRangeException>(() => serviceBusEntity is ServiceBusEntityType.Unknown, 
+            Guard.For<ArgumentOutOfRangeException>(() => serviceBusEntity is ServiceBusEntityType.Unknown,
                 "Azure Service Bus entity type 'Unknown' is not supported here");
-            
+
             _serviceProvider = serviceProvider;
             _tokenCredential = tokenCredential;
 
@@ -115,7 +116,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             SubscriptionName = subscriptionName;
             ServiceBusEntity = serviceBusEntity;
             Options = options;
-            
+
             if (serviceBusNamespace.EndsWith(".servicebus.windows.net"))
             {
                 FullyQualifiedNamespace = serviceBusNamespace;
@@ -147,7 +148,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets the fully qualified namespace where the Azure Service Bus entity is located.
         /// </summary>
         public string FullyQualifiedNamespace { get; }
-         /// <summary>
+        /// <summary>
         /// Gets the additional options that influence the behavior of the message pump.
         /// </summary>
         public AzureServiceBusMessagePumpOptions Options { get; internal set; }
@@ -161,7 +162,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             {
                 string connectionString = await GetConnectionStringAsync();
                 var client = new ServiceBusAdministrationClient(connectionString);
-                
+
                 return client;
             }
             else
@@ -192,21 +193,53 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         }
 
         /// <summary>
+        /// Creates an <see cref="ServiceBusReceiver"/> instance based on the provided settings.
+        /// </summary>
+        internal async Task<ServiceBusReceiver> CreateMessageReceiverAsync()
+        {
+            ServiceBusClient client;
+            string entityPath;
+
+            if (_tokenCredential is null)
+            {
+                string rawConnectionString = await GetConnectionStringAsync();
+                entityPath = DetermineEntityPath(rawConnectionString);
+                client = new ServiceBusClient(rawConnectionString);
+            }
+            else
+            {
+                client = new ServiceBusClient(FullyQualifiedNamespace, _tokenCredential);
+                entityPath = DetermineEntityPath();
+            }
+
+            if (string.IsNullOrWhiteSpace(SubscriptionName))
+            {
+                return client.CreateReceiver(entityPath);
+            }
+
+            return client.CreateReceiver(entityPath, SubscriptionName);
+        }
+
+        /// <summary>
         /// Creates an <see cref="ServiceBusProcessor"/> instance based on the provided settings.
         /// </summary>
         internal async Task<ServiceBusProcessor> CreateMessageProcessorAsync()
         {
+            var options = new ServiceBusClientOptions
+            {
+                RetryOptions = { TryTimeout = TimeSpan.FromSeconds(5) }
+            };
             if (_tokenCredential is null)
             {
                 string rawConnectionString = await GetConnectionStringAsync();
                 string entityPath = DetermineEntityPath(rawConnectionString);
-                
-                var client = new ServiceBusClient(rawConnectionString);
+
+                var client = new ServiceBusClient(rawConnectionString, options);
                 return CreateProcessor(client, entityPath, SubscriptionName);
             }
             else
             {
-                var client = new ServiceBusClient(FullyQualifiedNamespace, _tokenCredential);
+                var client = new ServiceBusClient(FullyQualifiedNamespace, _tokenCredential, options);
 
                 string entityPath = DetermineEntityPath();
                 ServiceBusProcessor processor = CreateProcessor(client, entityPath, SubscriptionName);
@@ -239,14 +272,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             {
                 throw new ArgumentException("No Azure Service Bus entity name was specified while the managed identity authentication requires this");
             }
-            
+
             return EntityName;
         }
 
         private ServiceBusProcessor CreateProcessor(ServiceBusClient client, string entityName, string subscriptionName)
         {
             ServiceBusProcessorOptions options = DetermineMessageProcessorOptions();
-            
+
             if (string.IsNullOrWhiteSpace(subscriptionName))
             {
                 return client.CreateProcessor(entityName, options);
@@ -260,14 +293,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             var messageHandlerOptions = new ServiceBusProcessorOptions();
             if (Options != null)
             {
-                // Assign the configured defaults
                 messageHandlerOptions.AutoCompleteMessages = Options.AutoComplete;
-                messageHandlerOptions.MaxConcurrentCalls = Options.MaxConcurrentCalls ?? messageHandlerOptions.MaxConcurrentCalls;
+                messageHandlerOptions.MaxConcurrentCalls = Options.MaxConcurrentCalls;
+                messageHandlerOptions.PrefetchCount = Options.PrefetchCount;
             }
 
             return messageHandlerOptions;
         }
-        
+
         private async Task<string> GetConnectionStringAsync()
         {
             if (Options.EmitSecurityEvents)
@@ -281,9 +314,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
                     ["Service Bus entity"] = ServiceBusEntity,
                     ["Entity name"] = EntityName,
                     ["Job ID"] = Options.JobId
-                }); 
+                });
             }
-            
+
             if (_getConnectionStringFromSecretFunc != null)
             {
                 return await GetConnectionStringFromSecretAsync();
@@ -300,15 +333,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 
         private async Task<string> GetConnectionStringFromSecretAsync()
         {
-            ISecretProvider userDefinedSecretProvider = 
+            ISecretProvider userDefinedSecretProvider =
                 _serviceProvider.GetService<ICachedSecretProvider>()
                 ?? _serviceProvider.GetService<ISecretProvider>();
 
             if (userDefinedSecretProvider is null)
             {
-                throw new KeyNotFoundException(
-                    $"No configured {nameof(ICachedSecretProvider)} or {nameof(ISecretProvider)} implementation found in the service container. "
-                    + "Please configure such an implementation (ex. in the Startup) of your application");
+                throw new InvalidOperationException(
+                    "Could not retrieve the Azure Service Bus connection string from the Arcus secret store because no secret store was configured in the application,"
+                    + $"please configure the Arcus secret store with '{nameof(IHostBuilderExtensions.ConfigureSecretStore)}' on the application '{nameof(IHost)}' "
+                    + $"or during the service collection registration 'AddSecretStore' on the application '{nameof(IServiceCollection)}'."
+                    + "For more information on the Arcus secret store, see: https://security.arcus-azure.net/features/secret-store");
             }
 
             Task<string> getConnectionStringTask = _getConnectionStringFromSecretFunc(userDefinedSecretProvider);

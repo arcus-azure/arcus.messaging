@@ -2,7 +2,6 @@
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using GuardNet;
-using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -105,14 +104,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
 
-            services.Services.AddTransient<IMessageHandler<TMessage, TMessageContext>, MessageHandlerRegistration<TMessage, TMessageContext>>(
-                serviceProvider => new MessageHandlerRegistration<TMessage, TMessageContext>(
-                    messageContextFilter: null,
-                    messageBodySerializer: null,
-                    messageBodyFilter: messageBodyFilter,
-                    messageHandlerImplementation: implementationFactory(serviceProvider),
-                    logger: serviceProvider.GetService<ILogger<MessageHandlerRegistration<TMessage, TMessageContext>>>()));
-
+            services.AddMessageHandler(implementationFactory, messageBodyFilter: messageBodyFilter);
             return services;
         }
     }

@@ -79,11 +79,15 @@ public class OrdersMessageHandler : IMessageHandler<Order>
 ```
 
 Other topics:
-- [Configuration](#configuration)
-- [Customized configuration](#customized-configuration)
-- [Fallback message handling](#fallback-message-handling)
-- [Influence handling of Service Bus message in a message handler](#influence-handling-of-Service-Bus-message-in-message-handler)
-- [Correlation](#correlation)
+- [Azure Service Bus Message Pump](#azure-service-bus-message-pump)
+  - [Configuration](#configuration)
+    - [Customized Configuration](#customized-configuration)
+  - [Fallback message handling](#fallback-message-handling)
+  - [Influence handling of Service Bus message in message handler](#influence-handling-of-service-bus-message-in-message-handler)
+    - [During (regular) message handling](#during-regular-message-handling)
+    - [During fallback message handling](#during-fallback-message-handling)
+  - [Correlation](#correlation)
+  - [Want to get started easy? Use our templates!](#want-to-get-started-easy-use-our-templates)
 
 ## Configuration
 
@@ -122,7 +126,7 @@ Next to that, we provide a **variety of overloads** to allow you to:
 - Specify the name of the queue/topic
 - Only provide a prefix for the topic subscription, so each topic message pump is handling messages on separate subscriptions
 - Configure how the message pump should work *(ie. max concurrent calls & auto delete)*
-- Read the connection string from the configuration *(although we highly recommend using a secret store instead)*
+- Read the connection string from the configuration *(although we highly recommend using the [Arcus secret store](https://security.arcus-azure.net/features/secret-store) instead)*
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -153,7 +157,7 @@ public class Startup
             options => 
             {
                 // Indicate whether or not messages should be automatically marked as completed 
-                // if no exceptions occured andprocessing has finished (default: true).
+                // if no exceptions occurred and processing has finished (default: true).
                 options.AutoComplete = true;
 
                 // The amount of concurrent calls to process messages 
@@ -174,7 +178,7 @@ public class Startup
             options => 
             {
                 // Indicate whether or not messages should be automatically marked as completed 
-                // if no exceptions occured andprocessing has finished (default: true).
+                // if no exceptions occurred and processing has finished (default: true).
                 options.AutoComplete = true;
 
                 // The amount of concurrent calls to process messages 
@@ -210,7 +214,7 @@ using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.MessageHandling;
 using Microsoft.Extensions.Logging;
 
-public class WarnsUserFallbackMessageHandler : IAzureServiceBusFallbackMessageHandller
+public class WarnsUserFallbackMessageHandler : IAzureServiceBusFallbackMessageHandler
 {
     private readonly ILogger _logger;
 
@@ -231,7 +235,7 @@ public class WarnsUserFallbackMessageHandler : IAzureServiceBusFallbackMessageHa
 And to register such an implementation:
 
 ```csharp
-using Microsoft.Extensions.DepdencencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 public class Startup
 {
@@ -245,7 +249,7 @@ public class Startup
 ## Influence handling of Service Bus message in message handler
 
 When an Azure Service Bus message is received (either via regular message handlers or fallback message handlers), we allow specific Azure Service Bus operations during the message handling.
-Currently we support [**Dead letter**](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dead-letter-queues) and [*Abandon**](https://docs.microsoft.com/en-us/dotnet/api/microsoft.servicebus.messaging.messagereceiver.abandon?view=azure-dotnet).
+Currently we support [**Dead letter**](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dead-letter-queues) and [**Abandon**](https://docs.microsoft.com/en-us/dotnet/api/microsoft.servicebus.messaging.messagereceiver.abandon?view=azure-dotnet).
 
 ### During (regular) message handling
 
@@ -365,7 +369,7 @@ string cycleId = correlationInfo.CycleId;
 // Unique identifier that relates different requests together.
 string transactionId = correlationInfo.TransactionId;
 
-// Unique idenfier that distinguishes the request.
+// Unique identifier that distinguishes the request.
 string operationId = correlationInfo.OperationId;
 ```
 

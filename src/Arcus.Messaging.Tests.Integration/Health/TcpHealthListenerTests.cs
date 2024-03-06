@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Integration.Fixture;
@@ -66,6 +68,41 @@ namespace Arcus.Messaging.Tests.Integration.Health
                 // Assert
                 await RetryAssert<ThrowsException, SocketException>(
                     () => Assert.ThrowsAnyAsync<SocketException>(() => service.GetHealthReportAsync()));
+            }
+        }
+
+        [Fact]
+        public async Task TcpHealthProbe_RemovesExceptionDetails_WhenHealthCheckIsUnhealthy()
+        {
+            // Arrange
+            var service = new TcpHealthService(TcpPort, _logger);
+            var options = new WorkerOptions();
+            options.Configuration.Add(HealthPortConfigurationName, TcpPort.ToString());
+            options.Services.AddTcpHealthProbes(HealthPortConfigurationName, 
+                configureHealthChecks: builder =>
+                {
+                    builder.AddCheck("unhealhty", () => HealthCheckResult.Unhealthy(
+                        description: "Something happened!",
+                        data: new ReadOnlyDictionary<string, object>(new Dictionary<string, object> { ["Some"] = "Thing" }),
+                        exception: new InvalidOperationException("Something happened!")));
+                },
+                configureTcpListenerOptions: opt => opt.RejectTcpConnectionWhenUnhealthy = false,
+                configureHealthCheckPublisherOptions: opt => opt.Period = TimeSpan.FromSeconds(3));
+            
+            // Act
+            await using (var worker = await Worker.StartNewAsync(options))
+            {
+                // Assert
+                HealthReport afterReport = await RetryAssert<SocketException, HealthReport>(
+                    () => service.GetHealthReportAsync());
+                Assert.NotNull(afterReport);
+                Assert.Equal(HealthStatus.Unhealthy, afterReport.Status);
+                Assert.All(afterReport.Entries, item =>
+                {
+                    Assert.NotNull(item.Value.Description);
+                    Assert.NotEmpty(item.Value.Data);
+                    Assert.Null(item.Value.Exception);
+                });
             }
         }
 

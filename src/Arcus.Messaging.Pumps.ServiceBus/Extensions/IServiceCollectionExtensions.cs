@@ -25,7 +25,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Queue.
         /// </summary>
         /// <remarks>
-        ///     When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace.
+        ///     <para>When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace.</para>
+        ///     <para>Make sure that the application has the Arcus secret store configured correctly.
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="getConnectionStringFromSecretFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the secret store.</param>
@@ -52,7 +54,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Queue.
         /// </summary>
         /// <remarks>
-        ///     When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace.
+        ///     <para>When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace.</para>
+        ///     <para>Make sure that the application has the Arcus secret store configured correctly.
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="getConnectionStringFromConfigurationFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the configuration.</param>
@@ -79,7 +83,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Queue
         /// </summary>
         /// <remarks>
-        ///     When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace.
+        ///     <para>When using this approach; the connection string should be scoped to the queue that is being processed, not the namespace.</para>
+        ///     <para>Make sure that the application has the Arcus secret store configured correctly.
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="secretName">
@@ -108,6 +114,10 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Adds a message pump to consume messages from Azure Service Bus Queue
         /// </summary>
+        /// <remarks>
+        ///     Make sure that the application has the Arcus secret store configured correctly.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="queueName">The name of the Azure Service Bus Queue to process.</param>
         /// <param name="secretName">
@@ -138,6 +148,10 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Adds a message pump to consume messages from Azure Service Bus Queue.
         /// </summary>
+        /// <remarks>
+        ///     Make sure that the application has the Arcus secret store configured correctly.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        /// </remarks>
         /// <param name="queueName">The name of the Azure Service Bus Queue to process.</param>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="getConnectionStringFromSecretFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the secret store.</param>
@@ -258,7 +272,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Topic.
         /// </summary>
         /// <remarks>
-        ///     When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.
+        ///     <para>When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.</para>
+        ///     <para>Make sure that the application has the Arcus secret store configured correctly.
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="subscriptionName">The name of the Azure Service Bus Topic subscription to process.</param>
         /// <param name="services">The collection of services to add the message pump to.</param>
@@ -293,7 +309,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Topic.
         /// </summary>
         /// <remarks>
-        ///     When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.
+        ///     <para>When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.</para>
+        ///     <para>Make sure that the application has the Arcus secret store configured correctly.
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="subscriptionName">The name of the Azure Service Bus Topic subscription to process.</param>
         /// <param name="services">The collection of services to add the message pump to.</param>
@@ -361,6 +379,10 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Adds a message pump to consume messages from Azure Service Bus Topic.
         /// </summary>
+        /// <remarks>
+        ///     Make sure that the application has the Arcus secret store configured correctly.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        /// </remarks>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
         /// <param name="subscriptionName">The name of the Azure Service Bus Topic subscription to process</param>
         /// <param name="services">The collection of services to add the message pump to.</param>
@@ -397,6 +419,10 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Adds a message pump to consume messages from Azure Service Bus Topic.
         /// </summary>
+        /// <remarks>
+        ///     Make sure that the application has the Arcus secret store configured correctly.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        /// </remarks>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
         /// <param name="subscriptionName">The name of the Azure Service Bus Topic subscription to process.</param>
         /// <param name="services">The collection of services to add the message pump to.</param>
@@ -504,7 +530,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Topic.
         /// </summary>
         /// <remarks>
-        ///     When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.
+        ///     <para>When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.</para>
+        ///     <para>Make sure that the application has the Arcus secret store configured correctly.
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="subscriptionPrefix">
@@ -540,7 +568,9 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a message pump to consume messages from Azure Service Bus Topic.
         /// </summary>
         /// <remarks>
-        ///     When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.
+        ///     <para>When using this approach; the connection string should be scoped to the topic that is being processed, not the namespace.</para>
+        ///     <para>Make sure that the application has the Arcus secret store configured correctly.
+        ///           For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.</para>
         /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="subscriptionPrefix">
@@ -610,6 +640,10 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Adds a message pump to consume messages from Azure Service Bus Topic.
         /// </summary>
+        /// <remarks>
+        ///     Make sure that the application has the Arcus secret store configured correctly.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
         /// <param name="subscriptionPrefix">
@@ -648,6 +682,10 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Adds a message pump to consume messages from Azure Service Bus Topic
         /// </summary>
+        /// <remarks>
+        ///     Make sure that the application has the Arcus secret store configured correctly.
+        ///     For more on the Arcus secret store: <a href="https://security.arcus-azure.net/features/secret-store" />.
+        /// </remarks>
         /// <param name="services">The collection of services to add the message pump to.</param>
         /// <param name="topicName">The name of the Azure Service Bus Topic to process.</param>
         /// <param name="subscriptionPrefix">
@@ -823,13 +861,6 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Queue message pump");
 
-            services.AddCorrelation<MessageCorrelationInfo>()
-                    .AddScoped<IMessageCorrelationInfoAccessor>(serviceProvider =>
-                    {
-                        return new MessageCorrelationInfoAccessor(
-                            serviceProvider.GetRequiredService<ICorrelationInfoAccessor<MessageCorrelationInfo>>());
-                    });
-
             AzureServiceBusMessagePumpOptions options = 
                 DetermineAzureServiceBusMessagePumpOptions(serviceBusEntity, configureQueueMessagePump, configureTopicMessagePump);
 
@@ -838,8 +869,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
                 return new AzureServiceBusMessageRouter(provider, options.Routing, logger);
             });
-            
-            services.AddHostedService(serviceProvider =>
+            collection.JobId = options.JobId;
+
+            services.AddMessagePump(serviceProvider =>
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
                 if (subscriptionName != null && subscriptionName.Length > 50)

@@ -1,7 +1,7 @@
 ﻿using System;
-using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Azure.Messaging.ServiceBus;
 using GuardNet;
 
 // ReSharper disable once CheckNamespace
@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
 
-            handlers.Services.AddTransient<IMessageHandler<TMessage, AzureServiceBusMessageContext>, TMessageHandler>();
+            handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>();
             return handlers;
         }
 
@@ -49,7 +49,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent handlers");
 
-            handlers.Services.AddTransient<IMessageHandler<TMessage, AzureServiceBusMessageContext>, TMessageHandler>(implementationFactory);
+            handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(implementationFactory);
             return handlers;
         }
 
@@ -61,11 +61,11 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/> is <c>null</c>.</exception>
         public static ServiceBusMessageHandlerCollection WithServiceBusFallbackMessageHandler<TMessageHandler>(
             this ServiceBusMessageHandlerCollection handlers)
-            where TMessageHandler : class, IAzureServiceBusFallbackMessageHandler
+            where TMessageHandler : IAzureServiceBusFallbackMessageHandler
         {
             Guard.NotNull(handlers, nameof(handlers), "Requires a handlers collection to add the Azure Service Bus fallback message handler to");
 
-            handlers.Services.AddTransient<IAzureServiceBusFallbackMessageHandler, TMessageHandler>();
+            handlers.WithServiceBusFallbackMessageHandler(serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
             return handlers;
         }
 
@@ -79,12 +79,12 @@ namespace Microsoft.Extensions.DependencyInjection
         public static ServiceBusMessageHandlerCollection WithServiceBusFallbackMessageHandler<TMessageHandler>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<IServiceProvider, TMessageHandler> createImplementation)
-            where TMessageHandler : class, IAzureServiceBusFallbackMessageHandler
+            where TMessageHandler : IAzureServiceBusFallbackMessageHandler
         {
             Guard.NotNull(handlers, nameof(handlers), "Requires a handlers collection to add the fallback message handler to");
             Guard.NotNull(createImplementation, nameof(createImplementation), "Requires a function to create the fallback message handler");
 
-            handlers.Services.AddTransient<IAzureServiceBusFallbackMessageHandler, TMessageHandler>(createImplementation);
+            handlers.AddFallbackMessageHandler<TMessageHandler, ServiceBusReceivedMessage, AzureServiceBusMessageContext>(createImplementation);
             return handlers;
         }
     }

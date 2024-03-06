@@ -1,44 +1,67 @@
 ﻿using System;
-using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using GuardNet;
 
-namespace Arcus.Messaging.Pumps.ServiceBus.Configuration 
+namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
     /// <summary>
     /// The general options that configures a <see cref="AzureServiceBusMessagePump"/> implementation.
     /// </summary>
     public class AzureServiceBusMessagePumpOptions : IAzureServiceBusQueueMessagePumpOptions, IAzureServiceBusTopicMessagePumpOptions
     {
-        private int? _maxConcurrentCalls;
+        private int _maxConcurrentCalls = 1;
+        private int _prefetchCount = 0;
         private string _jobId = Guid.NewGuid().ToString();
         private TimeSpan _keyRotationTimeout = TimeSpan.FromSeconds(5);
         private int _maximumUnauthorizedExceptionsBeforeRestart = 5;
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpOptions"/> class.
+        /// </summary>
+        public AzureServiceBusMessagePumpOptions()
+        {
+            Routing = new AzureServiceBusMessageRouterOptions();
+        }
+
+        /// <summary>
         /// <para>Gets or sets the value indicating whether or not a new Azure Service Bus Topic subscription has to be created when the <see cref="AzureServiceBusMessagePump"/> starts.</para>
-        /// <para>The subscription will be deleted afterwards when the message pump stops if the options <see cref="ServiceBus.TopicSubscription.DeleteOnStop"/> is selected.</para>
+        /// <para>The subscription will be deleted afterwards when the message pump stops if the options <see cref="ServiceBus.TopicSubscription.Automatic"/> is selected.</para>
         /// </summary>
         /// <remarks>
         ///     Provides capability to create and delete these subscriptions. This requires 'Manage' permissions on the Azure Service Bus Topic or namespace.
         /// </remarks>
         public TopicSubscription? TopicSubscription { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the maximum concurrent calls to process messages.
         /// </summary>
+        /// <remarks>The default value is 1</remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
-        public int? MaxConcurrentCalls
+        public int MaxConcurrentCalls
         {
             get => _maxConcurrentCalls;
             set
             {
-                if (value != null)
-                {
-                    Guard.For<ArgumentException>(() => value <= 0, "Max concurrent calls has to be 1 or above.");
-                }
+                Guard.For<ArgumentException>(() => value <= 0, "Max concurrent calls has to be 1 or above.");
 
                 _maxConcurrentCalls = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the number of messages that will be eagerly requested from
+        /// Queues or Subscriptions and queued locally, intended to help maximize throughput
+        /// by allowing the processor to receive from a local cache rather than waiting on a service request.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than zero.</exception>
+        /// <remarks>The default value is 0.</remarks>
+        public int PrefetchCount
+        {
+            get => _prefetchCount;
+            set
+            {
+                Guard.For<ArgumentException>(() => value < 0, "PrefetchCount has to be 0 or above.");
+                _prefetchCount = value;
             }
         }
 
@@ -62,7 +85,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _jobId;
             set
             {
-                Guard.NotNullOrEmpty(value, nameof(value), "Unique identifier for background job cannot be empty");
+                Guard.NotNullOrWhitespace(value, nameof(value), "Requires a non-blank job identifier for the Azure Service Bus message pump");
                 _jobId = value;
             }
         }
@@ -97,20 +120,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         }
 
         /// <summary>
-        /// Gets the options to control the correlation information upon the receiving of Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
-        /// </summary>
-        public AzureServiceBusCorrelationOptions Correlation { get; } = new AzureServiceBusCorrelationOptions();
-
-        /// <summary>
-        /// Gets the consumer-configurable options to change the deserialization behavior.
-        /// </summary>
-        [Obsolete("Use the " + nameof(Routing) + ".Deserialization instead")]
-        public MessageDeserializationOptions Deserialization => Routing.Deserialization;
-
-        /// <summary>
         /// Gets the consumer-configurable options to change the behavior of the message router.
         /// </summary>
-        public AzureServiceBusMessageRouterOptions Routing { get; } = new AzureServiceBusMessageRouterOptions();
+        public AzureServiceBusMessageRouterOptions Routing { get; }
 
         /// <summary>
         /// Gets the default consumer-configurable options for Azure Service Bus Queue message pumps.
@@ -125,7 +137,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         internal static AzureServiceBusMessagePumpOptions DefaultTopicOptions => new AzureServiceBusMessagePumpOptions()
         {
-            TopicSubscription = ServiceBus.TopicSubscription.CreateOnStart | ServiceBus.TopicSubscription.DeleteOnStop
+            TopicSubscription = ServiceBus.TopicSubscription.None
         };
     }
 }

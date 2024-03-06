@@ -65,7 +65,7 @@ string myCustomPropertyValue = message.GetUserProperty<string>("my-custom-proper
 ## Simplify Message Context Information Discovery
 
 On receive, the context in which the message is received contains a set of `.Properties` with additional information ie. encoding.
-This information can be acces in a more simplified way:
+This information can be access in a more simplified way:
 
 ```csharp
 using Arcus.Messaging.Abstractions;

@@ -22,20 +22,26 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         }
 
         /// <summary>
+        /// Gets the registered application services of the test worker.
+        /// </summary>
+        public IServiceProvider Services => _host.Services;
+
+        /// <summary>
         /// Spawns a new test worker configurable with <paramref name="options"/>.
         /// </summary>
         /// <param name="options">The configurable options to influence the content of the test worker.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> or <paramref name="logger"/> is <c>null</c>.</exception>
+        /// <param name="memberName">The automatically assigned calling member to show in the test output logs which test is stated.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
         public static async Task<Worker> StartNewAsync(WorkerOptions options, [CallerMemberName] string memberName = null)
         {
             Guard.NotNull(options, nameof(options), "Requires a options instance that influence the test worker implementation");
             
             Console.WriteLine("Start '{0}' integration test", memberName);
-            
+
             IHostBuilder hostBuilder = Host.CreateDefaultBuilder();
             options.ApplyOptions(hostBuilder);
             IHost host = hostBuilder.Build();
-            
+
             var worker = new Worker(host, memberName);
             await worker._host.StartAsync();
             return worker;
@@ -56,7 +62,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             }
             catch (OperationCanceledException)
             {
-                // Ignore.
+                // Ignore: cancellation is to be expected when the test runs to its end.
             }
         }
     }
