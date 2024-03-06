@@ -91,7 +91,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var options = new AzureServiceBusMessagePumpOptions();
 
             // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => options.Correlation.TransactionIdPropertyName = transactionIdPropertyName);
+            Assert.ThrowsAny<ArgumentException>(() => options.Routing.Correlation.TransactionIdPropertyName = transactionIdPropertyName);
         }
 
         [Fact]
@@ -102,10 +102,10 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             const string expected = "Transaction-ID";
 
             // Act
-            options.Correlation.TransactionIdPropertyName = expected;
+            options.Routing.Correlation.TransactionIdPropertyName = expected;
 
             // Assert
-            Assert.Equal(expected, options.Correlation.TransactionIdPropertyName);
+            Assert.Equal(expected, options.Routing.Correlation.TransactionIdPropertyName);
         }
 
         [Theory]
@@ -117,7 +117,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() =>
-                options.Correlation.OperationParentIdPropertyName = operationParentIdPropertyName);
+                options.Routing.Correlation.OperationParentIdPropertyName = operationParentIdPropertyName);
         }
 
         [Fact]
@@ -128,10 +128,10 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var operationParentId = $"operation-parent-{Guid.NewGuid()}";
 
             // Act
-            options.Correlation.OperationParentIdPropertyName = operationParentId;
+            options.Routing.Correlation.OperationParentIdPropertyName = operationParentId;
 
             // Assert
-            Assert.Equal(operationParentId, options.Correlation.OperationParentIdPropertyName);
+            Assert.Equal(operationParentId, options.Routing.Correlation.OperationParentIdPropertyName);
         }
 
         [Theory]

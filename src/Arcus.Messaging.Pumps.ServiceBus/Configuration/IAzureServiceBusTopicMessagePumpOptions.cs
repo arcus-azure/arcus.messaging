@@ -1,5 +1,5 @@
 ﻿using System;
-using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
@@ -61,15 +61,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         int MaximumUnauthorizedExceptionsBeforeRestart { get; set; }
 
         /// <summary>
-        /// Gets the options to control the correlation information upon the receiving of Azure Service Bus messages in the <see cref="AzureServiceBusMessagePump"/>.
+        /// Gets the consumer-configurable options to change the behavior of the message router.
         /// </summary>
-        [Obsolete("Will be moved to message routing options in the future")]
-        AzureServiceBusCorrelationOptions Correlation { get; }
-        
-        /// <summary>
-        /// Gets the consumer-configurable options to change the deserialization behavior.
-        /// </summary>
-        [Obsolete("Will be moved to message routing options in the future")]
-        MessageDeserializationOptions Deserialization { get; }
+        AzureServiceBusMessageRouterOptions Routing { get; }
     }
 }
