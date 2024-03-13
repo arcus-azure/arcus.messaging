@@ -56,9 +56,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs
             var services = new ServiceCollection();
             EventHubsMessageHandlerCollection collection = services.AddEventHubsMessageRouting();
             collection.JobId = Guid.NewGuid().ToString();
+            var handler = new StubTestMessageHandler<Order, AzureEventHubsMessageContext>();
 
             // Act
-            collection.WithEventHubsMessageHandler<OrderEventHubsMessageHandler, Order>();
+            collection.WithMessageHandler<StubTestMessageHandler<Order, AzureEventHubsMessageContext>, Order, AzureEventHubsMessageContext>(implementationFactory: _ => handler);
 
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
@@ -68,8 +69,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs
             var eventData = new EventData(JsonConvert.SerializeObject(order));
             AzureEventHubsMessageContext context = eventData.GetMessageContext("namespace", "name", "consumer-group", "other-job-id");
             MessageCorrelationInfo correlationInfo = eventData.GetCorrelationInfo();
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() => router.RouteMessageAsync(eventData, context, correlationInfo, CancellationToken.None));
+            await router.RouteMessageAsync(eventData, context, correlationInfo, CancellationToken.None);
+            
+            Assert.False(handler.IsProcessed, "Different job ID should skip registered message handler");
         }
 
         [Fact]

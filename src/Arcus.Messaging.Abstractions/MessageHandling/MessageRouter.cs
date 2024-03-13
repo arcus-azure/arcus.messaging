@@ -202,7 +202,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-           bool isProcessed = await TryProcessMessageAsync(serviceProvider, message, messageContext, correlationInfo, cancellationToken);
+            bool isProcessed = await TryProcessMessageAsync(serviceProvider, message, messageContext, correlationInfo, cancellationToken);
             if (isProcessed)
             {
                 return;
@@ -211,10 +211,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             bool isFallbackProcessed = await TryFallbackProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
             if (!isFallbackProcessed)
             {
-                throw new InvalidOperationException(
-                    $"Message pump cannot correctly process the message in the '{typeof(TMessageContext).Name}' "
-                    + "because none of the registered 'IMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context. "
-                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump or message router to register a message handler");
+                Logger.LogDebug("Message router cannot correctly process the message in the '{MessageContextType}' because none of the registered '{MessageHandlerType}' implementations in the dependency container matches the incoming message type and context. Make sure you call the correct '.With...' extension on the '{ServiceCollectionType}' during the registration of the message pump/router to register a message handler", typeof(TMessageContext).Name, typeof(IMessageHandler<,>).Name, nameof(IServiceCollection));
             } 
         }
 
@@ -234,7 +231,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             {
                 throw new InvalidOperationException(
                     $"Message pump cannot correctly process the message in the '{typeof(TMessageContext).Name}' "
-                    + "because no 'IMessageHandler<,>' was registered in the dependency injection container. "
+                    + "because no 'IMessageHandler<,>' implementations were registered in the dependency injection container. "
                     + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump or message router to register a message handler");
             }
 
