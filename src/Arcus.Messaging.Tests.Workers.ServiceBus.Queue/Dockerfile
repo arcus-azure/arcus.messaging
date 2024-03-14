@@ -1,7 +1,7 @@
-FROM mcr.microsoft.com/dotnet/aspnet:6.0.3-alpine3.15 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0.2-alpine3.18 AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:6.0.100-bullseye-slim AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0.100-preview.7-alpine3.18 AS build
 WORKDIR /src
 COPY ["Arcus.Messaging.Tests.Workers.ServiceBus.Queue/Arcus.Messaging.Tests.Workers.ServiceBus.Queue.csproj", "Arcus.Messaging.Tests.Workers.ServiceBus.Queue/"]
 RUN dotnet restore "Arcus.Messaging.Tests.Workers.ServiceBus.Queue/Arcus.Messaging.Tests.Workers.ServiceBus.Queue.csproj"

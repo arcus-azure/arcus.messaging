@@ -34,6 +34,7 @@ stages:
           - template: build/build-solution.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
+              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
               version: $(Build.BuildNumber)
           - task: CopyFiles@2
             displayName: 'Copy build artifacts'
@@ -66,6 +67,7 @@ stages:
             inputs:
               packageType: 'sdk'
               version: '$(DotNet.Sdk.PreviousVersion)'
+              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
           - template: test/run-unit-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
@@ -106,6 +108,7 @@ stages:
             inputs:
               packageType: 'sdk'
               version: '$(DotNet.Sdk.PreviousVersion)'
+              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
           - template: test/run-integration-tests.yml@templates
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'

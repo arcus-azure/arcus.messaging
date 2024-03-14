@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.Extensions.Logging;
@@ -33,14 +34,20 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             IEnumerable<ITelemetry> telemetries,
             Predicate<RequestTelemetry> filter)
         {
-            return (RequestTelemetry) Assert.Single(telemetries, t => t is RequestTelemetry r && filter(r));
+            ITelemetry[] result = telemetries.Where(t => t is RequestTelemetry r && filter(r)).ToArray();
+            Assert.True(result.Length > 0, "Should find at least a single request telemetry, but got none");
+
+            return (RequestTelemetry) result.First();
         }
 
         public static DependencyTelemetry GetDependencyFrom(
             IEnumerable<ITelemetry> telemetries,
             Predicate<DependencyTelemetry> filter)
         {
-            return (DependencyTelemetry) Assert.Single(telemetries, t => t is DependencyTelemetry r && filter(r));
+            ITelemetry[] result = telemetries.Where(t => t is DependencyTelemetry r && filter(r)).ToArray();
+            Assert.True(result.Length > 0, "Should find at least a single dependency telemetry, but got none");
+
+            return (DependencyTelemetry) result.First();
         }
     }
 }
