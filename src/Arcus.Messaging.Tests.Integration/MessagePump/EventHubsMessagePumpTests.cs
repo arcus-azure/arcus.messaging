@@ -334,13 +334,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task EventHubsMessagePump_WithW3CCorrelationFormat_AutomaticallyTracksMicrosoftDependencies()
         {
             // Arrange
-            var spySink = new InMemoryApplicationInsightsTelemetryConverter();
+            var spySink = new InMemoryApplicationInsightsTelemetryConverter(_logger);
             var spyChannel = new InMemoryTelemetryChannel();
 
             var options = new WorkerOptions();
             options.ConfigureSerilog(config => config.WriteTo.ApplicationInsights(spySink));
 
-            string operationName = Guid.NewGuid().ToString();
+            string operationName = $"operation-{Guid.NewGuid()}";
             AddEventHubsMessagePump(options, opt => opt.Routing.Telemetry.OperationName = operationName)
                 .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
 

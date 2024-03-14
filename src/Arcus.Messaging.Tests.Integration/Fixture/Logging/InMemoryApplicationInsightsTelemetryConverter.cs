@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Arcus.Observability.Telemetry.Serilog.Sinks.ApplicationInsights.Converters;
 using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Serilog.Events;
 using Serilog.Sinks.ApplicationInsights.TelemetryConverters;
 
@@ -13,13 +16,15 @@ namespace Arcus.Messaging.Tests.Integration.Fixture.Logging
     {
         private readonly ApplicationInsightsTelemetryConverter _telemetryConverter;
         private readonly ConcurrentStack<ITelemetry> _telemetries = new ConcurrentStack<ITelemetry>();
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="InMemoryApplicationInsightsTelemetryConverter" /> class.
         /// </summary>
-        public InMemoryApplicationInsightsTelemetryConverter()
+        public InMemoryApplicationInsightsTelemetryConverter(ILogger logger = null)
         {
             _telemetryConverter = ApplicationInsightsTelemetryConverter.Create();
+            _logger = logger ?? NullLogger.Instance;
         }
 
         public ITelemetry[] Telemetries => _telemetries.ToArray();
@@ -29,6 +34,17 @@ namespace Arcus.Messaging.Tests.Integration.Fixture.Logging
             IEnumerable<ITelemetry> telemetries = _telemetryConverter.Convert(logEvent, formatProvider);
             foreach (ITelemetry telemetry in telemetries)
             {
+                switch (telemetry)
+                {
+                    case RequestTelemetry r:
+                        _logger.LogTrace("Received {TelemetryType} telemetry (Name: {RequestName}) in the in-memory Serilog sink", nameof(RequestTelemetry), r.Name);
+                        break;
+
+                    case DependencyTelemetry d:
+                        _logger.LogTrace("Received {TelemetryType} telemetry (Type: {DependencyType}) in the in-memory Serilog sink", nameof(DependencyTelemetry), d.Type);
+                        break;
+                }
+
                 _telemetries.Push(telemetry);
             }
 
