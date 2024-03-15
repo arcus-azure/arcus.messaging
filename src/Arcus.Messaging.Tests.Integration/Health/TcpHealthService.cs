@@ -93,7 +93,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
         {
             JToken token = healthEntryJson.First;
 
-            string name = healthEntryJson.Path.Replace("Entries.", "");
+            string name = healthEntryJson.Path.Replace("entries.", "");
             var healthStatus = token["status"].ToObject<HealthStatus>();
             var description = token["description"]?.ToObject<string>();
             var duration = token["duration"].ToObject<TimeSpan>();
