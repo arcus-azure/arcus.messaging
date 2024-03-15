@@ -37,11 +37,11 @@ namespace Arcus.Messaging.Tests.Integration.Fixture.Logging
                 switch (telemetry)
                 {
                     case RequestTelemetry r:
-                        _logger.LogTrace("Received {TelemetryType} telemetry (Name: {RequestName}) in the in-memory Serilog sink", nameof(RequestTelemetry), r.Name);
+                        _logger.LogTrace("Received {TelemetryType} telemetry (Name: {RequestName}, Transaction ID: {TransactionId}) in the in-memory Serilog sink", nameof(RequestTelemetry), r.Name, r.Context.Operation.Id);
                         break;
 
                     case DependencyTelemetry d:
-                        _logger.LogTrace("Received {TelemetryType} telemetry (Type: {DependencyType}) in the in-memory Serilog sink", nameof(DependencyTelemetry), d.Type);
+                        _logger.LogTrace("Received {TelemetryType} telemetry (Type: {DependencyType}, Transaction ID: {TransactionId}) in the in-memory Serilog sink", nameof(DependencyTelemetry), d.Type, d.Context.Operation.Id);
                         break;
                 }
 

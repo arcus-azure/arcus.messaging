@@ -45,11 +45,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.EventHubs
 
             await using (var client = new EventHubProducerClient(_eventHubsConnectionString, _eventHubName))
             {
-                using (EventDataBatch eventBatch = await client.CreateBatchAsync())
-                {
-                    eventBatch.TryAdd(eventData);
-                    await client.SendAsync(eventBatch);
-                }
+                await client.SendAsync(new[] { eventData });
             }
         }
     }

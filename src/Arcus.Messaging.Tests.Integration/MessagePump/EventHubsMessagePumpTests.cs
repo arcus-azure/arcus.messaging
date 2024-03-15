@@ -335,22 +335,21 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var spySink = new InMemoryApplicationInsightsTelemetryConverter(_logger);
-            var spyChannel = new InMemoryTelemetryChannel();
+            var spyChannel = new InMemoryTelemetryChannel(_logger);
 
             var options = new WorkerOptions();
             options.ConfigureSerilog(config => config.WriteTo.ApplicationInsights(spySink));
 
+            var traceParent = TraceParent.Generate();
+            EventData eventData = CreateOrderEventDataMessageForW3C(traceParent);
+
             string operationName = $"operation-{Guid.NewGuid()}";
             AddEventHubsMessagePump(options, opt => opt.Routing.Telemetry.OperationName = operationName)
-                .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
-
-            var traceParent = TraceParent.Generate();
-            var eventData = CreateOrderEventDataMessageForW3C(traceParent);
+                .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>(msg => msg.Id == eventData.MessageId);
 
             TestEventHubsMessageProducer producer = CreateEventHubsMessageProducer();
 
             await using (var worker = await Worker.StartNewAsync(options))
-            await using (await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
             {
                 worker.Services.GetRequiredService<TelemetryConfiguration>().TelemetryChannel = spyChannel;
 
@@ -366,7 +365,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     
                     Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaArcusKeyVault.Context.Operation.ParentId);
                     Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaMicrosoftSql.Context.Operation.ParentId);
-                }, timeout: TimeSpan.FromMinutes(1.5), _logger);
+                }, timeout: TimeSpan.FromMinutes(2), _logger);
             }
         }
 
@@ -388,7 +387,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             TestEventHubsMessageProducer producer = CreateEventHubsMessageProducer();
 
             await using (var worker = await Worker.StartNewAsync(options))
-            await using (await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
             {
                 worker.Services.GetRequiredService<TelemetryConfiguration>().TelemetryChannel = spyChannel;
 
@@ -512,13 +510,17 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             return eventData;
         }
 
-        private static EventData CreateOrderEventDataMessageForW3C(TraceParent traceParent)
+        private EventData CreateOrderEventDataMessageForW3C(TraceParent traceParent)
         {
             Order order = OrderGenerator.Generate();
-            var eventData = new EventData(JsonConvert.SerializeObject(order));
+            var eventData = new EventData(JsonConvert.SerializeObject(order))
+            {
+                MessageId = order.Id
+            };
 
             if (traceParent != null)
             {
+                _logger.LogTrace("Create EventData with trace-parent (Transaction ID: {TransactionId})", traceParent.TransactionId);
                 eventData.WithDiagnosticId(traceParent);
             }
 

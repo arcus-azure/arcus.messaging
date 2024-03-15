@@ -56,9 +56,9 @@ namespace Arcus.Messaging.Tests.Integration.Health
                 {
                     JObject json = JObject.Load(jsonReader);
 
-                    if (json.TryGetValue("Entries", out JToken entries)
-                        && json.TryGetValue("Status", out JToken status)
-                        && json.TryGetValue("TotalDuration", out JToken totalDuration))
+                    if (json.TryGetValue("entries", out JToken entries)
+                        && json.TryGetValue("status", out JToken status)
+                        && json.TryGetValue("totalDuration", out JToken totalDuration))
                     {
                        HealthReport report = ParseHealthReport(entries, status, totalDuration);
 
@@ -93,14 +93,14 @@ namespace Arcus.Messaging.Tests.Integration.Health
         {
             JToken token = healthEntryJson.First;
 
-            string name = healthEntryJson.Path.Replace("Entries.", "");
-            var healthStatus = token["Status"].ToObject<HealthStatus>();
-            var description = token["Description"]?.ToObject<string>();
-            var duration = token["Duration"].ToObject<TimeSpan>();
-            var exception = token["Exception"]?.ToObject<Exception>();
-            var data = token["Data"]?.ToObject<Dictionary<string, object>>();
+            string name = healthEntryJson.Path.Replace("entries.", "");
+            var healthStatus = token["status"].ToObject<HealthStatus>();
+            var description = token["description"]?.ToObject<string>();
+            var duration = token["duration"].ToObject<TimeSpan>();
+            var exception = token["exception"]?.ToObject<Exception>();
+            var data = token["data"]?.ToObject<Dictionary<string, object>>();
             var readOnlyDictionary = new ReadOnlyDictionary<string, object>(data ?? new Dictionary<string, object>());
-            var tags = token["Tags"]?.ToObject<string[]>();
+            var tags = token["tags"]?.ToObject<string[]>();
 
             var healthEntry = new HealthReportEntry(healthStatus, description, duration, exception, readOnlyDictionary, tags);
             return new KeyValuePair<string, HealthReportEntry>(name, healthEntry);
