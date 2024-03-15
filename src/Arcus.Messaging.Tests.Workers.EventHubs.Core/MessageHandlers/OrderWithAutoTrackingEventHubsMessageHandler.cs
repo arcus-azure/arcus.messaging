@@ -13,7 +13,7 @@ namespace Arcus.Messaging.Tests.Workers.EventHubs.Core.MessageHandlers
 {
     public class OrderWithAutoTrackingEventHubsMessageHandler : IAzureEventHubsMessageHandler<Order>
     {
-        private readonly ILogger<OrderWithAutoTrackingEventHubsMessageHandler> _logger;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OrderWithAutoTrackingEventHubsMessageHandler" /> class.
@@ -29,6 +29,7 @@ namespace Arcus.Messaging.Tests.Workers.EventHubs.Core.MessageHandlers
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Process Order '{OrderId}'", message.Id);
             _logger.LogAzureKeyVaultDependency("https://my-vault.azure.net", "Sql-connection-string", isSuccessful: true, DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
             SimulateSqlQueryWithMicrosoftTracking();
 
