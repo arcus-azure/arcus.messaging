@@ -1,5 +1,4 @@
 ﻿using System;
-using Arcus.Security.Providers.AzureKeyVault.Authentication;
 using GuardNet;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
@@ -57,14 +56,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// Gets the key to the client secret of the client application.
         /// </summary>
         public string ClientSecretKey { get; }
-
-        /// <summary>
-        /// Creates an instance to authenticate to Azure Key Vault.
-        /// </summary>
-        public ServicePrincipalAuthentication CreateAuthentication()
-        {
-            return new ServicePrincipalAuthentication(ClientId, ClientSecret);
-        }
 
         /// <summary>
         /// Creates an instance that combines the service principal information into an <see cref="ClientCredential"/> instance.

@@ -24,7 +24,7 @@ namespace Arcus.Messaging.Tests.Integration.AzureFunctions.ServiceBus
         }
 
         [Theory]
-        [InlineData("Arcus:ServiceBus:Docker:AzureFunctions:ConnectionStringWithQueue")]
+        [InlineData("Arcus:ServiceBus:Docker:AzureFunctions:ConnectionStringWithQueue", Skip = ".NET 8 is not supported yet for in-process Azure Functions")]
         [InlineData("Arcus:ServiceBus:Docker:AzureFunctions:ConnectionStringWithTopic")]
         public async Task ServiceBusTrigger_PublishServiceBusMessage_MessageSuccessfullyProcessed(string connectionStringKey)
         {

@@ -28,17 +28,18 @@ steps:
       EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
       EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
       ARCUS_SERVICEBUS_CONNECTIONSTRING=$(Arcus.ServiceBus.Docker.ConnectionStringWithTopic)
-- template: build-and-run-az-func-container.yml
-  parameters:
-    projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue'
-    containerName: '$(Images.AzureFunction.ServiceBus.Queue)'
-    imageName: '$(Images.AzureFunction.ServiceBus.Queue)'
-    imageTag: '$(Build.BuildId)'
-    port: '$(Arcus.AzureFunctions.Queue.Port)'
-    envVars: |
-      ARCUS_EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
-      ARCUS_EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
-      ARCUS_SERVICEBUS_CONNECTIONSTRING=$(Arcus.ServiceBus.Docker.AzureFunctions.NamespaceConnectionString)
+# .NET 8 not available yet for Azure Functions in-process
+# - template: build-and-run-az-func-container.yml
+#   parameters:
+#     projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Queue'
+#     containerName: '$(Images.AzureFunction.ServiceBus.Queue)'
+#     imageName: '$(Images.AzureFunction.ServiceBus.Queue)'
+#     imageTag: '$(Build.BuildId)'
+#     port: '$(Arcus.AzureFunctions.Queue.Port)'
+#     envVars: |
+#       ARCUS_EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
+#       ARCUS_EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
+#       ARCUS_SERVICEBUS_CONNECTIONSTRING=$(Arcus.ServiceBus.Docker.AzureFunctions.NamespaceConnectionString)
 - template: build-and-run-az-func-container.yml
   parameters:
     projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic'
@@ -64,18 +65,19 @@ steps:
       EventHubsConnectionString=$(Arcus.EventHubs.ConnectionString)
       AzureWebJobsStorage=$(Arcus.EventHubs.BlobStorage.StorageAccountConnectionString)
       FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
-- template: build-and-run-az-func-container.yml
-  parameters:
-    projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs.InProcess'
-    containerName: '$(Images.AzureFunction.InProcess.EventHubs)'
-    imageName: '$(Images.AzureFunction.InProcess.EventHubs)'
-    imageTag: '$(Build.BuildId)'
-    port: '$(Arcus.AzureFunctions.InProcess.EventHubs.Port)'
-    envVars: |
-      EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
-      EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
-      EventHubsConnectionString=$(Arcus.EventHubs.ConnectionString)
-      AzureWebJobsStorage=$(Arcus.EventHubs.BlobStorage.StorageAccountConnectionString)
+# .NET 8 not available yet for Azure Functions in-process
+# - template: build-and-run-az-func-container.yml
+#   parameters:
+#     projectName: 'Arcus.Messaging.Tests.Runtimes.AzureFunction.EventHubs.InProcess'
+#     containerName: '$(Images.AzureFunction.InProcess.EventHubs)'
+#     imageName: '$(Images.AzureFunction.InProcess.EventHubs)'
+#     imageTag: '$(Build.BuildId)'
+#     port: '$(Arcus.AzureFunctions.InProcess.EventHubs.Port)'
+#     envVars: |
+#       EVENTGRID_TOPIC_URI=$(Arcus.TestInfra.EventGrid.Topic.Uri)
+#       EVENTGRID_AUTH_KEY=$(Arcus.TestInfra.EventGrid.Auth.Key)
+#       EventHubsConnectionString=$(Arcus.EventHubs.ConnectionString)
+#       AzureWebJobsStorage=$(Arcus.EventHubs.BlobStorage.StorageAccountConnectionString)
 - template: build-and-run-worker-container.yml
   parameters:
     projectName: 'Arcus.Messaging.Tests.Workers.EventHubs'
@@ -94,6 +96,7 @@ steps:
 - template: test/run-integration-tests.yml@templates
   parameters:
     dotnetSdkVersion: '$(DotNet.Sdk.Version)'
+    includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
     projectName: '$(Project).Tests.Integration'
     category: 'Docker'
 - task: PowerShell@2
@@ -108,24 +111,26 @@ steps:
     targetType: 'inline'
     script: 'docker logs $(Images.ServiceBus.Topic)'
   condition: failed()
-- task: PowerShell@2
-  displayName: 'Get Docker container logs for Azure Functions Service Bus Queue project'
-  inputs:
-    targetType: 'inline'
-    script: 'docker logs $(Images.AzureFunction.ServiceBus.Queue)'
-  condition: failed()
+# .NET 8 not available yet for Azure Functions in-process
+# - task: PowerShell@2
+#   displayName: 'Get Docker container logs for Azure Functions Service Bus Queue project'
+#   inputs:
+#     targetType: 'inline'
+#     script: 'docker logs $(Images.AzureFunction.ServiceBus.Queue)'
+#   condition: failed()
 - task: PowerShell@2
   displayName: 'Get Docker container logs for Azure Functions Service Bus Topic project'
   inputs:
     targetType: 'inline'
     script: 'docker logs $(Images.AzureFunction.ServiceBus.Topic)'
   condition: failed()
-- task: PowerShell@2
-  displayName: 'Get Docker container logs for Azure Functions EventHubs project'
-  inputs:
-    targetType: 'inline'
-    script: 'docker logs $(Images.AzureFunction.InProcess.EventHubs)'
-  condition: failed()
+# .NET 8 not available yet for Azure Functions in-process
+# - task: PowerShell@2
+#   displayName: 'Get Docker container logs for Azure Functions EventHubs project'
+#   inputs:
+#     targetType: 'inline'
+#     script: 'docker logs $(Images.AzureFunction.InProcess.EventHubs)'
+#   condition: failed()
 - task: PowerShell@2
   displayName: 'Get Docker container logs for Azure Functions EventHubs (isolated) project'
   inputs:

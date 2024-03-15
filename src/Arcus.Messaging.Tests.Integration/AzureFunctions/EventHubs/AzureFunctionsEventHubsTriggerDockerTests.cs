@@ -33,7 +33,7 @@ namespace Arcus.Messaging.Tests.Integration.AzureFunctions.EventHubs
         }
 
         [Theory]
-        [InlineData(IntegrationTestType.DockerAzureFunctionsInProcess)]
+        [InlineData(IntegrationTestType.DockerAzureFunctionsInProcess, Skip = ".NET 8 is not supported yet for in-process Azure Functions")]
         [InlineData(IntegrationTestType.DockerAzureFunctionsIsolated)]
         public async Task EventHubsMessageFunction_PublishesEventDataMessage_MessageSuccessfullyProcessed(IntegrationTestType integrationType)
         {

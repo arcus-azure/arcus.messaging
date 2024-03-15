@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <UserSecretsId>dotnet-Arcus.Messaging.Tests.Worker-65A54172-E600-4927-A20F-DEFE98B86592</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
@@ -9,6 +9,9 @@
   <ItemGroup>
     <PackageReference Include="Arcus.EventGrid.Core" Version="3.3.0" />
     <PackageReference Include="Arcus.EventGrid.Testing" Version="3.3.0" />
+    <PackageReference Include="Arcus.Observability.Correlation" Version="3.0.0" />
+    <PackageReference Include="Arcus.Observability.Telemetry.Core" Version="3.0.0" />
+    <PackageReference Include="Arcus.Security.Core" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
