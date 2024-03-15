@@ -335,7 +335,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var spySink = new InMemoryApplicationInsightsTelemetryConverter(_logger);
-            var spyChannel = new InMemoryTelemetryChannel();
+            var spyChannel = new InMemoryTelemetryChannel(_logger);
 
             var options = new WorkerOptions();
             options.ConfigureSerilog(config => config.WriteTo.ApplicationInsights(spySink));
@@ -345,12 +345,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 .WithEventHubsMessageHandler<OrderWithAutoTrackingEventHubsMessageHandler, Order>();
 
             var traceParent = TraceParent.Generate();
-            var eventData = CreateOrderEventDataMessageForW3C(traceParent);
+            EventData eventData = CreateOrderEventDataMessageForW3C(traceParent);
 
             TestEventHubsMessageProducer producer = CreateEventHubsMessageProducer();
 
             await using (var worker = await Worker.StartNewAsync(options))
-            await using (await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
             {
                 worker.Services.GetRequiredService<TelemetryConfiguration>().TelemetryChannel = spyChannel;
 
@@ -388,7 +387,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             TestEventHubsMessageProducer producer = CreateEventHubsMessageProducer();
 
             await using (var worker = await Worker.StartNewAsync(options))
-            await using (await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger))
             {
                 worker.Services.GetRequiredService<TelemetryConfiguration>().TelemetryChannel = spyChannel;
 
