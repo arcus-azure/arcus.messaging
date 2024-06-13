@@ -432,6 +432,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                       .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(provider => spyOrderV1MessageHandler)
                       .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>();
 
+            // Act
             services.AddServiceBusMessageRouting();
             
             // Assert
@@ -462,6 +463,97 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             
             Assert.Equal(messageCount, spyOrderV1MessageHandler.ProcessedMessages.Length);
             Assert.Equal(messageCount, spyOrderV2MessageHandler.ProcessedMessages.Length);
+        }
+
+
+
+        [Fact]
+        public async Task Route_WithoutAnyRegisteredMessageHandlers_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            
+            // Act
+            services.AddServiceBusMessageRouting();
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            Order order = OrderGenerator.Generate();
+            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage();
+            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Route_WithoutAnyMatchingRegisteredMessageHandlers_Fails()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            
+            // Act
+            services.AddServiceBusMessageRouting()
+                    .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>();
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            OrderV2 order = OrderV2Generator.Generate();
+            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage();
+            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Route_WithMessageHandlerFromTemplate_Succeeds()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act
+            services.AddServiceBusMessageRouting()
+                    .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandlerFromTemplate, Order>();
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            Order order = OrderGenerator.Generate();
+            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage();
+            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
+            var receiver = new TestServiceBusReceiver();
+            await router.RouteMessageAsync(receiver, message, context, correlationInfo, CancellationToken.None);
+            Assert.True(receiver.HasCompletedMessage);
+        }
+
+        [Fact]
+        public async Task Route_WithFallbackMessageHandlerFromTemplate_Succeeds()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+
+            // Act
+            services.AddServiceBusMessageRouting()
+                    .WithServiceBusFallbackMessageHandler<TestAzureServiceBusFallbackMessageHandlerFromTemplate>();
+
+            // Assert
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            Order order = OrderGenerator.Generate();
+            ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage();
+            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
+            var receiver = new TestServiceBusReceiver();
+            await router.RouteMessageAsync(receiver, message, context, correlationInfo, CancellationToken.None);
+            Assert.True(receiver.HasCompletedMessage);
         }
 
         [Fact]
