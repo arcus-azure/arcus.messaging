@@ -109,6 +109,11 @@ namespace Arcus.Messaging.Pumps.EventHubs
         /// <inheritdoc />
         public override async Task StartProcessingMessagesAsync(CancellationToken stoppingToken)
         {
+            if (IsStarted)
+            {
+                return;
+            }
+
             await base.StartProcessingMessagesAsync(stoppingToken);
 
             _eventProcessor = await _eventHubsConfig.CreateEventProcessorClientAsync();
@@ -185,6 +190,11 @@ namespace Arcus.Messaging.Pumps.EventHubs
         /// <inheritdoc />
         public override async Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
+            if (!IsStarted)
+            {
+                return;
+            }
+
             await base.StopProcessingMessagesAsync(cancellationToken);
 
             try

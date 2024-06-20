@@ -236,6 +236,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <inheritdoc />
         public override async Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
         {
+            if (!IsStarted)
+            {
+                return;
+            }
+
             await base.StartProcessingMessagesAsync(cancellationToken);
             
             if (_messageProcessor is null)
@@ -260,6 +265,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <inheritdoc />
         public override async Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
+            if (!IsStarted)
+            {
+                return;
+            }
+
             await base.StopProcessingMessagesAsync(cancellationToken);
 
             if (_messageProcessor is null)
