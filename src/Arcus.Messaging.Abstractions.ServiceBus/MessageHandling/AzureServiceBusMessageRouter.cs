@@ -273,7 +273,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
                 Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
                 string messageBody = encoding.GetString(message.Body.ToArray());
-                bool isTried = false;
+                bool hasGoneThroughMessageHandler = false;
 
                 foreach (MessageHandler messageHandler in messageHandlers)
                 {
@@ -284,7 +284,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                         SetServiceBusPropertiesForSpecificOperations(messageHandler, args, messageContext);
 
                         bool isProcessed = await messageHandler.ProcessMessageAsync(result.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
-                        isTried = true;
+                        hasGoneThroughMessageHandler = true;
 
                         if (!isProcessed)
                         {
@@ -295,7 +295,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     }
                 }
 
-                if (!isTried)
+                if (!hasGoneThroughMessageHandler)
                 {
                     EnsureFallbackMessageHandlerAvailable(messageContext); 
                 }
