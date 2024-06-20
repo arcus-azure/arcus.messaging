@@ -158,7 +158,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             // Assert
             Assert.Contains("none of the registered", exception.Message, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("fallback", exception.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.False(sabotageHandler.IsProcessed, "sabotage message handler should be tried");
+            Assert.False(sabotageHandler.IsProcessed, "sabotage message handler should not be tried");
         }
 
         [Fact]

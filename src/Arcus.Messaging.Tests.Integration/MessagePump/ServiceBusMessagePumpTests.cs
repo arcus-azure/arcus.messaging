@@ -755,12 +755,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Fact]
-        public async Task ServiceBusTopicMessagePumpWithoutFallback_TriesMatchingMessageHandlerButFailing_PassTruMessage()
-        {
-
-        }
-
-        [Fact]
         public async Task ServiceBusTopicMessagePump_PauseViaCircuitBreaker_RestartsAgainWithOneMessage()
         {
             // Arrange
