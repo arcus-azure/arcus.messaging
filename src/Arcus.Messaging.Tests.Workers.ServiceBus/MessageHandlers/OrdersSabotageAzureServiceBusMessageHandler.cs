@@ -10,6 +10,8 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class OrdersSabotageAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<Order>
     {
+        public bool IsProcessed { get; private set; }
+
         /// <summary>
         ///     Process a new message that was received
         /// </summary>
@@ -26,6 +28,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
+            IsProcessed = true;
             throw new InvalidOperationException(
                 "Sabotage the message processing with an unhandled exception");
         }

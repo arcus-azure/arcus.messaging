@@ -754,7 +754,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusTopicMessageHandlingForW3CAsync(options);
         }
 
-         [Fact]
+        [Fact]
+        public async Task ServiceBusTopicMessagePumpWithoutFallback_TriesMatchingMessageHandlerButFailing_PassTruMessage()
+        {
+
+        }
+
+        [Fact]
         public async Task ServiceBusTopicMessagePump_PauseViaCircuitBreaker_RestartsAgainWithOneMessage()
         {
             // Arrange
