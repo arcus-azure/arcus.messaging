@@ -236,7 +236,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <inheritdoc />
         public override async Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
         {
-            if (!IsStarted)
+            if (IsStarted)
             {
                 return;
             }
