@@ -236,6 +236,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <inheritdoc />
         public override async Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
         {
+            await base.StartProcessingMessagesAsync(cancellationToken);
+            
             if (_messageProcessor is null)
             {
                 _messageProcessor = await Settings.CreateMessageProcessorAsync();
@@ -258,6 +260,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <inheritdoc />
         public override async Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
+            await base.StopProcessingMessagesAsync(cancellationToken);
+
             if (_messageProcessor is null)
             {
                 return;
@@ -413,9 +417,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             using (MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message))
             {
-                AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId, Settings.ServiceBusEntity);
                 ServiceBusReceiver receiver = args.GetServiceBusReceiver();
-
+                AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId, Settings.ServiceBusEntity);
+               
                 await _messageRouter.RouteMessageAsync(receiver, args.Message, messageContext, correlationResult.CorrelationInfo, args.CancellationToken);
             }
         }
@@ -439,7 +443,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
         {
-            if (cancellationToken.IsCancellationRequested == false)
+            if (!cancellationToken.IsCancellationRequested)
             {
                 await Task.Delay(Timeout.Infinite, cancellationToken);
             }

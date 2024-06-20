@@ -277,21 +277,20 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
                 foreach (MessageHandler messageHandler in messageHandlers)
                 {
-                    MessageResult result = await DeserializeMessageForHandlerAsync(messageBody, messageContext, messageHandler);
-                    if (result.IsSuccess)
+                    MessageResult deserializeResult = await DeserializeMessageForHandlerAsync(messageBody, messageContext, messageHandler);
+                    if (deserializeResult.IsSuccess)
                     {
                         var args = new ProcessMessageEventArgs(message, messageReceiver, cancellationToken);
                         SetServiceBusPropertiesForSpecificOperations(messageHandler, args, messageContext);
 
-                        bool isProcessed = await messageHandler.ProcessMessageAsync(result.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
+                        bool isProcessed = 
+                            await messageHandler.ProcessMessageAsync(deserializeResult.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
+
                         hasGoneThroughMessageHandler = true;
-
-                        if (!isProcessed)
+                        if (isProcessed)
                         {
-                            continue;
+                            return;
                         }
-
-                        return;
                     }
                 }
 

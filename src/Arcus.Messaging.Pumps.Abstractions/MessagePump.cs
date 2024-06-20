@@ -42,6 +42,11 @@ namespace Arcus.Messaging.Pumps.Abstractions
         public string JobId { get; protected set; } = Guid.NewGuid().ToString();
 
         /// <summary>
+        /// Gets the boolean flag that indicates whether the message pump is started and receiving messages.
+        /// </summary>
+        public bool IsStarted { get; private set; }
+
+        /// <summary>
         /// Gets hte ID of the client being used to connect to the messaging service.
         /// </summary>
         protected string ClientId { get; private set; }
@@ -109,6 +114,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="cancellationToken">The token to indicate the start process should no longer be graceful.</param>
         public virtual Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
         {
+            IsStarted = true;
             return Task.CompletedTask;
         }
 
@@ -118,6 +124,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="cancellationToken">The token to indicate the stop process should no longer be graceful.</param>
         public virtual Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
+            IsStarted = false;
             return Task.CompletedTask;
         }
 

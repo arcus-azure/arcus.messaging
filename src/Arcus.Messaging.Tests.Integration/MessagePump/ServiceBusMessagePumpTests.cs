@@ -761,7 +761,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             ServiceBusMessage[] messages = GenerateShipmentMessages(3);
             TimeSpan recoveryTime = TimeSpan.FromSeconds(10);
-            TimeSpan messageInterval = TimeSpan.FromSeconds(1);
+            TimeSpan messageInterval = TimeSpan.FromSeconds(2);
 
             options.AddXunitTestLogging(_outputWriter)
                    .AddServiceBusTopicMessagePump(
@@ -791,10 +791,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 DateTimeOffset[] arrivals = handler.GetMessageArrivals();
                 Assert.Equal(messages.Length, arrivals.Length);
 
+                _outputWriter.WriteLine("Arrivals: {0}", string.Join(", ", arrivals));
                 TimeSpan faultMargin = TimeSpan.FromSeconds(1);
                 Assert.Collection(arrivals.SkipLast(1).Zip(arrivals.Skip(1)),
-                    dates => AssertDateDiff(dates.First, dates.Second, recoveryTime.Subtract(faultMargin), recoveryTime.Add(faultMargin)),
-                    dates => AssertDateDiff(dates.First, dates.Second, messageInterval.Subtract(faultMargin), messageInterval.Add(faultMargin)));
+                    dates => AssertDateDiff(dates.First, dates.Second, recoveryTime, recoveryTime.Add(faultMargin)),
+                    dates => AssertDateDiff(dates.First, dates.Second, messageInterval, messageInterval.Add(faultMargin)));
 
             }, timeout: TimeSpan.FromMinutes(2), _logger);
         }

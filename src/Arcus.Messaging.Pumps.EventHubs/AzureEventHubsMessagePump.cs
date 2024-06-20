@@ -109,6 +109,8 @@ namespace Arcus.Messaging.Pumps.EventHubs
         /// <inheritdoc />
         public override async Task StartProcessingMessagesAsync(CancellationToken stoppingToken)
         {
+            await base.StartProcessingMessagesAsync(stoppingToken);
+
             _eventProcessor = await _eventHubsConfig.CreateEventProcessorClientAsync();
             _eventProcessor.ProcessEventAsync += ProcessMessageAsync;
             _eventProcessor.ProcessErrorAsync += ProcessErrorAsync;
@@ -183,6 +185,8 @@ namespace Arcus.Messaging.Pumps.EventHubs
         /// <inheritdoc />
         public override async Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
+            await base.StopProcessingMessagesAsync(cancellationToken);
+
             try
             {
                 Logger.LogTrace("Stopping Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}'",  JobId, ConsumerGroup, EventHubName , Namespace);

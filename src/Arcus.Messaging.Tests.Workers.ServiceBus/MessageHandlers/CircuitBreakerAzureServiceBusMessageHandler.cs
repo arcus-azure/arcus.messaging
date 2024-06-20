@@ -64,14 +64,9 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
             }
 
             MessageArrivals.Add((message, DateTimeOffset.UtcNow));
-            if (MessageArrivals.Count == 1)
+            if (MessageArrivals.Count < _targetMessageIds.Length)
             {
                 await _circuitBreaker.PauseMessageProcessingAsync(messageContext.JobId, _configureOptions);
-            }
-
-            if (MessageArrivals.Count == 2)
-            {
-                throw new InvalidOperationException("Sabotage processing once the message pump starts back up again!");
             }
         }
 
