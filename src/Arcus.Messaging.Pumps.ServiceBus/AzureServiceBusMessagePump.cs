@@ -266,9 +266,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             try
             {
                 Logger.LogTrace("Closing Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}'", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
+
+                await _messageProcessor.StopProcessingAsync(cancellationToken);
+
                 _messageProcessor.ProcessMessageAsync -= ProcessMessageAsync;
                 _messageProcessor.ProcessErrorAsync -= ProcessErrorAsync;
-                await _messageProcessor.StopProcessingAsync(cancellationToken);
 
                 Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}", Settings.ServiceBusEntity, JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
             }
