@@ -265,6 +265,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 }
                 catch (Exception exception) when (exception is TaskCanceledException or OperationCanceledException or ObjectDisposedException)
                 {
+                    IsStarted = false;
+
                     Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' was cancelled", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
                     return;
                 }
