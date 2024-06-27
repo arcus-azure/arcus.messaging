@@ -798,6 +798,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     dates => AssertDateDiff(dates.First, dates.Second, messageInterval, messageInterval.Add(faultMargin)));
 
             }, timeout: TimeSpan.FromMinutes(2), _logger);
+
+            var pump = Assert.IsType<AzureServiceBusMessagePump>(worker.Services.GetService<IHostedService>());
+            Assert.True(pump.IsStarted, "pump should be started after circuit breaker scenario");
         }
 
         private static TMessageHandler GetMessageHandler<TMessageHandler>(Worker worker)

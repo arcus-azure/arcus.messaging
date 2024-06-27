@@ -12,6 +12,27 @@ using Microsoft.Extensions.Logging;
 namespace Arcus.Messaging.Pumps.Abstractions
 {
     /// <summary>
+    /// Represents the available states in which the <see cref="MessagePump"/> is presently in within the circuit breaker context
+    /// </summary>
+    public enum MessagePumpCircuitState
+    {
+        /// <summary>
+        /// The message pump is able to receive messages.
+        /// </summary>
+        Closed,
+
+        /// <summary>
+        /// The message pump is under inspection if it can receive messages.
+        /// </summary>
+        HalfOpen,
+
+        /// <summary>
+        /// The message is unable to receive messages.
+        /// </summary>
+        Open
+    }
+
+    /// <summary>
     /// Represents the foundation for building message pumps.
     /// </summary>
     public abstract class MessagePump : BackgroundService
@@ -44,7 +65,12 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <summary>
         /// Gets the boolean flag that indicates whether the message pump is started and receiving messages.
         /// </summary>
-        public bool IsStarted { get; private set; }
+        public bool IsStarted { get; protected set; }
+
+        /// <summary>
+        /// Gets the current state of the message pump within the circuit breaker context.
+        /// </summary>
+        public MessagePumpCircuitState CircuitState { get; set; } = MessagePumpCircuitState.Closed;
 
         /// <summary>
         /// Gets hte ID of the client being used to connect to the messaging service.
@@ -115,6 +141,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
         public virtual Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
         {
             IsStarted = true;
+            CircuitState = MessagePumpCircuitState.Closed;
+
             return Task.CompletedTask;
         }
 
@@ -125,6 +153,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
         public virtual Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
             IsStarted = false;
+            CircuitState = MessagePumpCircuitState.Open;
+
             return Task.CompletedTask;
         }
 
