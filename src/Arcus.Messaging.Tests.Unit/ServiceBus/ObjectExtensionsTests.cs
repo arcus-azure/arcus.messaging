@@ -6,7 +6,6 @@ using Arcus.Messaging.Tests.Core;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Azure.ServiceBus;
 using Newtonsoft.Json;
 using Xunit;
 
@@ -29,7 +28,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             Assert.NotNull(serviceBusMessage);
-            Assert.Empty(serviceBusMessage.CorrelationId);
+            Assert.Null(serviceBusMessage.CorrelationId);
             IDictionary<string, object> userProperties = serviceBusMessage.ApplicationProperties;
             Assert.True(userProperties.ContainsKey(PropertyNames.ContentType));
             Assert.True(userProperties.ContainsKey(PropertyNames.Encoding));
@@ -77,7 +76,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             Assert.NotNull(serviceBusMessage);
-            Assert.Empty(serviceBusMessage.CorrelationId);
+            Assert.Null(serviceBusMessage.CorrelationId);
             IDictionary<string, object> userProperties = serviceBusMessage.ApplicationProperties;
             Assert.True(userProperties.ContainsKey(PropertyNames.ContentType));
             Assert.True(userProperties.ContainsKey(PropertyNames.Encoding));
@@ -101,7 +100,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Assert
             Assert.NotNull(serviceBusMessage);
-            Assert.Empty(serviceBusMessage.CorrelationId);
+            Assert.Null(serviceBusMessage.CorrelationId);
             IDictionary<string, object> userProperties = serviceBusMessage.ApplicationProperties;
             Assert.True(userProperties.ContainsKey(PropertyNames.ContentType));
             Assert.True(userProperties.ContainsKey(PropertyNames.Encoding));
