@@ -26,10 +26,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private readonly IAzureServiceBusMessageRouter _messageRouter;
         private readonly IDisposable _loggingScope;
 
-        private bool _ownsTopicSubscription = false;
-        private bool _isHostShuttingDown;
-        private ServiceBusReceiver _messageReceiver;
+        private bool _ownsTopicSubscription, _isHostShuttingDown;
         private int _unauthorizedExceptionCount;
+        private ServiceBusReceiver _messageReceiver;
         private CancellationTokenSource _receiveMessagesCancellation;
 
         /// <summary>
@@ -224,7 +223,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                await ProcessMessageAsync(new ProcessMessageEventArgs(message, _messageReceiver, CancellationToken.None));
+                await ProcessMessageAsync(message, CancellationToken.None);
                 return MessageProcessingResult.Success;
             }
             catch (Exception exception)
@@ -261,16 +260,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 {
                     await foreach (ServiceBusReceivedMessage message in _messageReceiver.ReceiveMessagesAsync(_receiveMessagesCancellation.Token))
                     {
-                        await ProcessMessageAsync(new ProcessMessageEventArgs(message, _messageReceiver, cancellationToken));
+                        await ProcessMessageAsync(message, cancellationToken);
                     }
                 }
                 catch (Exception exception) when (exception is TaskCanceledException or OperationCanceledException or ObjectDisposedException)
                 {
+                    Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' was cancelled", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
                     return;
                 }
                 catch (Exception exception)
                 {
-                    await ProcessErrorAsync(new ProcessErrorEventArgs(exception, ServiceBusErrorSource.Receive, Namespace, EntityPath, cancellationToken));
+                    await ProcessErrorAsync(exception, cancellationToken);
                 }
             }
         }
@@ -283,15 +283,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
-            await base.StopProcessingMessagesAsync(cancellationToken);
             Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}", Settings.ServiceBusEntity, JobId, EntityPath, Namespace, DateTimeOffset.UtcNow);
 
             _receiveMessagesCancellation?.Cancel();
+            await base.StopProcessingMessagesAsync(cancellationToken);
+
         }
 
-        private async Task ProcessErrorAsync(ProcessErrorEventArgs args)
+        private async Task ProcessErrorAsync(Exception exception, CancellationToken cancellationToken)
         {
-            if (args?.Exception is null)
+            if (exception is null)
             {
                 Logger.LogWarning("Thrown exception on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", Settings.ServiceBusEntity, JobId);
                 return;
@@ -299,21 +300,20 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                await HandleReceiveExceptionAsync(args.Exception);
+                await HandleReceiveExceptionAsync(exception);
             }
             finally
             {
-                if (args.Exception is UnauthorizedAccessException)
+                if (exception is UnauthorizedAccessException)
                 {
                     if (Interlocked.Increment(ref _unauthorizedExceptionCount) >= Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart)
                     {
                         Logger.LogTrace("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
-                        await RestartAsync(args.CancellationToken);
+                        await RestartAsync(cancellationToken);
                     }
                     else
                     {
-                        Logger.LogWarning("Unable to connect anymore to Azure Service Bus ({CurrentCount}/{MaxCount})",
-                            _unauthorizedExceptionCount, Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart);
+                        Logger.LogWarning("Unable to connect anymore to Azure Service Bus ({CurrentCount}/{MaxCount})", _unauthorizedExceptionCount, Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart);
                     }
                 }
             }
@@ -367,6 +367,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             await base.StopAsync(cancellationToken);
             _isHostShuttingDown = true;
             _loggingScope?.Dispose();
+            _receiveMessagesCancellation?.Dispose();
         }
 
         private async Task DeleteTopicSubscriptionAsync(CancellationToken cancellationToken)
@@ -395,9 +396,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
         }
 
-        private async Task ProcessMessageAsync(ProcessMessageEventArgs args)
+        private async Task ProcessMessageAsync(ServiceBusReceivedMessage message, CancellationToken cancellationToken)
         {
-            ServiceBusReceivedMessage message = args?.Message;
             if (message is null)
             {
                 Logger.LogWarning("Received message on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", Settings.ServiceBusEntity, JobId);
@@ -407,7 +407,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             if (_isHostShuttingDown)
             {
                 Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure Service Bus {EntityType} message pump '{JobId}' is shutting down", message.MessageId, Settings.ServiceBusEntity, JobId);
-                await args.AbandonMessageAsync(message);
+                await _messageReceiver.AbandonMessageAsync(message);
                 return;
             }
 
@@ -419,9 +419,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             using (MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message))
             {
                 AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId, Settings.ServiceBusEntity);
-                ServiceBusReceiver receiver = args.GetServiceBusReceiver();
-
-                await _messageRouter.RouteMessageAsync(receiver, args.Message, messageContext, correlationResult.CorrelationInfo, args.CancellationToken);
+                await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
             }
         }
 
@@ -444,7 +442,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
         {
-            if (cancellationToken.IsCancellationRequested == false)
+            if (!cancellationToken.IsCancellationRequested)
             {
                 await Task.Delay(Timeout.Infinite, cancellationToken);
             }

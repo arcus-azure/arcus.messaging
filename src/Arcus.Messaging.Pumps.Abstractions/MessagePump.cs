@@ -65,12 +65,12 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <summary>
         /// Gets the boolean flag that indicates whether the message pump is started and receiving messages.
         /// </summary>
-        public bool IsStarted { get; protected set; }
+        public bool IsStarted { get; private set; }
 
         /// <summary>
         /// Gets the current state of the message pump within the circuit breaker context.
         /// </summary>
-        public MessagePumpCircuitState CircuitState { get; set; } = MessagePumpCircuitState.Closed;
+        protected MessagePumpCircuitState CircuitState { get; set; } = MessagePumpCircuitState.Closed;
 
         /// <summary>
         /// Gets hte ID of the client being used to connect to the messaging service.
