@@ -13,6 +13,7 @@ using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs;
+using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Testing.Logging;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,13 +22,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Xunit;
 using Order = Arcus.Messaging.Tests.Core.Messages.v1.Order;
+using OrderV2AzureServiceBusMessageHandler = Arcus.Messaging.Tests.Unit.Fixture.OrderV2AzureServiceBusMessageHandler;
 
 namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 {
     public class AzureServiceBusMessageRouterTests
     {
         [Fact]
-        public async Task Add_WithDifferentMessageContext_SucceedsWithSameJobId()
+        public async Task RouteMessage_WithDifferentMessageContext_SucceedsWithSameJobId()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -51,7 +53,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task Add_WithDifferentMessageContext_FailsWithDifferentJobId()
+        public async Task RouteMessage_WithDifferentMessageContext_FailsWithDifferentJobId()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -74,7 +76,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task Add_WithMultipleFallbackHandlers_UsesCorrectHandlerByJobId()
+        public async Task RouteMessage_WithMultipleFallbackHandlers_UsesCorrectHandlerByJobId()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -106,7 +108,61 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task WithServiceBusMessageRouting_WithGeneralRouting_GoesThroughRegisteredMessageHandler()
+        public async Task RouteMessage_WithoutFallbackWithFailingButMatchingMessageHandler_PassThruMessage()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var sabotageHandler = new OrdersSabotageAzureServiceBusMessageHandler();
+
+            services.AddServiceBusMessageRouting()
+                    .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
+                    .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>(serviceProvider => sabotageHandler);
+
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            var order = OrderGenerator.Generate();
+            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
+            var context = AzureServiceBusMessageContextFactory.Generate();
+            var correlationInfo = message.GetCorrelationInfo();
+
+            // Act / Assert
+            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
+
+            // Assert
+            Assert.True(sabotageHandler.IsProcessed, "sabotage message handler should be tried");
+        }
+
+        [Fact]
+        public async Task RouteMessage_WithoutFallbackWithFailingButMismatchingMessageHandler_FailsBecauseNoFallback()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var sabotageHandler = new OrdersSabotageAzureServiceBusMessageHandler();
+
+            services.AddServiceBusMessageRouting()
+                    .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
+                    .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>(serviceProvider => sabotageHandler);
+
+            IServiceProvider provider = services.BuildServiceProvider();
+            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
+
+            var orderV2 = OrderV2Generator.Generate();
+            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(orderV2), messageId: "message-id");
+            var context = AzureServiceBusMessageContextFactory.Generate();
+            var correlationInfo = message.GetCorrelationInfo();
+
+            // Act / Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None));
+
+            // Assert
+            Assert.Contains("none of the registered", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("fallback", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.False(sabotageHandler.IsProcessed, "sabotage message handler should not be tried");
+        }
+
+        [Fact]
+        public async Task RouteMessage_WithGeneralRouting_GoesThroughRegisteredMessageHandler()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -139,7 +195,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task WithServiceBusMessageRouting_WithMessageHandler_GoesThroughRegisteredMessageHandlers()
+        public async Task RouteMessage_WithMessageHandler_GoesThroughRegisteredMessageHandlers()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -168,7 +224,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task WithServiceBusMessageRouting_WithMessageHandlerContextFilter_GoesThroughRegisteredMessageHandlers()
+        public async Task RouteMessage_WithMessageHandlerContextFilter_GoesThroughRegisteredMessageHandlers()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -198,7 +254,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task WithServiceBusMessageRouting_WithMessageHandlerMessageBodyFilter_GoesThroughRegisteredMessageHandlers()
+        public async Task RouteMessage_WithMessageHandlerMessageBodyFilter_GoesThroughRegisteredMessageHandlers()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -228,7 +284,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task WithServiceBusMessageRouting_WithMessageHandlerWithoutMessageFilterShouldGoBefore_OtherwiseDoesntTakeIntoAccountTrailingRegistrations()
+        public async Task RouteMessage_WithMessageHandlerWithoutMessageFilterShouldGoBefore_OtherwiseDoesntTakeIntoAccountTrailingRegistrations()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -256,7 +312,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task WithServiceBusRouting_WithMessageHandlerMessageBodySerializer_DeserializesCustomMessage()
+        public async Task RouteMessage_WithMessageHandlerMessageBodySerializer_DeserializesCustomMessage()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -287,7 +343,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task WithServiceBusRouting_WithMessageHandlerMessageBodySerializerSubType_DeserializesCustomMessage()
+        public async Task RouteMessage_WithMessageHandlerMessageBodySerializerSubType_DeserializesCustomMessage()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -318,7 +374,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task WithServiceBusRouting_WithMessageHandlerCanHandleAllFiltersAtOnce_AndStillFindsTheRightMessageHandler()
+        public async Task RouteMessage_WithMessageHandlerCanHandleAllFiltersAtOnce_AndStillFindsTheRightMessageHandler()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -368,7 +424,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public void WithServiceBusRouting_WithCustomRouter_RegistersCustomRouter()
+        public void RouteMessage_WithCustomRouter_RegistersCustomRouter()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -388,7 +444,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         [Theory]
         [InlineData(AdditionalMemberHandling.Ignore)]
         [InlineData(AdditionalMemberHandling.Error)]
-        public async Task WithServiceBusRouting_IgnoreMissingMembers_ResultsInDifferentMessageHandler(AdditionalMemberHandling additionalMemberHandling)
+        public async Task RouteMessage_IgnoreMissingMembers_ResultsInDifferentMessageHandler(AdditionalMemberHandling additionalMemberHandling)
         {
             // Arrange
             var services = new ServiceCollection();
@@ -416,7 +472,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task WithServiceBusRouting_ExtremeNumberOfMessages_StillUsesTheCorrectMessageHandler()
+        public async Task RouteMessage_ExtremeNumberOfMessages_StillUsesTheCorrectMessageHandler()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -465,7 +521,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task WithServiceBusRouting_WithMessageHandlerWithDifferentJobId_Fails()
+        public async Task RouteMessage_WithMessageHandlerWithDifferentJobId_Fails()
         {
             // Arrange
             var services = new ServiceCollection();

@@ -22,6 +22,7 @@
     <ProjectReference Include="..\Arcus.Messaging.Pumps.EventHubs\Arcus.Messaging.Pumps.EventHubs.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.Tests.Workers.ServiceBus\Arcus.Messaging.Tests.Workers.ServiceBus.csproj" />
   </ItemGroup>
 
 </Project>

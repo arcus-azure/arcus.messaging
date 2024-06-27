@@ -40,7 +40,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <param name="jobId">The unique identifier to distinguish the message pump in the application services.</param>
         /// <param name="configureOptions">The optional user-configurable options to manipulate the workings of the message pump interaction.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        public virtual async Task PauseMessageProcessingAsync(string jobId,  Action<MessagePumpCircuitBreakerOptions> configureOptions)
+        public virtual async Task PauseMessageProcessingAsync(string jobId, Action<MessagePumpCircuitBreakerOptions> configureOptions)
         {
             Guard.NotNullOrWhitespace(jobId, nameof(jobId));
 
@@ -50,10 +50,17 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             configureOptions?.Invoke(options);
 
             MessagePump messagePump = GetRegisteredMessagePump(jobId);
-            await messagePump.StopProcessingMessagesAsync(CancellationToken.None);
-
-            await WaitUntilRecoveredAsync(messagePump, options);
-            await messagePump.StartProcessingMessagesAsync(CancellationToken.None);
+            if (messagePump.IsStarted)
+            {
+                await messagePump.StopProcessingMessagesAsync(CancellationToken.None);
+                await WaitRecoveryTimeAsync(messagePump, options);
+                await TryProcessSingleMessageAsync(messagePump, options);
+            }
+            else
+            {
+                await WaitMessageIntervalAsync(messagePump, options);
+                await TryProcessSingleMessageAsync(messagePump, options);
+            }
         }
 
         /// <summary>
@@ -83,14 +90,11 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
                     $"Cannot find one correct registered message pump as multiple pump instances were registered with the same job ID: '{jobId}', please make sure to only register a single message pump instance in the application services with this job ID");
             }
 
-            return messagePumps.First();
+            return messagePumps[0];
         }
 
-        private async Task WaitUntilRecoveredAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
+        private async Task TryProcessSingleMessageAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
         {
-            _logger.LogTrace("Wait configured recovery period ({RecoveryPeriod}) before trying to close circuit for message pump '{JobId}'", options.MessageRecoveryPeriod, messagePump.JobId);
-            await Task.Delay(options.MessageRecoveryPeriod);
-
             bool isRecovered = false;
             while (!isRecovered)
             {
@@ -100,13 +104,25 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
                 if (isRecovered)
                 {
                     _logger.LogTrace("Message pump '{JobId}' successfully handled a single message, closing circuit...", messagePump.JobId);
+                    await messagePump.StartProcessingMessagesAsync(CancellationToken.None);
                 }
                 else
                 {
-                    _logger.LogError(processingResult.ProcessingException, "Message pump '{JobId}' failed to handle a single message: {Message}, wait configured interval period ({IntervalPeriod}) before retrying...", messagePump.JobId, processingResult.ProcessingException.Message, options.MessageIntervalDuringRecovery);
-                    await Task.Delay(options.MessageIntervalDuringRecovery);
+                    await WaitMessageIntervalAsync(messagePump, options);
                 }
             }
+        }
+
+        private async Task WaitMessageIntervalAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
+        {
+            _logger.LogError("Message pump '{JobId}' failed to handle a single message, wait configured interval period ({IntervalPeriod}) before retrying...", messagePump.JobId, options.MessageIntervalDuringRecovery);
+            await Task.Delay(options.MessageIntervalDuringRecovery);
+        }
+
+        private async Task WaitRecoveryTimeAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
+        {
+            _logger.LogTrace("Wait configured recovery period ({RecoveryPeriod}) before trying to close circuit for message pump '{JobId}'", options.MessageRecoveryPeriod, messagePump.JobId);
+            await Task.Delay(options.MessageRecoveryPeriod);
         }
     }
 }
