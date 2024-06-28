@@ -65,7 +65,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
                 {
                     await WaitMessageIntervalAsync(messagePump, options);
                     await TryProcessSingleMessageAsync(messagePump, options);
-                });
+                }, TaskCreationOptions.LongRunning);
             }
         }
 
