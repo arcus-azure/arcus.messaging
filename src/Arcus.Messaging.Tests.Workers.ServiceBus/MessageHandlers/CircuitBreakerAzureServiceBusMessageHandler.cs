@@ -68,6 +68,10 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
             {
                 await _circuitBreaker.PauseMessageProcessingAsync(messageContext.JobId, _configureOptions);
             }
+            else
+            {
+                await _circuitBreaker.ResumeMessageProcessingAsync(messageContext.JobId);
+            }
         }
 
         public DateTimeOffset[] GetMessageArrivals()
