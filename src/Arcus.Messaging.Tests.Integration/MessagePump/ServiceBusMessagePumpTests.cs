@@ -759,7 +759,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var options = new WorkerOptions();
-            ServiceBusMessage[] messages = GenerateShipmentMessages(3);
+            ServiceBusMessage[] messages = GenerateShipmentMessages(1);
             TimeSpan recoveryTime = TimeSpan.FromSeconds(10);
             TimeSpan messageInterval = TimeSpan.FromSeconds(2);
 
@@ -768,15 +768,16 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        subscriptionName: "circuit-breaker-" + Guid.NewGuid(),
                        _ => _config.GetServiceBusTopicConnectionString(),
                        opt => opt.TopicSubscription = TopicSubscription.Automatic)
-                   .WithServiceBusMessageHandler<CircuitBreakerAzureServiceBusMessageHandler, Shipment>(
-                        implementationFactory: provider => new CircuitBreakerAzureServiceBusMessageHandler(
+                   .WithServiceBusMessageHandler<TestCircuitBreakerAzureServiceBusMessageHandler, Shipment>(
+                        implementationFactory: provider => new TestCircuitBreakerAzureServiceBusMessageHandler(
                             targetMessageIds: messages.Select(m => m.MessageId).ToArray(),
                             configureOptions: opt =>
                             {
                                 opt.MessageRecoveryPeriod = recoveryTime;
                                 opt.MessageIntervalDuringRecovery = messageInterval;
                             },
-                            provider.GetRequiredService<IMessagePumpCircuitBreaker>()));
+                            provider.GetRequiredService<IMessagePumpCircuitBreaker>(),
+                            provider.GetRequiredService<ILogger<TestCircuitBreakerAzureServiceBusMessageHandler>>()));
 
             var producer = TestServiceBusMessageProducer.CreateFor(_config, ServiceBusEntityType.Topic);
             await using var worker = await Worker.StartNewAsync(options);
@@ -785,14 +786,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await producer.ProduceAsync(messages);
 
             // Assert
-            var handler = GetMessageHandler<CircuitBreakerAzureServiceBusMessageHandler>(worker);
+            var handler = GetMessageHandler<TestCircuitBreakerAzureServiceBusMessageHandler>(worker);
             AssertX.RetryAssertUntil(() =>
             {
                 DateTimeOffset[] arrivals = handler.GetMessageArrivals();
-                Assert.Equal(messages.Length, arrivals.Length);
 
-                _outputWriter.WriteLine("Arrivals: {0}", string.Join(", ", arrivals));
                 TimeSpan faultMargin = TimeSpan.FromSeconds(1);
+                _outputWriter.WriteLine("Arrivals: {0}", string.Join(", ", arrivals));
                 Assert.Collection(arrivals.SkipLast(1).Zip(arrivals.Skip(1)),
                     dates => AssertDateDiff(dates.First, dates.Second, recoveryTime, recoveryTime.Add(faultMargin)),
                     dates => AssertDateDiff(dates.First, dates.Second, messageInterval, messageInterval.Add(faultMargin)));

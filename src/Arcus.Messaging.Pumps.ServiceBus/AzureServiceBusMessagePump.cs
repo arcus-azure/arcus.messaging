@@ -215,12 +215,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             CircuitState = MessagePumpCircuitState.HalfOpen;
             Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' tries to process single message during half-open circuit...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
 
-            ServiceBusReceivedMessage message = null;
-            while (message is null)
-            {
-                message = await _messageReceiver.ReceiveMessageAsync();
-            }
-
+            ServiceBusReceivedMessage message = await _messageReceiver.ReceiveMessageAsync(maxWaitTime: TimeSpan.MaxValue);
             try
             {
                 await ProcessMessageAsync(message, CancellationToken.None);

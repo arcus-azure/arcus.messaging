@@ -7,6 +7,7 @@ using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Xunit.Abstractions;
 
@@ -78,7 +79,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         internal void ApplyOptions(IHostBuilder hostBuilder)
         {
             Guard.NotNull(hostBuilder, nameof(hostBuilder), "Requires a host builder instance to apply the worker options to");
-            
+
             hostBuilder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(Configuration))
                        .ConfigureServices(services =>
                        {
@@ -86,22 +87,32 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                            {
                                services.Add(service);
                            }
-                       })
-                       .UseSerilog((context, config) =>
-                       {
-                           config.MinimumLevel.Verbose()
-                                 .Enrich.FromLogContext();
-
-                           if (_outputWriter != null)
-                           {
-                               config.WriteTo.XunitTestLogging(_outputWriter);
-                           }
-
-                           foreach (Action<LoggerConfiguration> configure in _additionalSerilogConfigOptions)
-                           {
-                               configure(config);
-                           }
                        });
+
+            if (_additionalSerilogConfigOptions.Count > 0)
+            {
+                hostBuilder.UseSerilog((context, config) =>
+                {
+                    config.MinimumLevel.Verbose()
+                          .Enrich.FromLogContext();
+
+                    if (_outputWriter != null)
+                    {
+                        config.WriteTo.XunitTestLogging(_outputWriter);
+                    }
+
+                    foreach (Action<LoggerConfiguration> configure in _additionalSerilogConfigOptions)
+                    {
+                        configure(config);
+                    }
+                });
+            }
+            else
+            {
+                hostBuilder.ConfigureLogging(
+                    logging => logging.SetMinimumLevel(LogLevel.Trace)
+                                      .AddXunitTestLogging(_outputWriter));
+            }
 
             foreach (Action<IHostBuilder> additionalHostOption in _additionalHostOptions)
             {
