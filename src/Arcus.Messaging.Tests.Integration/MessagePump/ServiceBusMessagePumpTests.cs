@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,12 +25,15 @@ using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Arcus.Observability.Telemetry.Core;
 using Arcus.Security.Core.Caching.Configuration;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
+using Arcus.Messaging.Pumps.Abstractions.Resiliency;
+using Bogus;
 using Azure;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Azure.Security.KeyVault.Secrets;
+using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,10 +45,7 @@ using Serilog.Events;
 using Xunit;
 using Xunit.Abstractions;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
-using Microsoft.ApplicationInsights.DataContracts;
-using System.Linq;
-using Arcus.Messaging.Pumps.Abstractions.Resiliency;
-using Bogus;
+using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
@@ -100,7 +101,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(message);
 
                 // Assert
-                OrderCreatedEventData eventData = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                OrderCreatedEventData eventData = await consumer.ConsumeOrderEventForW3CAsync(traceParent.TransactionId);
                 AssertReceivedOrderEventDataForW3C(message, eventData, traceParent, encoding);
             }
         }
@@ -127,7 +128,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(message);
 
                 // Assert
-                OrderCreatedEventData eventData = consumer.ConsumeOrderEventForW3C(traceParnet.TransactionId);
+                OrderCreatedEventData eventData = await consumer.ConsumeOrderEventForW3CAsync(traceParnet.TransactionId);
                 AssertReceivedOrderEventDataForW3C(message, eventData, traceParnet, encoding);
             }
         }
@@ -509,7 +510,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(message);
 
                 // Assert
-                OrderCreatedEventData eventData = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                OrderCreatedEventData eventData = await consumer.ConsumeOrderEventForW3CAsync(traceParent.TransactionId);
                 AssertReceivedOrderEventDataForW3C(message, eventData, traceParent);
             }
         }
@@ -538,7 +539,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(message);
 
                 // Assert
-                OrderCreatedEventData eventData = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                OrderCreatedEventData eventData = await consumer.ConsumeOrderEventForW3CAsync(traceParent.TransactionId);
                 AssertReceivedOrderEventDataForW3C(message, eventData, traceParent);
             }
         }
@@ -1054,7 +1055,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     var producer = new TestServiceBusMessageProducer(newPrimaryConnectionString);
                     await producer.ProduceAsync(message);
 
-                    OrderCreatedEventData eventData = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                    OrderCreatedEventData eventData = await consumer.ConsumeOrderEventForW3CAsync(traceParent.TransactionId);
                     AssertReceivedOrderEventDataForW3C(message, eventData, traceParent);
                 }
             }

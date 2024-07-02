@@ -10,17 +10,19 @@ using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
 {
-
-
     /// <summary>
-    /// 
+    /// Represents a template for a message handler that interacts with an unstable dependency system that requires a circuit breaker to prevent overloading the system.
     /// </summary>
+    /// <typeparam name="TMessage">The type of the message that this handler can process.</typeparam>
     public abstract class CircuitBreakerServiceBusMessageHandler<TMessage> : AzureServiceBusMessageHandler<TMessage>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="CircuitBreakerServiceBusMessageHandler{TMessage}" /> class.
         /// </summary>
-        public CircuitBreakerServiceBusMessageHandler(
+        /// <param name="circuitBreaker">The circuit breaker that controls the activation of the message pump.</param>
+        /// <param name="logger">The logger to write diagnostic messages during the processing of the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="circuitBreaker"/> or <paramref name="logger"/> is <c>null</c>.</exception>
+        protected CircuitBreakerServiceBusMessageHandler(
             IMessagePumpCircuitBreaker circuitBreaker,
             ILogger<CircuitBreakerServiceBusMessageHandler<TMessage>> logger) 
             : base(logger)
