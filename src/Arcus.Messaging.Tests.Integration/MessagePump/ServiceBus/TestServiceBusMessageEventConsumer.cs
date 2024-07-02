@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Arcus.EventGrid;
 using Arcus.EventGrid.Contracts;
@@ -6,6 +8,7 @@ using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
+using Arcus.Testing;
 using CloudNative.CloudEvents;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
@@ -13,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Xunit;
+using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
 {
@@ -79,6 +83,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         /// <param name="transactionId">The ID to identity the produced event.</param>
         /// <param name="timeoutInSeconds">The optional time-out in seconds for the event to be arrived.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="transactionId"/> is blank.</exception>
+        [Obsolete("Use the " + nameof(ConsumeOrderEventForW3CAsync) + " instead")]
         public OrderCreatedEventData ConsumeOrderEventForW3C(string transactionId, int timeoutInSeconds = 60)
         {
             Guard.NotNullOrWhitespace(transactionId, nameof(transactionId), "Requires a non-blank transaction ID to identity the produced event on the Azure Service Bus");
@@ -97,6 +102,29 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
 
             var eventData = JsonConvert.DeserializeObject<OrderCreatedEventData>(data, new MessageCorrelationInfoJsonConverter());
             return eventData;
+        }
+
+        /// <summary>
+        /// Receives an event produced on the Azure Service Bus.
+        /// </summary>
+        /// <param name="transactionId">The ID to identity the produced event.</param>
+        public async Task<OrderCreatedEventData> ConsumeOrderEventForW3CAsync(string transactionId)
+        {
+            var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+            
+            FileInfo[] foundFiles =
+                await Poll.Target(() => Task.FromResult(directory.GetFiles(transactionId + ".json", SearchOption.AllDirectories)))
+                          .Until(files => files.Length > 0 && files.All(f => f.Length > 0))
+                          .Every(TimeSpan.FromSeconds(0.5))
+                          .Timeout(TimeSpan.FromMinutes(2))
+                          .FailWith("Failed to retrieve the necessary produced message");
+
+            FileInfo foundFile = Assert.Single(foundFiles);
+            string json = await File.ReadAllTextAsync(foundFile.FullName);
+            var settings = new JsonSerializerSettings();
+            settings.Converters.Add(new MessageCorrelationInfoJsonConverter());
+
+            return JsonConvert.DeserializeObject<OrderCreatedEventData>(json, settings);
         }
 
         /// <summary>

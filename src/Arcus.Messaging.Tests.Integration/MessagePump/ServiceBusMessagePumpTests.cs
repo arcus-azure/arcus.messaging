@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,12 +25,15 @@ using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Arcus.Observability.Telemetry.Core;
 using Arcus.Security.Core.Caching.Configuration;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
+using Arcus.Messaging.Pumps.Abstractions.Resiliency;
+using Bogus;
 using Azure;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Azure.Security.KeyVault.Secrets;
+using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,10 +45,7 @@ using Serilog.Events;
 using Xunit;
 using Xunit.Abstractions;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
-using Microsoft.ApplicationInsights.DataContracts;
-using System.Linq;
-using Arcus.Messaging.Pumps.Abstractions.Resiliency;
-using Bogus;
+using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
@@ -100,7 +101,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(message);
 
                 // Assert
-                OrderCreatedEventData eventData = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                OrderCreatedEventData eventData = await consumer.ConsumeOrderEventForW3CAsync(traceParent.TransactionId);
                 AssertReceivedOrderEventDataForW3C(message, eventData, traceParent, encoding);
             }
         }
@@ -127,7 +128,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(message);
 
                 // Assert
-                OrderCreatedEventData eventData = consumer.ConsumeOrderEventForW3C(traceParnet.TransactionId);
+                OrderCreatedEventData eventData = await consumer.ConsumeOrderEventForW3CAsync(traceParnet.TransactionId);
                 AssertReceivedOrderEventDataForW3C(message, eventData, traceParnet, encoding);
             }
         }
@@ -509,7 +510,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(message);
 
                 // Assert
-                OrderCreatedEventData eventData = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                OrderCreatedEventData eventData = await consumer.ConsumeOrderEventForW3CAsync(traceParent.TransactionId);
                 AssertReceivedOrderEventDataForW3C(message, eventData, traceParent);
             }
         }
@@ -538,7 +539,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 await producer.ProduceAsync(message);
 
                 // Assert
-                OrderCreatedEventData eventData = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                OrderCreatedEventData eventData = await consumer.ConsumeOrderEventForW3CAsync(traceParent.TransactionId);
                 AssertReceivedOrderEventDataForW3C(message, eventData, traceParent);
             }
         }
@@ -759,7 +760,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var options = new WorkerOptions();
-            ServiceBusMessage[] messages = GenerateShipmentMessages(3);
+            ServiceBusMessage[] messages = GenerateShipmentMessages(1);
             TimeSpan recoveryTime = TimeSpan.FromSeconds(10);
             TimeSpan messageInterval = TimeSpan.FromSeconds(2);
 
@@ -768,15 +769,16 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        subscriptionName: "circuit-breaker-" + Guid.NewGuid(),
                        _ => _config.GetServiceBusTopicConnectionString(),
                        opt => opt.TopicSubscription = TopicSubscription.Automatic)
-                   .WithServiceBusMessageHandler<CircuitBreakerAzureServiceBusMessageHandler, Shipment>(
-                        implementationFactory: provider => new CircuitBreakerAzureServiceBusMessageHandler(
+                   .WithServiceBusMessageHandler<TestCircuitBreakerAzureServiceBusMessageHandler, Shipment>(
+                        implementationFactory: provider => new TestCircuitBreakerAzureServiceBusMessageHandler(
                             targetMessageIds: messages.Select(m => m.MessageId).ToArray(),
                             configureOptions: opt =>
                             {
                                 opt.MessageRecoveryPeriod = recoveryTime;
                                 opt.MessageIntervalDuringRecovery = messageInterval;
                             },
-                            provider.GetRequiredService<IMessagePumpCircuitBreaker>()));
+                            provider.GetRequiredService<IMessagePumpCircuitBreaker>(),
+                            provider.GetRequiredService<ILogger<TestCircuitBreakerAzureServiceBusMessageHandler>>()));
 
             var producer = TestServiceBusMessageProducer.CreateFor(_config, ServiceBusEntityType.Topic);
             await using var worker = await Worker.StartNewAsync(options);
@@ -785,19 +787,21 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await producer.ProduceAsync(messages);
 
             // Assert
-            var handler = GetMessageHandler<CircuitBreakerAzureServiceBusMessageHandler>(worker);
+            var handler = GetMessageHandler<TestCircuitBreakerAzureServiceBusMessageHandler>(worker);
             AssertX.RetryAssertUntil(() =>
             {
                 DateTimeOffset[] arrivals = handler.GetMessageArrivals();
-                Assert.Equal(messages.Length, arrivals.Length);
 
-                _outputWriter.WriteLine("Arrivals: {0}", string.Join(", ", arrivals));
                 TimeSpan faultMargin = TimeSpan.FromSeconds(1);
+                _outputWriter.WriteLine("Arrivals: {0}", string.Join(", ", arrivals));
                 Assert.Collection(arrivals.SkipLast(1).Zip(arrivals.Skip(1)),
                     dates => AssertDateDiff(dates.First, dates.Second, recoveryTime, recoveryTime.Add(faultMargin)),
                     dates => AssertDateDiff(dates.First, dates.Second, messageInterval, messageInterval.Add(faultMargin)));
 
             }, timeout: TimeSpan.FromMinutes(2), _logger);
+
+            var pump = Assert.IsType<AzureServiceBusMessagePump>(worker.Services.GetService<IHostedService>());
+            Assert.True(pump.IsStarted, "pump should be started after circuit breaker scenario");
         }
 
         private static TMessageHandler GetMessageHandler<TMessageHandler>(Worker worker)
@@ -1051,7 +1055,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     var producer = new TestServiceBusMessageProducer(newPrimaryConnectionString);
                     await producer.ProduceAsync(message);
 
-                    OrderCreatedEventData eventData = consumer.ConsumeOrderEventForW3C(traceParent.TransactionId);
+                    OrderCreatedEventData eventData = await consumer.ConsumeOrderEventForW3CAsync(traceParent.TransactionId);
                     AssertReceivedOrderEventDataForW3C(message, eventData, traceParent);
                 }
             }
