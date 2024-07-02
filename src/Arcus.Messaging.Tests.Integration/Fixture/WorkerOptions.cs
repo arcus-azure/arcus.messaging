@@ -87,32 +87,21 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                            {
                                services.Add(service);
                            }
-                       });
+                       }).UseSerilog((context, config) =>
+                        {
+                            config.MinimumLevel.Verbose()
+                                  .Enrich.FromLogContext();
 
-            if (_additionalSerilogConfigOptions.Count > 0)
-            {
-                hostBuilder.UseSerilog((context, config) =>
-                {
-                    config.MinimumLevel.Verbose()
-                          .Enrich.FromLogContext();
+                            if (_outputWriter != null)
+                            {
+                                config.WriteTo.XunitTestLogging(_outputWriter);
+                            }
 
-                    if (_outputWriter != null)
-                    {
-                        config.WriteTo.XunitTestLogging(_outputWriter);
-                    }
-
-                    foreach (Action<LoggerConfiguration> configure in _additionalSerilogConfigOptions)
-                    {
-                        configure(config);
-                    }
-                });
-            }
-            else
-            {
-                hostBuilder.ConfigureLogging(
-                    logging => logging.SetMinimumLevel(LogLevel.Trace)
-                                      .AddXunitTestLogging(_outputWriter));
-            }
+                            foreach (Action<LoggerConfiguration> configure in _additionalSerilogConfigOptions)
+                            {
+                                configure(config);
+                            }
+                        });
 
             foreach (Action<IHostBuilder> additionalHostOption in _additionalHostOptions)
             {
