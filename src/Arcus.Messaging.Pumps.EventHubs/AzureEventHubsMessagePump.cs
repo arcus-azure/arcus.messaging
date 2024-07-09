@@ -200,9 +200,9 @@ namespace Arcus.Messaging.Pumps.EventHubs
             try
             {
                 Logger.LogTrace("Stopping Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}'",  JobId, ConsumerGroup, EventHubName , Namespace);
-                await _eventProcessor.StopProcessingAsync(cancellationToken);
                 _eventProcessor.ProcessEventAsync -= ProcessMessageAsync;
                 _eventProcessor.ProcessErrorAsync -= ProcessErrorAsync;
+                await _eventProcessor.StopProcessingAsync(cancellationToken);
                 Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' stopped: {Time}",  JobId, ConsumerGroup, EventHubName , Namespace, DateTimeOffset.UtcNow);
             }
             catch (Exception exception)
