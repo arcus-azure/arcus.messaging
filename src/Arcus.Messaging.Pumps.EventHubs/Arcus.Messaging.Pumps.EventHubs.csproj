@@ -28,8 +28,8 @@
 
   <ItemGroup>
     <PackageReference Include="Arcus.Security.Core" Version="[2.0.0,3.0.0)" />
-    <PackageReference Include="Azure.Messaging.EventHubs" Version="5.7.1" />
-    <PackageReference Include="Azure.Messaging.EventHubs.Processor" Version="5.7.1" />
+    <PackageReference Include="Azure.Messaging.EventHubs" Version="5.11.3" />
+    <PackageReference Include="Azure.Messaging.EventHubs.Processor" Version="5.11.3" />
   </ItemGroup>
 
   <ItemGroup>
