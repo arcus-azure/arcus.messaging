@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using Arcus.EventGrid;
 using Arcus.EventGrid.Contracts;
@@ -6,6 +7,8 @@ using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
+using Arcus.Messaging.Tests.Workers.ServiceBus.Fixture;
+using Arcus.Testing;
 using CloudNative.CloudEvents;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
@@ -13,9 +16,38 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Xunit;
+using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
 {
+    public class DiskMessageEventConsumer
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DiskMessageEventConsumer" /> class.
+        /// </summary>
+        public DiskMessageEventConsumer()
+        {
+            
+        }
+
+        public async Task<OrderCreatedEventData> ConsumeOrderCreatedAsync(string messageId)
+        {
+            var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+            FileInfo file = 
+                await Poll.Target(() => Assert.Single(dir.GetFiles($"{messageId}.json", SearchOption.AllDirectories)))
+                          .Until(files => files.Length > 0)
+                          .Every(TimeSpan.FromMilliseconds(100))
+                          .Timeout(TimeSpan.FromSeconds(5))
+                          .FailWith($"order created event does not seem to be delivered in time as the file '{messageId}.json' cannot be found on disk");
+
+            string json = await File.ReadAllTextAsync(file.FullName);
+            var eventData = JsonConvert.DeserializeObject<OrderCreatedEventData>(json, new MessageCorrelationInfoJsonConverter());
+
+            return eventData;
+        }
+    }
+
     /// <summary>
     /// Represents an event consumer which receives events from an Azure Service Bus.
     /// </summary>
