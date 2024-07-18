@@ -95,10 +95,17 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
                           .Until(msg => msg != null)
                           .Until(msg =>
                           {
-                              string json = msg.Body.ToString();
-                              var order = JsonConvert.DeserializeObject<OrderCreatedEventData>(json, new MessageCorrelationInfoJsonConverter());
+                              try
+                              {
+                                  string json = msg.Body.ToString();
+                                  var order = JsonConvert.DeserializeObject<OrderCreatedEventData>(json, new MessageCorrelationInfoJsonConverter());
 
-                              return order.Id == messageId;
+                                  return order.Id == messageId;
+                              }
+                              catch (JsonException)
+                              {
+                                  return false;
+                              }
                           })
                           .Every(TimeSpan.FromSeconds(1))
                           .Timeout(TimeSpan.FromMinutes(2))

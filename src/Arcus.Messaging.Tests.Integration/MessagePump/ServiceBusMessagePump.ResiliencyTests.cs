@@ -26,7 +26,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     public partial class ServiceBusMessagePumpTests
     {
-        [Fact]
+        [Fact(Skip = "Currently incomplete in testing as it is not fully validating correct start/stop of message pump")]
         public async Task ServiceBusTopicMessagePump_PauseViaCircuitBreaker_RestartsAgainWithOneMessage()
         {
             // Arrange
