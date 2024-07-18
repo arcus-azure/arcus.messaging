@@ -53,12 +53,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="MessagePump\EventHubs\MessageHandling\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="MessagePump\ServiceBusMessagePump.ResiliencyTests.cs" />
-  </ItemGroup>
-
 </Project>
