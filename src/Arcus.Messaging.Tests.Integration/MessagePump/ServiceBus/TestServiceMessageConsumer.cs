@@ -1,18 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Core.Events.v1;
-using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.ServiceBus.Fixture;
 using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
-using Azure.Messaging.ServiceBus.Administration;
 using GuardNet;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Polly;
-using Polly.Timeout;
 using Xunit;
 using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
 
@@ -50,6 +45,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
             return new TestServiceMessageConsumer(connectionString, logger);
         }
 
+        /// <summary>
+        /// Verifies that the message is completed on the Azure Service Bus queue.
+        /// </summary>
         public async Task AssertCompletedMessageAsync(string messageId)
         {
             var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
@@ -60,6 +58,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
             Assert.DoesNotContain(messages, msg => msg.MessageId == messageId);
         }
 
+        /// <summary>
+        /// Tries receiving a single abandoned message on the Azure Service Bus queue.
+        /// </summary>
+        /// <exception cref="TimeoutException">Thrown when no abandoned messages can be consumed within the configured time-out.</exception>
         public async Task AssertAbandonMessageAsync(string messageId)
         {
             var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
@@ -79,7 +81,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         /// <summary>
         /// Tries receiving a single dead lettered message on the Azure Service Bus dead letter queue.
         /// </summary>
-        /// <exception cref="TimeoutRejectedException">Thrown when no dead-lettered messages can be consumed within the configured time-out.</exception>
+        /// <exception cref="TimeoutException">Thrown when no dead-lettered messages can be consumed within the configured time-out.</exception>
         public async Task AssertDeadLetterMessageAsync(string messageId)
         {
             var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
@@ -90,13 +92,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
             
             ServiceBusReceivedMessage message = 
                 await Poll.Target(() => receiver.ReceiveMessageAsync())
+                          .Until(msg => msg != null)
                           .Until(msg =>
                           {
-                              if (msg == null)
-                              {
-                                  return false;
-                              }
-
                               string json = msg.Body.ToString();
                               var order = JsonConvert.DeserializeObject<OrderCreatedEventData>(json, new MessageCorrelationInfoJsonConverter());
 

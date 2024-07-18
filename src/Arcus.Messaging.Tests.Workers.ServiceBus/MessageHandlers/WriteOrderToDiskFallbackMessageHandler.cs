@@ -14,43 +14,6 @@ using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
-    public class CompleteAzureServiceBusFallbackMessageHandler : AzureServiceBusFallbackMessageHandler
-    {
-        public CompleteAzureServiceBusFallbackMessageHandler(
-            ILogger<WriteOrderToDiskFallbackMessageHandler> logger) : base(logger)
-        {
-            
-        }
-
-        public override async Task ProcessMessageAsync(
-            ServiceBusReceivedMessage message,
-            AzureServiceBusMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
-        {
-            await CompleteMessageAsync(message);
-        }
-    }
-
-    public class WriteOrderToDiskAbandonFallbackMessageHandler : WriteOrderToDiskFallbackMessageHandler
-    {
-        public WriteOrderToDiskAbandonFallbackMessageHandler(
-            ILogger<WriteOrderToDiskFallbackMessageHandler> logger) : base(logger)
-        {
-            
-        }
-
-        public override async Task ProcessMessageAsync(
-            ServiceBusReceivedMessage message,
-            AzureServiceBusMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
-        {
-            await base.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-            await AbandonMessageAsync(message);
-        }
-    }
-
     public class WriteOrderToDiskFallbackMessageHandler : AzureServiceBusFallbackMessageHandler, IFallbackMessageHandler
     {
         private readonly ILogger<WriteOrderToDiskFallbackMessageHandler> _logger;

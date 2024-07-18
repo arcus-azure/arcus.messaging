@@ -8,14 +8,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
-    public class OrdersAzureServiceBusDeadLetterFallbackMessageHandler : AzureServiceBusFallbackMessageHandler
+    public class DeadLetterAzureServiceBusFallbackMessageHandler : AzureServiceBusFallbackMessageHandler
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusFallbackMessageHandler"/> class.
         /// </summary>
         /// <param name="logger">The logger instance to write diagnostic messages during the message handling.</param>
-        public OrdersAzureServiceBusDeadLetterFallbackMessageHandler(
-            ILogger<OrdersAzureServiceBusDeadLetterFallbackMessageHandler> logger)
+        public DeadLetterAzureServiceBusFallbackMessageHandler(
+            ILogger<DeadLetterAzureServiceBusFallbackMessageHandler> logger)
             : base(logger)
         {
         }

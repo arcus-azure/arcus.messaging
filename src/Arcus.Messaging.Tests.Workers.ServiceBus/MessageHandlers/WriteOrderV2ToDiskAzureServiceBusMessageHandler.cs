@@ -13,13 +13,13 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class WriteOrderV2ToDiskAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<OrderV2>
     {
-        private readonly ILogger<OrderV2AzureServiceBusMessageHandler> _logger;
+        private readonly ILogger<WriteOrderV2ToDiskAzureServiceBusMessageHandler> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WriteOrderV2ToDiskAzureServiceBusMessageHandler" /> class.
         /// </summary>
         public WriteOrderV2ToDiskAzureServiceBusMessageHandler(
-            ILogger<OrderV2AzureServiceBusMessageHandler> logger)
+            ILogger<WriteOrderV2ToDiskAzureServiceBusMessageHandler> logger)
         {
             _logger = logger;
         }
