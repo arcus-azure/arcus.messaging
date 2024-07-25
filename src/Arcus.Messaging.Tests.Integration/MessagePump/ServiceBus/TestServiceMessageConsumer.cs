@@ -87,45 +87,45 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
             var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
             var options = new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter };
 
-
             async Task<ServiceBusReceivedMessage> ReceiveMessageAsync()
             {
                 await using var client = new ServiceBusClient(_connectionString);
                 await using var receiver = client.CreateReceiver(properties.EntityPath, options);
                 
+                _logger.LogTrace("Start looking for dead-lettered message '{MessageId}' for Azure Service bus queue '{QueueName}'", messageId, properties.EntityPath);
                 ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync();
                 if (message != null)
                 {
+                    _logger.LogTrace("Found dead-lettered message '{MessageId}' for Azure Service bus queue '{QueueName}'", messageId, properties.EntityPath);
                     await receiver.CompleteMessageAsync(message);
                 }
 
                 return message;
             }
 
-            var message = 
-                await Poll.Target(ReceiveMessageAsync)
-                          .Until(message =>
+            await Poll.Target(ReceiveMessageAsync)
+                      .Until(message =>
+                      {
+                          if (message is null)
                           {
-                              if (message is null)
-                              {
-                                  return false;
-                              }
+                              return false;
+                          }
 
-                              try
-                              {
-                                  string json = message.Body.ToString();
-                                  var order = JsonConvert.DeserializeObject<OrderCreatedEventData>(json, new MessageCorrelationInfoJsonConverter());
+                          try
+                          {
+                              string json = message.Body.ToString();
+                              var order = JsonConvert.DeserializeObject<OrderCreatedEventData>(json, new MessageCorrelationInfoJsonConverter());
 
-                                  return order.Id == messageId;
-                              }
-                              catch (JsonException)
-                              {
-                                  return false;
-                              }
-                          })
-                          .Every(TimeSpan.FromSeconds(1))
-                          .Timeout(TimeSpan.FromMinutes(2))
-                          .FailWith($"cannot receive dead-lettered message with message ID: '{messageId}' in time");
+                              return order.Id == messageId;
+                          }
+                          catch (JsonException)
+                          {
+                              return false;
+                          }
+                      })
+                      .Every(TimeSpan.FromSeconds(1))
+                      .Timeout(TimeSpan.FromMinutes(2))
+                      .FailWith($"cannot receive dead-lettered message with message ID: '{messageId}' in time");
         }
     }
 }
