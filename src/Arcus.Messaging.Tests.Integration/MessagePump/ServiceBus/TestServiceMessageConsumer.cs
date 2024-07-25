@@ -87,17 +87,33 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
             var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
             var options = new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter };
 
-            await using var client = new ServiceBusClient(_connectionString);
-            await using var receiver = client.CreateReceiver(properties.EntityPath, options);
-            
-            ServiceBusReceivedMessage message = 
-                await Poll.Target(() => receiver.ReceiveMessageAsync())
-                          .Until(msg => msg != null)
-                          .Until(msg =>
+
+            async Task<ServiceBusReceivedMessage> ReceiveMessageAsync()
+            {
+                await using var client = new ServiceBusClient(_connectionString);
+                await using var receiver = client.CreateReceiver(properties.EntityPath, options);
+                
+                ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync();
+                if (message != null)
+                {
+                    await receiver.CompleteMessageAsync(message);
+                }
+
+                return message;
+            }
+
+            var message = 
+                await Poll.Target(ReceiveMessageAsync)
+                          .Until(message =>
                           {
+                              if (message is null)
+                              {
+                                  return false;
+                              }
+
                               try
                               {
-                                  string json = msg.Body.ToString();
+                                  string json = message.Body.ToString();
                                   var order = JsonConvert.DeserializeObject<OrderCreatedEventData>(json, new MessageCorrelationInfoJsonConverter());
 
                                   return order.Id == messageId;
@@ -110,8 +126,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
                           .Every(TimeSpan.FromSeconds(1))
                           .Timeout(TimeSpan.FromMinutes(2))
                           .FailWith($"cannot receive dead-lettered message with message ID: '{messageId}' in time");
-
-            await receiver.CompleteMessageAsync(message);
         }
     }
 }

@@ -17,14 +17,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     public partial class ServiceBusMessagePumpTests
     {
-         [Fact]
+        [Fact]
         public async Task ServiceBusQueueMessagePumpWithServiceBusDeadLetter_PublishServiceBusMessage_MessageSuccessfullyDeadLettered()
         {
             await TestServiceBusQueueDeadLetteredMessageAsync(options =>
             {
                 options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => opt.AutoComplete = false)
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties["Topic"].ToString() == "Customers")
-                       .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>(context => context.Properties["Topic"].ToString() == "Orders")
+                       .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>()
                        .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
             });
         }
