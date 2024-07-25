@@ -93,23 +93,6 @@ stages:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               projectName: '$(Project).Tests.Unit'
 
-  - stage: DockerIntegrationTests
-    displayName: Docker Integration Tests
-    dependsOn: Build
-    condition: succeeded()
-    jobs:
-      - job: DockerIntegrationTests
-        displayName: 'Run Docker integration tests'
-        pool:
-          vmImage: '$(Vm.Image)'
-        steps:
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download build artifacts'
-            inputs:
-              artifact: 'Build'
-              path: '$(Build.SourcesDirectory)'
-          - template: templates/run-docker-integration-tests.yml
-
   - stage: SelfContainingIntegrationTests
     displayName: Self-Containing Integration Tests
     dependsOn: Build
