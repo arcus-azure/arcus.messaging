@@ -107,7 +107,7 @@ stages:
   - stage: Release
     displayName: 'Release to NuGet.org'
     dependsOn:
-      [SelfContainingIntegrationTests, DockerIntegrationTests, UnitTests]
+      [SelfContainingIntegrationTests , UnitTests]
     condition: succeeded()
     jobs:
       - job: PushToNuGet

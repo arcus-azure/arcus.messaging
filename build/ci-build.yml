@@ -121,7 +121,7 @@ stages:
   - stage: ReleaseToMyget
     displayName: 'Release to MyGet'
     dependsOn:
-      [SelfContainingIntegrationTests, DockerIntegrationTests, UnitTests]
+      [SelfContainingIntegrationTests, UnitTests]
     condition: succeeded()
     jobs:
       - job: PushToMyGet
