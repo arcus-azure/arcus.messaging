@@ -5,7 +5,7 @@ using Arcus.EventGrid.Contracts;
 using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
-using Arcus.Messaging.Tests.Integration.Fixture;
+using Arcus.Messaging.Tests.Workers.ServiceBus.Fixture;
 using CloudNative.CloudEvents;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Xunit;
+using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
 {

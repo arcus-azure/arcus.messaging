@@ -6,6 +6,7 @@ using Arcus.EventGrid.Parsers;
 using Arcus.EventGrid.Testing.Infrastructure.Hosts.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Arcus.Messaging.Tests.Workers.ServiceBus.Fixture;
 using Azure.Messaging.ServiceBus;
 using CloudNative.CloudEvents;
 using GuardNet;

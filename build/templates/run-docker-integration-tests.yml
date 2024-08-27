@@ -137,3 +137,9 @@ steps:
     targetType: 'inline'
     script: 'docker logs $(Images.AzureFunction.Isolated.EventHubs)'
   condition: failed()
+- task: PowerShell@2
+  displayName: 'Get Docker container logs for Azure EventHubs worker project'
+  inputs:
+    targetType: 'inline'
+    script: 'docker logs $(Images.EventHubs)'
+  condition: failed()
