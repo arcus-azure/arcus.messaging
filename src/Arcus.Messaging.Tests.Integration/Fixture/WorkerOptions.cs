@@ -7,8 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
- using Serilog.Configuration;
- using Xunit.Abstractions;
+using Serilog.Configuration;
+using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {

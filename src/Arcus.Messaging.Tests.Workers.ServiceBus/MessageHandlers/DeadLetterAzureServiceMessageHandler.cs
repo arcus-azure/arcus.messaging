@@ -8,12 +8,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
-    public class OrdersAzureServiceBusDeadLetterMessageHandler : AzureServiceBusMessageHandler<Order>
+    public class DeadLetterAzureServiceMessageHandler : AzureServiceBusMessageHandler<Order>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessageHandlerTemplate"/> class.
         /// </summary>
-        public OrdersAzureServiceBusDeadLetterMessageHandler(ILogger<OrdersAzureServiceBusDeadLetterMessageHandler> logger) : base(logger)
+        public DeadLetterAzureServiceMessageHandler(ILogger<DeadLetterAzureServiceMessageHandler> logger) : base(logger)
         {
         }
 

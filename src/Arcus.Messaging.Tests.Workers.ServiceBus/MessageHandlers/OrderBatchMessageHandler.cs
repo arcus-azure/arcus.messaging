@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Messages.v1;
-using Azure.Messaging.EventGrid;
-using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
@@ -23,11 +16,10 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         /// Initializes a new instance of the <see cref="OrderBatchMessageHandler"/> class.
         /// </summary>
         public OrderBatchMessageHandler(
-            IAzureClientFactory<EventGridPublisherClient> clientFactory, 
-            IMessageCorrelationInfoAccessor correlationAccessor, 
-            ILogger<OrdersAzureServiceBusMessageHandler> logger)
+            IMessageCorrelationInfoAccessor correlationAccessor,
+            ILogger<WriteOrderToDiskAzureServiceBusMessageHandler> logger)
         {
-            _messageHandler = new OrdersAzureServiceBusMessageHandler(clientFactory, correlationAccessor, logger);
+            _messageHandler = new WriteOrderToDiskAzureServiceBusMessageHandler(correlationAccessor, logger);
         }
 
         /// <summary>
