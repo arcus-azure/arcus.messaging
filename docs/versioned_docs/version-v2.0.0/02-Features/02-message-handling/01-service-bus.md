@@ -437,29 +437,29 @@ public class Startup
 
                 // The format of the message correlation used when receiving Azure Service Bus messages.
                 // (default: W3C).
-                options.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+                options.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
 
                 // The name of the operation used when tracking the request telemetry.
                 // (default: Process)
-                options.Correlation.OperationName = "Order";
+                options.Routing.Correlation.OperationName = "Order";
 
                 // The name of the Azure Service Bus message property that has the transaction ID.
                 // ⚠ Only used when the correlation format is configured as Hierarchical.
                 // (default: Transaction-Id).
-                options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
+                options.Routing.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
 
                 // The name of the Azure Service Bus message property that has the upstream service ID.
                 // ⚠ Only used when the correlation format is configured as Hierarchical.
                 // (default: Operation-Parent-Id).
-                options.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
+                options.Routing.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
 
                 // The property name to enrich the log event with the correlation information cycle ID.
                 // (default: CycleId)
-                options.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
+                options.Routing.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
 
                 // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
                 // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
-                options.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
+                options.Routing.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
 
                 // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
                 // when the message pump starts/stops (default: None, so no subscription will be created or deleted).
@@ -493,29 +493,29 @@ public class Startup
 
                 // The format of the message correlation used when receiving Azure Service Bus messages.
                 // (default: W3C).
-                options.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+                options.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
 
                 // The name of the operation used when tracking the request telemetry.
                 // (default: Process)
-                options.Correlation.OperationName = "Order";
+                options.Routing.Correlation.OperationName = "Order";
 
                 // The name of the Azure Service Bus message property that has the transaction ID.
                 // ⚠ Only used when the correlation format is configured as Hierarchical.
                 // (default: Transaction-Id).
-                options.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
+                options.Routing.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
 
                 // The name of the Azure Service Bus message property that has the upstream service ID.
                 // ⚠ Only used when the correlation format is configured as Hierarchical.
                 // (default: Operation-Parent-Id).
-                options.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
+                options.Routing.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
 
                 // The property name to enrich the log event with the correlation information cycle ID.
                 // (default: CycleId)
-                options.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
+                options.Routing.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
 
                 // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
                 // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
-                options.Deserialization.AdditionalMembers = AdditionalMembersHandling.Ignore;
+                options.Routing.Deserialization.AdditionalMembers = AdditionalMembersHandling.Ignore;
             });
 
         // Uses managed identity to authenticate with the Service Bus Topic:
