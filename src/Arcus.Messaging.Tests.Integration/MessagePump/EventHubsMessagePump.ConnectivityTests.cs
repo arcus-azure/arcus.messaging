@@ -48,7 +48,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             TestEventHubsMessageProducer producer = CreateEventHubsMessageProducer();
 
             await using var worker = await Worker.StartNewAsync(options);
-            await using var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger);
             
             IEnumerable<AzureEventHubsMessagePump> messagePumps =
                 worker.Services.GetServices<IHostedService>()
@@ -80,7 +79,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             TestEventHubsMessageProducer producer = CreateEventHubsMessageProducer();
             
             await using var worker = await Worker.StartNewAsync(options);
-            await using var consumer = await TestServiceBusMessageEventConsumer.StartNewAsync(_config, _logger);
             
             var lifetime = worker.Services.GetRequiredService<IMessagePumpLifetime>();
             await lifetime.PauseProcessingMessagesAsync(jobId, TimeSpan.FromSeconds(5), CancellationToken.None);
