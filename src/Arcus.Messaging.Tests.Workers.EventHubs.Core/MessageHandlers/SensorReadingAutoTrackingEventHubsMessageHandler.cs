@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -11,25 +10,25 @@ using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.EventHubs.Core.MessageHandlers
 {
-    public class OrderWithAutoTrackingEventHubsMessageHandler : IAzureEventHubsMessageHandler<Order>
+    public class SensorReadingAutoTrackingEventHubsMessageHandler : IAzureEventHubsMessageHandler<SensorReading>
     {
         private readonly ILogger _logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OrderWithAutoTrackingEventHubsMessageHandler" /> class.
+        /// Initializes a new instance of the <see cref="SensorReadingAutoTrackingEventHubsMessageHandler" /> class.
         /// </summary>
-        public OrderWithAutoTrackingEventHubsMessageHandler(ILogger<OrderWithAutoTrackingEventHubsMessageHandler> logger)
+        public SensorReadingAutoTrackingEventHubsMessageHandler(ILogger<SensorReadingAutoTrackingEventHubsMessageHandler> logger)
         {
             _logger = logger;
         }
 
         public Task ProcessMessageAsync(
-            Order message,
+            SensorReading message,
             AzureEventHubsMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            _logger.LogInformation("Process Order '{OrderId}'", message.Id);
+            _logger.LogInformation("Process Order '{OrderId}'", message.SensorId);
             _logger.LogAzureKeyVaultDependency("https://my-vault.azure.net", "Sql-connection-string", isSuccessful: true, DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
             SimulateSqlQueryWithMicrosoftTracking();
 
