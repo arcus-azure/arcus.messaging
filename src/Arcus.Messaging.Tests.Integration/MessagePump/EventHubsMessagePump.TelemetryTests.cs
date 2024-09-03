@@ -108,7 +108,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             string operationName = $"operation-{Guid.NewGuid()}";
             AddEventHubsMessagePump(options, opt => opt.Routing.Telemetry.OperationName = operationName)
-                .WithEventHubsMessageHandler<SensorReadingAutoTrackingEventHubsMessageHandler, SensorReading>(msg => msg.SensorId == eventData.MessageId);
+                .WithEventHubsMessageHandler<SensorReadingAutoTrackingEventHubsMessageHandler, SensorReading>();
 
             TestEventHubsMessageProducer producer = CreateEventHubsMessageProducer();
 
