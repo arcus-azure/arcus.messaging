@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Core.Correlation;
@@ -13,7 +12,6 @@ using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs;
 using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.EventHubs.Core.MessageHandlers;
-using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Azure.Messaging.EventHubs;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -108,28 +106,27 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             string operationName = $"operation-{Guid.NewGuid()}";
             AddEventHubsMessagePump(options, opt => opt.Routing.Telemetry.OperationName = operationName)
-                .WithEventHubsMessageHandler<SensorReadingAutoTrackingEventHubsMessageHandler, SensorReading>();
+                .WithEventHubsMessageHandler<SensorReadingAutoTrackingEventHubsMessageHandler, SensorReading>(
+                    messageBodyFilter: msg => msg.SensorId == eventData.MessageId);
 
             TestEventHubsMessageProducer producer = CreateEventHubsMessageProducer();
 
-            await using (var worker = await Worker.StartNewAsync(options))
+            await using var worker = await Worker.StartNewAsync(options);
+            worker.Services.GetRequiredService<TelemetryConfiguration>().TelemetryChannel = spyChannel;
+
+            // Act
+            await producer.ProduceAsync(eventData);
+
+            // Assert
+            AssertX.RetryAssertUntil(() =>
             {
-                worker.Services.GetRequiredService<TelemetryConfiguration>().TelemetryChannel = spyChannel;
-
-                // Act
-                await producer.ProduceAsync(eventData);
-
-                // Assert
-                AssertX.RetryAssertUntil(() =>
-                {
-                    RequestTelemetry requestViaArcusEventHubs = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName && r.Context.Operation.Id == traceParent.TransactionId);
-                    DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault" && d.Context.Operation.Id == traceParent.TransactionId);
-                    DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL" && d.Context.Operation.Id == traceParent.TransactionId);
+                RequestTelemetry requestViaArcusEventHubs = AssertX.GetRequestFrom(spySink.Telemetries, r => r.Name == operationName && r.Context.Operation.Id == traceParent.TransactionId);
+                DependencyTelemetry dependencyViaArcusKeyVault = AssertX.GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault" && d.Context.Operation.Id == traceParent.TransactionId);
+                DependencyTelemetry dependencyViaMicrosoftSql = AssertX.GetDependencyFrom(spyChannel.Telemetries, d => d.Type == "SQL" && d.Context.Operation.Id == traceParent.TransactionId);
                     
-                    Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaArcusKeyVault.Context.Operation.ParentId);
-                    Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaMicrosoftSql.Context.Operation.ParentId);
-                }, timeout: TimeSpan.FromMinutes(2), _logger);
-            }
+                Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaArcusKeyVault.Context.Operation.ParentId);
+                Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaMicrosoftSql.Context.Operation.ParentId);
+            }, timeout: TimeSpan.FromMinutes(2), _logger);
         }
 
         [Fact]
