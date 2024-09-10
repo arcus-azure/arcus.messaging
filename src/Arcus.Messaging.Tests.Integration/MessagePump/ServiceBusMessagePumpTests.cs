@@ -53,7 +53,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             string connectionString = _config.GetServiceBusQueueConnectionString();
             var options = new WorkerOptions();
-            options.AddEventGridPublisher(_config);
             options.AddServiceBusQueueMessagePump(_ => connectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
             options.AddServiceBusTopicMessagePump(
