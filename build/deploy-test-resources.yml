@@ -52,12 +52,15 @@ stages:
                 az deployment group create `
                   --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME `
                   --template-file ./build/templates/test-resources.bicep `
-                  --parameters serviceBusNamespace $env:ARCUS_MESSAGING_SERVICEBUS_NAMESPACE `
-                  --parameters eventHubsNamespace $env:ARCUS_MESSAGING_EVENTHUBS_NAMESPACE `
+                  --parameters serviceBusNamespace=$env:ARCUS_MESSAGING_SERVICEBUS_NAMESPACE `
+                  --parameters eventHubsNamespace=$env:ARCUS_MESSAGING_EVENTHUBS_NAMESPACE `
                   --parameters storageAccountName=$env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME `
                   --parameters keyVaultName=$env:ARCUS_MESSAGING_KEYVAULT_NAME
 
                 $accountKey = (az storage account keys list --account-name $env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME | ConvertFrom-Json)[0].value
-                az keyvault set --name $env:ARCUS_MESSAGING_STORAGEACCOUNT_CONNECTIONSTRING_SECRETNAME --value $accountKey --vault-name ${{ parameters.keyVaultName }}
+                az keyvault set `
+                  --name $env:ARCUS_MESSAGING_STORAGEACCOUNT_CONNECTIONSTRING_SECRETNAME `
+                  --value 'DefaultEndpointsProtocol=https;AccountName=$($env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME);AccountKey=$(accountKey);EndpointSuffix=core.windows.net' `
+                  --vault-name ${{ parameters.keyVaultName }}
 
                 # az eventhubs eventhub authorization-rule keys list --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME 
