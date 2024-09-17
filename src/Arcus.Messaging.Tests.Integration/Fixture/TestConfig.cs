@@ -71,6 +71,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         public ServicePrincipal GetServicePrincipal()
         {
             var servicePrincipal = new ServicePrincipal(
+                tenantId: GetTenantId(),
                 clientId: _config.GetValue<string>("Arcus:Infra:ServicePrincipal:ClientId"),
                 clientSecret: _config.GetValue<string>("Arcus:Infra:ServicePrincipal:ClientSecret"));
 
@@ -104,6 +105,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                 authorizationRuleName: _config.GetValue<string>("Arcus:KeyRotation:ServiceBus:AuthorizationRuleName"));
 
             var servicePrincipal = new ServicePrincipal(
+                tenantId: GetTenantId(),
                 clientId: _config.GetValue<string>("Arcus:KeyRotation:ServicePrincipal:ClientId"),
                 clientSecret: _config.GetValue<string>("Arcus:KeyRotation:ServicePrincipal:ClientSecret"),
                 clientSecretKey: _config.GetValue<string>("Arcus:KeyRotation:ServicePrincipal:ClientSecretKey"));
@@ -124,9 +126,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             return new EventHubsConfig(
                 _config.GetValue<string>("Arcus:EventHubs:SelfContained:EventHubsName"),
-                _config.GetValue<string>("Arcus:EventHubs:Docker:EventHubsName"),
-                _config.GetValue<string>("Arcus:EventHubs:Docker:AzureFunctions:Isolated:EventHubsName"),
-                _config.GetValue<string>("Arcus:EventHubs:Docker:AzureFunctions:InProcess:EventHubsName"),
                 _config.GetValue<string>("Arcus:EventHubs:ConnectionString"),
                 _config.GetValue<string>("Arcus:EventHubs:BlobStorage:StorageAccountConnectionString"));
         }

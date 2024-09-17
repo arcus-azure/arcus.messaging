@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,14 +14,15 @@ using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs;
 using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
 using Azure.Messaging.EventHubs;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
+using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
+using XunitTestLogger = Arcus.Testing.Logging.XunitTestLogger;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
@@ -35,7 +35,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private readonly ILogger _logger;
         private readonly ITestOutputHelper _outputWriter;
 
-        private TemporaryBlobStorageContainer _blobStorageContainer;
+        private TemporaryBlobContainer _blobStorageContainer;
+        private TemporaryManagedIdentityConnection _connection;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventHubsMessagePumpTests" /> class.
@@ -51,28 +52,26 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         private string EventHubsName => _eventHubsConfig.GetEventHubsName(IntegrationTestType.SelfContained);
         private string FullyQualifiedEventHubsNamespace => EventHubsConnectionStringProperties.Parse(_eventHubsConfig.EventHubsConnectionString).FullyQualifiedNamespace;
-        private string ContainerName => _blobStorageContainer.ContainerName;
+        private string ContainerName => _blobStorageContainer.Name;
 
         /// <summary>
         /// Called immediately after the class has been created, before it is used.
         /// </summary>
         public async Task InitializeAsync()
         {
-            _blobStorageContainer = await TemporaryBlobStorageContainer.CreateAsync(_eventHubsConfig.StorageConnectionString, _logger);
+            _connection = TemporaryManagedIdentityConnection.Create(_config, _logger);
+            _blobStorageContainer = await TemporaryBlobContainer.CreateIfNotExistsAsync(_eventHubsConfig.Storage.Name, $"test-{Guid.NewGuid()}", _logger);
         }
 
         private EventHubsMessageHandlerCollection AddEventHubsMessagePump(WorkerOptions options, Action<AzureEventHubsMessagePumpOptions> configureOptions = null)
         {
-            string eventHubsConnectionStringSecretName = "Arcus_EventHubs_ConnectionString",
-                   storageAccountConnectionStringSecretName = "Arcus_StorageAccount_ConnectionString";
-
             return options.AddXunitTestLogging(_outputWriter)
-                          .AddSecretStore(stores => stores.AddInMemory(new Dictionary<string, string>
-                          {
-                              [eventHubsConnectionStringSecretName] = _eventHubsConfig.EventHubsConnectionString,
-                              [storageAccountConnectionStringSecretName] = _eventHubsConfig.StorageConnectionString
-                          }))
-                          .AddEventHubsMessagePump(EventHubsName, eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName, configureOptions);
+                          .AddEventHubsMessagePumpUsingManagedIdentity(
+                              eventHubsName: EventHubsName,
+                              fullyQualifiedNamespace: FullyQualifiedEventHubsNamespace,
+                              blobContainerUri: _blobStorageContainer.Client.Uri.ToString(),
+                              clientId: _connection.ClientId,
+                              configureOptions);
         }
 
         private async Task TestEventHubsMessageHandlingAsync(
@@ -230,6 +229,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 await _blobStorageContainer.DisposeAsync();
             }
+
+            _connection?.Dispose();
         }
     }
 }

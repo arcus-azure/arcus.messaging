@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.EventHubs;
-using Arcus.Messaging.Tests.Core.Correlation;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
@@ -22,16 +21,20 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     public partial class EventHubsMessagePumpTests
     {
         [Fact]
-        public async Task EventHubsMessagePumpUsingManagedIdentity_PublishesMessage_MessageSuccessfullyProcessed()
+        public async Task EventHubsMessagePumpUsingSecrets_PublishesMessage_MessageSuccessfullyProcessed()
         {
-            using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
+            string eventHubsConnectionStringSecretName = "Arcus_EventHubs_ConnectionString",
+                   storageAccountConnectionStringSecretName = "Arcus_StorageAccount_ConnectionString";
+
             await TestEventHubsMessageHandlingAsync(options =>
             {
-                options.AddEventHubsMessagePumpUsingManagedIdentity(
-                           eventHubsName: EventHubsName,
-                           fullyQualifiedNamespace: FullyQualifiedEventHubsNamespace,
-                           blobContainerUri: _blobStorageContainer.ContainerUri,
-                           clientId: auth.ClientId)
+                options.AddSecretStore(stores => stores.AddInMemory(new Dictionary<string, string>
+                {
+                    [eventHubsConnectionStringSecretName] = _eventHubsConfig.EventHubsConnectionString,
+                    [storageAccountConnectionStringSecretName] = _eventHubsConfig.StorageConnectionString
+                }));
+
+                options.AddEventHubsMessagePump(EventHubsName,  eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName)
                        .WithEventHubsMessageHandler<WriteSensorToDiskEventHubsMessageHandler, SensorReading>();
             });
         }

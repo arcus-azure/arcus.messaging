@@ -1,4 +1,6 @@
 ﻿using System;
+using Azure.Core;
+using Azure.Identity;
 using GuardNet;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
@@ -15,11 +17,12 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <param name="clientId">The ID of the client application.</param>
         /// <param name="clientSecret">The secret of the client application.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="clientId"/> or <paramref name="clientSecret"/> is blank.</exception>
-        public ServicePrincipal(string clientId, string clientSecret)
+        public ServicePrincipal(string tenantId, string clientId, string clientSecret)
         {
             Guard.NotNullOrWhitespace(clientId, nameof(clientId), "Requires a non-blank Azure service principal client ID");
             Guard.NotNullOrWhitespace(clientSecret, nameof(clientSecret), "Requires a non-blank Azure service principal client secret");
 
+            TenantId = tenantId;
             ClientId = clientId;
             ClientSecret = clientSecret;
         }
@@ -31,16 +34,19 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <param name="clientSecret">The secret of the client application.</param>
         /// <param name="clientSecretKey">The key to the secret of the client application.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="clientId"/>, <paramref name="clientSecret"/> or <paramref name="clientSecretKey"/> is blank.</exception>
-        public ServicePrincipal(string clientId, string clientSecret, string clientSecretKey)
+        public ServicePrincipal(string tenantId, string clientId, string clientSecret, string clientSecretKey)
         {
             Guard.NotNullOrWhitespace(clientId, nameof(clientId), "Requires a non-blank Azure service principal client ID");
             Guard.NotNullOrWhitespace(clientSecret, nameof(clientSecret), "Requires a non-blank Azure service principal client secret");
             Guard.NotNullOrWhitespace(clientSecretKey, nameof(clientSecretKey), "Requires a non-blank secret Azure Key Vault key where the Azure service principal client secret is located");
 
+            TenantId = tenantId;
             ClientId = clientId;
             ClientSecret = clientSecret;
             ClientSecretKey = clientSecretKey;
         }
+
+        public string TenantId { get; }
 
         /// <summary>
         /// Gets the ID of the client application.
@@ -60,9 +66,9 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <summary>
         /// Creates an instance that combines the service principal information into an <see cref="ClientCredential"/> instance.
         /// </summary>
-        public ClientCredential CreateCredentials()
+        public TokenCredential GetCredential()
         {
-            return new ClientCredential(ClientId, ClientSecret);
+            return new ClientSecretCredential(TenantId, ClientId, ClientSecret);
         }
     }
 }

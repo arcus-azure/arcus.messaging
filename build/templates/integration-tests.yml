@@ -1,0 +1,35 @@
+parameters:
+  azureServiceConnection: ''
+
+steps:
+  - task: UseDotNet@2
+    displayName: 'Import .NET Core SDK ($(DotNet.Sdk.PreviousVersion))'
+    inputs:
+      packageType: 'sdk'
+      version: '$(DotNet.Sdk.PreviousVersion)'
+
+  - task: AzureCLI@2
+    displayName: 'Import secrets from Azure Key Vault'
+    inputs:
+      azureSubscription: '${{ parameters.azureServiceConnection }}'
+      addSpnToEnvironment: true
+      scriptType: 'pscore'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+        Install-Module -Name Arcus.Scripting.DevOps -AllowClobber -MinimumVersion 1.3.0
+
+        $subscriptionId = (az account show | ConvertFrom-Json).id
+        Set-AzDevOpsVariable -Name 'Arcus.Infra.TenantId' -Value $env:tenantId -AsSecret
+        Set-AzDevOpsVariable -Name 'Arcus.Infra.ServicePrincipal.ClientId' -Value $env:servicePrincipalId -AsSecret
+        Set-AzDevOpsVariable -Name 'Arcus.Infra.ServicePrincipal.ClientSecret' -Value $env:servicePrincipalKey -AsSecret
+
+        $accountKey = az keyvault secret show --name $env:ARCUS_MESSAGING_STORAGEACCOUNT_CONNECTIONSTRING_SECRETNAME --vault-name $env:ARCUS_MESSAGING_KEYVAULT_NAME | ConvertFrom-Json
+        Set-AzDevOpsVariable -Name 'Arcus.Messaging.StorageAccount.ConnectionString.SecretName' -Value 'DefaultEndpointsProtocol=https;AccountName=$($env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME);AccountKey=$(accountKey.value);EndpointSuffix=core.windows.net' -AsSecret
+
+  - template: test/run-integration-tests.yml@templates
+    parameters:
+      dotnetSdkVersion: '$(DotNet.Sdk.Version)'
+      includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
+      projectName: '$(Project).Tests.Integration'
+      category: 'Integration'

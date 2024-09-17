@@ -1,4 +1,5 @@
 ﻿using System;
+using Azure.Storage.Blobs;
 using GuardNet;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
@@ -8,45 +9,51 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// </summary>
     public class EventHubsConfig
     {
-        private readonly string _selfContainedEventHubsName, _dockerEventHubsName, _dockerAzureFunctionsIsolatedEventHubsName, _dockerAzureFunctionsInProcessEventHubsName;
+        private readonly string _eventHubsName;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventHubsConfig" /> class.
         /// </summary>
-        /// <param name="selfContainedEventHubsName">The name of the Azure EventHubs instance used in the slf-contained integration tests.</param>
-        /// <param name="dockerEventHubsName">The name of the Azure EventHubs instance used in the docker integration tests.</param>
-        /// <param name="dockerAzureFunctionsIsolatedEventHubsName">The name of the Azure EventHubs instance used in the docker Azure Functions isolated integration tests.</param>
-        /// <param name="dockerAzureFunctionsInProcessEventHubsName">The name of the Azure EventHubs instance used in the docker Azure Functions in-process integration tests.</param>
-        /// <param name="connectionString">The connection string to connect to the <paramref name="selfContainedEventHubsName"/> on Azure.</param>
+        /// <param name="eventHubsName">The name of the Azure EventHubs instance used in the slf-contained integration tests.</param>
+        /// <param name="connectionString">The connection string to connect to the <paramref name="eventHubsName"/> on Azure.</param>
         /// <param name="storageConnectionString">
         ///     The connection string used to connect to the related Azure Blob storage instance where checkpoints are stored and load balancing done.
         /// </param>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="selfContainedEventHubsName"/>, <paramref name="connectionString"/>, or the <paramref name="storageConnectionString"/> is blank.
+        ///     Thrown when the <paramref name="eventHubsName"/>, <paramref name="connectionString"/>, or the <paramref name="storageConnectionString"/> is blank.
         /// </exception>
         public EventHubsConfig(
-            string selfContainedEventHubsName, 
-            string dockerEventHubsName,
-            string dockerAzureFunctionsIsolatedEventHubsName,
-            string dockerAzureFunctionsInProcessEventHubsName,
+            string eventHubsName, 
             string connectionString, 
             string storageConnectionString)
         {
-            Guard.NotNullOrWhitespace(selfContainedEventHubsName, nameof(selfContainedEventHubsName), "Requires a non-blank name for the Azure EventHubs instance used in the self-contained integration tests");
-            Guard.NotNullOrWhitespace(dockerEventHubsName, nameof(dockerEventHubsName), "Requires a non-blank name for the Azure EventHubs instance used in the docker integration tests");
-            Guard.NotNullOrWhitespace(dockerAzureFunctionsIsolatedEventHubsName, nameof(dockerAzureFunctionsIsolatedEventHubsName), "Requires a non-blank name for the Azure EventHubs instance used in the docker Azure Functions integration tests");
-            Guard.NotNullOrWhitespace(dockerAzureFunctionsInProcessEventHubsName, nameof(dockerAzureFunctionsInProcessEventHubsName), "Requires a non-blank name for the Azure EventHubs instance used in the docker Azure Functions integration tests");
+            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank name for the Azure EventHubs instance used in the self-contained integration tests");
             Guard.NotNullOrWhitespace(connectionString, nameof(connectionString), "Requires a non-blank connection string to connect to the Azure EventHubs instance");
             Guard.NotNullOrWhitespace(storageConnectionString, nameof(storageConnectionString), "Requires a non-blank connection string to connect to the related Azure Blob storage instance for Azure EventHubs");
 
-            _selfContainedEventHubsName = selfContainedEventHubsName;
-            _dockerEventHubsName = dockerEventHubsName;
-            _dockerAzureFunctionsIsolatedEventHubsName = dockerAzureFunctionsIsolatedEventHubsName;
-            _dockerAzureFunctionsInProcessEventHubsName = dockerAzureFunctionsInProcessEventHubsName;
+            _eventHubsName = eventHubsName;
 
             EventHubsConnectionString = connectionString;
             StorageConnectionString = storageConnectionString;
         }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EventHubsConfig" /> class.
+        /// </summary>
+        public EventHubsConfig(
+            ServicePrincipal servicePrincipal,
+            string eventHubsName,
+            string storageAccountName)
+        {
+            Name = eventHubsName;
+            Storage = new BlobStorageConfig(servicePrincipal, storageAccountName);
+        }
+
+        public string Name { get; }
+
+        public BlobStorageConfig Storage { get; }
+
+
 
         /// <summary>
         /// Gets the connection string to connect to the Azure EventHubs instance.
@@ -67,13 +74,26 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             switch (type)
             {
-                case IntegrationTestType.SelfContained: return _selfContainedEventHubsName;
-                case IntegrationTestType.DockerWorker: return _dockerEventHubsName;
-                case IntegrationTestType.DockerAzureFunctionsIsolated: return _dockerAzureFunctionsIsolatedEventHubsName;
-                case IntegrationTestType.DockerAzureFunctionsInProcess: return _dockerAzureFunctionsInProcessEventHubsName;
+                case IntegrationTestType.SelfContained: return _eventHubsName;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown integration test type");
             }
         }
+    }
+
+    public class BlobStorageConfig
+    {
+        private readonly ServicePrincipal _servicePrincipal;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BlobStorageConfig" /> class.
+        /// </summary>
+        public BlobStorageConfig(ServicePrincipal servicePrincipal, string name)
+        {
+            _servicePrincipal = servicePrincipal;
+            Name = name;
+        }
+
+        public string Name { get; }
     }
 }
