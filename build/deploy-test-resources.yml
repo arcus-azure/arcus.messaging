@@ -13,7 +13,7 @@ parameters:
     default: arcus-messaging-dev-we-rg
   - name: keyVaultName
     displayName: 'Key vault name'
-    value: 'arcus-messaging-kv'
+    default: 'arcus-messaging-kv'
 
 variables:
   - template: ./variables/build.yml
