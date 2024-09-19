@@ -3,7 +3,7 @@ variables:
   Arcus.Messaging.KeyVault.Name: 'arcus-messaging-kv'
 
   Arcus.Messaging.StorageAccount.Name: 'arcusmessagingstorage'
-  Arcus.Messaging.StorageAccount.ConnectionString.SecretName: 'Arcus-Messaging-StorageAccount-ConnectionString'
+  Arcus.Messaging.StorageAccount.Key.SecretName: 'Arcus-Messaging-StorageAccount-Key'
 
   Arcus.Messaging.ServiceBus.Namespace: 'arcus-messaging-servicebus'
   Arcus.Messaging.EventHubs.Namespace: 'arcus-messaging-eventhubs'

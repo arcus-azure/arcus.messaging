@@ -25,7 +25,7 @@ steps:
         Set-AzDevOpsVariable -Name 'Arcus.Infra.ServicePrincipal.ClientSecret' -Value $env:servicePrincipalKey -AsSecret
 
         $accountKey = az keyvault secret show --name $env:ARCUS_MESSAGING_STORAGEACCOUNT_KEY_SECRETNAME --vault-name $env:ARCUS_MESSAGING_KEYVAULT_NAME | ConvertFrom-Json
-        Set-AzDevOpsVariable -Name 'Arcus.Messaging.StorageAccount.ConnectionString.SecretName' -Value 'DefaultEndpointsProtocol=https;AccountName=$($env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME);AccountKey=$(accountKey.value);EndpointSuffix=core.windows.net' -AsSecret
+        Set-AzDevOpsVariable -Name 'Arcus.Messaging.StorageAccount.Key' -Value $accountKey -AsSecret
 
   - template: test/run-integration-tests.yml@templates
     parameters:

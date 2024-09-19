@@ -55,12 +55,13 @@ stages:
                   --parameters serviceBusNamespace=$env:ARCUS_MESSAGING_SERVICEBUS_NAMESPACE `
                   --parameters eventHubsNamespace=$env:ARCUS_MESSAGING_EVENTHUBS_NAMESPACE `
                   --parameters storageAccountName=$env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME `
-                  --parameters keyVaultName=$env:ARCUS_MESSAGING_KEYVAULT_NAME
+                  --parameters keyVaultName=$env:ARCUS_MESSAGING_KEYVAULT_NAME `
+                  --parameters servicePrincipal_objectId=$objectId
 
                 $accountKey = (az storage account keys list --account-name $env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME | ConvertFrom-Json)[0].value
                 az keyvault set `
-                  --name $env:ARCUS_MESSAGING_STORAGEACCOUNT_CONNECTIONSTRING_SECRETNAME `
-                  --value 'DefaultEndpointsProtocol=https;AccountName=$($env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME);AccountKey=$(accountKey);EndpointSuffix=core.windows.net' `
+                  --name $env:ARCUS_MESSAGING_STORAGEACCOUNT_KEY_SECRETNAME `
+                  --value $accountKey `
                   --vault-name ${{ parameters.keyVaultName }}
 
                 # az eventhubs eventhub authorization-rule keys list --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME 
