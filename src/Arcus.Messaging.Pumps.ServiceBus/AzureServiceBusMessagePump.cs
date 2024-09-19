@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -253,10 +255,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 try
                 {
-                    await foreach (ServiceBusReceivedMessage message in _messageReceiver.ReceiveMessagesAsync(_receiveMessagesCancellation.Token))
-                    {
-                        await ProcessMessageAsync(message, cancellationToken);
-                    }
+                    IReadOnlyList<ServiceBusReceivedMessage> messages = 
+                        await _messageReceiver.ReceiveMessagesAsync(Settings.Options.MaxConcurrentCalls, cancellationToken: _receiveMessagesCancellation.Token);
+
+                    await Task.WhenAll(messages.Select(msg => ProcessMessageAsync(msg, cancellationToken)));
                 }
                 catch (Exception exception) when (exception is TaskCanceledException or OperationCanceledException or ObjectDisposedException)
                 {
@@ -413,10 +415,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
             }
 
-            using (MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message))
+            using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
+            
+            AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId, Settings.ServiceBusEntity);
+            await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
+
+            if (Settings.Options.AutoComplete)
             {
-                AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId, Settings.ServiceBusEntity);
-                await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
+                await _messageReceiver.CompleteMessageAsync(message);
             }
         }
 
