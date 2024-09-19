@@ -50,7 +50,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                             },
                             provider.GetRequiredService<IMessagePumpCircuitBreaker>()));
 
-            var producer = TestServiceBusMessageProducer.CreateFor(_config, ServiceBusEntityType.Topic);
+            var producer = TestServiceBusMessageProducer.CreateFor(QueueName, _config);
             await using var worker = await Worker.StartNewAsync(options);
 
             // Act
@@ -111,14 +111,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task ServiceBusMessagePump_PauseViaLifetime_RestartsAgain()
         {
             // Arrange
-            string connectionString = _config.GetServiceBusTopicConnectionString();
             string jobId = Guid.NewGuid().ToString();
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter)
-                   .AddServiceBusTopicMessagePump(
+                   .AddServiceBusTopicMessagePumpUsingManagedIdentity(
+                       TopicName,
                        subscriptionName: Guid.NewGuid().ToString(), 
-                       _ => connectionString, 
-                       opt =>
+                       HostName,
+                       configureMessagePump: opt =>
                        {
                            opt.JobId = jobId;
                            opt.TopicSubscription = TopicSubscription.Automatic;
@@ -128,7 +128,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
 
-            var producer = TestServiceBusMessageProducer.CreateFor(_config, ServiceBusEntityType.Topic);
+            var producer = TestServiceBusMessageProducer.CreateFor(QueueName, _config);
             await using var worker = await Worker.StartNewAsync(options);
             
             var lifetime = worker.Services.GetRequiredService<IMessagePumpLifetime>();

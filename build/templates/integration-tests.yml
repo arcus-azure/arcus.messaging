@@ -27,6 +27,9 @@ steps:
         $accountKey = az keyvault secret show --name $env:ARCUS_MESSAGING_STORAGEACCOUNT_KEY_SECRETNAME --vault-name $env:ARCUS_MESSAGING_KEYVAULT_NAME | ConvertFrom-Json
         Set-AzDevOpsVariable -Name 'Arcus.Messaging.StorageAccount.Key' -Value $accountKey -AsSecret
 
+        $serviceBusConnectionString = az keyvault secret show --name $env:ARCUS_MESSAGING_SERVICEBUS_CONNECTIONSTRING_SECRETNAME --vault-name $env:ARCUS_MESSAGING_KEYVAULT_NAME | ConvertFrom-Json
+        Set-AzDevOpsVariable -Name 'Arcus.Messaging.ServiceBus.ConnectionString' -Value $serviceBusConnectionString -AsSecret
+
   - template: test/run-integration-tests.yml@templates
     parameters:
       dotnetSdkVersion: '$(DotNet.Sdk.Version)'

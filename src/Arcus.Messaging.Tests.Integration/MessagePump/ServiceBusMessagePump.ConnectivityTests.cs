@@ -51,14 +51,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Fact]
         public async Task ServiceBusQueueMessagePumpWithNamespaceScopedConnectionString_PublishesServiceBusMessage_MessageSuccessfullyProcessed()
         {
-            // Arrange
-            var properties = ServiceBusConnectionStringProperties.Parse(QueueConnectionString);
-            string namespaceConnectionString = properties.GetNamespaceConnectionString();
-            
-            // Act / Assert
             await TestServiceBusMessageHandlingAsync(Queue, options =>
             {
-                options.AddServiceBusQueueMessagePump(properties.EntityPath, _ => namespaceConnectionString, opt => opt.AutoComplete = true)
+                options.AddServiceBusQueueMessagePump(QueueName, _ => NamespaceConnectionString, opt => opt.AutoComplete = true)
                        .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
             });
         }
@@ -76,65 +71,17 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Fact]
         public async Task ServiceBusTopicMessagePumpWithNamespaceScopedConnectionString_PublishesServiceBusMessage_MessageSuccessfullyProcessed()
         {
-            // Arrange
-            var properties = ServiceBusConnectionStringProperties.Parse(TopicConnectionString);
-            string namespaceConnectionString = properties.GetNamespaceConnectionString();
-
-            // Act / Assert
             await TestServiceBusMessageHandlingAsync(Topic, options =>
             {
                 options.AddServiceBusTopicMessagePump(
-                           topicName: properties.EntityPath,
+                           topicName: TopicName,
                            subscriptionName: Guid.NewGuid().ToString(),
-                           getConnectionStringFromConfigurationFunc: _ => namespaceConnectionString,
+                           getConnectionStringFromConfigurationFunc: _ => NamespaceConnectionString,
                            configureMessagePump: opt =>
                            {
                                opt.AutoComplete = true;
                                opt.TopicSubscription = TopicSubscription.Automatic;
                            })
-                       .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
-            });
-        }
-
-        [Fact]
-        public async Task ServiceBusTopicMessagePumpUsingManagedIdentity_PublishServiceBusMessage_MessageSuccessfullyProcessed()
-        {
-            // Arrange
-            ServiceBusConnectionStringProperties properties = ServiceBusConnectionStringProperties.Parse(TopicConnectionString);
-            using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
-            
-            // Act / Assert
-            await TestServiceBusMessageHandlingAsync(Topic, options =>
-            {
-                options.AddServiceBusTopicMessagePumpUsingManagedIdentity(
-                           topicName: properties.EntityPath,
-                           subscriptionName: Guid.NewGuid().ToString(),
-                           serviceBusNamespace: properties.FullyQualifiedNamespace,
-                           clientId: auth.ClientId,
-                           configureMessagePump: opt =>
-                           {
-                               opt.AutoComplete = true;
-                               opt.TopicSubscription = TopicSubscription.Automatic;
-                           })
-                       .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
-            });
-        }
-
-        [Fact]
-        public async Task ServiceBusQueueMessagePumpUsingManagedIdentity_PublishServiceBusMessage_MessageSuccessfullyProcessed()
-        {
-            // Arrange
-            ServiceBusConnectionStringProperties properties = ServiceBusConnectionStringProperties.Parse(QueueConnectionString);
-            using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
-
-            // Act / Assert
-            await TestServiceBusMessageHandlingAsync(Queue, options =>
-            {
-                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(
-                           queueName: properties.EntityPath,
-                           serviceBusNamespace: properties.FullyQualifiedNamespace,
-                           clientId: auth.ClientId,
-                           configureMessagePump: opt => opt.AutoComplete = true)
                        .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
             });
         }

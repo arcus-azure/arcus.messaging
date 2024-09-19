@@ -17,8 +17,8 @@
     <PackageReference Include="Arcus.Testing.Security.Providers.InMemory" Version="1.1.0-preview-1" />
     <PackageReference Include="Arcus.Testing.Storage.Blob" Version="1.1.0-preview-1" />
     <PackageReference Include="Azure.Identity" Version="1.12.0" />
+    <PackageReference Include="Azure.ResourceManager.ServiceBus" Version="1.0.1" />
     <PackageReference Include="Microsoft.Azure.ApplicationInsights.Query" Version="1.0.0" />
-    <PackageReference Include="Microsoft.Azure.Management.ServiceBus" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="6.0.0" />

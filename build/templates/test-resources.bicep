@@ -22,8 +22,9 @@ module serviceBus 'br/public:avm/res/service-bus/namespace:0.8.0' = {
     name: serviceBusNamespace
     location: location
     skuObject: {
-      name: 'Basic'
+      name: 'Standard'
     }
+    disableLocalAuth: false
     roleAssignments: [
       {
         principalId: servicePrincipal_objectId

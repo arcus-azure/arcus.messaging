@@ -64,4 +64,14 @@ stages:
                   --value $accountKey `
                   --vault-name ${{ parameters.keyVaultName }}
 
+                $serviceBusKeys = az servicebus namespace authorization-rule keys list `
+                  --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME `
+                  --namespace-name $env:ARCUS_MESSAGING_SERVICEBUS_NAMESPACE `
+                  --authorization-rule-name 'RootManageSharedAccessKey' `
+                  | ConvertFrom-Json
+                az keyvault secret set `
+                  --name $env:ARCUS_MESSAGING_SERVICEBUS_CONNECTIONSTRING_SECRETNAME `
+                  --value $serviceBusKeys.primaryConnectionString `
+                  --vault-name ${{ parameters.keyVaultName }}
+
                 # az eventhubs eventhub authorization-rule keys list --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME 

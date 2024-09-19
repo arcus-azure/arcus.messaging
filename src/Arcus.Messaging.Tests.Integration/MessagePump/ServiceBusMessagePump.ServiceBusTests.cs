@@ -10,8 +10,8 @@ using Azure;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Xunit;
+using static Microsoft.Extensions.Logging.ServiceBusEntityType;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
@@ -22,7 +22,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await TestServiceBusQueueDeadLetteredMessageAsync(options =>
             {
-                options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => opt.AutoComplete = false)
+                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = false)
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties["Topic"].ToString() == "Customers")
                        .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>()
                        .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
@@ -34,7 +34,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await TestServiceBusQueueDeadLetteredMessageAsync(options =>
             {
-                options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => opt.AutoComplete = false)
+                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = false)
                        .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>((AzureServiceBusMessageContext _) => true)
                        .WithServiceBusFallbackMessageHandler<DeadLetterAzureServiceBusFallbackMessageHandler>();
             });
@@ -48,7 +48,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
 
-            await TestServiceBusMessageHandlingAsync(options, ServiceBusEntityType.Queue, message, async () =>
+            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
             {
                 var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
                 await consumer.AssertDeadLetterMessageAsync(message.MessageId);
@@ -60,7 +60,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await TestServiceBusQueueAbandonMessageAsync(options =>
             {
-                options.AddServiceBusQueueMessagePump(_ => QueueConnectionString)
+                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName)
                        .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
                        .WithServiceBusMessageHandler<AbandonAzureServiceBusMessageHandler, Order>((AzureServiceBusMessageContext _) => true);
             });
@@ -71,7 +71,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await TestServiceBusQueueAbandonMessageAsync(options =>
             {
-                options.AddServiceBusQueueMessagePump(_ => QueueConnectionString)
+                options.AddServiceBusQueueMessagePump(QueueName, HostName)
                        .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
                        .WithServiceBusFallbackMessageHandler<AbandonAzureServiceBusFallbackMessageHandler>();
             });
@@ -86,7 +86,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
             
             // Act
-            await TestServiceBusMessageHandlingAsync(options, ServiceBusEntityType.Queue, message, async () =>
+            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
             {
                 // Assert
                 var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
@@ -99,14 +99,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => opt.AutoComplete = false)
+            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = false)
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
                    .WithServiceBusFallbackMessageHandler<CompleteAzureServiceBusFallbackMessageHandler>();
             
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
             
             // Act
-            await TestServiceBusMessageHandlingAsync(options, ServiceBusEntityType.Queue, message, async () =>
+            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
             {
                 // Assert
                 var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
@@ -119,13 +119,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => opt.AutoComplete = false)
+            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = false)
                    .WithServiceBusMessageHandler<CompleteAzureServiceBusMessageHandler, Order>();
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
 
             // Act
-            await TestServiceBusMessageHandlingAsync(options, ServiceBusEntityType.Queue, message, async () =>
+            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
             {
                 // Assert
                 var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
@@ -161,12 +161,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Fact]
         public async Task ServiceBusTopicMessagePumpWithSubscriptionNameOver50_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
-            await TestServiceBusMessageHandlingAsync(ServiceBusEntityType.Topic, options =>
+            await TestServiceBusMessageHandlingAsync(Topic, options =>
             {
-                options.AddServiceBusTopicMessagePump(
+                options.AddServiceBusTopicMessagePumpUsingManagedIdentity(
+                           TopicName,
                            subscriptionName: "Test-Receive-All-Topic-Only-with-an-azure-servicebus-topic-subscription-name-over-50-characters", 
-                           _ => TopicConnectionString,
-                           opt =>
+                           HostName,
+                           configureMessagePump: opt =>
                            {
                                opt.AutoComplete = true;
                                opt.TopicSubscription = TopicSubscription.Automatic;

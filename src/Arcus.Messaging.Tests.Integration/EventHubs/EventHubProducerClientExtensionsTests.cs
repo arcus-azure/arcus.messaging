@@ -7,7 +7,7 @@ using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using Azure.Storage.Blobs;
@@ -16,6 +16,9 @@ using Polly;
 using Polly.Wrap;
 using Xunit;
 using Xunit.Abstractions;
+using InMemoryLogger = Arcus.Testing.Logging.InMemoryLogger;
+using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
+using XunitTestLogger = Arcus.Testing.Logging.XunitTestLogger;
 
 namespace Arcus.Messaging.Tests.Integration.EventHubs
 {
@@ -29,7 +32,8 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
         private readonly EventHubsConfig _eventHubsConfig;
         private readonly ILogger _logger;
 
-        private TemporaryBlobStorageContainer _blobStorageContainer;
+        private TemporaryManagedIdentityConnection _connection;
+        private TemporaryBlobContainer _blobStorageContainer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventHubProducerClientExtensionsTests" /> class.
@@ -171,7 +175,7 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
 
         private EventProcessorClient CreateEventProcessorClient()
         {
-            var storageClient = new BlobContainerClient(_eventHubsConfig.StorageConnectionString, _blobStorageContainer.ContainerName);
+            var storageClient = new BlobContainerClient(_eventHubsConfig.StorageConnectionString, _blobStorageContainer.Name);
             var eventProcessor = new EventProcessorClient(storageClient, "$Default", _eventHubsConfig.EventHubsConnectionString, EventHubsName);
             
             return eventProcessor;
@@ -188,7 +192,8 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
 
         public async Task InitializeAsync()
         {
-           _blobStorageContainer = await TemporaryBlobStorageContainer.CreateAsync(_eventHubsConfig.StorageConnectionString, _logger);
+            _connection = TemporaryManagedIdentityConnection.Create(_config, _logger);
+           _blobStorageContainer = await TemporaryBlobContainer.CreateIfNotExistsAsync(_eventHubsConfig.Storage.Name, $"test-{Guid.NewGuid()}", _logger);
         }
 
         public async Task DisposeAsync()
@@ -197,6 +202,8 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
             {
                 await _blobStorageContainer.DisposeAsync();
             }
+
+            _connection?.Dispose();
         }
     }
 }
