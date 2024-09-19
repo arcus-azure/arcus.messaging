@@ -59,7 +59,7 @@ stages:
                   --parameters servicePrincipal_objectId=$objectId
 
                 $accountKey = (az storage account keys list --account-name $env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME | ConvertFrom-Json)[0].value
-                az keyvault set `
+                az keyvault secret set `
                   --name $env:ARCUS_MESSAGING_STORAGEACCOUNT_KEY_SECRETNAME `
                   --value $accountKey `
                   --vault-name ${{ parameters.keyVaultName }}
