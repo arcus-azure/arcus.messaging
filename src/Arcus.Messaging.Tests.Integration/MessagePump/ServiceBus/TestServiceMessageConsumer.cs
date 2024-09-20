@@ -9,6 +9,7 @@ using GuardNet;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Xunit;
+using Xunit.Sdk;
 using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
@@ -50,12 +51,16 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         /// </summary>
         public async Task AssertCompletedMessageAsync(string messageId)
         {
-            var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
-            await using var client = new ServiceBusClient(_connectionString);
-            await using var receiver = client.CreateReceiver(properties.EntityPath);
+            await Poll.UntilAvailableAsync<XunitException>(async () =>
+            {
+                var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
+                await using var client = new ServiceBusClient(_connectionString);
+                await using var receiver = client.CreateReceiver(properties.EntityPath);
 
-            IReadOnlyList<ServiceBusReceivedMessage> messages = await receiver.ReceiveMessagesAsync(1, maxWaitTime: TimeSpan.FromSeconds(2));
-            Assert.DoesNotContain(messages, msg => msg.MessageId == messageId);
+                IReadOnlyList<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+                Assert.DoesNotContain(messages, msg => msg.MessageId == messageId);
+
+            }, options => options.FailureMessage = $"Azure Service bus message '{messageId}' did not get completed in time");
         }
 
         /// <summary>

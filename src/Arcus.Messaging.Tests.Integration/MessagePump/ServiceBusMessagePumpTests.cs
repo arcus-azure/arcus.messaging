@@ -13,6 +13,7 @@ using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Azure.Messaging.ServiceBus;
+using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -33,6 +34,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private readonly TestConfig _config;
         private readonly ILogger _logger;
         private readonly ITestOutputHelper _outputWriter;
+
+        private static readonly Faker Bogus = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessagePumpTests"/> class.
