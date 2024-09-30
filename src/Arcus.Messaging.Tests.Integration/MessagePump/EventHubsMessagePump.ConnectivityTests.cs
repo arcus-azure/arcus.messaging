@@ -31,7 +31,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 options.AddSecretStore(stores => stores.AddInMemory(new Dictionary<string, string>
                 {
                     [eventHubsConnectionStringSecretName] = _eventHubsConfig.EventHubsConnectionString,
-                    [storageAccountConnectionStringSecretName] = _eventHubsConfig.StorageConnectionString
+                    [storageAccountConnectionStringSecretName] = _eventHubsConfig.Storage.ConnectionString
                 }));
 
                 options.AddEventHubsMessagePump(EventHubsName,  eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName)

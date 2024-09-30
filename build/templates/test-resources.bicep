@@ -40,6 +40,7 @@ module hubs 'br/public:avm/res/event-hub/namespace:0.7.0' = {
     name: eventHubsNamespace
     location: location
     skuName: 'Basic'
+    disableLocalAuth: false
     roleAssignments: [
       {
         principalId: servicePrincipal_objectId

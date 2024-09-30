@@ -50,7 +50,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
             {
-                var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
+                TestServiceMessageConsumer consumer = CreateQueueConsumer();
                 await consumer.AssertDeadLetterMessageAsync(message.MessageId);
             });
         }
@@ -89,7 +89,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
             {
                 // Assert
-                var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
+                TestServiceMessageConsumer consumer = CreateQueueConsumer();
                 await consumer.AssertAbandonMessageAsync(message.MessageId);
             });
         }
@@ -109,7 +109,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
             {
                 // Assert
-                var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
+                TestServiceMessageConsumer consumer = CreateQueueConsumer();
                 await consumer.AssertCompletedMessageAsync(message.MessageId);
             });
         }
@@ -128,9 +128,15 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
             {
                 // Assert
-                var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
+                TestServiceMessageConsumer consumer = CreateQueueConsumer();
                 await consumer.AssertCompletedMessageAsync(message.MessageId);
             });
+        }
+
+        private TestServiceMessageConsumer CreateQueueConsumer()
+        {
+            var consumer = TestServiceMessageConsumer.CreateForQueue(QueueName, _serviceBusConfig, _logger);
+            return consumer;
         }
 
         [Theory]
@@ -141,20 +147,19 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var options = new WorkerOptions();
             var subscriptionName = $"Subscription-{Guid.NewGuid():N}";
-            options.AddServiceBusTopicMessagePump(
+            options.AddServiceBusTopicMessagePumpUsingManagedIdentity(
+                       TopicName,
                        subscriptionName, 
-                       _ => TopicConnectionString, 
-                       opt => opt.TopicSubscription = topicSubscription)
+                       HostName, 
+                       configureMessagePump: opt => opt.TopicSubscription = topicSubscription)
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
             
             // Act
             await using var worker = await Worker.StartNewAsync(options);
             
             // Assert
-            var client = new ServiceBusAdministrationClient(TopicConnectionString);
-            var properties = ServiceBusConnectionStringProperties.Parse(TopicConnectionString);
-                
-            Response<bool> subscriptionExistsResponse = await client.SubscriptionExistsAsync(properties.EntityPath, subscriptionName);
+            ServiceBusAdministrationClient client = _serviceBusConfig.GetAdminClient();
+            Response<bool> subscriptionExistsResponse = await client.SubscriptionExistsAsync(TopicName, subscriptionName);
             Assert.Equal(doesSubscriptionExists, subscriptionExistsResponse.Value);
         }
 

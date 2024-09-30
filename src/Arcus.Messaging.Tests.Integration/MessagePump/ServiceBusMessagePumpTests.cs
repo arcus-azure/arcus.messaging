@@ -23,9 +23,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
-using ArgumentOutOfRangeException = System.ArgumentOutOfRangeException;
-using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
-using XunitTestLogger = Arcus.Testing.Logging.XunitTestLogger;
 using static Microsoft.Extensions.Logging.ServiceBusEntityType;
 using static Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus.DiskMessageEventConsumer;
 
@@ -265,7 +262,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         public async Task InitializeAsync()
         {
-            var config = TestConfig.Create();
+            var config = TestConfig.Create().GetServiceBus();
             _topic = await TemporaryServiceBusEntity.CreateAsync(Topic, TopicName, config, NullLogger.Instance);
             _queue = await TemporaryServiceBusEntity.CreateAsync(Queue, QueueName, config, NullLogger.Instance);
         }

@@ -9,3 +9,4 @@ variables:
   Arcus.Messaging.ServiceBus.ConnectionString.SecretName: 'Arcus-Messaging-ServiceBus-ConnectionString'
 
   Arcus.Messaging.EventHubs.Namespace: 'arcus-messaging-eventhubs'
+  Arcus.Messaging.EventHubs.ConnectionString.SecretName: 'Arcus-Messaging-EventHubs-ConnectionString'

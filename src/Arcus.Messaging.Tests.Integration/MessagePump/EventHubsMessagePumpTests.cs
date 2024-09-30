@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Arcus.EventGrid.Testing.Logging;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using Arcus.Messaging.Abstractions.MessageHandling;
@@ -18,6 +19,7 @@ using Arcus.Testing;
 using Azure.Messaging.EventHubs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
@@ -28,7 +30,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     [Collection("Integration")]
     [Trait("Category", "Integration")]
-    public partial class EventHubsMessagePumpTests : IAsyncLifetime
+    public partial class EventHubsMessagePumpTests : IClassFixture<EventHubsEntityFixture>, IAsyncLifetime
     {
         private readonly TestConfig _config;
         private readonly EventHubsConfig _eventHubsConfig;
@@ -41,17 +43,19 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         /// <summary>
         /// Initializes a new instance of the <see cref="EventHubsMessagePumpTests" /> class.
         /// </summary>
-        public EventHubsMessagePumpTests(ITestOutputHelper outputWriter)
+        public EventHubsMessagePumpTests(EventHubsEntityFixture fixture, ITestOutputHelper outputWriter)
         {
             _outputWriter = outputWriter;
             _logger = new XunitTestLogger(outputWriter);
             
             _config = TestConfig.Create();
-            _eventHubsConfig = _config.GetEventHubsConfig();
+            _eventHubsConfig = _config.GetEventHubs();
+            
+            EventHubsName = fixture.HubName;
         }
 
-        private string EventHubsName => _eventHubsConfig.GetEventHubsName(IntegrationTestType.SelfContained);
-        private string FullyQualifiedEventHubsNamespace => EventHubsConnectionStringProperties.Parse(_eventHubsConfig.EventHubsConnectionString).FullyQualifiedNamespace;
+        private string EventHubsName { get; }
+        private string FullyQualifiedEventHubsNamespace => _eventHubsConfig.HostName;
         private string ContainerName => _blobStorageContainer.Name;
 
         /// <summary>
@@ -214,9 +218,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         private TestEventHubsMessageProducer CreateEventHubsMessageProducer()
         {
-            return new TestEventHubsMessageProducer(
-                _eventHubsConfig.EventHubsConnectionString,
-                EventHubsName);
+            return new TestEventHubsMessageProducer(EventHubsName, _eventHubsConfig);
         }
 
         /// <summary>
@@ -231,6 +233,24 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }
 
             _connection?.Dispose();
+        }
+    }
+
+    public class EventHubsEntityFixture : IAsyncLifetime
+    {
+        private TemporaryEventHubEntity _hub;
+
+        public string HubName { get; } = $"hub-{Guid.NewGuid()}";
+
+        public async Task InitializeAsync()
+        {
+            var config = TestConfig.Create();
+            _hub = await TemporaryEventHubEntity.CreateAsync(HubName, config.GetEventHubs(), NullLogger.Instance);
+        }
+
+        public async Task DisposeAsync()
+        {
+            await _hub.DisposeAsync();
         }
     }
 }

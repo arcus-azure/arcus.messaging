@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Arcus.Testing;
 using Azure.Core;
 using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
+using Azure.ResourceManager.ServiceBus;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
@@ -18,12 +21,12 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             string subscriptionId,
             string resourceGroupName,
             string @namespace,
-            string namespaceConnectionString)
+            string namespaceConnectionString = null)
         {
             ServicePrincipal = servicePrincipal;
             NamespaceConnectionString = namespaceConnectionString;
             HostName = $"{@namespace}.servicebus.windows.net";
-            ResourceId = ResourceIdentifier.Parse($"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ServiceBus/namespaces/{@namespace}");
+            ResourceId = ServiceBusNamespaceResource.CreateResourceIdentifier(subscriptionId, resourceGroupName, @namespace);
         }
 
         public string HostName { get; }
@@ -34,6 +37,11 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         public ServiceBusClient GetClient()
         {
             return new ServiceBusClient(HostName, ServicePrincipal.GetCredential());
+        }
+
+        public ServiceBusAdministrationClient GetAdminClient()
+        {
+            return new ServiceBusAdministrationClient(HostName, ServicePrincipal.GetCredential());
         }
     }
 

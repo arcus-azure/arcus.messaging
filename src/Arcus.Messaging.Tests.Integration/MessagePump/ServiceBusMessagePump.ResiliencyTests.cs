@@ -38,7 +38,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddXunitTestLogging(_outputWriter)
                    .AddServiceBusTopicMessagePump(
                        subscriptionName: "circuit-breaker-" + Guid.NewGuid(),
-                       _ => _config.GetServiceBusTopicConnectionString(),
+                       _ => TopicConnectionString,
                        opt => opt.TopicSubscription = TopicSubscription.Automatic)
                    .WithServiceBusMessageHandler<CircuitBreakerAzureServiceBusMessageHandler, Shipment>(
                         implementationFactory: provider => new CircuitBreakerAzureServiceBusMessageHandler(

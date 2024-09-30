@@ -104,7 +104,7 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
         public async Task InitializeAsync()
         {
             _connection = TemporaryManagedIdentityConnection.Create(_config, _logger);
-            _queue = await TemporaryServiceBusEntity.CreateAsync(ServiceBusEntityType.Queue, $"queue-{Guid.NewGuid()}", _config, _logger);
+            _queue = await TemporaryServiceBusEntity.CreateAsync(ServiceBusEntityType.Queue, $"queue-{Guid.NewGuid()}", _config.GetServiceBus(), _logger);
         }
 
         public async Task DisposeAsync()

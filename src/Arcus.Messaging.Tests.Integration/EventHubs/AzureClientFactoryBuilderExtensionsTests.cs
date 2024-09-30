@@ -4,12 +4,10 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
-using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs;
+using Arcus.Messaging.Tests.Integration.MessagePump;
 using Arcus.Testing;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
-using Azure.Storage.Blobs;
-using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,12 +16,10 @@ using Polly;
 using Polly.Wrap;
 using Xunit;
 using Xunit.Abstractions;
-using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
-using XunitTestLogger = Arcus.Testing.Logging.XunitTestLogger;
 
 namespace Arcus.Messaging.Tests.Integration.EventHubs
 {
-    public class AzureClientFactoryBuilderExtensionsTests : IAsyncLifetime
+    public class AzureClientFactoryBuilderExtensionsTests : IClassFixture<EventHubsEntityFixture>, IAsyncLifetime
     {
         private readonly TestConfig _config;
         private readonly EventHubsConfig _eventHubsConfig;
@@ -35,14 +31,16 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureClientFactoryBuilderExtensionsTests" /> class.
         /// </summary>
-        public AzureClientFactoryBuilderExtensionsTests(ITestOutputHelper outputWriter)
+        public AzureClientFactoryBuilderExtensionsTests(EventHubsEntityFixture fixture, ITestOutputHelper outputWriter)
         {
             _config = TestConfig.Create();
             _logger = new XunitTestLogger(outputWriter);
-            _eventHubsConfig = _config.GetEventHubsConfig();
+            _eventHubsConfig = _config.GetEventHubs();
+
+            EventHubsName = fixture.HubName;
         }
 
-        private string EventHubsName => _eventHubsConfig.GetEventHubsName(IntegrationTestType.SelfContained);
+        private string EventHubsName { get; }
 
         [Fact]
         public async Task AddEventHubProducerClientWithNamespace_SendEvent_Succeeds()
@@ -50,7 +48,7 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
             // Arrange
             var services = new ServiceCollection();
             var connectionStringSecretName = "MyConnectionString";
-            EventHubsConfig eventHubsConfig = _config.GetEventHubsConfig();
+            EventHubsConfig eventHubsConfig = _config.GetEventHubs();
             services.AddSecretStore(stores => stores.AddInMemory(connectionStringSecretName, eventHubsConfig.EventHubsConnectionString));
 
             // Act
@@ -123,9 +121,7 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
 
         private EventProcessorClient CreateEventProcessorClient()
         {
-            var storageClient = new BlobContainerClient(_eventHubsConfig.StorageConnectionString, _blobStorageContainer.Name);
-            var eventProcessor = new EventProcessorClient(storageClient, "$Default", _eventHubsConfig.EventHubsConnectionString, EventHubsName);
-            
+            EventProcessorClient eventProcessor = _eventHubsConfig.GetProcessorClient(EventHubsName, _blobStorageContainer.Client);
             return eventProcessor;
         }
 

@@ -1,4 +1,6 @@
 ﻿using System;
+using Arcus.Testing;
+using Azure.Security.KeyVault.Secrets;
 using GuardNet;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
@@ -8,6 +10,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// </summary>
     public class KeyVaultConfig
     {
+        private readonly ServicePrincipal _servicePrincipal;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="KeyVaultConfig" /> class.
         /// </summary>
@@ -28,6 +32,15 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="KeyVaultConfig" /> class.
+        /// </summary>
+        public KeyVaultConfig(ServicePrincipal servicePrincipal, string vaultName)
+        {
+            _servicePrincipal = servicePrincipal;
+            VaultUri = $"https://{vaultName}.vault.azure.net";
+        }
+
+        /// <summary>
         /// Gets the URI referencing the Azure Key Vault instance.
         /// </summary>
         public string VaultUri { get; }
@@ -41,5 +54,20 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// Gets the endpoint where Azure Key Vault events will be available, including 'Secret new version created' event.
         /// </summary>
         public KeyVaultEventEndpoint SecretNewVersionCreated { get; }
+
+        public SecretClient GetClient()
+        {
+            return new SecretClient(new Uri(VaultUri), _servicePrincipal.GetCredential());
+        }
+    }
+
+    public static class KeyVaultConfigExtensions
+    {
+        public static KeyVaultConfig GetKeyVault(this TestConfig config)
+        {
+            return new KeyVaultConfig(
+                config.GetServicePrincipal(),
+                config["Arcus:KeyVault:Name"]);
+        }
     }
 }

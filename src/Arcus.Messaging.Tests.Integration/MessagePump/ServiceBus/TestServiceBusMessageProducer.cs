@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Integration.Fixture;
+using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
 using GuardNet;
 

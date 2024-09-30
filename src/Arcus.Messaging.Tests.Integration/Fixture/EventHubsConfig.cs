@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Arcus.Testing;
+using Azure.Core;
+using Azure.Messaging.EventHubs;
+using Azure.Messaging.EventHubs.Producer;
 using Azure.Storage.Blobs;
-using GuardNet;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
@@ -9,91 +11,53 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// </summary>
     public class EventHubsConfig
     {
-        private readonly string _eventHubsName;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="EventHubsConfig" /> class.
-        /// </summary>
-        /// <param name="eventHubsName">The name of the Azure EventHubs instance used in the slf-contained integration tests.</param>
-        /// <param name="connectionString">The connection string to connect to the <paramref name="eventHubsName"/> on Azure.</param>
-        /// <param name="storageConnectionString">
-        ///     The connection string used to connect to the related Azure Blob storage instance where checkpoints are stored and load balancing done.
-        /// </param>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="eventHubsName"/>, <paramref name="connectionString"/>, or the <paramref name="storageConnectionString"/> is blank.
-        /// </exception>
-        public EventHubsConfig(
-            string eventHubsName, 
-            string connectionString, 
-            string storageConnectionString)
-        {
-            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank name for the Azure EventHubs instance used in the self-contained integration tests");
-            Guard.NotNullOrWhitespace(connectionString, nameof(connectionString), "Requires a non-blank connection string to connect to the Azure EventHubs instance");
-            Guard.NotNullOrWhitespace(storageConnectionString, nameof(storageConnectionString), "Requires a non-blank connection string to connect to the related Azure Blob storage instance for Azure EventHubs");
-
-            _eventHubsName = eventHubsName;
-
-            EventHubsConnectionString = connectionString;
-            StorageConnectionString = storageConnectionString;
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="EventHubsConfig" /> class.
         /// </summary>
         public EventHubsConfig(
             ServicePrincipal servicePrincipal,
-            string eventHubsName,
-            string storageAccountName)
+            string subscriptionId,
+            string resourceGroupName,
+            string eventHubsNamespace,
+            string connectionString,
+            StorageAccountConfig storageAccount)
         {
-            Name = eventHubsName;
-            Storage = new BlobStorageConfig(servicePrincipal, storageAccountName);
+            ServicePrincipal = servicePrincipal;
+
+            ResourceId = ResourceIdentifier.Parse($"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventHub/namespaces/{eventHubsNamespace}");
+            HostName = $"{eventHubsNamespace}.servicebus.windows.net";
+            Storage = storageAccount;
+            EventHubsConnectionString = connectionString;
         }
 
-        public string Name { get; }
-
-        public BlobStorageConfig Storage { get; }
-
-
-
-        /// <summary>
-        /// Gets the connection string to connect to the Azure EventHubs instance.
-        /// </summary>
+        public ServicePrincipal ServicePrincipal { get; }
+        public ResourceIdentifier ResourceId { get; }
+        public string HostName { get; }
+        public StorageAccountConfig Storage { get; }
         public string EventHubsConnectionString { get; }
 
-        /// <summary>
-        /// Gets the connection string to connect to the related Azure Blob storage instance that is prepared for the integration tests.
-        /// </summary>
-        public string StorageConnectionString { get; }
-
-        /// <summary>
-        /// Gets the configured Azure EventHubs name used during the integration tests.
-        /// </summary>
-        /// <param name="type">The type of test that request the name of the Azure EventHubs instance.</param>
-        /// <exception cref="ArgumentOutOfRangeException">When the <paramref name="type"/> is outside the bounds of the enumeration.</exception>
-        public string GetEventHubsName(IntegrationTestType type)
+        public EventHubProducerClient GetProducerClient(string name)
         {
-            switch (type)
-            {
-                case IntegrationTestType.SelfContained: return _eventHubsName;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown integration test type");
-            }
+            return new EventHubProducerClient(HostName, name, ServicePrincipal.GetCredential());
+        }
+
+        public EventProcessorClient GetProcessorClient(string name, BlobContainerClient checkpointStore)
+        {
+            return new EventProcessorClient(checkpointStore, "$Default", HostName, name, ServicePrincipal.GetCredential());
         }
     }
 
-    public class BlobStorageConfig
+    public static class EventHubsTestConfigExtensions
     {
-        private readonly ServicePrincipal _servicePrincipal;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="BlobStorageConfig" /> class.
-        /// </summary>
-        public BlobStorageConfig(ServicePrincipal servicePrincipal, string name)
+        public static EventHubsConfig GetEventHubs(this TestConfig config)
         {
-            _servicePrincipal = servicePrincipal;
-            Name = name;
+            return new EventHubsConfig(
+                config.GetServicePrincipal(),
+                config["Arcus:Infra:SubscriptionId"],
+                config["Arcus:Infra:ResourceGroup:Name"],
+                config["Arcus:EventHubs:Namespace"],
+                config["Arcus:EventHubs:ConnectionString"],
+                config.GetStorageAccount());
         }
-
-        public string Name { get; }
     }
 }
