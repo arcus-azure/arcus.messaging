@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Core.Events.v1;
@@ -9,6 +10,7 @@ using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
+using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Azure;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
@@ -176,12 +178,35 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Fact]
-        public async Task ServiceBusQueueMessagePumpWithAutoComplete_WhenNoMessageHandlerAbleToHandle_ThenMessageShouldBeDeadLettered()
+        public async Task ServiceBusQueueMessagePump_WhenNoMessageHandlerAbleToHandle_ThenMessageShouldBeDeadLettered()
         {
             // Arrange
             var options = new WorkerOptions();
             options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
+
+            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
+
+            // Act
+            await TestServiceBusMessageHandlingAsync(options, ServiceBusEntityType.Queue, message, async () =>
+            {
+                // Assert
+                var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
+                await consumer.AssertDeadLetterMessageAsync(message.MessageId);
+            });
+        }
+
+        [Fact]
+        public async Task ServiceBusQueueMessagePump_WhenNoFallbackMessageHandlerAbleToHandle_ThenMessageShouldBeDeadLettered()
+        {
+            // Arrange
+            var options = new WorkerOptions();
+            options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>()
+                   .WithServiceBusFallbackMessageHandler<SabotageAzureServiceBusFallbackMessageHandler>()
+                   .WithFallbackMessageHandler<SabotageAzureServiceBusFallbackMessageHandler, AzureServiceBusMessageContext>()
+                   .WithFallbackMessageHandler<SabotageAzureServiceBusFallbackMessageHandler, MessageContext>()
+                   .WithFallbackMessageHandler<SabotageAzureServiceBusFallbackMessageHandler>();
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
 

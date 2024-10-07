@@ -91,8 +91,16 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
             if (CanProcessMessageBasedOnContext(messageContext))
             {
-                await MessageHandlerInstance.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                return true;
+                try
+                {
+                    await MessageHandlerInstance.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+                    return true;
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Fallback message handler '{MessageHandlerType}' failed to handle '{MessageType}' message due to an exception: {Message}", MessageHandlerType.Name, typeof(TMessage).Name, exception.Message);
+                    return false;   
+                }
             }
 
             _logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' cannot handle message because it was not registered in the correct message context (JobId: {JobId})", MessageHandlerType.Name, _jobId);

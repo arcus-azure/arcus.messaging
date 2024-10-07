@@ -298,10 +298,12 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     EnsureFallbackMessageHandlerAvailable(messageContext); 
                 }
 
-                await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-                await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                bool isProcessedByFallback = await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+                if (!isProcessedByFallback)
+                {
+                    await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                }
 
-                await DeadLetterMessageAsync(messageReceiver, message);
             }
             catch (Exception exception)
             {
@@ -408,6 +410,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             if (fallbackHandlers.Length <= 0)
             {
                 Logger.LogTrace("No Azure Service Bus message handlers found within message context (JobId: {JobId})", messageContext.JobId);
+                await DeadLetterMessageAsync(messageReceiver, message);
+
                 return;
             }
 
@@ -433,11 +437,13 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 if (result)
                 {
                     Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' has processed the message", fallbackMessageHandlerTypeName);
-                    break;
+                    return;
                 }
 
                 Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' was not able to process the message", fallbackMessageHandlerTypeName);
             }
+
+            await DeadLetterMessageAsync(messageReceiver, message);
         }
 
         private async Task DeadLetterMessageAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message)
