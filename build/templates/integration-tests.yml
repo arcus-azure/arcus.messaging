@@ -21,6 +21,7 @@ steps:
 
         $subscriptionId = (az account show | ConvertFrom-Json).id
         $objectId = (az ad sp show --id $env:servicePrincipalId | ConvertFrom-Json).id
+        Set-AzDevOpsVariable -Name 'Arcus.Infra.SubscriptionId' -Value $subscriptionId
         Set-AzDevOpsVariable -Name 'Arcus.Infra.TenantId' -Value $env:tenantId -AsSecret
         Set-AzDevOpsVariable -Name 'Arcus.Infra.ServicePrincipal.ObjectId' -Value $objectId
         Set-AzDevOpsVariable -Name 'Arcus.Infra.ServicePrincipal.ClientId' -Value $env:servicePrincipalId -AsSecret
