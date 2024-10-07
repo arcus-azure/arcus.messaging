@@ -12,7 +12,6 @@ using Azure.Messaging.ServiceBus;
 using Polly;
 using Polly.Wrap;
 using Xunit;
-using InMemoryLogger = Arcus.Testing.Logging.InMemoryLogger;
 
 namespace Arcus.Messaging.Tests.Integration.ServiceBus
 {

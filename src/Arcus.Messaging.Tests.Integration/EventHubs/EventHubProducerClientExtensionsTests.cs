@@ -7,18 +7,14 @@ using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump;
-using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs;
 using Arcus.Testing;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
-using Azure.Storage.Blobs;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Wrap;
 using Xunit;
 using Xunit.Abstractions;
-using InMemoryLogger = Arcus.Testing.Logging.InMemoryLogger;
-using XunitTestLogger = Arcus.Testing.Logging.XunitTestLogger;
 
 namespace Arcus.Messaging.Tests.Integration.EventHubs
 {
