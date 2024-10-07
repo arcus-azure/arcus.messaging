@@ -110,11 +110,12 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
             string tenantId = _configuration.ServiceBusNamespace.TenantId;
             var context = new AuthenticationContext($"https://login.microsoftonline.com/{tenantId}");
 
-            ClientCredential clientCredentials = _configuration.ServicePrincipal.CreateCredentials();
             AuthenticationResult result =
                 await context.AcquireTokenAsync(
-                    "https://management.azure.com/",
-                    clientCredentials);
+                    "https://management.azure.com/", 
+                    new ClientCredential(
+                        _configuration.ServicePrincipal.ClientId,
+                        _configuration.ServicePrincipal.ClientSecret));
 
             var tokenCredentials = new TokenCredentials(result.AccessToken);
             string subscriptionId = _configuration.ServiceBusNamespace.SubscriptionId;

@@ -8,15 +8,9 @@ using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Unit.Fixture;
-using Arcus.Observability.Telemetry.Core;
-using Arcus.Testing.Logging;
-using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
-using Serilog;
-using Serilog.Events;
 using Xunit;
 using Order = Arcus.Messaging.Tests.Core.Messages.v1.Order;
 

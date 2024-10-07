@@ -1,5 +1,9 @@
-﻿using System;
-using GuardNet;
+﻿using Arcus.Testing;
+using Azure.Core;
+using Azure.Messaging.EventHubs;
+using Azure.Messaging.EventHubs.Producer;
+using Azure.ResourceManager.EventHubs;
+using Azure.Storage.Blobs;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
@@ -8,72 +12,53 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// </summary>
     public class EventHubsConfig
     {
-        private readonly string _selfContainedEventHubsName, _dockerEventHubsName, _dockerAzureFunctionsIsolatedEventHubsName, _dockerAzureFunctionsInProcessEventHubsName;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="EventHubsConfig" /> class.
         /// </summary>
-        /// <param name="selfContainedEventHubsName">The name of the Azure EventHubs instance used in the slf-contained integration tests.</param>
-        /// <param name="dockerEventHubsName">The name of the Azure EventHubs instance used in the docker integration tests.</param>
-        /// <param name="dockerAzureFunctionsIsolatedEventHubsName">The name of the Azure EventHubs instance used in the docker Azure Functions isolated integration tests.</param>
-        /// <param name="dockerAzureFunctionsInProcessEventHubsName">The name of the Azure EventHubs instance used in the docker Azure Functions in-process integration tests.</param>
-        /// <param name="connectionString">The connection string to connect to the <paramref name="selfContainedEventHubsName"/> on Azure.</param>
-        /// <param name="storageConnectionString">
-        ///     The connection string used to connect to the related Azure Blob storage instance where checkpoints are stored and load balancing done.
-        /// </param>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="selfContainedEventHubsName"/>, <paramref name="connectionString"/>, or the <paramref name="storageConnectionString"/> is blank.
-        /// </exception>
         public EventHubsConfig(
-            string selfContainedEventHubsName, 
-            string dockerEventHubsName,
-            string dockerAzureFunctionsIsolatedEventHubsName,
-            string dockerAzureFunctionsInProcessEventHubsName,
-            string connectionString, 
-            string storageConnectionString)
+            ServicePrincipal servicePrincipal,
+            string subscriptionId,
+            string resourceGroupName,
+            string eventHubsNamespace,
+            string connectionString,
+            StorageAccountConfig storageAccount)
         {
-            Guard.NotNullOrWhitespace(selfContainedEventHubsName, nameof(selfContainedEventHubsName), "Requires a non-blank name for the Azure EventHubs instance used in the self-contained integration tests");
-            Guard.NotNullOrWhitespace(dockerEventHubsName, nameof(dockerEventHubsName), "Requires a non-blank name for the Azure EventHubs instance used in the docker integration tests");
-            Guard.NotNullOrWhitespace(dockerAzureFunctionsIsolatedEventHubsName, nameof(dockerAzureFunctionsIsolatedEventHubsName), "Requires a non-blank name for the Azure EventHubs instance used in the docker Azure Functions integration tests");
-            Guard.NotNullOrWhitespace(dockerAzureFunctionsInProcessEventHubsName, nameof(dockerAzureFunctionsInProcessEventHubsName), "Requires a non-blank name for the Azure EventHubs instance used in the docker Azure Functions integration tests");
-            Guard.NotNullOrWhitespace(connectionString, nameof(connectionString), "Requires a non-blank connection string to connect to the Azure EventHubs instance");
-            Guard.NotNullOrWhitespace(storageConnectionString, nameof(storageConnectionString), "Requires a non-blank connection string to connect to the related Azure Blob storage instance for Azure EventHubs");
+            ServicePrincipal = servicePrincipal;
 
-            _selfContainedEventHubsName = selfContainedEventHubsName;
-            _dockerEventHubsName = dockerEventHubsName;
-            _dockerAzureFunctionsIsolatedEventHubsName = dockerAzureFunctionsIsolatedEventHubsName;
-            _dockerAzureFunctionsInProcessEventHubsName = dockerAzureFunctionsInProcessEventHubsName;
-
+            ResourceId = EventHubsNamespaceResource.CreateResourceIdentifier(subscriptionId, resourceGroupName, eventHubsNamespace);
+            HostName = $"{eventHubsNamespace}.servicebus.windows.net";
+            Storage = storageAccount;
             EventHubsConnectionString = connectionString;
-            StorageConnectionString = storageConnectionString;
         }
 
-        /// <summary>
-        /// Gets the connection string to connect to the Azure EventHubs instance.
-        /// </summary>
+        public ServicePrincipal ServicePrincipal { get; }
+        public ResourceIdentifier ResourceId { get; }
+        public string HostName { get; }
+        public StorageAccountConfig Storage { get; }
         public string EventHubsConnectionString { get; }
 
-        /// <summary>
-        /// Gets the connection string to connect to the related Azure Blob storage instance that is prepared for the integration tests.
-        /// </summary>
-        public string StorageConnectionString { get; }
-
-        /// <summary>
-        /// Gets the configured Azure EventHubs name used during the integration tests.
-        /// </summary>
-        /// <param name="type">The type of test that request the name of the Azure EventHubs instance.</param>
-        /// <exception cref="ArgumentOutOfRangeException">When the <paramref name="type"/> is outside the bounds of the enumeration.</exception>
-        public string GetEventHubsName(IntegrationTestType type)
+        public EventHubProducerClient GetProducerClient(string name)
         {
-            switch (type)
-            {
-                case IntegrationTestType.SelfContained: return _selfContainedEventHubsName;
-                case IntegrationTestType.DockerWorker: return _dockerEventHubsName;
-                case IntegrationTestType.DockerAzureFunctionsIsolated: return _dockerAzureFunctionsIsolatedEventHubsName;
-                case IntegrationTestType.DockerAzureFunctionsInProcess: return _dockerAzureFunctionsInProcessEventHubsName;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown integration test type");
-            }
+            return new EventHubProducerClient(HostName, name, ServicePrincipal.GetCredential());
+        }
+
+        public EventProcessorClient GetProcessorClient(string name, BlobContainerClient checkpointStore)
+        {
+            return new EventProcessorClient(checkpointStore, "$Default", HostName, name, ServicePrincipal.GetCredential());
+        }
+    }
+
+    public static class EventHubsTestConfigExtensions
+    {
+        public static EventHubsConfig GetEventHubs(this TestConfig config)
+        {
+            return new EventHubsConfig(
+                config.GetServicePrincipal(),
+                config.GetSubscriptionId(),
+                config.GetResourceGroupName(),
+                config["Arcus:EventHubs:Namespace"],
+                config["Arcus:EventHubs:ConnectionString"],
+                config.GetStorageAccount());
         }
     }
 }
