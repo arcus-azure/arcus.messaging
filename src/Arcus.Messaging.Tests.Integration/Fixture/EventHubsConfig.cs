@@ -54,8 +54,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             return new EventHubsConfig(
                 config.GetServicePrincipal(),
-                config["Arcus:Infra:SubscriptionId"],
-                config["Arcus:Infra:ResourceGroup:Name"],
+                config.GetSubscriptionId(),
+                config.GetResourceGroupName(),
                 config["Arcus:EventHubs:Namespace"],
                 config["Arcus:EventHubs:ConnectionString"],
                 config.GetStorageAccount());

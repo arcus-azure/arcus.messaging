@@ -51,8 +51,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             return new ServiceBusConfig(
                 config.GetServicePrincipal(),
-                config["Arcus:Infra:SubscriptionId"],
-                config["Arcus:Infra:ResourceGroup:Name"],
+                config.GetSubscriptionId(),
+                config.GetResourceGroupName(),
                 config["Arcus:ServiceBus:Namespace"],
                 config["Arcus:ServiceBus:ConnectionString"]);
         }
