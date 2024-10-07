@@ -27,7 +27,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         HalfOpen,
 
         /// <summary>
-        /// The message is unable to receive messages.
+        /// The message pump is unable to receive messages.
         /// </summary>
         Open
     }
