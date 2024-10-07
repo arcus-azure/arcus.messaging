@@ -23,8 +23,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
-using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
-using XunitTestLogger = Arcus.Testing.Logging.XunitTestLogger;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {

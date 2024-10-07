@@ -1,27 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
-using Arcus.Messaging.Tests.Integration.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
-using Arcus.Security.Core.Caching.Configuration;
-using Azure.Identity;
 using Azure.Messaging.ServiceBus;
-using Azure.Messaging.ServiceBus.Administration;
 using Azure.ResourceManager.ServiceBus.Models;
-using Azure.Security.KeyVault.Secrets;
-using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Xunit;
-using Xunit.Sdk;
 using static Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus.DiskMessageEventConsumer;
 using static Microsoft.Extensions.Logging.ServiceBusEntityType;
-using TemporaryKeyVaultSecret = Arcus.Messaging.Tests.Integration.Fixture.TemporaryKeyVaultSecret;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {

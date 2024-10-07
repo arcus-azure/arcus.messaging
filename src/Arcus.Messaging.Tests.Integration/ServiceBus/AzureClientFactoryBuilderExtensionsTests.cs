@@ -15,7 +15,6 @@ using Polly;
 using Polly.Wrap;
 using Xunit;
 using Xunit.Abstractions;
-using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
 
 namespace Arcus.Messaging.Tests.Integration.ServiceBus
 {

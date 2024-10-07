@@ -2,6 +2,7 @@
 using Azure.Core;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
+using Azure.ResourceManager.EventHubs;
 using Azure.Storage.Blobs;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
@@ -24,7 +25,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             ServicePrincipal = servicePrincipal;
 
-            ResourceId = ResourceIdentifier.Parse($"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventHub/namespaces/{eventHubsNamespace}");
+            ResourceId = EventHubsNamespaceResource.CreateResourceIdentifier(subscriptionId, resourceGroupName, eventHubsNamespace);
             HostName = $"{eventHubsNamespace}.servicebus.windows.net";
             Storage = storageAccount;
             EventHubsConnectionString = connectionString;
