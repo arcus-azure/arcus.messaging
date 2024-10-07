@@ -43,6 +43,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private async Task TestServiceBusQueueDeadLetteredMessageAsync(Action<WorkerOptions> configureOptions)
         {
             // Arrange
+            using var connection = TemporaryManagedIdentityConnection.Create(_config, _logger);
+
             var options = new WorkerOptions();
             configureOptions(options);
 
