@@ -39,28 +39,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             return new TestConfig(config);
         }
 
-        /// <summary>
-        /// Gets the EventGrid topic URI for the test infrastructure.
-        /// </summary>
-        public string GetTestInfraEventGridTopicUri()
-        {
-            var value = _config.GetValue<string>("Arcus:Infra:EventGrid:TopicUri");
-            Guard.NotNullOrWhitespace(value, "No non-blank EventGrid topic URI was found for the test infrastructure in the application configuration");
-
-            return value;
-        }
-
-        /// <summary>
-        /// Gets the EventGrid authentication key for the test infrastructure.
-        /// </summary>
-        public string GetTestInfraEventGridAuthKey()
-        {
-            var value = _config.GetValue<string>("Arcus:Infra:EventGrid:AuthKey");
-            Guard.NotNullOrWhitespace(value, "No non-blank EventGrid authentication key was found for the test infrastructure in the application configuration");
-
-            return value;
-        }
-
         public string GetServiceBusTopicConnectionString()
         {
             return GetServiceBusConnectionString(ServiceBusEntityType.Topic);

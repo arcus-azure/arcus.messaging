@@ -293,11 +293,11 @@ public class Program
 
             // The format of the message correlation used when receiving Azure EventHubs messages.
             // (default: W3C).
-            options.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+            options.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
 
             // The name of the operation used when tracking the request telemetry.
             // (default: Process)
-            options.Correlation.OperationName = "Sensor";
+            options.Routing.Correlation.OperationName = "Sensor";
 
             // The name of the Azure EventHubs message property that has the upstream service ID.
             // ⚠ Only used when the correlation format is configured as Hierarchical.
