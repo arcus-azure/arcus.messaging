@@ -7,7 +7,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Unit.EventHubs.Fixture;
-using Arcus.Testing;
+using Arcus.Testing.Logging;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using Azure.Messaging.ServiceBus;
