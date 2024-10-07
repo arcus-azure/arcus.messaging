@@ -87,6 +87,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 MessageCorrelationFormat.Hierarchical => CreateSensorEventDataForHierarchical(),
             };
 
+            using var connection = TemporaryManagedIdentityConnection.Create(_config, _logger);
+
             var options = new WorkerOptions();
             configureOptions(options);
 
