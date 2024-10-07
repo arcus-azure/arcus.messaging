@@ -1,17 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
+using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Azure;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Xunit;
+using static Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus.DiskMessageEventConsumer;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
@@ -131,6 +138,112 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
                 await consumer.AssertCompletedMessageAsync(message.MessageId);
             });
+        }
+
+        [Fact]
+        public async Task ServiceBusQueueMessagePumpWithAutoComplete_PublishServiceBusMessage_MessageSuccessfullyCompleted()
+        {
+            // Arrange
+            var options = new WorkerOptions();
+            options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
+
+            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
+
+            // Act
+            await TestServiceBusMessageHandlingAsync(options, ServiceBusEntityType.Queue, message, async () =>
+            {
+                // Assert
+                var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
+                await consumer.AssertCompletedMessageAsync(message.MessageId);
+            });
+        }
+
+        [Fact]
+        public async Task ServiceBusQueueMessagePumpWithAutoComplete_WhenNoMessageHandlerRegistered_ThenMessageShouldBeAbandoned()
+        {
+            // Arrange
+            var options = new WorkerOptions();
+            options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => opt.AutoComplete = true);
+
+            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
+
+            // Act
+            await TestServiceBusMessageHandlingAsync(options, ServiceBusEntityType.Queue, message, async () =>
+            {
+                // Assert
+                var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
+                await consumer.AssertAbandonMessageAsync(message.MessageId);
+            });
+        }
+
+        [Fact]
+        public async Task ServiceBusQueueMessagePump_WhenNoMessageHandlerAbleToHandle_ThenMessageShouldBeDeadLettered()
+        {
+            // Arrange
+            var options = new WorkerOptions();
+            options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
+
+            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
+
+            // Act
+            await TestServiceBusMessageHandlingAsync(options, ServiceBusEntityType.Queue, message, async () =>
+            {
+                // Assert
+                var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
+                await consumer.AssertDeadLetterMessageAsync(message.MessageId);
+            });
+        }
+
+        [Fact]
+        public async Task ServiceBusQueueMessagePump_WhenNoFallbackMessageHandlerAbleToHandle_ThenMessageShouldBeDeadLettered()
+        {
+            // Arrange
+            var options = new WorkerOptions();
+            options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => opt.AutoComplete = true)
+                   .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>()
+                   .WithServiceBusFallbackMessageHandler<SabotageAzureServiceBusFallbackMessageHandler>()
+                   .WithFallbackMessageHandler<SabotageAzureServiceBusFallbackMessageHandler, AzureServiceBusMessageContext>()
+                   .WithFallbackMessageHandler<SabotageAzureServiceBusFallbackMessageHandler, MessageContext>()
+                   .WithFallbackMessageHandler<SabotageAzureServiceBusFallbackMessageHandler>();
+
+            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
+
+            // Act
+            await TestServiceBusMessageHandlingAsync(options, ServiceBusEntityType.Queue, message, async () =>
+            {
+                // Assert
+                var consumer = TestServiceMessageConsumer.CreateForQueue(_config, _logger);
+                await consumer.AssertDeadLetterMessageAsync(message.MessageId);
+            });
+        }
+
+        [Fact]
+        public async Task ServiceBusTopicMessagePumpWithMultipleMessages_PublishesServiceBusMessages_AllMessagesSuccessfullyHandled()
+        {
+            // Arrange
+            var options = new WorkerOptions();
+            options.AddServiceBusTopicMessagePump(TopicConnectionString)
+                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
+
+            options.AddXunitTestLogging(_outputWriter);
+
+            ServiceBusMessage[] messages = 
+                Bogus.Make(50, () => CreateOrderServiceBusMessageForW3C()).ToArray();
+
+            await using var worker = await Worker.StartNewAsync(options);
+            var producer = TestServiceBusMessageProducer.CreateFor(_config, ServiceBusEntityType.Topic);
+
+            // Act
+            await producer.ProduceAsync(messages);
+
+            // Assert
+            foreach (ServiceBusMessage msg in messages)
+            {
+                OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(msg.MessageId);
+                AssertReceivedOrderEventDataForW3C(msg, eventData);
+            }
         }
 
         [Theory]

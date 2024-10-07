@@ -17,6 +17,7 @@ using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Azure.Messaging.ServiceBus;
 using Bogus;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Xunit;
@@ -26,12 +27,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     public partial class ServiceBusMessagePumpTests
     {
-        [Fact(Skip = "Currently incomplete in testing as it is not fully validating correct start/stop of message pump")]
+        [Fact]
         public async Task ServiceBusTopicMessagePump_PauseViaCircuitBreaker_RestartsAgainWithOneMessage()
         {
             // Arrange
             var options = new WorkerOptions();
-            ServiceBusMessage[] messages = GenerateShipmentMessages(3);
+            ServiceBusMessage[] messages = GenerateShipmentMessages(1);
             TimeSpan recoveryTime = TimeSpan.FromSeconds(10);
             TimeSpan messageInterval = TimeSpan.FromSeconds(2);
 
@@ -40,15 +41,16 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        subscriptionName: "circuit-breaker-" + Guid.NewGuid(),
                        _ => _config.GetServiceBusTopicConnectionString(),
                        opt => opt.TopicSubscription = TopicSubscription.Automatic)
-                   .WithServiceBusMessageHandler<CircuitBreakerAzureServiceBusMessageHandler, Shipment>(
-                        implementationFactory: provider => new CircuitBreakerAzureServiceBusMessageHandler(
+                   .WithServiceBusMessageHandler<TestCircuitBreakerAzureServiceBusMessageHandler, Shipment>(
+                        implementationFactory: provider => new TestCircuitBreakerAzureServiceBusMessageHandler(
                             targetMessageIds: messages.Select(m => m.MessageId).ToArray(),
                             configureOptions: opt =>
                             {
                                 opt.MessageRecoveryPeriod = recoveryTime;
                                 opt.MessageIntervalDuringRecovery = messageInterval;
                             },
-                            provider.GetRequiredService<IMessagePumpCircuitBreaker>()));
+                            provider.GetRequiredService<IMessagePumpCircuitBreaker>(),
+                            provider.GetRequiredService<ILogger<TestCircuitBreakerAzureServiceBusMessageHandler>>()));
 
             var producer = TestServiceBusMessageProducer.CreateFor(_config, ServiceBusEntityType.Topic);
             await using var worker = await Worker.StartNewAsync(options);
@@ -57,11 +59,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await producer.ProduceAsync(messages);
 
             // Assert
-            var handler = GetMessageHandler<CircuitBreakerAzureServiceBusMessageHandler>(worker);
+            var handler = GetMessageHandler<TestCircuitBreakerAzureServiceBusMessageHandler>(worker);
             AssertX.RetryAssertUntil(() =>
             {
                 DateTimeOffset[] arrivals = handler.GetMessageArrivals();
-                Assert.Equal(messages.Length, arrivals.Length);
 
                 _outputWriter.WriteLine("Arrivals: {0}", string.Join(", ", arrivals));
                 TimeSpan faultMargin = TimeSpan.FromSeconds(1);
@@ -70,6 +71,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     dates => AssertDateDiff(dates.First, dates.Second, messageInterval, messageInterval.Add(faultMargin)));
 
             }, timeout: TimeSpan.FromMinutes(2), _logger);
+
+            var pump = Assert.IsType<AzureServiceBusMessagePump>(worker.Services.GetService<IHostedService>());
+            Assert.True(pump.IsStarted, "pump should be started after circuit breaker scenario");
         }
 
         private static TMessageHandler GetMessageHandler<TMessageHandler>(Worker worker)

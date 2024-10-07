@@ -19,6 +19,7 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="TypeNotFoundException">Thrown when the no Azure Service Bus receiver could be found on the <paramref name="args"/>.</exception>
         /// <exception cref="InvalidOperationException">Thrown when no value could be found for the Azure Service Bus receiver on the <paramref name="args"/>.</exception>
         /// <exception cref="InvalidCastException">Thrown when the value for the Azure Service Bus receiver on the <paramref name="args"/> wasn't the expected type.</exception>
+        [Obsolete("Service Bus receiver is used internally instead, no need to go via the processor")]
         public static ServiceBusReceiver GetServiceBusReceiver(this ProcessMessageEventArgs args)
         {
             Guard.NotNull(args, nameof(args), "Requires an event args instance to retrieve the original Service Bus message receiver");

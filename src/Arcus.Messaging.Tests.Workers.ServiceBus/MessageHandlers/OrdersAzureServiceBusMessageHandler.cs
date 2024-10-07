@@ -1,9 +1,12 @@
-﻿using System.Threading;
+﻿using System.IO;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Arcus.EventGrid.Publishing.Interfaces;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Azure.Messaging.EventGrid;
 using GuardNet;
@@ -50,6 +53,18 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         {
             EnsureSameCorrelation(correlationInfo);
             await _eventGridPublisher.PublishOrderAsync(order, correlationInfo, _logger);
+
+            string filePath = Path.Combine(Directory.GetCurrentDirectory(), $"{correlationInfo.TransactionId}.json");
+            
+            var eventData = new OrderCreatedEventData(
+                order.Id,
+                order.Amount,
+                order.ArticleNumber,
+                $"{order.Customer.FirstName} {order.Customer.LastName}",
+                correlationInfo);
+            string json = JsonSerializer.Serialize(eventData);
+
+            await File.WriteAllTextAsync(filePath, json, cancellationToken);
         }
 
         private void EnsureSameCorrelation(MessageCorrelationInfo correlationInfo)

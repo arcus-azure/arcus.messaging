@@ -19,6 +19,7 @@ using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Newtonsoft.Json;
 using Xunit;
 using Order = Arcus.Messaging.Tests.Core.Messages.v1.Order;
@@ -121,13 +122,14 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             IServiceProvider provider = services.BuildServiceProvider();
             var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
 
+            var receiver = new Mock<ServiceBusReceiver>();
             var order = OrderGenerator.Generate();
             var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
             var context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = message.GetCorrelationInfo();
 
             // Act / Assert
-            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
+            await router.RouteMessageAsync(receiver.Object, message, context, correlationInfo, CancellationToken.None);
 
             // Assert
             Assert.True(sabotageHandler.IsProcessed, "sabotage message handler should be tried");

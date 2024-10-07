@@ -218,7 +218,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             ServiceBusMessage message = builder.Build();
             AssertEqualOrder(expected, message);
-            Assert.Empty(message.CorrelationId);
+            Assert.Null(message.CorrelationId);
         }
 
         [Theory]
@@ -235,7 +235,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             ServiceBusMessage message = builder.Build();
             AssertEqualOrder(expected, message);
-            Assert.Empty(message.CorrelationId);
+            Assert.Null(message.CorrelationId);
         }
 
         [Fact]
