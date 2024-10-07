@@ -300,6 +300,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
                 await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
                 await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+
+                await DeadLetterMessageAsync(messageReceiver, message);
             }
             catch (Exception exception)
             {
@@ -436,6 +438,12 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
                 Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' was not able to process the message", fallbackMessageHandlerTypeName);
             }
+        }
+
+        private async Task DeadLetterMessageAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message)
+        {
+            Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' as no message handler was able to process the message, dead lettering message!", message.MessageId);
+            await messageReceiver.DeadLetterMessageAsync(message);
         }
     }
 }
