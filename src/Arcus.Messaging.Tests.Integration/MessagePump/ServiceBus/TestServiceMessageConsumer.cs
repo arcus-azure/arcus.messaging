@@ -67,27 +67,30 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         /// Tries receiving a single abandoned message on the Azure Service Bus queue.
         /// </summary>
         /// <exception cref="TimeoutException">Thrown when no abandoned messages can be consumed within the configured time-out.</exception>
-        public async Task AssertAbandonMessageAsync(string messageId)
+        public async Task AssertAbandonMessageAsync(string messageId, bool completeUponReceive = false)
         {
             var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
             await using var client = new ServiceBusClient(_connectionString);
             await using var receiver = client.CreateReceiver(properties.EntityPath);
 
-            ServiceBusReceivedMessage message =
+            ServiceBusReceivedMessage message = 
                 await Poll.Target(() => receiver.ReceiveMessageAsync())
                           .Until(msg => msg != null && msg.MessageId == messageId && msg.DeliveryCount > 1)
                           .Every(TimeSpan.FromSeconds(1))
                           .Timeout(TimeSpan.FromMinutes(2))
                           .FailWith($"cannot receive abandoned message with the message ID: '{messageId}' in time");
 
-            await receiver.CompleteMessageAsync(message);
+            if (completeUponReceive)
+            {
+                await receiver.CompleteMessageAsync(message);
+            }
         }
 
         /// <summary>
         /// Tries receiving a single dead lettered message on the Azure Service Bus dead letter queue.
         /// </summary>
         /// <exception cref="TimeoutException">Thrown when no dead-lettered messages can be consumed within the configured time-out.</exception>
-        public async Task AssertDeadLetterMessageAsync(string messageId)
+        public async Task AssertDeadLetterMessageAsync(string messageId, TimeSpan? timeout = null)
         {
             var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
             var options = new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter };
@@ -129,7 +132,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
                           }
                       })
                       .Every(TimeSpan.FromSeconds(1))
-                      .Timeout(TimeSpan.FromMinutes(2))
+                      .Timeout(timeout ?? TimeSpan.FromMinutes(2))
                       .FailWith($"cannot receive dead-lettered message with message ID: '{messageId}' in time");
         }
     }

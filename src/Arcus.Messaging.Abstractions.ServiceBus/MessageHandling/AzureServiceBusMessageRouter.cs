@@ -269,7 +269,17 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             try
             {
                 MessageHandler[] messageHandlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
-                EnsureAnyMessageHandlerAvailable(messageHandlers, messageContext);
+                if (messageHandlers.Length <= 0)
+                {
+                    Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
+                    await messageReceiver.DeadLetterMessageAsync(message);
+
+                    throw new InvalidOperationException(
+                        $"Azure Service Bus message router cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' "
+                        + "because no 'IAzureServiceBusMessageHandler<>' was registered in the dependency injection container. "
+                        + $"Make sure you call the correct 'WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} "
+                        + "during the registration of the Azure Service Bus message pump or message router to register a message handler");
+                }
 
                 Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
                 string messageBody = encoding.GetString(message.Body.ToArray());
@@ -293,15 +303,35 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     }
                 }
 
-                if (!hasGoneThroughMessageHandler)
-                {
-                    EnsureFallbackMessageHandlerAvailable(messageContext); 
-                }
+                ServiceBusFallbackMessageHandler[] serviceBusFallbackHandlers = 
+                    GetAvailableFallbackMessageHandlersByContext<ServiceBusReceivedMessage, AzureServiceBusMessageContext>(messageContext);
 
-                bool isProcessedByFallback = await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-                if (!isProcessedByFallback)
+                FallbackMessageHandler<string, MessageContext>[] generalFallbackHandlers = 
+                    GetAvailableFallbackMessageHandlersByContext<string, MessageContext>(messageContext);
+
+                bool fallbackAvailable = serviceBusFallbackHandlers.Length > 0 || generalFallbackHandlers.Length > 0;
+
+                if (hasGoneThroughMessageHandler && !fallbackAvailable)
                 {
-                    await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                    Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully processed the message and no fallback message handlers configured, abandoning message!", message.MessageId, messageContext.JobId);
+                    await messageReceiver.AbandonMessageAsync(message);
+                }
+                else if (!hasGoneThroughMessageHandler && !fallbackAvailable)
+                {
+                    Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
+                    await messageReceiver.DeadLetterMessageAsync(message);
+                }
+                else
+                {
+                    bool isProcessedByGeneralFallback = await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+                    if (isProcessedByGeneralFallback)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                    }
                 }
 
             }
@@ -309,42 +339,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             {
                 Logger.LogCritical(exception, "Unable to process message with ID '{MessageId}'", message.MessageId);
                 throw;
-            }
-        }
-
-        private void EnsureAnyMessageHandlerAvailable(MessageHandler[] messageHandlers, AzureServiceBusMessageContext messageContext)
-        {
-            ServiceBusFallbackMessageHandler[] serviceBusFallbackHandlers = 
-                GetAvailableFallbackMessageHandlersByContext<ServiceBusReceivedMessage, AzureServiceBusMessageContext>(messageContext);
-
-            FallbackMessageHandler<string, MessageContext>[] generalFallbackHandlers = 
-                GetAvailableFallbackMessageHandlersByContext<string, MessageContext>(messageContext);
-
-            if (messageHandlers.Length <= 0 && serviceBusFallbackHandlers.Length <= 0 && generalFallbackHandlers.Length <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"Azure Service Bus message router cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' "
-                    + "because no 'IAzureServiceBusMessageHandler<>' was registered in the dependency injection container. "
-                    + $"Make sure you call the correct 'WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} "
-                    + "during the registration of the Azure Service Bus message pump or message router to register a message handler");
-            }
-        }
-
-        private void EnsureFallbackMessageHandlerAvailable(AzureServiceBusMessageContext messageContext)
-        {
-            ServiceBusFallbackMessageHandler[] serviceBusFallbackHandlers = 
-                GetAvailableFallbackMessageHandlersByContext<ServiceBusReceivedMessage, AzureServiceBusMessageContext>(messageContext);
-
-            FallbackMessageHandler<string, MessageContext>[] generalFallbackHandlers = 
-                GetAvailableFallbackMessageHandlersByContext<string, MessageContext>(messageContext);
-
-            if (serviceBusFallbackHandlers.Length <= 0 && generalFallbackHandlers.Length <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"Azure Service Bus message router cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' "
-                    + "because none of the registered 'IAzureServiceBusMessageHandler<,>' implementations in the dependency injection container matches the incoming message type and context; "
-                    + $"and no '{nameof(IFallbackMessageHandler)}' or '{nameof(IAzureServiceBusFallbackMessageHandler)}' was registered to fall back to."
-                    + $"Make sure you call the correct '.WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} during the registration of the message pump or message router to register a message handler");
             }
         }
 
@@ -406,14 +400,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
             ServiceBusFallbackMessageHandler[] fallbackHandlers = 
                 GetAvailableFallbackMessageHandlersByContext<ServiceBusReceivedMessage, AzureServiceBusMessageContext>(messageContext);
-            
-            if (fallbackHandlers.Length <= 0)
-            {
-                Logger.LogTrace("No Azure Service Bus message handlers found within message context (JobId: {JobId})", messageContext.JobId);
-                await DeadLetterMessageAsync(messageReceiver, message);
-
-                return;
-            }
 
             foreach (ServiceBusFallbackMessageHandler handler in fallbackHandlers)
             {
@@ -443,13 +429,11 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' was not able to process the message", fallbackMessageHandlerTypeName);
             }
 
-            await DeadLetterMessageAsync(messageReceiver, message);
-        }
-
-        private async Task DeadLetterMessageAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message)
-        {
-            Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' as no message handler was able to process the message, dead lettering message!", message.MessageId);
-            await messageReceiver.DeadLetterMessageAsync(message);
+            if (messageReceiver != null)
+            {
+                Logger.LogWarning("No fallback message handler processed the Azure Service Bus message '{MessageId}' in pump '{JobId}', abandoning message!", message.MessageId, messageContext.JobId);
+                await messageReceiver.AbandonMessageAsync(message);
+            }
         }
     }
 }

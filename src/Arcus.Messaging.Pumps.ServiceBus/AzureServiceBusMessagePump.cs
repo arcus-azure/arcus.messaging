@@ -422,6 +422,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (Settings.Options.AutoComplete)
             {
+                Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
                 await _messageReceiver.CompleteMessageAsync(message);
             }
         }
