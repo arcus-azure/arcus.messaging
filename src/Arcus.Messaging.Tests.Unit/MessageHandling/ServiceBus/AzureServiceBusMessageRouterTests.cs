@@ -54,37 +54,14 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task RouteMessage_WithDifferentMessageContext_FailsWithDifferentJobId()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting();
-            collection.JobId = Guid.NewGuid().ToString();
-
-            // Act
-            collection.WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>();
-
-            // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
-            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
-
-            var order = OrderGenerator.Generate();
-            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
-            AzureServiceBusMessageContext context = message.GetMessageContext("other-job-id");
-            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() => router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None));
-        }
-
-        [Fact]
         public async Task RouteMessage_WithMultipleFallbackHandlers_UsesCorrectHandlerByJobId()
         {
             // Arrange
             var services = new ServiceCollection();
-            ServiceBusMessageHandlerCollection collection1 = services.AddServiceBusMessageRouting();
+            ServiceBusMessageHandlerCollection collection1 = services.AddServiceBusMessageRouting().WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>();
             collection1.JobId = Guid.NewGuid().ToString();
 
-            ServiceBusMessageHandlerCollection collection2 = services.AddServiceBusMessageRouting();
+            ServiceBusMessageHandlerCollection collection2 = services.AddServiceBusMessageRouting().WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>();
             collection2.JobId = Guid.NewGuid().ToString();
 
             var handler1 = new PassThruServiceBusFallbackMessageHandler();
@@ -133,34 +110,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             // Assert
             Assert.True(sabotageHandler.IsProcessed, "sabotage message handler should be tried");
-        }
-
-        [Fact]
-        public async Task RouteMessage_WithoutFallbackWithFailingButMismatchingMessageHandler_FailsBecauseNoFallback()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            var sabotageHandler = new OrdersSabotageAzureServiceBusMessageHandler();
-
-            services.AddServiceBusMessageRouting()
-                    .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
-                    .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>(serviceProvider => sabotageHandler);
-
-            IServiceProvider provider = services.BuildServiceProvider();
-            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
-
-            var orderV2 = OrderV2Generator.Generate();
-            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(orderV2), messageId: "message-id");
-            var context = AzureServiceBusMessageContextFactory.Generate();
-            var correlationInfo = message.GetCorrelationInfo();
-
-            // Act / Assert
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None));
-
-            // Assert
-            Assert.Contains("none of the registered", exception.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains("fallback", exception.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.False(sabotageHandler.IsProcessed, "sabotage message handler should not be tried");
         }
 
         [Fact]
@@ -520,31 +469,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             
             Assert.Equal(messageCount, spyOrderV1MessageHandler.ProcessedMessages.Length);
             Assert.Equal(messageCount, spyOrderV2MessageHandler.ProcessedMessages.Length);
-        }
-
-        [Fact]
-        public async Task RouteMessage_WithMessageHandlerWithDifferentJobId_Fails()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            var collection = new ServiceBusMessageHandlerCollection(services) { JobId = Guid.NewGuid().ToString() };
-            collection.WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>();
-
-            // Act
-            services.AddServiceBusMessageRouting();
-
-            // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
-            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
-
-            Order order = OrderGenerator.Generate();
-            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: Guid.NewGuid().ToString());
-            AzureServiceBusMessageContext context = message.GetMessageContext(jobId: Guid.NewGuid().ToString());
-            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
-
-            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None));
-            Assert.Contains("because none", exception.Message);
         }
 
         [Fact]

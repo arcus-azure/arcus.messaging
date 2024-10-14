@@ -271,8 +271,11 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 MessageHandler[] messageHandlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
                 if (messageHandlers.Length <= 0)
                 {
-                    Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
-                    await messageReceiver.DeadLetterMessageAsync(message);
+                    if (messageReceiver != null)
+                    {
+                        Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
+                        await messageReceiver.DeadLetterMessageAsync(message); 
+                    }
 
                     throw new InvalidOperationException(
                         $"Azure Service Bus message router cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' "
@@ -313,13 +316,19 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
                 if (hasGoneThroughMessageHandler && !fallbackAvailable)
                 {
-                    Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully processed the message and no fallback message handlers configured, abandoning message!", message.MessageId, messageContext.JobId);
-                    await messageReceiver.AbandonMessageAsync(message);
+                    if (messageReceiver != null)
+                    {
+                        Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully processed the message and no fallback message handlers configured, abandoning message!", message.MessageId, messageContext.JobId);
+                        await messageReceiver.AbandonMessageAsync(message); 
+                    }
                 }
                 else if (!hasGoneThroughMessageHandler && !fallbackAvailable)
                 {
-                    Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
-                    await messageReceiver.DeadLetterMessageAsync(message);
+                    if (messageReceiver != null)
+                    {
+                        Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
+                        await messageReceiver.DeadLetterMessageAsync(message); 
+                    }
                 }
                 else
                 {
