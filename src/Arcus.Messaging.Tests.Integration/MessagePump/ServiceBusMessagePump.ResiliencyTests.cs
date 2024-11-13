@@ -81,12 +81,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             TriedOrders.Clear();
+            using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
             await using TemporaryQueue queue = await CreateQueueAsync();
 
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter)
                    .ConfigureSerilog(logging => logging.MinimumLevel.Debug())
-                   .AddServiceBusQueueMessagePump(queue.Name, _ => NamespaceConnectionString)
+                   .AddServiceBusQueueMessagePumpUsingManagedIdentity(queue.Name, FullyQualifiedNamespace)
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>();
 
             var producer = new TestServiceBusMessageProducer($"{NamespaceConnectionString};EntityPath={queue.Name}");
@@ -107,7 +108,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         private async Task<TemporaryQueue> CreateQueueAsync()
         {
-            var client = new ServiceBusAdministrationClient(NamespaceConnectionString);
+            ServicePrincipal servicePrincipal = _config.GetServicePrincipal();
+            var client = new ServiceBusAdministrationClient(
+                FullyQualifiedNamespace,
+                new ClientSecretCredential(_config.GetTenantId(),
+                    servicePrincipal.ClientId,
+                    servicePrincipal.ClientSecret));
 
             return await TemporaryQueue.CreateIfNotExistsAsync(client, $"queue-{Guid.NewGuid()}", _logger);
         }
@@ -119,12 +125,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             TriedOrders.Clear();
             ServiceBusMessage messageBeforeBreak = CreateOrderServiceBusMessageForW3C();
             ServiceBusMessage messageAfterBreak = CreateOrderServiceBusMessageForW3C();
+            using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
             await using TemporaryTopicSubscription subscription = await CreateTopicSubscriptionForMessageAsync(messageBeforeBreak, messageAfterBreak);
 
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter)
                    .ConfigureSerilog(logging => logging.MinimumLevel.Debug())
-                   .AddServiceBusTopicMessagePump(subscription.Name, _ => TopicConnectionString)
+                   .AddServiceBusTopicMessagePumpUsingManagedIdentity(ServiceBusConnectionStringProperties.Parse(TopicConnectionString).EntityPath, subscription.Name, FullyQualifiedNamespace)
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>();
 
             var producer = TestServiceBusMessageProducer.CreateFor(_config, ServiceBusEntityType.Topic);

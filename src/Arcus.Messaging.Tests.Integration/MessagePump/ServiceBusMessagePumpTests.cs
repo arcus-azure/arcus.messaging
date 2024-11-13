@@ -47,6 +47,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             _logger = new XunitTestLogger(outputWriter);
         }
 
+        private string FullyQualifiedNamespace => ServiceBusConnectionStringProperties.Parse(QueueConnectionString).FullyQualifiedNamespace;
         private string QueueConnectionString => _config.GetServiceBusQueueConnectionString();
         private string TopicConnectionString => _config.GetServiceBusTopicConnectionString();
 
