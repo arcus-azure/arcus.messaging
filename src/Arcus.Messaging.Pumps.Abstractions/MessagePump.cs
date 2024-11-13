@@ -70,7 +70,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <summary>
         /// Gets the current state of the message pump within the circuit breaker context.
         /// </summary>
-        protected MessagePumpCircuitState CircuitState { get; private set; } = MessagePumpCircuitState.Closed;
+        public MessagePumpCircuitState CircuitState { get; private set; } = MessagePumpCircuitState.Closed;
 
         /// <summary>
         /// Gets hte ID of the client being used to connect to the messaging service.

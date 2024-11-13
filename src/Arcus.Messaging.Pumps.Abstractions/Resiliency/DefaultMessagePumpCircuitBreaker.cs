@@ -79,11 +79,24 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             Guard.NotNullOrWhitespace(jobId, nameof(jobId));
 
             MessagePump messagePump = GetRegisteredMessagePump(jobId);
-            if (!messagePump.IsStarted)
+            if (!messagePump.IsStarted && messagePump.CircuitState is MessagePumpCircuitState.HalfOpen)
             {
                 _logger.LogDebug("Message pump '{JobId}' successfully handled a single message, resume message processing (circuit breaker: closed)", messagePump.JobId);
                 await messagePump.StartProcessingMessagesAsync(CancellationToken.None);
             }
+        }
+
+        /// <summary>
+        /// Gets the current circuit breaker state of message processing in the given message pump.
+        /// </summary>
+        /// <param name="jobId">The unique identifier to distinguish the message pump in the application services.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
+        public MessagePumpCircuitState GetMessageProcessingState(string jobId)
+        {
+            Guard.NotNullOrWhitespace(jobId, nameof(jobId));
+
+            MessagePump messagePump = GetRegisteredMessagePump(jobId);
+            return messagePump.CircuitState;
         }
 
         /// <summary>

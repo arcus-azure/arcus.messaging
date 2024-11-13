@@ -217,7 +217,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             await base.TryProcessProcessSingleMessageAsync(options);
             Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' tries to process single message during half-open circuit...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
 
-            ServiceBusReceivedMessage message = await _messageReceiver.ReceiveMessageAsync();
+            ServiceBusReceivedMessage message = null;
+            while (message is null)
+            {
+                message = await _messageReceiver.ReceiveMessageAsync();
+                if (message is null)
+                {
+                    Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to receive a single message, trying again...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
+                }
+            }
+
             try
             {
                 await ProcessMessageAsync(message, CancellationToken.None);
@@ -227,7 +236,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 Logger.LogError(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to process single message during half-open circuit, retrying after circuit delay", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
                 return MessageProcessingResult.Failure(exception);
-            }
+            } 
         }
 
         /// <inheritdoc />
@@ -422,8 +431,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (Settings.Options.AutoComplete)
             {
-                Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
-                await _messageReceiver.CompleteMessageAsync(message);
+                try
+                {
+                    Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
+                    await _messageReceiver.CompleteMessageAsync(message);
+                }
+                catch (ServiceBusException exception) when (
+                    exception.Message.Contains("lock")
+                    && exception.Message.Contains("expired")
+                    && exception.Message.Contains("already") 
+                    && exception.Message.Contains("removed"))
+                {
+                    Logger.LogTrace("Message '{MessageId}' on Azure Service Bus {EntityType} message pump '{JobId}' was already completed", message.MessageId, Settings.ServiceBusEntity, JobId);
+                }
             }
         }
 

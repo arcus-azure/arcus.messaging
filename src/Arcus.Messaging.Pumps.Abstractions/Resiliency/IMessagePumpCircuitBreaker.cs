@@ -10,6 +10,13 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
     public interface IMessagePumpCircuitBreaker
     {
         /// <summary>
+        /// Gets the current circuit breaker state of message processing in the given message pump.
+        /// </summary>
+        /// <param name="jobId">The unique identifier to distinguish the message pump in the application services.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
+        MessagePumpCircuitState GetMessageProcessingState(string jobId);
+
+        /// <summary>
         /// Pause the process of receiving messages in the message pump for a period of time before careful retrying again.
         /// </summary>
         /// <param name="jobId">The unique identifier to distinguish the message pump in the application services.</param>
