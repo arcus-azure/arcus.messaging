@@ -74,7 +74,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
     public partial class ServiceBusMessagePumpTests
     {
-        private string NamespaceConnectionString => ServiceBusConnectionStringProperties.Parse(QueueConnectionString).GetNamespaceConnectionString();
+        private string NamespaceConnectionString => _config["Arcus:ServiceBus:Docker:NamespaceConnectionString"];
 
         [Fact]
         public async Task ServiceBusMessageQueuePump_WithUnavailableDependencySystem_CircuitBreaksUntilDependencyBecomesAvailable()
