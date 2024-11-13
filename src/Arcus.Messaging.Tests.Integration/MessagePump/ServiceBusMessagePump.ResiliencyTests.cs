@@ -76,7 +76,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     {
         private string NamespaceConnectionString => _config["Arcus:ServiceBus:Docker:NamespaceConnectionString"];
 
-        [Fact]
+        [Fact(Skip = "TODO: use correct authentication mechanism")]
         public async Task ServiceBusMessageQueuePump_WithUnavailableDependencySystem_CircuitBreaksUntilDependencyBecomesAvailable()
         {
             // Arrange
@@ -118,7 +118,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             return await TemporaryQueue.CreateIfNotExistsAsync(client, $"queue-{Guid.NewGuid()}", _logger);
         }
 
-        [Fact]
+        [Fact(Skip = "TODO: use correct authentication mechanism")]
         public async Task ServiceBusMessageTopicPump_WithUnavailableDependencySystem_CircuitBreaksUntilDependencyBecomesAvailable()
         {
             // Arrange
