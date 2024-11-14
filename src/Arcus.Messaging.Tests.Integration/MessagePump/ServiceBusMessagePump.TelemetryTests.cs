@@ -208,8 +208,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var customOperationParentIdPropertyName = "MyOperationParentId";
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(QueueName, HostName,
-                opt =>
+            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName,
+                configureMessagePump: opt =>
                 {
                     opt.AutoComplete = true;
                     opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;

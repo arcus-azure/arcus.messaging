@@ -30,10 +30,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     [Collection("Integration")]
     [Trait("Category", "Integration")]
-    public partial class ServiceBusMessagePumpTests : IClassFixture<ServiceBusEntityFixture>
+    public partial class ServiceBusMessagePumpTests : IClassFixture<ServiceBusEntityFixture>, IDisposable
     {
         private readonly TestConfig _config;
         private readonly ServiceBusConfig _serviceBusConfig;
+        private readonly TemporaryManagedIdentityConnection _connection;
         private readonly ILogger _logger;
         private readonly ITestOutputHelper _outputWriter;
 
@@ -47,6 +48,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             _outputWriter = outputWriter;
             _logger = new XunitTestLogger(outputWriter);
+            _connection = TemporaryManagedIdentityConnection.Create(_config, _logger);
 
             QueueName = entity.QueueName;
             TopicName = entity.TopicName;
@@ -99,8 +101,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 MessageCorrelationFormat.W3C => CreateOrderServiceBusMessageForW3C(),
                 MessageCorrelationFormat.Hierarchical => CreateOrderServiceBusMessageForHierarchical(),
             };
-
-            using var connection = TemporaryManagedIdentityConnection.Create(_config, _logger);
 
             var options = new WorkerOptions();
             configureOptions(options);
@@ -250,6 +250,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Assert.Equal(transactionId, receivedEventData.CorrelationInfo.TransactionId);
             Assert.NotNull(receivedEventData.CorrelationInfo.OperationId);
             Assert.Equal(operationParentId, receivedEventData.CorrelationInfo.OperationParentId);
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
+        public void Dispose()
+        {
+            _connection?.Dispose();
         }
     }
 
