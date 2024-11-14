@@ -4,12 +4,10 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
-using Arcus.Messaging.Tests.Integration.MessagePump.EventHubs;
-using Arcus.Testing.Logging;
+using Arcus.Messaging.Tests.Integration.MessagePump;
+using Arcus.Testing;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
-using Azure.Storage.Blobs;
-using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,25 +19,28 @@ using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.EventHubs
 {
-    public class AzureClientFactoryBuilderExtensionsTests : IAsyncLifetime
+    public class AzureClientFactoryBuilderExtensionsTests : IClassFixture<EventHubsEntityFixture>, IAsyncLifetime
     {
         private readonly TestConfig _config;
         private readonly EventHubsConfig _eventHubsConfig;
         private readonly ILogger _logger;
 
-        private TemporaryBlobStorageContainer _blobStorageContainer;
+        private TemporaryManagedIdentityConnection _connection;
+        private TemporaryBlobContainer _blobStorageContainer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureClientFactoryBuilderExtensionsTests" /> class.
         /// </summary>
-        public AzureClientFactoryBuilderExtensionsTests(ITestOutputHelper outputWriter)
+        public AzureClientFactoryBuilderExtensionsTests(EventHubsEntityFixture fixture, ITestOutputHelper outputWriter)
         {
             _config = TestConfig.Create();
             _logger = new XunitTestLogger(outputWriter);
-            _eventHubsConfig = _config.GetEventHubsConfig();
+            _eventHubsConfig = _config.GetEventHubs();
+
+            EventHubsName = fixture.HubName;
         }
 
-        private string EventHubsName => _eventHubsConfig.GetEventHubsName(IntegrationTestType.SelfContained);
+        private string EventHubsName { get; }
 
         [Fact]
         public async Task AddEventHubProducerClientWithNamespace_SendEvent_Succeeds()
@@ -47,7 +48,7 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
             // Arrange
             var services = new ServiceCollection();
             var connectionStringSecretName = "MyConnectionString";
-            EventHubsConfig eventHubsConfig = _config.GetEventHubsConfig();
+            EventHubsConfig eventHubsConfig = _config.GetEventHubs();
             services.AddSecretStore(stores => stores.AddInMemory(connectionStringSecretName, eventHubsConfig.EventHubsConnectionString));
 
             // Act
@@ -120,9 +121,7 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
 
         private EventProcessorClient CreateEventProcessorClient()
         {
-            var storageClient = new BlobContainerClient(_eventHubsConfig.StorageConnectionString, _blobStorageContainer.ContainerName);
-            var eventProcessor = new EventProcessorClient(storageClient, "$Default", _eventHubsConfig.EventHubsConnectionString, EventHubsName);
-            
+            EventProcessorClient eventProcessor = _eventHubsConfig.GetProcessorClient(EventHubsName, _blobStorageContainer.Client);
             return eventProcessor;
         }
 
@@ -137,7 +136,8 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
 
         public async Task InitializeAsync()
         {
-            _blobStorageContainer = await TemporaryBlobStorageContainer.CreateAsync(_eventHubsConfig.StorageConnectionString, _logger);
+            _connection = TemporaryManagedIdentityConnection.Create(_config, _logger);
+            _blobStorageContainer = await TemporaryBlobContainer.CreateIfNotExistsAsync(_eventHubsConfig.Storage.Name, $"test-{Guid.NewGuid()}", _logger);
         }
 
         public async Task DisposeAsync()
@@ -146,6 +146,8 @@ namespace Arcus.Messaging.Tests.Integration.EventHubs
             {
                 await _blobStorageContainer.DisposeAsync();
             }
+
+            _connection?.Dispose();
         }
     }
 }

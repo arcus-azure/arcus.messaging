@@ -442,7 +442,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     && exception.Message.Contains("already") 
                     && exception.Message.Contains("removed"))
                 {
-                    Logger.LogTrace("Message '{MessageId}' on Azure Service Bus {EntityType} message pump '{JobId}' was already completed", message.MessageId, Settings.ServiceBusEntity, JobId);
+                    Logger.LogTrace("Message '{MessageId}' on Azure Service Bus {EntityType} message pump '{JobId}' does not need to be auto-completed, because it was already settled", message.MessageId, Settings.ServiceBusEntity, JobId);
                 }
             }
         }

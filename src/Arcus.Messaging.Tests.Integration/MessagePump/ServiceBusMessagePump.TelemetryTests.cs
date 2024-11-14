@@ -39,10 +39,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
 
             string operationName = Guid.NewGuid().ToString();
-            options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt => 
+            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => 
             {
                 opt.AutoComplete = true;
                 opt.Routing.Telemetry.OperationName = operationName;
+
             }).WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
             
             var spySink = new InMemoryApplicationInsightsTelemetryConverter();
@@ -73,10 +74,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
              var options = new WorkerOptions();
             
             string operationName = Guid.NewGuid().ToString();
-            options.AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt =>
+            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt =>
             {
                 opt.Routing.Telemetry.OperationName = operationName;
                 opt.AutoComplete = true;
+
             }).WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
             
             var spySink = new InMemoryApplicationInsightsTelemetryConverter();
@@ -143,12 +145,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var spySink = new InMemoryLogSink();
             var options = new WorkerOptions();
             options.ConfigureSerilog(config => config.WriteTo.Sink(spySink))
-                   .AddServiceBusQueueMessagePump(_ => QueueConnectionString, opt =>
+                   .AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt =>
                    {
                        opt.AutoComplete = true;
                        opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
-                   })
-                   .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
+
+                   }).WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
             
             string operationId = $"operation-{Guid.NewGuid()}", transactionId = $"transaction-{Guid.NewGuid()}";
             Order order = OrderGenerator.Generate();
@@ -180,15 +182,15 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var customTransactionIdPropertyName = "MyTransactionId";
             var options = new WorkerOptions();
-            options.AddServiceBusTopicMessagePump($"MySubscription-{Guid.NewGuid():N}", _ => TopicConnectionString,
-                       opt =>
-                       {
-                           opt.AutoComplete = true;
-                           opt.TopicSubscription = TopicSubscription.Automatic;
-                           opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
-                           opt.Routing.Correlation.TransactionIdPropertyName = customTransactionIdPropertyName;
-                       })
-                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
+            options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, $"MySubscription-{Guid.NewGuid():N}", HostName,
+                configureMessagePump: opt =>
+                {
+                    opt.AutoComplete = true;
+                    opt.TopicSubscription = TopicSubscription.Automatic;
+                    opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+                    opt.Routing.Correlation.TransactionIdPropertyName = customTransactionIdPropertyName;
+
+                }).WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForHierarchical(customTransactionIdPropertyName);
 
@@ -206,20 +208,19 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var customOperationParentIdPropertyName = "MyOperationParentId";
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(
-                       _ => QueueConnectionString,
-                       opt =>
-                       {
-                           opt.AutoComplete = true;
-                           opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
-                           opt.Routing.Correlation.OperationParentIdPropertyName = customOperationParentIdPropertyName;
-                       })
-                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
+            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName,
+                configureMessagePump: opt =>
+                {
+                    opt.AutoComplete = true;
+                    opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
+                    opt.Routing.Correlation.OperationParentIdPropertyName = customOperationParentIdPropertyName;
+
+                }).WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForHierarchical(operationParentIdPropertyName: customOperationParentIdPropertyName);
 
             // Act / Assert
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
+            await TestServiceBusMessageHandlingAsync(options, ServiceBusEntityType.Topic, message, async () =>
             {
                 OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId);
                 AssertReceivedOrderEventDataForHierarchical(message, eventData, operationParentIdPropertyName: customOperationParentIdPropertyName);

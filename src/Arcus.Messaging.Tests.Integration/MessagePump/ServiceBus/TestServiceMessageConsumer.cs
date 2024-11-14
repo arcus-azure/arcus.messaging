@@ -2,15 +2,14 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Core.Events.v1;
+using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Workers.ServiceBus.Fixture;
 using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Sdk;
-using TestConfig = Arcus.Messaging.Tests.Integration.Fixture.TestConfig;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
 {
@@ -19,31 +18,23 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
     /// </summary>
     public class TestServiceMessageConsumer
     {
-        private readonly string _connectionString;
+        private readonly string _entityName;
+        private readonly ServiceBusConfig _config;
         private readonly ILogger _logger;
 
-        private TestServiceMessageConsumer(string connectionString, ILogger logger)
+        private TestServiceMessageConsumer(string entityName, ServiceBusConfig config, ILogger logger)
         {
-            Guard.NotNullOrWhitespace(connectionString, nameof(connectionString), "Requires an Azure Service Bus connection string so dead-lettered messages can be consumed");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write informational messages during the dead-lettered message consuming from an Azure Service Bus queue");
-
-            _connectionString = connectionString;
+            _entityName = entityName;
+            _config = config;
             _logger = logger;
         }
 
         /// <summary>
         /// Creates an <see cref="TestServiceMessageConsumer"/> instance that consumes dead-lettered messages from an Azure Service Bus queue.
         /// </summary>
-        /// <param name="config">The integration test configuration where the connection string to the Azure Service Bus queue is present.</param>
-        /// <param name="logger">The logger instance to write informational messages during the message consuming.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="config"/> or the <paramref name="logger"/> is <c>null</c>.</exception>
-        public static TestServiceMessageConsumer CreateForQueue(TestConfig config, ILogger logger)
+        public static TestServiceMessageConsumer CreateForQueue(string entityName, ServiceBusConfig config, ILogger logger)
         {
-            Guard.NotNull(config, nameof(config), "Requires an integration test configuration to retrieve the Azure Service Bus queue connection string so dead-lettered messages can be consumed");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write informational messages during the dead-lettered message consuming from an Azure Service Bus queue");
-
-            string connectionString = config.GetServiceBusQueueConnectionString();
-            return new TestServiceMessageConsumer(connectionString, logger);
+            return new TestServiceMessageConsumer(entityName, config, logger);
         }
 
         /// <summary>
@@ -53,9 +44,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         {
             await Poll.UntilAvailableAsync<XunitException>(async () =>
             {
-                var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
-                await using var client = new ServiceBusClient(_connectionString);
-                await using var receiver = client.CreateReceiver(properties.EntityPath);
+                await using ServiceBusClient client = _config.GetClient();
+                await using ServiceBusReceiver receiver = client.CreateReceiver(_entityName);
 
                 IReadOnlyList<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
                 Assert.DoesNotContain(messages, msg => msg.MessageId == messageId);
@@ -69,9 +59,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         /// <exception cref="TimeoutException">Thrown when no abandoned messages can be consumed within the configured time-out.</exception>
         public async Task AssertAbandonMessageAsync(string messageId, bool completeUponReceive = false)
         {
-            var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
-            await using var client = new ServiceBusClient(_connectionString);
-            await using var receiver = client.CreateReceiver(properties.EntityPath);
+            await using ServiceBusClient client = _config.GetClient();
+            await using ServiceBusReceiver receiver = client.CreateReceiver(_entityName);
 
             ServiceBusReceivedMessage message = 
                 await Poll.Target(() => receiver.ReceiveMessageAsync())
@@ -92,19 +81,18 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         /// <exception cref="TimeoutException">Thrown when no dead-lettered messages can be consumed within the configured time-out.</exception>
         public async Task AssertDeadLetterMessageAsync(string messageId, TimeSpan? timeout = null)
         {
-            var properties = ServiceBusConnectionStringProperties.Parse(_connectionString);
             var options = new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter };
 
             async Task<ServiceBusReceivedMessage> ReceiveMessageAsync()
             {
-                await using var client = new ServiceBusClient(_connectionString);
-                await using var receiver = client.CreateReceiver(properties.EntityPath, options);
+                await using ServiceBusClient client = _config.GetClient();
+                await using ServiceBusReceiver receiver = client.CreateReceiver(_entityName, options);
                 
-                _logger.LogTrace("Start looking for dead-lettered message '{MessageId}' for Azure Service bus queue '{QueueName}'", messageId, properties.EntityPath);
+                _logger.LogTrace("Start looking for dead-lettered message '{MessageId}' for Azure Service bus queue '{QueueName}'", messageId, _entityName);
                 ServiceBusReceivedMessage message = await receiver.ReceiveMessageAsync();
                 if (message != null)
                 {
-                    _logger.LogTrace("Found dead-lettered message '{MessageId}' for Azure Service bus queue '{QueueName}'", messageId, properties.EntityPath);
+                    _logger.LogTrace("Found dead-lettered message '{MessageId}' for Azure Service bus queue '{QueueName}'", messageId, _entityName);
                     await receiver.CompleteMessageAsync(message);
                 }
 

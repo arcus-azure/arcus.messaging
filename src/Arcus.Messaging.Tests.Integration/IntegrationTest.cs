@@ -1,4 +1,4 @@
-﻿using Arcus.Testing.Logging;
+﻿using Arcus.Testing;
 using Microsoft.Extensions.Configuration;
 using Xunit.Abstractions;
 
