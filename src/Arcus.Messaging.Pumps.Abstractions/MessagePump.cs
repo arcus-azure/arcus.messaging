@@ -82,7 +82,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="receiveException">Exception that occurred</param>
         protected virtual Task HandleReceiveExceptionAsync(Exception receiveException)
         {
-            Logger.LogCritical(receiveException, "Unable to process message from {EntityPath} with client {ClientId}", EntityPath, ClientId);
+            Logger.LogCritical(receiveException, "Unable to process message from {EntityPath} with client {ClientId}: {Message}", EntityPath, ClientId, receiveException.Message);
             return Task.CompletedTask;
         }
 

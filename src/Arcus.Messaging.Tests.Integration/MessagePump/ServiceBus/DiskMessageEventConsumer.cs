@@ -11,10 +11,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
 {
     public static class DiskMessageEventConsumer
     {
-        public static async Task<OrderCreatedEventData> ConsumeOrderCreatedAsync(string messageId)
+        public static async Task<OrderCreatedEventData> ConsumeOrderCreatedAsync(string messageId, TimeSpan? timeout = null)
         {
             return await ConsumeEventAsync<OrderCreatedEventData>(messageId,
-                $"order created event does not seem to be delivered in time as the file '{messageId}.json' cannot be found on disk");
+                $"order created event does not seem to be delivered in time as the file '{messageId}.json' cannot be found on disk", timeout);
         }
 
         public static async Task<SensorReadEventData> ConsumeSensorReadAsync(string messageId)
@@ -23,7 +23,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
                 $"sensor read event does not seem to be delivered in time as the file '{messageId}.json' cannot be found on disk");
         }
 
-        private static async Task<TResult> ConsumeEventAsync<TResult>(string messageId, string errorMessage)
+        private static async Task<TResult> ConsumeEventAsync<TResult>(string messageId, string errorMessage, TimeSpan? timeout = null)
         {
             var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
 
@@ -31,7 +31,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
                 await Poll.Target(() => Assert.Single(dir.GetFiles($"{messageId}.json", SearchOption.AllDirectories)))
                           .Until(files => files.Length > 0)
                           .Every(TimeSpan.FromMilliseconds(100))
-                          .Timeout(TimeSpan.FromSeconds(10))
+                          .Timeout(timeout ?? TimeSpan.FromSeconds(10))
                           .FailWith(errorMessage);
 
             string json = await File.ReadAllTextAsync(file.FullName);

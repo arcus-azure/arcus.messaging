@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using Arcus.Messaging.Tests.Integration.Fixture;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using GuardNet;
@@ -12,22 +13,16 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.EventHubs
     /// </summary>
     public class TestEventHubsMessageProducer
     {
-        private readonly string _eventHubsConnectionString;
-        private readonly string _eventHubName;
+        private readonly string _name;
+        private readonly EventHubsConfig _config;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TestEventHubsMessageProducer" /> class.
         /// </summary>
-        /// <param name="eventHubsConnectionString">The connection string to access the Azure EventHubs.</param>
-        /// <param name="eventHubName">The name of the Azure EventHubs where an event message should be placed.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="eventHubsConnectionString"/> or the <paramref name="eventHubName"/> is blank.</exception>
-        public TestEventHubsMessageProducer(string eventHubsConnectionString, string eventHubName)
+        public TestEventHubsMessageProducer(string name, EventHubsConfig config)
         {
-            Guard.NotNullOrWhitespace(eventHubsConnectionString, nameof(eventHubsConnectionString), "Requires a non-blank connection string to access the Azure EventHubs");
-            Guard.NotNullOrWhitespace(eventHubName, nameof(eventHubName), "Requires a non-blank name of the Azure EventHubs");
-            
-            _eventHubsConnectionString = eventHubsConnectionString;
-            _eventHubName = eventHubName;
+            _name = name;
+            _config = config;
         }
 
         /// <summary>
@@ -43,7 +38,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.EventHubs
         {
             Guard.NotNull(eventData, nameof(eventData), "Requires an event data instance to place on the configured Azure EventHubs");
 
-            await using (var client = new EventHubProducerClient(_eventHubsConnectionString, _eventHubName))
+            await using (EventHubProducerClient client = _config.GetProducerClient(_name))
             {
                 await client.SendAsync(new[] { eventData });
             }

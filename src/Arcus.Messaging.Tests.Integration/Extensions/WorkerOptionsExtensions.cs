@@ -1,6 +1,7 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
+using Azure.Messaging.ServiceBus;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,6 +31,22 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             return options.Services.AddServiceBusTopicMessagePump(
                 subscriptionName: Guid.NewGuid().ToString(),
                 _ => connectionString, opt =>
+                {
+                    opt.TopicSubscription = TopicSubscription.Automatic;
+                    opt.AutoComplete = true;
+                });
+        }
+
+        public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpUsingManagedIdentity(
+            this WorkerOptions options,
+            string topicName,
+            string hostName)
+        {
+            return options.Services.AddServiceBusTopicMessagePumpUsingManagedIdentity(
+                topicName,
+                subscriptionName: Guid.NewGuid().ToString(),
+                serviceBusNamespace: hostName,
+                configureMessagePump: opt =>
                 {
                     opt.TopicSubscription = TopicSubscription.Automatic;
                     opt.AutoComplete = true;

@@ -5,26 +5,34 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
+using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Wrap;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.ServiceBus
 {
-    public class AzureClientFactoryBuilderExtensionsTests
+    public class AzureClientFactoryBuilderExtensionsTests : IAsyncLifetime
     {
         private readonly TestConfig _config;
+        private readonly ILogger _logger;
+
+        private TemporaryManagedIdentityConnection _connection;
+        private TemporaryServiceBusEntity _queue;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureClientFactoryBuilderExtensionsTests" /> class.
         /// </summary>
-        public AzureClientFactoryBuilderExtensionsTests()
+        public AzureClientFactoryBuilderExtensionsTests(ITestOutputHelper outputWriter)
         {
             _config = TestConfig.Create();
+            _logger = new XunitTestLogger(outputWriter);
         }
 
         [Fact]
@@ -33,7 +41,7 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
             // Arrange
             var services = new ServiceCollection();
             var connectionStringSecretName = "MyConnectionString";
-            string connectionString = _config.GetServiceBusQueueConnectionString();
+            string connectionString = _config.GetServiceBus().NamespaceConnectionString + ";EntityPath=" + _queue.EntityName;
             var connectionStringProperties = ServiceBusConnectionStringProperties.Parse(connectionString);
             services.AddSecretStore(stores => stores.AddInMemory(connectionStringSecretName, connectionString));
             
@@ -90,6 +98,18 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
                     throw exceptions.Count == 1 ? exceptions[0] : new AggregateException(exceptions);
                 });
             }
+        }
+
+        public async Task InitializeAsync()
+        {
+            _connection = TemporaryManagedIdentityConnection.Create(_config, _logger);
+            _queue = await TemporaryServiceBusEntity.CreateAsync(ServiceBusEntityType.Queue, $"queue-{Guid.NewGuid()}", _config.GetServiceBus(), _logger);
+        }
+
+        public async Task DisposeAsync()
+        {
+            await _queue.DisposeAsync();
+            _connection.Dispose();
         }
     }
 }

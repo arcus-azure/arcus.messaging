@@ -1,0 +1,85 @@
+name: Arcus Messaging - Deploy test resources
+
+trigger: none
+pr: none
+
+parameters:
+  - name: azureServiceConnection
+    displayName: 'Azure service connection'
+    type: string
+    default: 'Azure Codit-Arcus Service Principal'
+  - name: resourceGroupName
+    displayName: 'Resource group name'
+    default: arcus-messaging-dev-we-rg
+  - name: keyVaultName
+    displayName: 'Key vault name'
+    default: 'arcus-messaging-kv'
+
+variables:
+  - template: ./variables/build.yml
+  - template: ./variables/test.yml
+
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: arcus-azure/azure-devops-templates
+      endpoint: arcus-azure
+
+stages:
+  - stage: Deploy
+    jobs:
+      - job: DeployBicep
+        displayName: 'Deploy test resources'
+        pool:
+          vmImage: $(Vm.Image)
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '${{ parameters.azureServiceConnection }}'
+              addSpnToEnvironment: true
+              scriptType: 'pscore'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az deployment sub create `
+                  --location westeurope `
+                  --template-file ./build/templates/resource-group.bicep `
+                  --parameters resourceGroupName=$env:ARCUS_MESSAGING_RESOURCEGROUP_NAME `
+                  --parameters location=westeurope 
+
+                $objectId = (az ad sp show --id $env:servicePrincipalId | ConvertFrom-Json).id
+
+                az deployment group create `
+                  --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME `
+                  --template-file ./build/templates/test-resources.bicep `
+                  --parameters serviceBusNamespace=$env:ARCUS_MESSAGING_SERVICEBUS_NAMESPACE `
+                  --parameters eventHubsNamespace=$env:ARCUS_MESSAGING_EVENTHUBS_NAMESPACE `
+                  --parameters storageAccountName=$env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME `
+                  --parameters keyVaultName=$env:ARCUS_MESSAGING_KEYVAULT_NAME `
+                  --parameters servicePrincipal_objectId=$objectId
+
+                $accountKey = (az storage account keys list --account-name $env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME | ConvertFrom-Json)[0].value
+                az keyvault secret set `
+                  --name $env:ARCUS_MESSAGING_STORAGEACCOUNT_KEY_SECRETNAME `
+                  --value $accountKey `
+                  --vault-name ${{ parameters.keyVaultName }}
+
+                $serviceBusKeys = az servicebus namespace authorization-rule keys list `
+                  --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME `
+                  --namespace-name $env:ARCUS_MESSAGING_SERVICEBUS_NAMESPACE `
+                  --authorization-rule-name 'RootManageSharedAccessKey' `
+                  | ConvertFrom-Json
+                az keyvault secret set `
+                  --name $env:ARCUS_MESSAGING_SERVICEBUS_CONNECTIONSTRING_SECRETNAME `
+                  --value $serviceBusKeys.primaryConnectionString `
+                  --vault-name ${{ parameters.keyVaultName }}
+
+                $eventHubsKeys = az eventhubs namespace authorization-rule keys list `
+                  --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME `
+                  --namespace-name $env:ARCUS_MESSAGING_EVENTHUBS_NAMESPACE `
+                  --authorization-rule-name 'RootManageSharedAccessKey' `
+                  | ConvertFrom-Json
+                az keyvault secret set `
+                  --name $env:ARCUS_MESSAGING_EVENTHUBS_CONNECTIONSTRING_SECRETNAME `
+                  --value $eventHubsKeys.primaryConnectionString `
+                  --vault-name ${{ parameters.keyVaultName }}

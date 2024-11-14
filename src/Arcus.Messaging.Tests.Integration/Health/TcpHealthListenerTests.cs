@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Integration.Fixture;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;

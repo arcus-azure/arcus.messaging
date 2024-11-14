@@ -6,7 +6,8 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
-using Arcus.Testing.Logging;
+using Arcus.Messaging.Tests.Integration.MessagePump;
+using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
 using Polly;
 using Polly.Wrap;
@@ -14,7 +15,7 @@ using Xunit;
 
 namespace Arcus.Messaging.Tests.Integration.ServiceBus
 {
-    public class ServiceBusSenderExtensionsTests
+    public class ServiceBusSenderExtensionsTests : IClassFixture<ServiceBusEntityFixture>
     {
         private const string DependencyIdPattern = @"with ID [a-z0-9]{8}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{4}\-[a-z0-9]{12}";
 
@@ -23,10 +24,14 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusSenderExtensionsTests" /> class.
         /// </summary>
-        public ServiceBusSenderExtensionsTests()
+        public ServiceBusSenderExtensionsTests(ServiceBusEntityFixture fixture)
         {
             _config = TestConfig.Create();
+            
+            QueueName = fixture.QueueName;
         }
+
+        private string QueueName { get; }
 
         [Fact]
         public async Task SendMessage_WithMessageCorrelation_TracksMessage()
@@ -36,31 +41,26 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
             MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
             var logger = new InMemoryLogger();
 
-            string connectionString = _config.GetServiceBusQueueConnectionString();
-            var connectionStringProperties = ServiceBusConnectionStringProperties.Parse(connectionString);
-
-            await using (var client = new ServiceBusClient(connectionString))
+            await using ServiceBusClient client = _config.GetServiceBus().GetClient();
+            await using (ServiceBusSender sender = client.CreateSender(QueueName))
             {
-                await using (ServiceBusSender sender = client.CreateSender(connectionStringProperties.EntityPath))
-                {
-                    // Act
-                    await sender.SendMessageAsync(order, correlation, logger);
-                }
-
-                // Assert
-               await RetryAssertUntilServiceBusMessageIsAvailableAsync(client, connectionStringProperties.EntityPath, message =>
-               {
-                   var actual = message.Body.ToObjectFromJson<Order>();
-                   Assert.Equal(order.Id, actual.Id);
-
-                   Assert.Equal(message.ApplicationProperties[PropertyNames.TransactionId], correlation.TransactionId);
-                   Assert.False(string.IsNullOrWhiteSpace(message.ApplicationProperties[PropertyNames.OperationParentId].ToString()));
-
-                   string logMessage = Assert.Single(logger.Messages);
-                   Assert.Contains("Dependency", logMessage);
-                   Assert.Matches(DependencyIdPattern, logMessage);
-               });
+                // Act
+                await sender.SendMessageAsync(order, correlation, logger);
             }
+
+            // Assert
+            await RetryAssertUntilServiceBusMessageIsAvailableAsync(client, QueueName, message =>
+            {
+                var actual = message.Body.ToObjectFromJson<Order>();
+                Assert.Equal(order.Id, actual.Id);
+
+                Assert.Equal(message.ApplicationProperties[PropertyNames.TransactionId], correlation.TransactionId);
+                Assert.False(string.IsNullOrWhiteSpace(message.ApplicationProperties[PropertyNames.OperationParentId].ToString()));
+
+                string logMessage = Assert.Single(logger.Messages);
+                Assert.Contains("Dependency", logMessage);
+                Assert.Matches(DependencyIdPattern, logMessage);
+            });
         }
 
         [Fact]
@@ -75,38 +75,33 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
             var telemetryContext = new Dictionary<string, object> { [key] = value };
             var logger = new InMemoryLogger();
 
-            string connectionString = _config.GetServiceBusQueueConnectionString();
-            var connectionStringProperties = ServiceBusConnectionStringProperties.Parse(connectionString);
-
-            await using (var client = new ServiceBusClient(connectionString))
+            await using ServiceBusClient client = _config.GetServiceBus().GetClient();
+            await using (ServiceBusSender sender = client.CreateSender(QueueName))
             {
-                await using (ServiceBusSender sender = client.CreateSender(connectionStringProperties.EntityPath))
+                // Act
+                await sender.SendMessageAsync(order, correlation, logger, options =>
                 {
-                    // Act
-                    await sender.SendMessageAsync(order, correlation, logger, options =>
-                    {
-                        options.TransactionIdPropertyName = transactionIdPropertyName;
-                        options.UpstreamServicePropertyName = upstreamServicePropertyName;
-                        options.GenerateDependencyId = () => dependencyId;
-                        options.AddTelemetryContext(telemetryContext);
-                    });
-                }
-
-                // Assert
-                string logMessage = Assert.Single(logger.Messages);
-                Assert.Contains("Dependency", logMessage);
-                Assert.Matches($"with ID {dependencyId}", logMessage);
-                Assert.Contains(key, logMessage);
-                Assert.Contains(value, logMessage);
-                await RetryAssertUntilServiceBusMessageIsAvailableAsync(client, connectionStringProperties.EntityPath, message =>
-                {
-                    var actual = message.Body.ToObjectFromJson<Order>();
-                    Assert.Equal(order.Id, actual.Id);
-
-                    Assert.Equal(correlation.TransactionId, message.ApplicationProperties[transactionIdPropertyName]);
-                    Assert.Equal(dependencyId, message.ApplicationProperties[upstreamServicePropertyName]);
+                    options.TransactionIdPropertyName = transactionIdPropertyName;
+                    options.UpstreamServicePropertyName = upstreamServicePropertyName;
+                    options.GenerateDependencyId = () => dependencyId;
+                    options.AddTelemetryContext(telemetryContext);
                 });
             }
+
+            // Assert
+            string logMessage = Assert.Single(logger.Messages);
+            Assert.Contains("Dependency", logMessage);
+            Assert.Matches($"with ID {dependencyId}", logMessage);
+            Assert.Contains(key, logMessage);
+            Assert.Contains(value, logMessage);
+            await RetryAssertUntilServiceBusMessageIsAvailableAsync(client, QueueName, message =>
+            {
+                var actual = message.Body.ToObjectFromJson<Order>();
+                Assert.Equal(order.Id, actual.Id);
+
+                Assert.Equal(correlation.TransactionId, message.ApplicationProperties[transactionIdPropertyName]);
+                Assert.Equal(dependencyId, message.ApplicationProperties[upstreamServicePropertyName]);
+            });
         }
 
         private static MessageCorrelationInfo GenerateMessageCorrelationInfo()
