@@ -184,8 +184,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await producer.ProduceAsync(messages);
 
             // Assert
-            await Task.Delay(TimeSpan.FromDays(1));
-
             var handler = GetMessageHandler<TestCircuitBreakerAzureServiceBusMessageHandler>(worker);
             AssertX.RetryAssertUntil(() =>
             {
