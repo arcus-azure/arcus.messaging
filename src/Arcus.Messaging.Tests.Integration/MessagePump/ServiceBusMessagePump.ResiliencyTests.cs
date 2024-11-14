@@ -74,7 +74,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
     public partial class ServiceBusMessagePumpTests
     {
-        private string NamespaceConnectionString => _config["Arcus:ServiceBus:Docker:NamespaceConnectionString"];
+        private string NamespaceConnectionString => _config["Arcus:ServiceBus:SelfContained:NamespaceConnectionString"];
 
         [Fact(Skip = "TODO: use correct authentication mechanism")]
         public async Task ServiceBusMessageQueuePump_WithUnavailableDependencySystem_CircuitBreaksUntilDependencyBecomesAvailable()
@@ -87,10 +87,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter)
                    .ConfigureSerilog(logging => logging.MinimumLevel.Debug())
-                   .AddServiceBusQueueMessagePumpUsingManagedIdentity(queue.Name, FullyQualifiedNamespace)
+                   .AddServiceBusQueueMessagePump(queue.Name, _ => NamespaceConnectionString)
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>();
 
-            var producer = new TestServiceBusMessageProducer($"{NamespaceConnectionString};EntityPath={queue.Name}");
+            var producer = new TestServiceBusMessageProducer(NamespaceConnectionString, queue.Name);
             ServiceBusMessage messageBeforeBreak = CreateOrderServiceBusMessageForW3C();
             ServiceBusMessage messageAfterBreak = CreateOrderServiceBusMessageForW3C();
 
@@ -131,10 +131,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter)
                    .ConfigureSerilog(logging => logging.MinimumLevel.Debug())
-                   .AddServiceBusTopicMessagePumpUsingManagedIdentity(ServiceBusConnectionStringProperties.Parse(TopicConnectionString).EntityPath, subscription.Name, FullyQualifiedNamespace)
+                   .AddServiceBusTopicMessagePump("orders", subscription.Name, _ => NamespaceConnectionString)
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>();
 
-            var producer = TestServiceBusMessageProducer.CreateFor(_config, ServiceBusEntityType.Topic);
+            var producer = new TestServiceBusMessageProducer(NamespaceConnectionString, "orders");
             await using var worker = await Worker.StartNewAsync(options);
 
             // Act
@@ -149,12 +149,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         private async Task<TemporaryTopicSubscription> CreateTopicSubscriptionForMessageAsync(params ServiceBusMessage[] messages)
         {
-            var properties = ServiceBusConnectionStringProperties.Parse(TopicConnectionString);
-            var client = new ServiceBusAdministrationClient(properties.GetNamespaceConnectionString());
+            var client = new ServiceBusAdministrationClient(NamespaceConnectionString);
 
             return await TemporaryTopicSubscription.CreateIfNotExistsAsync(
                 client, 
-                properties.EntityPath,
+                "orders",
                 $"circuit-breaker-{Guid.NewGuid().ToString("N")[..10]}", 
                 _logger,
                 configureOptions: null, 

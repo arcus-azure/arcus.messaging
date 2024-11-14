@@ -12,17 +12,17 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
     /// </summary>
     public class TestServiceBusMessageProducer
     {
+        private readonly string _entityPath;
         private readonly string _connectionString;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TestServiceBusMessageProducer"/> class.
+        /// Initializes a new instance of the <see cref="TestServiceBusMessageProducer" /> class.
         /// </summary>
-        /// <param name="connectionString">The Azure Service Bus entity-scoped connection string to send messages to.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionString"/> is blank.</exception>
-        public TestServiceBusMessageProducer(string connectionString)
+        public TestServiceBusMessageProducer(string connectionString, string entityPath = null)
         {
             Guard.NotNullOrWhitespace(connectionString, nameof(connectionString), "Requires a non-blank Azure Service Bus entity-scoped connection string");
             _connectionString = connectionString;
+            _entityPath = entityPath;
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
             var connectionStringProperties = ServiceBusConnectionStringProperties.Parse(_connectionString);
             await using (var client = new ServiceBusClient(_connectionString))
             {
-                ServiceBusSender messageSender = client.CreateSender(connectionStringProperties.EntityPath);
+                ServiceBusSender messageSender = client.CreateSender(_entityPath ?? connectionStringProperties.EntityPath);
 
                 try
                 {
