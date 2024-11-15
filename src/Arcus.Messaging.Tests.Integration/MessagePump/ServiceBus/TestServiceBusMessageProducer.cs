@@ -12,12 +12,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
     /// </summary>
     public class TestServiceBusMessageProducer
     {
+        private readonly string _entityPath;
         private readonly string _connectionString;
         private readonly string _entityName;
         private readonly ServiceBusConfig _config;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TestServiceBusMessageProducer"/> class.
+        /// Initializes a new instance of the <see cref="TestServiceBusMessageProducer" /> class.
         /// </summary>
         public TestServiceBusMessageProducer(string entityName, ServiceBusConfig config)
         {

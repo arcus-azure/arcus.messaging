@@ -220,34 +220,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             return client.CreateReceiver(entityPath, SubscriptionName);
         }
 
-        /// <summary>
-        /// Creates an <see cref="ServiceBusProcessor"/> instance based on the provided settings.
-        /// </summary>
-        internal async Task<ServiceBusProcessor> CreateMessageProcessorAsync()
-        {
-            var options = new ServiceBusClientOptions
-            {
-                RetryOptions = { TryTimeout = TimeSpan.FromSeconds(5) }
-            };
-            if (_tokenCredential is null)
-            {
-                string rawConnectionString = await GetConnectionStringAsync();
-                string entityPath = DetermineEntityPath(rawConnectionString);
-
-                var client = new ServiceBusClient(rawConnectionString, options);
-                return CreateProcessor(client, entityPath, SubscriptionName);
-            }
-            else
-            {
-                var client = new ServiceBusClient(FullyQualifiedNamespace, _tokenCredential, options);
-
-                string entityPath = DetermineEntityPath();
-                ServiceBusProcessor processor = CreateProcessor(client, entityPath, SubscriptionName);
-
-                return processor;
-            }
-        }
-
         private string DetermineEntityPath(string connectionString = null)
         {
             if (_tokenCredential is null && !string.IsNullOrWhiteSpace(connectionString))
@@ -276,29 +248,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             return EntityName;
         }
 
-        private ServiceBusProcessor CreateProcessor(ServiceBusClient client, string entityName, string subscriptionName)
+        private ServiceBusReceiverOptions DetermineMessageReceiverOptions()
         {
-            ServiceBusProcessorOptions options = DetermineMessageProcessorOptions();
-
-            if (string.IsNullOrWhiteSpace(subscriptionName))
-            {
-                return client.CreateProcessor(entityName, options);
-            }
-
-            return client.CreateProcessor(entityName, subscriptionName, options);
-        }
-
-        private ServiceBusProcessorOptions DetermineMessageProcessorOptions()
-        {
-            var messageHandlerOptions = new ServiceBusProcessorOptions();
+            var options = new ServiceBusReceiverOptions();
             if (Options != null)
             {
-                messageHandlerOptions.AutoCompleteMessages = Options.AutoComplete;
-                messageHandlerOptions.MaxConcurrentCalls = Options.MaxConcurrentCalls;
-                messageHandlerOptions.PrefetchCount = Options.PrefetchCount;
+                options.PrefetchCount = Options.PrefetchCount;
             }
 
-            return messageHandlerOptions;
+            return options;
         }
 
         private async Task<string> GetConnectionStringAsync()

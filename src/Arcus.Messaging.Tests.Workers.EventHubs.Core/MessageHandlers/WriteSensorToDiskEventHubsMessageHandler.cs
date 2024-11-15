@@ -55,7 +55,7 @@ namespace Arcus.Messaging.Tests.Workers.EventHubs.Core.MessageHandlers
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            _logger.LogTrace("Write order v1 message to disk: {MessageId}", message.SensorId);
+            _logger.LogTrace("Write sensor reading message to disk: {MessageId}", message.SensorId);
 
             string fileName = message.SensorId + ".json";
             string dirPath = Directory.GetCurrentDirectory();

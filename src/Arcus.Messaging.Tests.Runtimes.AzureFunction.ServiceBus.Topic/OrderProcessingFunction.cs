@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
@@ -25,10 +24,9 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic
 
         [Function("order-processing")]
         public async Task Run(
-            [ServiceBusTrigger("docker-az-func-topic", "TestSubscription", Connection = "ARCUS_SERVICEBUS_CONNECTIONSTRING")] byte[] messageBody,
+            [ServiceBusTrigger("docker-az-func-topic", "TestSubscription", Connection = "ARCUS_SERVICEBUS_CONNECTIONSTRING")] ServiceBusReceivedMessage message,
             FunctionContext executionContext)
         {
-            ServiceBusReceivedMessage message = ConvertToServiceBusMessage(messageBody, executionContext);
             _logger.LogInformation("C# ServiceBus topic trigger function processed message: {MessageId}", message.MessageId);
 
             AzureServiceBusMessageContext messageContext = message.GetMessageContext(_jobId);
@@ -36,24 +34,6 @@ namespace Arcus.Messaging.Tests.Runtimes.AzureFunction.ServiceBus.Topic
             {
                 await _messageRouter.RouteMessageAsync(message, messageContext, result.CorrelationInfo, CancellationToken.None);
             }
-        }
-
-        private static ServiceBusReceivedMessage ConvertToServiceBusMessage(byte[] messageBody, FunctionContext context)
-        {
-            var applicationProperties = new Dictionary<string, object>();
-            if (context.BindingContext.BindingData.TryGetValue("ApplicationProperties", out object applicationPropertiesObj))
-            {
-                var json = applicationPropertiesObj.ToString();
-                applicationProperties = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
-            }
-
-            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(
-                body: BinaryData.FromBytes(messageBody),
-                messageId: context.BindingContext.BindingData["MessageId"]?.ToString(),
-                correlationId: context.BindingContext.BindingData["CorrelationId"]?.ToString(),
-                properties: applicationProperties);
-
-            return message;
         }
     }
 }

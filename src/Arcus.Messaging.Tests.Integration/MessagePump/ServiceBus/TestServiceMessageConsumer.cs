@@ -9,6 +9,7 @@ using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
 {
@@ -41,37 +42,44 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         /// </summary>
         public async Task AssertCompletedMessageAsync(string messageId)
         {
-            await using ServiceBusClient client = _config.GetClient();
-            await using ServiceBusReceiver receiver = client.CreateReceiver(_entityName);
+            await Poll.UntilAvailableAsync<XunitException>(async () =>
+            {
+                await using ServiceBusClient client = _config.GetClient();
+                await using ServiceBusReceiver receiver = client.CreateReceiver(_entityName);
 
-            IReadOnlyList<ServiceBusReceivedMessage> messages = await receiver.ReceiveMessagesAsync(1, maxWaitTime: TimeSpan.FromSeconds(2));
-            Assert.DoesNotContain(messages, msg => msg.MessageId == messageId);
+                IReadOnlyList<ServiceBusReceivedMessage> messages = await receiver.PeekMessagesAsync(100);
+                Assert.DoesNotContain(messages, msg => msg.MessageId == messageId);
+
+            }, options => options.FailureMessage = $"Azure Service bus message '{messageId}' did not get completed in time");
         }
 
         /// <summary>
         /// Tries receiving a single abandoned message on the Azure Service Bus queue.
         /// </summary>
         /// <exception cref="TimeoutException">Thrown when no abandoned messages can be consumed within the configured time-out.</exception>
-        public async Task AssertAbandonMessageAsync(string messageId)
+        public async Task AssertAbandonMessageAsync(string messageId, bool completeUponReceive = false)
         {
             await using ServiceBusClient client = _config.GetClient();
             await using ServiceBusReceiver receiver = client.CreateReceiver(_entityName);
 
-            ServiceBusReceivedMessage message =
+            ServiceBusReceivedMessage message = 
                 await Poll.Target(() => receiver.ReceiveMessageAsync())
                           .Until(msg => msg != null && msg.MessageId == messageId && msg.DeliveryCount > 1)
                           .Every(TimeSpan.FromSeconds(1))
                           .Timeout(TimeSpan.FromMinutes(2))
                           .FailWith($"cannot receive abandoned message with the message ID: '{messageId}' in time");
 
-            await receiver.CompleteMessageAsync(message);
+            if (completeUponReceive)
+            {
+                await receiver.CompleteMessageAsync(message);
+            }
         }
 
         /// <summary>
         /// Tries receiving a single dead lettered message on the Azure Service Bus dead letter queue.
         /// </summary>
         /// <exception cref="TimeoutException">Thrown when no dead-lettered messages can be consumed within the configured time-out.</exception>
-        public async Task AssertDeadLetterMessageAsync(string messageId)
+        public async Task AssertDeadLetterMessageAsync(string messageId, TimeSpan? timeout = null)
         {
             var options = new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter };
 
@@ -112,7 +120,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
                           }
                       })
                       .Every(TimeSpan.FromSeconds(1))
-                      .Timeout(TimeSpan.FromMinutes(2))
+                      .Timeout(timeout ?? TimeSpan.FromMinutes(2))
                       .FailWith($"cannot receive dead-lettered message with message ID: '{messageId}' in time");
         }
     }
