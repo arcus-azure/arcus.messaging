@@ -18,7 +18,6 @@ using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Arcus.Testing;
-using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Bogus;
@@ -68,21 +67,19 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
     public partial class ServiceBusMessagePumpTests
     {
-        [Fact(Skip = "TODO: use correct authentication mechanism")]
+        [Fact]
         public async Task ServiceBusMessageQueuePump_WithUnavailableDependencySystem_CircuitBreaksUntilDependencyBecomesAvailable()
         {
             // Arrange
             TriedOrders.Clear();
-            using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
-            await using TemporaryQueue queue = await CreateQueueAsync();
 
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter)
                    .ConfigureSerilog(logging => logging.MinimumLevel.Debug())
-                   .AddServiceBusQueueMessagePump(queue.Name, _ => NamespaceConnectionString)
+                   .AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName)
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>();
 
-            var producer = new TestServiceBusMessageProducer(queue.Name, _config.GetServiceBus());
+            var producer = new TestServiceBusMessageProducer(QueueName, _config.GetServiceBus());
             ServiceBusMessage messageBeforeBreak = CreateOrderServiceBusMessageForW3C();
             ServiceBusMessage messageAfterBreak = CreateOrderServiceBusMessageForW3C();
 
@@ -98,32 +95,19 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await Poll.Target(() => Assert.Equal(4, TriedOrders.Count));
         }
 
-        private async Task<TemporaryQueue> CreateQueueAsync()
-        {
-            ServicePrincipal servicePrincipal = _config.GetServicePrincipal();
-            var client = new ServiceBusAdministrationClient(
-                HostName,
-                new ClientSecretCredential(_config.GetTenantId(),
-                    servicePrincipal.ClientId,
-                    servicePrincipal.ClientSecret));
-
-            return await TemporaryQueue.CreateIfNotExistsAsync(client, $"queue-{Guid.NewGuid()}", _logger);
-        }
-
-        [Fact(Skip = "TODO: use correct authentication mechanism")]
+        [Fact]
         public async Task ServiceBusMessageTopicPump_WithUnavailableDependencySystem_CircuitBreaksUntilDependencyBecomesAvailable()
         {
             // Arrange
             TriedOrders.Clear();
             ServiceBusMessage messageBeforeBreak = CreateOrderServiceBusMessageForW3C();
             ServiceBusMessage messageAfterBreak = CreateOrderServiceBusMessageForW3C();
-            using var auth = TemporaryManagedIdentityConnection.Create(_config, _logger);
             await using TemporaryTopicSubscription subscription = await CreateTopicSubscriptionForMessageAsync(messageBeforeBreak, messageAfterBreak);
 
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter)
                    .ConfigureSerilog(logging => logging.MinimumLevel.Debug())
-                   .AddServiceBusTopicMessagePump(TopicName, subscription.Name, _ => NamespaceConnectionString)
+                   .AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, subscription.Name, HostName)
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>();
 
             var producer = new TestServiceBusMessageProducer(TopicName, _config.GetServiceBus());
@@ -162,10 +146,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             TimeSpan messageInterval = TimeSpan.FromSeconds(2);
 
             options.AddXunitTestLogging(_outputWriter)
-                   .AddServiceBusTopicMessagePump(
-                       subscriptionName: "circuit-breaker-" + Guid.NewGuid(),
-                       _ => TopicConnectionString,
-                       opt => opt.TopicSubscription = TopicSubscription.Automatic)
+                   .AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
                    .WithServiceBusMessageHandler<TestCircuitBreakerAzureServiceBusMessageHandler, Shipment>(
                         implementationFactory: provider => new TestCircuitBreakerAzureServiceBusMessageHandler(
                             targetMessageIds: messages.Select(m => m.MessageId).ToArray(),
@@ -177,7 +158,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                             provider.GetRequiredService<IMessagePumpCircuitBreaker>(),
                             provider.GetRequiredService<ILogger<TestCircuitBreakerAzureServiceBusMessageHandler>>()));
 
-            var producer = TestServiceBusMessageProducer.CreateFor(QueueName, _config);
+            var producer = TestServiceBusMessageProducer.CreateFor(TopicName, _config);
             await using var worker = await Worker.StartNewAsync(options);
 
             // Act
@@ -185,7 +166,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             // Assert
             var handler = GetMessageHandler<TestCircuitBreakerAzureServiceBusMessageHandler>(worker);
-            AssertX.RetryAssertUntil(() =>
+
+            await Poll.UntilAvailableAsync(() =>
             {
                 DateTimeOffset[] arrivals = handler.GetMessageArrivals();
 
@@ -195,7 +177,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     dates => AssertDateDiff(dates.First, dates.Second, recoveryTime, recoveryTime.Add(faultMargin)),
                     dates => AssertDateDiff(dates.First, dates.Second, messageInterval, messageInterval.Add(faultMargin)));
 
-            }, timeout: TimeSpan.FromMinutes(2), _logger);
+                return Task.CompletedTask;
+                
+            }, opt => opt.Timeout= TimeSpan.FromMinutes(2));
 
             var pump = Assert.IsType<AzureServiceBusMessagePump>(worker.Services.GetService<IHostedService>());
             Assert.True(pump.IsStarted, "pump should be started after circuit breaker scenario");
@@ -236,7 +220,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             }).ToArray();
         }
 
-        [Fact(Skip = "TODO: fixed upon circuit breaker changes")]
+        [Fact]
         public async Task ServiceBusMessagePump_PauseViaLifetime_RestartsAgain()
         {
             // Arrange
@@ -257,7 +241,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
 
-            var producer = TestServiceBusMessageProducer.CreateFor(QueueName, _config);
+            var producer = TestServiceBusMessageProducer.CreateFor(TopicName, _config);
             await using var worker = await Worker.StartNewAsync(options);
             
             var lifetime = worker.Services.GetRequiredService<IMessagePumpLifetime>();
@@ -267,7 +251,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await producer.ProduceAsync(message);
 
             // Assert
-            OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId);
+            OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId, TimeSpan.FromSeconds(10));
             AssertReceivedOrderEventDataForW3C(message, eventData);
         }
     }
@@ -382,157 +366,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 _logger.LogTrace("[Test:Teardown] Delete Azure Service Bus topic subscription '{SubscriptionName}' in '{Namespace}/{TopicName}'", _options.SubscriptionName, _serviceBusNamespace, _options.TopicName);
                 await _client.DeleteSubscriptionAsync(_options.TopicName, _options.SubscriptionName);
             }
-        }
-    }
-
-    /// <summary>
-    /// Represents a temporary Azure Service Bus queue that will be deleted when the instance is disposed.
-    /// </summary>
-    public class TemporaryQueue : IAsyncDisposable
-    {
-        private readonly ServiceBusAdministrationClient _client;
-        private readonly string _serviceBusNamespace;
-        private readonly bool _createdByUs;
-        private readonly ILogger _logger;
-
-        private TemporaryQueue(
-            ServiceBusAdministrationClient client,
-            string serviceBusNamespace,
-            string queueName,
-            bool createdByUs,
-            ILogger logger)
-        {
-            ArgumentNullException.ThrowIfNull(client);
-
-            _client = client;
-            _serviceBusNamespace = serviceBusNamespace;
-            _createdByUs = createdByUs;
-            _logger = logger;
-
-            Name = queueName;
-        }
-
-        /// <summary>
-        /// Gets the name of the Azure Service Bus queue that is possibly created by the test fixture.
-        /// </summary>
-        public string Name { get; }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
-        /// </summary>
-        /// <param name="fullyQualifiedNamespace">
-        ///     The fully qualified Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
-        /// </param>
-        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
-        /// </exception>
-        public static async Task<TemporaryQueue> CreateIfNotExistsAsync(string fullyQualifiedNamespace, string queueName, ILogger logger)
-        {
-            return await CreateIfNotExistsAsync(fullyQualifiedNamespace, queueName, logger, configureOptions: null);
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
-        /// </summary>
-        /// <param name="fullyQualifiedNamespace">
-        ///     The fully qualified Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
-        /// </param>
-        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
-        /// <param name="configureOptions">
-        ///     The function to configure the additional options that describes how the Azure Service Bus queue should be created.
-        /// </param>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="fullyQualifiedNamespace"/> or the <paramref name="queueName"/> is blank.
-        /// </exception>
-        public static async Task<TemporaryQueue> CreateIfNotExistsAsync(
-            string fullyQualifiedNamespace,
-            string queueName,
-            ILogger logger,
-            Action<CreateQueueOptions> configureOptions)
-        {
-            if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank fully-qualified Azure Service bus namespace to set up a temporary queue", nameof(fullyQualifiedNamespace));
-            }
-
-            var client = new ServiceBusAdministrationClient(fullyQualifiedNamespace, new DefaultAzureCredential());
-            return await CreateIfNotExistsAsync(client, queueName, logger, configureOptions);
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
-        /// </summary>
-        /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the topic should be created.</param>
-        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="adminClient"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
-        public static async Task<TemporaryQueue> CreateIfNotExistsAsync(ServiceBusAdministrationClient adminClient, string queueName, ILogger logger)
-        {
-            return await CreateIfNotExistsAsync(adminClient, queueName, logger, configureOptions: null);
-        }
-
-        /// <summary>
-        /// Creates a new instance of the <see cref="TemporaryQueue"/> which creates a new Azure Service Bus queue if it doesn't exist yet.
-        /// </summary>
-        /// <param name="adminClient">The administration client to interact with the Azure Service Bus resource where the topic should be created.</param>
-        /// <param name="queueName">The name of the Azure Service Bus queue that should be created.</param>
-        /// <param name="logger">The logger to write diagnostic messages during the lifetime of the Azure Service Bus queue.</param>
-        /// <param name="configureOptions">
-        ///     The function to configure the additional options that describes how the Azure Service Bus queue should be created.
-        /// </param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="adminClient"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
-        public static async Task<TemporaryQueue> CreateIfNotExistsAsync(
-            ServiceBusAdministrationClient adminClient,
-            string queueName,
-            ILogger logger,
-            Action<CreateQueueOptions> configureOptions)
-        {
-            ArgumentNullException.ThrowIfNull(adminClient);
-            logger ??= NullLogger.Instance;
-
-            if (string.IsNullOrWhiteSpace(queueName))
-            {
-                throw new ArgumentException(
-                    "Requires a non-blank Azure Service bus queue name to set up a temporary queue", nameof(queueName));
-            }
-
-            var options = new CreateQueueOptions(queueName);
-            configureOptions?.Invoke(options);
-
-            NamespaceProperties properties = await adminClient.GetNamespacePropertiesAsync();
-            string serviceBusNamespace = properties.Name;
-
-            if (await adminClient.QueueExistsAsync(options.Name))
-            {
-                logger.LogTrace("[Test:Setup] Use already existing Azure Service Bus queue '{QueueName}' in namespace '{Namespace}'", options.Name, serviceBusNamespace);
-                return new TemporaryQueue(adminClient, serviceBusNamespace, options.Name, createdByUs: false, logger);
-            }
-
-            logger.LogTrace("[Test:Setup] Create new Azure Service Bus queue '{Queue}' in namespace '{Namespace}'", options.Name, serviceBusNamespace);
-            await adminClient.CreateQueueAsync(options);
-
-            return new TemporaryQueue(adminClient, serviceBusNamespace, options.Name, createdByUs: true, logger);
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
-        /// </summary>
-        /// <returns>A task that represents the asynchronous dispose operation.</returns>
-        public async ValueTask DisposeAsync()
-        {
-            if (_createdByUs && await _client.QueueExistsAsync(Name))
-            {
-                _logger.LogTrace("[Test:Teardown] Delete Azure Service Bus queue '{QueueName}' in namespace '{Namespace}'", Name, _serviceBusNamespace);
-                await _client.DeleteQueueAsync(Name);
-            }
-
-            GC.SuppressFinalize(this);
         }
     }
 }
