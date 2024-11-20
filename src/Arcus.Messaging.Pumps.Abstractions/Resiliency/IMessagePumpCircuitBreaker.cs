@@ -14,7 +14,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// </summary>
         /// <param name="jobId">The unique identifier to distinguish the message pump in the application services.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        MessagePumpCircuitState GetMessageProcessingState(string jobId);
+        MessagePumpCircuitState GetCircuitBreakerState(string jobId);
 
         /// <summary>
         /// Pause the process of receiving messages in the message pump for a period of time before careful retrying again.
