@@ -51,7 +51,14 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 
             if (!messagePump.IsStarted)
             {
-                throw new InvalidOperationException($"Cannot MessagePump for JobId {jobId} because the MessagePump has not been started.");
+                _logger.LogWarning($"Cannot pause MessagePump for JobId {jobId} because the MessagePump has not been started.");
+                return;
+            }
+
+            if (messagePump.CircuitState != MessagePumpCircuitState.Closed)
+            {
+                _logger.LogWarning($"Cannot pause MessagePump for JobId {jobId} because the MessagePump's circuitbreaker is not in a closed state.");
+                return;
             }
 
             _logger.LogDebug("Open circuit by pausing message processing for message pump '{JobId}'...", jobId);
