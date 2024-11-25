@@ -24,7 +24,6 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
     {
         private readonly string[] _targetMessageIds;
         private readonly Action<MessagePumpCircuitBreakerOptions> _configureOptions;
-        private readonly IMessagePumpCircuitBreaker _circuitBreaker;
         
         private static readonly ICollection<(Shipment message, DateTimeOffset arrival)> MessageArrivals = new Collection<(Shipment, DateTimeOffset)>();
 
@@ -43,7 +42,6 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
 
             _targetMessageIds = targetMessageIds;
             _configureOptions = configureOptions;
-            _circuitBreaker = circuitBreaker;
         }
 
         /// <summary>
