@@ -142,7 +142,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             
             // Assert
             Assert.Equal(expected, Guid.Parse(systemProperties.LockToken));
-            Assert.Equal(expected != null, systemProperties.IsLockTokenSet);
+            Assert.Equal(expected != Guid.Empty, systemProperties.IsLockTokenSet);
         }
         
         [Fact]

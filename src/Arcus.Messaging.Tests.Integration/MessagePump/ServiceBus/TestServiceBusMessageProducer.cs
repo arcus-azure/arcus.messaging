@@ -12,7 +12,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
     /// </summary>
     public class TestServiceBusMessageProducer
     {
-        private readonly string _entityPath;
         private readonly string _connectionString;
         private readonly string _entityName;
         private readonly ServiceBusConfig _config;
