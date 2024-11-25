@@ -199,6 +199,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
         }
 
+        private static readonly TimeSpan MessagePollingWaitTime = TimeSpan.FromMilliseconds(300);
+
         /// <summary>
         /// Try to process a single message after the circuit was broken, a.k.a entering the half-open state.
         /// </summary>
@@ -224,6 +226,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 if (message is null)
                 {
                     Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to receive a single message, trying again...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
+                    await Task.Delay(MessagePollingWaitTime);
                 }
             }
 
