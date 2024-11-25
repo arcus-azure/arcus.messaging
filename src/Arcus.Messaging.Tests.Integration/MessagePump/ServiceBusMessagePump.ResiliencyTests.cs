@@ -128,11 +128,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var client = new ServiceBusAdministrationClient(NamespaceConnectionString);
 
             return await TemporaryTopicSubscription.CreateIfNotExistsAsync(
-                client, 
+                client,
                 TopicName,
-                $"circuit-breaker-{Guid.NewGuid().ToString("N")[..10]}", 
+                $"circuit-breaker-{Guid.NewGuid().ToString("N")[..10]}",
                 _logger,
-                configureOptions: null, 
+                configureOptions: null,
                 rule: new CreateRuleOptions("MessageId", new SqlRuleFilter($"sys.messageid in ({string.Join(", ", messages.Select(m => $"'{m.MessageId}'"))})")));
         }
 
@@ -178,8 +178,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     dates => AssertDateDiff(dates.First, dates.Second, messageInterval, messageInterval.Add(faultMargin)));
 
                 return Task.CompletedTask;
-                
-            }, opt => opt.Timeout= TimeSpan.FromMinutes(2));
+
+            }, opt => opt.Timeout = TimeSpan.FromMinutes(2));
 
             var pump = Assert.IsType<AzureServiceBusMessagePump>(worker.Services.GetService<IHostedService>());
             Assert.True(pump.IsStarted, "pump should be started after circuit breaker scenario");
@@ -229,7 +229,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddXunitTestLogging(_outputWriter)
                    .AddServiceBusTopicMessagePumpUsingManagedIdentity(
                        TopicName,
-                       subscriptionName: Guid.NewGuid().ToString(), 
+                       subscriptionName: Guid.NewGuid().ToString(),
                        HostName,
                        configureMessagePump: opt =>
                        {
@@ -243,7 +243,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             var producer = TestServiceBusMessageProducer.CreateFor(TopicName, _config);
             await using var worker = await Worker.StartNewAsync(options);
-            
+
             var lifetime = worker.Services.GetRequiredService<IMessagePumpLifetime>();
             await lifetime.PauseProcessingMessagesAsync(jobId, TimeSpan.FromSeconds(5), CancellationToken.None);
 
