@@ -276,31 +276,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                         await _messageReceiver.ReceiveMessagesAsync(Settings.Options.MaxConcurrentCalls, cancellationToken: _receiveMessagesCancellation.Token);
 
                     await Task.WhenAll(messages.Select(msg => ProcessMessageAsync(msg, cancellationToken)));
-
-                    if (CircuitState == MessagePumpCircuitState.Open)
-                    {
-                        await Task.Delay(CurrentCircuitBreakerOptions.MessageRecoveryPeriod);
-                        Logger.LogWarning("Done waiting on recover-period - trying single message");
-
-                        MessageProcessingResult singleProcessingResult;
-
-                        do
-                        {
-                            singleProcessingResult = await TryProcessProcessSingleMessageAsync(CurrentCircuitBreakerOptions);
-                            Logger.LogWarning("Result = " + singleProcessingResult.IsSuccessful);
-                            if (singleProcessingResult.IsSuccessful == false)
-                            {
-                                Logger.LogWarning("Waiting on message-interval during halfopen state");
-                                await Task.Delay(CurrentCircuitBreakerOptions.MessageIntervalDuringRecovery);
-                                Logger.LogWarning("Done waiting on message-interval during halfopen state");
-                            }
-
-                        } while (singleProcessingResult.IsSuccessful == false);
-                        
-                        ResumeRetrievingMessages();
-                        Logger.LogWarning("Continue normal processing");
-                    }
-
                 }
                 catch (Exception exception) when (exception is TaskCanceledException or OperationCanceledException or ObjectDisposedException)
                 {

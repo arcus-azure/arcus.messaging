@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions.MessageHandling;
 
 namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 {
@@ -37,7 +40,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <param name="jobId">The unique identifier to distinguish the message pump in the application services.</param>
         /// <param name="configureOptions">The optional user-configurable options to manipulate the workings of the message pump interaction.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        public virtual void PauseMessageProcessingAsync(string jobId, Action<MessagePumpCircuitBreakerOptions> configureOptions)
+        public virtual async Task PauseMessageProcessingAsync(string jobId, Action<MessagePumpCircuitBreakerOptions> configureOptions)
         {
             Guard.NotNullOrWhitespace(jobId, nameof(jobId));
 
@@ -59,64 +62,59 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             configureOptions?.Invoke(options);
 
             _logger.LogDebug("Open circuit by pausing message processing for message pump '{JobId}'...", jobId);
-            
-            
-            messagePump.PauseRetrievingMessages(options);
 
-            ////await messagePump.StopProcessingMessagesAsync(CancellationToken.None);
+            await messagePump.StopProcessingMessagesAsync(CancellationToken.None);
 
-           //// //await Task.Factory.StartNew(async () =>
-           //// //{
-           //// await WaitRecoveryTimeAsync(messagePump, options);
-           //// _logger.LogWarning("recovery Waittime passed");
-           //// MessageProcessingResult result;
-           //// do
-           //// {
-           //////     MessageProcessingResult result = null;
+            await Task.Factory.StartNew(async () =>
+            {
+                await WaitRecoveryTimeAsync(messagePump, options);
+                _logger.LogWarning("recovery Waittime passed");
+                MessageProcessingResult result;
+                do
+                {
+                    try
+                    {
+                        result = await TryProcessSingleMessageAsync(messagePump, options);
+                    }
+                    catch (Exception ex)
+                    {
+                        result = MessageProcessingResult.Failure(ex);
+                    }
 
-           ////     try
-           ////     {
-           ////         result = await TryProcessSingleMessageAsync(messagePump, options);
-           ////     }
-           ////     catch (Exception ex)
-           ////     {
-           ////         result = MessageProcessingResult.Failure(ex);
-           ////     }
+                    _logger.LogInformation("Single message processed with succesfull result: " + result.IsSuccessful);
 
-           ////     _logger.LogInformation("Single message processed with succesfull result: " + result.IsSuccessful);
+                    if (!result.IsSuccessful)
+                    {
+                        await WaitMessageIntervalDuringRecoveryAsync(messagePump, options);
+                    }
 
-           ////     if (!result.IsSuccessful)
-           ////     {
-           ////         await WaitMessageIntervalDuringRecoveryAsync(messagePump, options);
-           ////     }
+                } while (!result.IsSuccessful);
 
-           //// } while (!result.IsSuccessful);
+                await ResumeMessageProcessingAsync(jobId);
 
-           //// await ResumeMessageProcessingAsync(jobId);
-           //// //}, TaskCreationOptions.LongRunning);
+            }, TaskCreationOptions.LongRunning);
         }
 
-        /////// <summary>
-        /////// Continue the process of receiving messages in the message pump after a successful message handling.
-        /////// </summary>
-        /////// <param name="jobId">The unique identifier to distinguish the message pump in the application services.</param>
-        /////// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        /////*public virtual*/
-        ////private async Task ResumeMessageProcessingAsync(string jobId)
-        ////{
-        ////    Guard.NotNullOrWhitespace(jobId, nameof(jobId));
+        /// <summary>
+        /// Continue the process of receiving messages in the message pump after a successful message handling.
+        /// </summary>
+        /// <param name="jobId">The unique identifier to distinguish the message pump in the application services.</param>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
+        private async Task ResumeMessageProcessingAsync(string jobId)
+        {
+            Guard.NotNullOrWhitespace(jobId, nameof(jobId));
 
-        ////    MessagePump messagePump = GetRegisteredMessagePump(jobId);
+            MessagePump messagePump = GetRegisteredMessagePump(jobId);
 
-        ////    if (messagePump.IsStarted)
-        ////    {
-        ////        _logger.LogWarning("Resume called on Message pump '{JobId}' but Message pump is already started. CircuitState = {CircuitState}", jobId, messagePump.CircuitState);
-        ////        return;
-        ////    }
+            if (messagePump.IsStarted)
+            {
+                _logger.LogWarning("Resume called on Message pump '{JobId}' but Message pump is already started. CircuitState = {CircuitState}", jobId, messagePump.CircuitState);
+                return;
+            }
 
-        ////    _logger.LogInformation("Message pump '{JobId}' successfully handled a single message, resume message processing (circuit breaker: closed)", messagePump.JobId);
-        ////    await messagePump.StartProcessingMessagesAsync(CancellationToken.None);
-        ////}
+            _logger.LogInformation("Message pump '{JobId}' successfully handled a single message, resume message processing (circuit breaker: closed)", messagePump.JobId);
+            await messagePump.StartProcessingMessagesAsync(CancellationToken.None);
+        }
 
         /// <summary>
         /// Gets the current circuit breaker state of message processing in the given message pump.
@@ -161,29 +159,29 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             return messagePumps[0];
         }
 
-        ////private async Task<MessageProcessingResult> TryProcessSingleMessageAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
-        ////{
-        ////    _logger.LogDebug("Try to process single message in message pump '{JobId}' (state: half-open)", messagePump.JobId);
-        ////    var result = await messagePump.TryProcessProcessSingleMessageAsync(options);
+        private async Task<MessageProcessingResult> TryProcessSingleMessageAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
+        {
+            _logger.LogDebug("Try to process single message in message pump '{JobId}' (state: half-open)", messagePump.JobId);
+            var result = await messagePump.TryProcessProcessSingleMessageAsync(options);
 
-        ////    if (result.IsSuccessful == false)
-        ////    {
-        ////        _logger.LogWarning("failed process single message " + Environment.StackTrace);
-        ////    }
+            if (result.IsSuccessful == false)
+            {
+                _logger.LogWarning("failed process single message");
+            }
 
-        ////    return result;
-        ////}
+            return result;
+        }
 
-        ////private async Task WaitMessageIntervalDuringRecoveryAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
-        ////{
-        ////    _logger.LogDebug("Wait configured interval period ({IntervalPeriod}) since message pump '{JobId}' failed to handle a single message (circuit breaker: open)", options.MessageIntervalDuringRecovery, messagePump.JobId);
-        ////    await Task.Delay(options.MessageIntervalDuringRecovery);
-        ////}
+        private async Task WaitMessageIntervalDuringRecoveryAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
+        {
+            _logger.LogDebug("Wait configured interval period ({IntervalPeriod}) since message pump '{JobId}' failed to handle a single message (circuit breaker: open)", options.MessageIntervalDuringRecovery, messagePump.JobId);
+            await Task.Delay(options.MessageIntervalDuringRecovery);
+        }
 
-        ////private async Task WaitRecoveryTimeAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
-        ////{
-        ////    _logger.LogDebug("Wait configured recovery period ({RecoveryPeriod}) since message pump '{JobId}' failed to process messages (circuit breaker: open)", options.MessageRecoveryPeriod, messagePump.JobId);
-        ////    await Task.Delay(options.MessageRecoveryPeriod);
-        ////}
+        private async Task WaitRecoveryTimeAsync(MessagePump messagePump, MessagePumpCircuitBreakerOptions options)
+        {
+            _logger.LogDebug("Wait configured recovery period ({RecoveryPeriod}) since message pump '{JobId}' failed to process messages (circuit breaker: open)", options.MessageRecoveryPeriod, messagePump.JobId);
+            await Task.Delay(options.MessageRecoveryPeriod);
+        }
     }
 }
