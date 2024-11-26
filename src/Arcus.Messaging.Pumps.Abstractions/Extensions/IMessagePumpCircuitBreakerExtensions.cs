@@ -17,14 +17,14 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <param name="circuitBreaker">The instance to interact with.</param>
         /// <param name="jobId">The unique identifier to distinguish the message pump in the application services.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        public static async Task PauseMessageProcessingAsync(
+        public static void PauseMessageProcessingAsync(
             this IMessagePumpCircuitBreaker circuitBreaker,
             string jobId)
         {
             Guard.NotNull(circuitBreaker, nameof(circuitBreaker));
             Guard.NotNullOrWhitespace(jobId, nameof(jobId));
 
-            await circuitBreaker.PauseMessageProcessingAsync(jobId, _ => { });
+            circuitBreaker.PauseMessageProcessingAsync(jobId, _ => { });
         }
     }
 }

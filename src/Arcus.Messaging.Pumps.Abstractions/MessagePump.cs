@@ -148,6 +148,31 @@ namespace Arcus.Messaging.Pumps.Abstractions
         }
 
         /// <summary>
+        /// Gets the <see cref="MessagePumpCircuitBreakerOptions"/> that are currently applicable; null if the CircuitBreaker
+        /// is not active.
+        /// </summary>
+        protected MessagePumpCircuitBreakerOptions CurrentCircuitBreakerOptions { get; private set; }
+
+        /// <summary>
+        /// Informs the MessagePump that the CircuitBreaker has been triggered
+        /// </summary>
+        /// <param name="options"></param>
+        public void PauseRetrievingMessages(MessagePumpCircuitBreakerOptions options)
+        {
+            CurrentCircuitBreakerOptions = options;
+            CircuitState = MessagePumpCircuitState.Open;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected void ResumeRetrievingMessages()
+        {
+            CurrentCircuitBreakerOptions = null;
+            CircuitState = MessagePumpCircuitState.Closed;
+        }
+
+        /// <summary>
         /// Stop with receiving messages on this message pump.
         /// </summary>
         /// <param name="cancellationToken">The token to indicate the stop process should no longer be graceful.</param>

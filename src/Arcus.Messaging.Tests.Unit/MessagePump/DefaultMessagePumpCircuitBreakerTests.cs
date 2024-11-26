@@ -25,7 +25,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
         }
 
         [Fact]
-        public async Task PauseMessagePump_WithoutRegisteredMessagePump_Fails()
+        public /*async*/ /*Task*/ void PauseMessagePump_WithoutRegisteredMessagePump_Fails()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -34,13 +34,13 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
             DefaultMessagePumpCircuitBreaker breaker = CreateCircuitBreaker(provider);
 
             // Act / Assert
-            var exception = await Assert.ThrowsAnyAsync<InvalidOperationException>(
+            var exception = Assert.ThrowsAny<InvalidOperationException>(
                 () => breaker.PauseMessageProcessingAsync("unknown-job-id"));
             Assert.Contains("Cannot find", exception.Message);
         }
 
         [Fact]
-        public async Task PauseMessagePump_WithManyRegisteredMessagePump_Fails()
+        public /*async*/ /*Task*/ void PauseMessagePump_WithManyRegisteredMessagePump_Fails()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -51,7 +51,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
             DefaultMessagePumpCircuitBreaker breaker = CreateCircuitBreaker(provider);
 
             // Act / Assert
-            var exception = await Assert.ThrowsAnyAsync<InvalidOperationException>(
+            var exception = /*await*/ Assert.ThrowsAny<InvalidOperationException>(
                 () => breaker.PauseMessageProcessingAsync("same-job-id"));
             Assert.Contains("Cannot find", exception.Message);
         }

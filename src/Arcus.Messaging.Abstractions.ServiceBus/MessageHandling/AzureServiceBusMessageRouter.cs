@@ -158,7 +158,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        public async Task RouteMessageAsync(
+        public async Task<bool> RouteMessageAsync(
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -168,7 +168,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
 
-            await RouteMessageWithPotentialFallbackAsync(
+            return await RouteMessageWithPotentialFallbackAsync(
                 messageReceiver: null,
                 message: message,
                 messageContext: messageContext,
@@ -193,7 +193,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        public async Task RouteMessageAsync(
+        public async Task<bool> RouteMessageAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
@@ -205,7 +205,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
 
-            await RouteMessageWithPotentialFallbackAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+            return await RouteMessageWithPotentialFallbackAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
         }
 
         /// <summary>
@@ -225,7 +225,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        protected async Task RouteMessageWithPotentialFallbackAsync(
+        protected async Task<bool> RouteMessageWithPotentialFallbackAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
@@ -246,8 +246,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                     accessor?.SetCorrelationInfo(correlationInfo);
 
-                    await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
-                    isSuccessful = true;
+                    isSuccessful = await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                    //isSuccessful = true;
                 }
                 finally
                 {
@@ -256,9 +256,11 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     Logger.LogServiceBusRequest(serviceBusNamespace, entityName, Options.Telemetry.OperationName, isSuccessful, measurement, messageContext.EntityType);
                 }
             }
+
+            return isSuccessful;
         }
 
-        private async Task TryRouteMessageWithPotentialFallbackAsync(
+        private async Task<bool> TryRouteMessageWithPotentialFallbackAsync(
             IServiceProvider serviceProvider,
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
@@ -301,7 +303,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                         hasGoneThroughMessageHandler = true;
                         if (isProcessed)
                         {
-                            return;
+                            return true;
                         }
                     }
                 }
@@ -319,7 +321,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     if (messageReceiver != null)
                     {
                         Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully processed the message and no fallback message handlers configured, abandoning message!", message.MessageId, messageContext.JobId);
-                        await messageReceiver.AbandonMessageAsync(message); 
+                        await messageReceiver.AbandonMessageAsync(message);
+                        return false;
                     }
                 }
                 else if (!hasGoneThroughMessageHandler && !fallbackAvailable)
@@ -327,7 +330,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     if (messageReceiver != null)
                     {
                         Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
-                        await messageReceiver.DeadLetterMessageAsync(message); 
+                        await messageReceiver.DeadLetterMessageAsync(message);
+                        return false;
                     }
                 }
                 else
@@ -335,11 +339,11 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     bool isProcessedByGeneralFallback = await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
                     if (isProcessedByGeneralFallback)
                     {
-                        return;
+                        return true;
                     }
                     else
                     {
-                        await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                        return await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
                     }
                 }
 
@@ -347,8 +351,11 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             catch (Exception exception)
             {
                 Logger.LogCritical(exception, "Unable to process message with ID '{MessageId}'", message.MessageId);
-                throw;
+                await messageReceiver.AbandonMessageAsync(message);
+                return false;
             }
+
+            return false;
         }
 
         /// <summary>
@@ -396,7 +403,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
-        protected async Task TryServiceBusFallbackMessageAsync(
+        protected async Task<bool> TryServiceBusFallbackMessageAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
@@ -432,7 +439,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 if (result)
                 {
                     Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' has processed the message", fallbackMessageHandlerTypeName);
-                    return;
+                    return true;
                 }
 
                 Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' was not able to process the message", fallbackMessageHandlerTypeName);
@@ -443,6 +450,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 Logger.LogWarning("No fallback message handler processed the Azure Service Bus message '{MessageId}' in pump '{JobId}', abandoning message!", message.MessageId, messageContext.JobId);
                 await messageReceiver.AbandonMessageAsync(message);
             }
+
+            return false;
         }
     }
 }

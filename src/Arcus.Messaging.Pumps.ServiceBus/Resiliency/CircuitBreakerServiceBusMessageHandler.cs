@@ -56,7 +56,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
 
             if (!result.IsSuccessful)
             {
-                await CircuitBreaker.PauseMessageProcessingAsync(messageContext.JobId, opt =>
+                CircuitBreaker.PauseMessageProcessingAsync(messageContext.JobId, opt =>
                 {
                     opt.MessageIntervalDuringRecovery = options.MessageIntervalDuringRecovery;
                     opt.MessageRecoveryPeriod = options.MessageRecoveryPeriod;
@@ -64,8 +64,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
                 await AbandonMessageAsync();
                 throw result.ProcessingException;
             }
-
-            await CircuitBreaker.ResumeMessageProcessingAsync(messageContext.JobId);
+            // Logger.LogWarning("Before resume");
+            //await CircuitBreaker.ResumeMessageProcessingAsync(messageContext.JobId);
         }
 
         private async Task<MessageProcessingResult> TryProcessMessageAsync(
@@ -82,7 +82,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
             }
             catch (Exception exception)
             {
-                Logger.LogError(exception, "Circuit breaker triggered due to thrown exception: {Message}", exception.Message);
+                Logger.LogError(exception, "Message Processing failed due to thrown exception: {Message}", exception.Message);
                 return MessageProcessingResult.Failure(exception);
             }
         }

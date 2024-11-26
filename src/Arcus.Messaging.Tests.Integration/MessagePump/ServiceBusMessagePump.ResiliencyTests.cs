@@ -173,7 +173,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
                 _outputWriter.WriteLine("Arrivals: {0}", string.Join(", ", arrivals));
                 TimeSpan faultMargin = TimeSpan.FromSeconds(1);
-                Assert.Collection(arrivals.SkipLast(1).Zip(arrivals.Skip(1)),
+
+                var arrivalsToConsider = arrivals.SkipLast(1).Zip(arrivals.Skip(1));
+
+                Assert.Collection(arrivalsToConsider,
                     dates => AssertDateDiff(dates.First, dates.Second, recoveryTime, recoveryTime.Add(faultMargin)),
                     dates => AssertDateDiff(dates.First, dates.Second, messageInterval, messageInterval.Add(faultMargin)));
 

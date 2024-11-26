@@ -29,7 +29,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        Task RouteMessageAsync(
+        Task<bool> RouteMessageAsync(
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -52,7 +52,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        Task RouteMessageAsync(
+        Task<bool> RouteMessageAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
