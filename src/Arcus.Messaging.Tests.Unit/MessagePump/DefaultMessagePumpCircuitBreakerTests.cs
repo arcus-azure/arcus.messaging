@@ -25,7 +25,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
         }
 
         [Fact]
-        public /*async*/ /*Task*/ void PauseMessagePump_WithoutRegisteredMessagePump_Fails()
+        public void PauseMessagePump_WithoutRegisteredMessagePump_Fails()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -40,18 +40,18 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
         }
 
         [Fact]
-        public /*async*/ /*Task*/ void PauseMessagePump_WithManyRegisteredMessagePump_Fails()
+        public void PauseMessagePump_WithManyRegisteredMessagePump_Fails()
         {
             // Arrange
             var services = new ServiceCollection();
-            services.AddMessagePump(p => (Pumps.Abstractions.MessagePump) new TestMessagePump("same-job-id", Mock.Of<IConfiguration>(), p, _logger));
+            services.AddMessagePump(p => (Pumps.Abstractions.MessagePump)new TestMessagePump("same-job-id", Mock.Of<IConfiguration>(), p, _logger));
             services.AddMessagePump(p => new TestMessagePump("same-job-id", Mock.Of<IConfiguration>(), p, _logger));
             IServiceProvider provider = services.BuildServiceProvider();
 
             DefaultMessagePumpCircuitBreaker breaker = CreateCircuitBreaker(provider);
 
             // Act / Assert
-            var exception = /*await*/ Assert.ThrowsAny<InvalidOperationException>(
+            var exception = Assert.ThrowsAny<InvalidOperationException>(
                 () => breaker.PauseMessageProcessingAsync("same-job-id"));
             Assert.Contains("Cannot find", exception.Message);
         }

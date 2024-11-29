@@ -279,26 +279,25 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
                     if (CircuitState == MessagePumpCircuitState.Open)
                     {
-                        await Task.Delay(CurrentCircuitBreakerOptions.MessageRecoveryPeriod);
-                        Logger.LogWarning("Done waiting on recover-period - trying single message");
+                        Logger.LogWarning("Circuitbreaker caused message pump '{JobId}' on entity path '{EntityPath}' to transition into an Open state, retrieving messages from ServiceBus is paused", JobId, EntityPath);
+                        await Task.Delay(CurrentCircuitBreakerOptions.MessageRecoveryPeriod, cancellationToken);
 
                         MessageProcessingResult singleProcessingResult;
 
                         do
                         {
                             singleProcessingResult = await TryProcessProcessSingleMessageAsync(CurrentCircuitBreakerOptions);
-                            Logger.LogWarning("Result = " + singleProcessingResult.IsSuccessful);
-                            if (singleProcessingResult.IsSuccessful == false)
+
+                            if (!singleProcessingResult.IsSuccessful)
                             {
-                                Logger.LogWarning("Waiting on message-interval during halfopen state");
-                                await Task.Delay(CurrentCircuitBreakerOptions.MessageIntervalDuringRecovery);
-                                Logger.LogWarning("Done waiting on message-interval during halfopen state");
+                                Logger.LogTrace("Waiting on message-interval during halfopen state");
+                                await Task.Delay(CurrentCircuitBreakerOptions.MessageIntervalDuringRecovery, cancellationToken);
                             }
 
-                        } while (singleProcessingResult.IsSuccessful == false);
-                        
+                        } while (!singleProcessingResult.IsSuccessful);
+
                         ResumeRetrievingMessages();
-                        Logger.LogWarning("Continue normal processing");
+                        Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' transitions back to a Closed state, retrieving messages from ServiceBus is resumed", Settings.ServiceBusEntity, JobId, EntityPath);
                     }
 
                 }

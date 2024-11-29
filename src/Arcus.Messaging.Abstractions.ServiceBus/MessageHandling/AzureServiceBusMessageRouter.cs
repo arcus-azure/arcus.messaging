@@ -247,7 +247,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     accessor?.SetCorrelationInfo(correlationInfo);
 
                     isSuccessful = await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
-                    //isSuccessful = true;
                 }
                 finally
                 {

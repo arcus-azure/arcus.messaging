@@ -64,8 +64,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
                 await AbandonMessageAsync();
                 throw result.ProcessingException;
             }
-            // Logger.LogWarning("Before resume");
-            //await CircuitBreaker.ResumeMessageProcessingAsync(messageContext.JobId);
         }
 
         private async Task<MessageProcessingResult> TryProcessMessageAsync(
