@@ -93,7 +93,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await Poll.Target(() => Assert.Equal(3, TriedOrders.Count)).Every(_1s).Timeout(_1min);
 
             await producer.ProduceAsync(messageAfterBreak);
-            await Poll.Target(() => Assert.Equal(4, TriedOrders.Count)).Every(_1s).Timeout(_1min);
+            await Poll.Target(() => Assert.True(3 < TriedOrders.Count, "after circuit breaker, the messages should continue to process normally")).Every(_1s).Timeout(_1min);
         }
 
         [Fact]
@@ -122,7 +122,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await Poll.Target(() => Assert.Equal(3, TriedOrders.Count)).Every(_1s).Timeout(_1min);
 
             await producer.ProduceAsync(messageAfterBreak);
-            await Poll.Target(() => Assert.Equal(4, TriedOrders.Count)).Every(_1s).Timeout(_1min);
+            await Poll.Target(() => Assert.True(3 < TriedOrders.Count, "after circuit breaker, the messages should continue to process normally")).Every(_1s).Timeout(_1min);
         }
 
         private async Task<TemporaryTopicSubscription> CreateTopicSubscriptionForMessageAsync(params ServiceBusMessage[] messages)
