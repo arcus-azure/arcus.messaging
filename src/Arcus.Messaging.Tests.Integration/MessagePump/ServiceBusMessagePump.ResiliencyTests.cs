@@ -89,10 +89,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await producer.ProduceAsync(messageBeforeBreak);
 
             // Assert
-            await Poll.Target(() => Assert.Equal(3, TriedOrders.Count));
+            TimeSpan _1s = TimeSpan.FromSeconds(1), _1min = TimeSpan.FromMinutes(1);
+            await Poll.Target(() => Assert.Equal(3, TriedOrders.Count)).Every(_1s).Timeout(_1min);
 
             await producer.ProduceAsync(messageAfterBreak);
-            await Poll.Target(() => Assert.Equal(4, TriedOrders.Count));
+            await Poll.Target(() => Assert.Equal(4, TriedOrders.Count)).Every(_1s).Timeout(_1min);
         }
 
         [Fact]
@@ -117,10 +118,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await producer.ProduceAsync(messageBeforeBreak);
 
             // Assert
-            await Poll.Target(() => Assert.Equal(3, TriedOrders.Count));
+            TimeSpan _1s = TimeSpan.FromSeconds(1), _1min = TimeSpan.FromMinutes(1);
+            await Poll.Target(() => Assert.Equal(3, TriedOrders.Count)).Every(_1s).Timeout(_1min);
 
             await producer.ProduceAsync(messageAfterBreak);
-            await Poll.Target(() => Assert.Equal(4, TriedOrders.Count));
+            await Poll.Target(() => Assert.Equal(4, TriedOrders.Count)).Every(_1s).Timeout(_1min);
         }
 
         private async Task<TemporaryTopicSubscription> CreateTopicSubscriptionForMessageAsync(params ServiceBusMessage[] messages)
