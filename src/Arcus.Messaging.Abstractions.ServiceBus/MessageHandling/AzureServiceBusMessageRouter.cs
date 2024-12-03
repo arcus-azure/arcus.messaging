@@ -332,8 +332,11 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             catch (Exception exception)
             {
                 Logger.LogCritical(exception, "Unable to process message with ID '{MessageId}'", message.MessageId);
-                await messageReceiver.AbandonMessageAsync(message);
-                
+                if (messageReceiver != null)
+                {
+                    await messageReceiver.AbandonMessageAsync(message);
+                }
+
                 return MessageProcessingResult.Failure(message.MessageId, ProcessingInterrupted, "Failed to process message in pump as there was an unexpected critical problem during processing, please see the logs for more information", exception);
             }
         }
