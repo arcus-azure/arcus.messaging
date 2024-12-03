@@ -34,33 +34,12 @@ namespace Azure.Messaging.ServiceBus
             
             string serializedMessageBody = JsonConvert.SerializeObject(messageBody);
             byte[] rawMessage = Encoding.UTF8.GetBytes(serializedMessageBody);
-            var amqp = new AmqpAnnotatedMessage(new AmqpMessageBody(new[] {new ReadOnlyMemory<byte>(rawMessage)}));
-            amqp.Header.DeliveryCount = BogusGenerator.Random.UInt();
-            
-            if (operationId is null)
-            {
-                amqp.Properties.CorrelationId = new AmqpMessageId();
-            }
-            else
-            {
-                amqp.Properties.CorrelationId = new AmqpMessageId(operationId);
-            }
 
-            if (applicationProperties != null)
-            {
-                foreach (KeyValuePair<string, object> applicationProperty in applicationProperties)
-                {
-                    amqp.ApplicationProperties[applicationProperty.Key] = applicationProperty.Value;
-                }
-            }
-
-            var serviceBusMessage = (ServiceBusReceivedMessage) Activator.CreateInstance(
-                type: typeof(ServiceBusReceivedMessage),
-                bindingAttr: BindingFlags.NonPublic | BindingFlags.Instance,
-                binder: null,
-                args: new object[] {amqp},
-                culture: null,
-                activationAttributes: null);
+            var serviceBusMessage = ServiceBusModelFactory.ServiceBusReceivedMessage(
+                body: BinaryData.FromBytes(rawMessage),
+                messageId: BogusGenerator.Random.Guid().ToString(),
+                correlationId: operationId,
+                properties: applicationProperties);
             
             return serviceBusMessage;
         }
