@@ -298,7 +298,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             catch (Exception exception)
             {
                 Logger.LogError(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to process single message during half-open circuit, retrying after circuit delay", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
-                return MessageProcessingResult.Failure(MessageProcessingError.ProcessingInterrupted, "Failed to process single message during half-open circuit due to an unexpected exception", exception);
+                return MessageProcessingResult.Failure(message.MessageId, MessageProcessingError.ProcessingInterrupted, "Failed to process single message during half-open circuit due to an unexpected exception", exception);
             }
         }
 
@@ -428,14 +428,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             if (message is null)
             {
                 Logger.LogWarning("Received message on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", Settings.ServiceBusEntity, JobId);
-                return MessageProcessingResult.Failure(MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message is was 'null'");
+                return MessageProcessingResult.Failure("<unavailable>", MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message is was 'null'");
             }
 
             if (_isHostShuttingDown)
             {
                 Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure Service Bus {EntityType} message pump '{JobId}' is shutting down", message.MessageId, Settings.ServiceBusEntity, JobId);
                 await _messageReceiver.AbandonMessageAsync(message);
-                return MessageProcessingResult.Failure(MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message pump is shutting down");
+                return MessageProcessingResult.Failure(message.MessageId, MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message pump is shutting down");
             }
 
             if (string.IsNullOrEmpty(message.CorrelationId))

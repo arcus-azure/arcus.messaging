@@ -76,12 +76,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
             try
             {
                 await ProcessMessageAsync(message, messageContext, correlationInfo, options, cancellationToken);
-                return MessageProcessingResult.Success;
+                return MessageProcessingResult.Success(messageContext.MessageId);
             }
             catch (Exception exception)
             {
                 Logger.LogError(exception, "Message Processing failed due to thrown exception: {Message}", exception.Message);
-                return MessageProcessingResult.Failure(MessageProcessingError.MatchedHandlerFailed, "Failed to process message due to an exception thrown by the message handler implementation", exception);
+                return MessageProcessingResult.Failure(messageContext.MessageId, MessageProcessingError.MatchedHandlerFailed, "Failed to process message due to an exception thrown by the message handler implementation", exception);
             }
         }
 

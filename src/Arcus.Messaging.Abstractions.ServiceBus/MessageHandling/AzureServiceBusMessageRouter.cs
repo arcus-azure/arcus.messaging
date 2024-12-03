@@ -275,7 +275,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 if (messageHandlers.Length <= 0)
                 {
                     await DeadLetterMessageNoHandlerRegisteredAsync(messageReceiver, message, messageContext);
-                    return MessageProcessingResult.Failure(CannotFindMatchedHandler, "Failed to process message in the message pump as no message handler is registered in the dependency container");
+                    return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process message in the message pump as no message handler is registered in the dependency container");
                 }
 
                 Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
@@ -295,7 +295,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                         hasGoneThroughMessageHandler = true;
                         if (isProcessed)
                         {
-                            return MessageProcessingResult.Success;
+                            return MessageProcessingResult.Success(message.MessageId);
                         }
                     }
                 }
@@ -311,19 +311,19 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 if (hasGoneThroughMessageHandler && !fallbackAvailable)
                 {
                     await AbandonMessageMatchedHandlerFailedAsync(messageReceiver, message, messageContext);
-                    return MessageProcessingResult.Failure(MatchedHandlerFailed, "Failed to process Azure Service Bus message in pump as the matched handler did not successfully processed the message and no fallback message handlers were configured");
+                    return MessageProcessingResult.Failure(message.MessageId, MatchedHandlerFailed, "Failed to process Azure Service Bus message in pump as the matched handler did not successfully processed the message and no fallback message handlers were configured");
                 }
                 
                 if (!hasGoneThroughMessageHandler && !fallbackAvailable)
                 {
                     await DeadLetterMessageNoHandlerMatchedAsync(messageReceiver, message, messageContext);
-                    return MessageProcessingResult.Failure(CannotFindMatchedHandler, "Failed to process message in pump as no message handler was matched against the message and no fallback message handlers were configured");
+                    return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process message in pump as no message handler was matched against the message and no fallback message handlers were configured");
                 }
 
                 bool isProcessedByGeneralFallback = await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
                 if (isProcessedByGeneralFallback)
                 {
-                    return MessageProcessingResult.Success;
+                    return MessageProcessingResult.Success(message.MessageId);
                 }
 
                 return await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
@@ -334,7 +334,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 Logger.LogCritical(exception, "Unable to process message with ID '{MessageId}'", message.MessageId);
                 await messageReceiver.AbandonMessageAsync(message);
                 
-                return MessageProcessingResult.Failure(ProcessingInterrupted, "Failed to process message in pump as there was an unexpected critical problem during processing, please see the logs for more information", exception);
+                return MessageProcessingResult.Failure(message.MessageId, ProcessingInterrupted, "Failed to process message in pump as there was an unexpected critical problem during processing, please see the logs for more information", exception);
             }
         }
 
@@ -446,7 +446,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 if (result)
                 {
                     Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' has processed the message", fallbackMessageHandlerTypeName);
-                    return MessageProcessingResult.Success;
+                    return MessageProcessingResult.Success(message.MessageId);
                 }
 
                 Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' was not able to process the message", fallbackMessageHandlerTypeName);
@@ -458,7 +458,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 await messageReceiver.AbandonMessageAsync(message);
             }
 
-            return MessageProcessingResult.Failure(CannotFindMatchedHandler, "No fallback message handler processed the message");
+            return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "No fallback message handler processed the message");
         }
     }
 }

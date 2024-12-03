@@ -31,13 +31,15 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// </summary>
     public class MessageProcessingResult
     {
-        private MessageProcessingResult()
+        private MessageProcessingResult(string messageId)
         {
+            MessageId = messageId ?? throw new ArgumentNullException(nameof(messageId));
             IsSuccessful = true;
         }
 
-        private MessageProcessingResult(MessageProcessingError error, string errorMessage, Exception processingException)
+        private MessageProcessingResult(string messageId, MessageProcessingError error, string errorMessage, Exception processingException)
         {
+            MessageId = messageId ?? throw new ArgumentNullException(nameof(messageId));
             Error = error;
             ErrorMessage = errorMessage;
             ProcessingException = processingException;
@@ -48,6 +50,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// Gets the boolean flag that indicates whether this result represents a successful or unsuccessful outcome of a processed message.
         /// </summary>
         public bool IsSuccessful { get; }
+
+        /// <summary>
+        /// Gets the unique ID to identify the message for which this is a processing result.
+        /// </summary>
+        public string MessageId { get; }
 
         /// <summary>
         /// Gets the error type that shows which kind of error the message processing failed.
@@ -76,22 +83,26 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets an <see cref="MessageProcessingResult"/> instance that represents a result of a message was successfully processed.
         /// </summary>
-        public static MessageProcessingResult Success => new();
+        public static MessageProcessingResult Success(string messageId) => new(messageId);
 
         /// <summary>
         /// Creates an <see cref="MessageProcessingResult"/> instance that represents a result of a message that was unsuccessfully processed.
         /// </summary>
-        public static MessageProcessingResult Failure(MessageProcessingError error, string errorMessage)
+        public static MessageProcessingResult Failure(string messageId, MessageProcessingError error, string errorMessage)
         {
-            return new MessageProcessingResult(error, errorMessage, processingException: null);
+            return new MessageProcessingResult(messageId, error, errorMessage, processingException: null);
         }
 
         /// <summary>
         /// Creates an <see cref="MessageProcessingResult"/> instance that represents a result of a message that was unsuccessfully processed.
         /// </summary>
-        public static MessageProcessingResult Failure(MessageProcessingError error, string errorMessage, Exception processingException)
+        public static MessageProcessingResult Failure(string messageId, MessageProcessingError error, string errorMessage, Exception processingException)
         {
-            return new MessageProcessingResult(error, errorMessage, processingException ?? throw new ArgumentNullException(nameof(processingException)));
+            return new MessageProcessingResult(
+                messageId, 
+                error, 
+                errorMessage, 
+                processingException ?? throw new ArgumentNullException(nameof(processingException)));
         }
     }
 }
