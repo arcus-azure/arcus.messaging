@@ -91,8 +91,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         public static MessageProcessingResult Failure(MessageProcessingError error, string errorMessage, Exception processingException)
         {
-            ArgumentNullException.ThrowIfNull(processingException);
-            return new MessageProcessingResult(error, errorMessage, processingException);
+            return new MessageProcessingResult(error, errorMessage, processingException ?? throw new ArgumentNullException(nameof(processingException)));
         }
     }
 }
