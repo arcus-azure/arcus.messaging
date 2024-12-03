@@ -2,7 +2,6 @@
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
@@ -11,27 +10,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.Abstractions
 {
-    /// <summary>
-    /// Represents the available states in which the <see cref="MessagePump"/> is presently in within the circuit breaker context
-    /// </summary>
-    public enum MessagePumpCircuitState
-    {
-        /// <summary>
-        /// The message pump is able to receive messages.
-        /// </summary>
-        Closed,
-
-        /// <summary>
-        /// The message pump is under inspection if it can receive messages.
-        /// </summary>
-        HalfOpen,
-
-        /// <summary>
-        /// The message pump is unable to receive messages.
-        /// </summary>
-        Open
-    }
-
     /// <summary>
     /// Represents the foundation for building message pumps.
     /// </summary>
@@ -124,18 +102,6 @@ namespace Arcus.Messaging.Pumps.Abstractions
         }
 
         /// <summary>
-        /// Try to process a single message after the circuit was broken, a.k.a entering the half-open state.
-        /// </summary>
-        /// <returns>
-        ///     [Success] when the related message handler can again process messages and the message pump can again start receive messages in full; [Failure] otherwise.
-        /// </returns>
-        public virtual Task<MessageProcessingResult> TryProcessProcessSingleMessageAsync(MessagePumpCircuitBreakerOptions options)
-        {
-            CircuitState = MessagePumpCircuitState.HalfOpen;
-            return Task.FromResult(MessageProcessingResult.Success);
-        }
-
-        /// <summary>
         /// Start with receiving messages on this message pump.
         /// </summary>
         /// <param name="cancellationToken">The token to indicate the start process should no longer be graceful.</param>
@@ -148,40 +114,60 @@ namespace Arcus.Messaging.Pumps.Abstractions
         }
 
         /// <summary>
-        /// Gets the <see cref="MessagePumpCircuitBreakerOptions"/> that are currently applicable; null if the CircuitBreaker
-        /// is not active.
-        /// </summary>
-        protected MessagePumpCircuitBreakerOptions CurrentCircuitBreakerOptions { get; private set; }
-
-        /// <summary>
-        /// Informs the MessagePump that the CircuitBreaker has been triggered
-        /// </summary>
-        /// <param name="options"></param>
-        public void PauseRetrievingMessages(MessagePumpCircuitBreakerOptions options)
-        {
-            CurrentCircuitBreakerOptions = options;
-            CircuitState = MessagePumpCircuitState.Open;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        protected void ResumeRetrievingMessages()
-        {
-            CurrentCircuitBreakerOptions = null;
-            CircuitState = MessagePumpCircuitState.Closed;
-        }
-
-        /// <summary>
         /// Stop with receiving messages on this message pump.
         /// </summary>
         /// <param name="cancellationToken">The token to indicate the stop process should no longer be graceful.</param>
         public virtual Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
             IsStarted = false;
-            CircuitState = MessagePumpCircuitState.Open;
+            CircuitState = MessagePumpCircuitState.Open();
 
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Waits a previously configured amount of time until the message pump is expected to be recovered (Closed to Open state).
+        /// </summary>
+        /// <param name="cancellationToken">The token to cancel the wait period.</param>
+        protected async Task WaitMessageRecoveryPeriodAsync(CancellationToken cancellationToken)
+        {
+            Logger.LogTrace("Circuit breaker caused message pump '{JobId}' to wait message interval of '{Interval}' during Half-Open state", JobId, CircuitState.Options.MessageRecoveryPeriod.ToString("g"));
+
+            CircuitState = MessagePumpCircuitState.HalfOpen;
+            await Task.Delay(CircuitState.Options.MessageRecoveryPeriod, cancellationToken);
+        }
+
+        /// <summary>
+        /// Waits a previously configured amount of time until the next single message can be tried (Half-Open state).
+        /// </summary>
+        /// <param name="cancellationToken">The token to cancel the wait period.</param>
+        protected async Task WaitMessageIntervalPeriodAsync(CancellationToken cancellationToken)
+        {
+            Logger.LogWarning("Circuit breaker caused message pump '{JobId}' to transition into an Open state, retrieving messages is paused for '{Period}'", JobId, CircuitState.Options.MessageIntervalDuringRecovery.ToString("g"));
+
+            CircuitState = MessagePumpCircuitState.HalfOpen;
+            await Task.Delay(CircuitState.Options.MessageIntervalDuringRecovery, cancellationToken);
+        }
+
+        /// <summary>
+        /// Notifies the message pump about the new state which pauses message retrieval.
+        /// </summary>
+        /// <param name="options">The additional accompanied options that goes with the new state.</param>
+        internal void NotifyPauseReceiveMessages(MessagePumpCircuitBreakerOptions options)
+        {
+            Logger.LogTrace("Circuit breaker caused message pump '{JobId}' to transition an Open state, retrieving messages is paused", JobId);
+
+            CircuitState = MessagePumpCircuitState.Open(options);
+        }
+
+        /// <summary>
+        /// Notifies the message pump about the new state which resumes message retrieval.
+        /// </summary>
+        protected void NotifyResumeRetrievingMessages()
+        {
+            Logger.LogTrace("Circuit breaker caused message pump '{JobId}' to transition back to a Closed state, retrieving messages is resumed", JobId);
+
+            CircuitState = MessagePumpCircuitState.Closed;
         }
 
         /// <summary>

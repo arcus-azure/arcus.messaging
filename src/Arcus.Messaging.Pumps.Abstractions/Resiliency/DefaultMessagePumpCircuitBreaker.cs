@@ -1,10 +1,11 @@
-﻿using GuardNet;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using System;
-using System.Linq;
 
 namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 {
@@ -37,7 +38,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <param name="jobId">The unique identifier to distinguish the message pump in the application services.</param>
         /// <param name="configureOptions">The optional user-configurable options to manipulate the workings of the message pump interaction.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        public virtual void PauseMessageProcessingAsync(string jobId, Action<MessagePumpCircuitBreakerOptions> configureOptions)
+        public virtual Task PauseMessageProcessingAsync(string jobId, Action<MessagePumpCircuitBreakerOptions> configureOptions)
         {
             Guard.NotNullOrWhitespace(jobId, nameof(jobId));
 
@@ -45,14 +46,14 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 
             if (!messagePump.IsStarted)
             {
-                _logger.LogWarning("Cannot pause MessagePump for JobId {JobId} because the MessagePump has not been started.", jobId);
-                return;
+                _logger.LogWarning("Cannot pause message pump '{JobId}' because the pump has not been started", jobId);
+                return Task.CompletedTask;
             }
 
             if (messagePump.CircuitState != MessagePumpCircuitState.Closed)
             {
-                _logger.LogWarning("Cannot pause MessagePump for JobId {JobId} because the MessagePump's circuitbreaker is not in a closed state.", jobId);
-                return;
+                _logger.LogWarning("Cannot pause message pump '{JobId}' because the pump's circuit breaker is not in a closed state", jobId);
+                return Task.CompletedTask;
             }
 
             var options = new MessagePumpCircuitBreakerOptions();
@@ -60,7 +61,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 
             _logger.LogDebug("Open circuit by pausing message processing for message pump '{JobId}'...", jobId);
 
-            messagePump.PauseRetrievingMessages(options);
+            messagePump.NotifyPauseReceiveMessages(options);
+            return Task.CompletedTask;
         }
 
         /// <summary>

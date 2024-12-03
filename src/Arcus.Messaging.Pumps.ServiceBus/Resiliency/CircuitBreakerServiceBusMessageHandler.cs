@@ -56,7 +56,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
 
             if (!result.IsSuccessful)
             {
-                CircuitBreaker.PauseMessageProcessingAsync(messageContext.JobId, opt =>
+                await CircuitBreaker.PauseMessageProcessingAsync(messageContext.JobId, opt =>
                 {
                     opt.MessageIntervalDuringRecovery = options.MessageIntervalDuringRecovery;
                     opt.MessageRecoveryPeriod = options.MessageRecoveryPeriod;
