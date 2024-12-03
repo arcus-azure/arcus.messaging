@@ -201,52 +201,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private static readonly TimeSpan MessagePollingWaitTime = TimeSpan.FromMilliseconds(300);
 
-        /// <summary>
-        /// Try to process a single message after the circuit was broken, a.k.a entering the half-open state.
-        /// </summary>
-        /// <returns>
-        ///     [Success] when the related message handler can again process messages and the message pump can again start receive messages in full; [Failure] otherwise.
-        /// </returns>
-        public override async Task<MessageProcessingResult> TryProcessProcessSingleMessageAsync(MessagePumpCircuitBreakerOptions options)
-        {
-            if (_messageReceiver is null)
-            {
-                throw new InvalidOperationException(
-                    $"Cannot try process a single message in the Azure Service Bus {EntityPath} message pump '{JobId}' because there was not a message receiver set before this point, " +
-                    $"this probably happens when the message pump is used in the wrong way or manually called, please let only the circuit breaker functionality call this functionality");
-            }
-
-            await base.TryProcessProcessSingleMessageAsync(options);
-            Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' tries to process single message during half-open circuit...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
-
-            ServiceBusReceivedMessage message = null;
-            while (message is null)
-            {
-                message = await _messageReceiver.ReceiveMessageAsync();
-                if (message is null)
-                {
-                    Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to receive a single message, trying again...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
-                    await Task.Delay(MessagePollingWaitTime);
-                }
-            }
-
-            try
-            {
-                bool isSuccesfullyProcessed = await ProcessMessageAsync(message, CancellationToken.None);
-                if (isSuccesfullyProcessed)
-                {
-                    return MessageProcessingResult.Success;
-                }
-
-                return MessageProcessingResult.Failure(new InvalidOperationException());
-            }
-            catch (Exception exception)
-            {
-                Logger.LogError(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to process single message during half-open circuit, retrying after circuit delay", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
-                return MessageProcessingResult.Failure(exception);
-            }
-        }
-
         /// <inheritdoc />
         public override async Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
         {
@@ -266,40 +220,31 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             RegisterClientInformation(JobId, _messageReceiver.EntityPath);
 
             _receiveMessagesCancellation = new CancellationTokenSource();
-            while (CircuitState is MessagePumpCircuitState.Closed
+            while (CircuitState == MessagePumpCircuitState.Closed
                    && !_messageReceiver.IsClosed
                    && !_receiveMessagesCancellation.IsCancellationRequested)
             {
                 try
                 {
-                    IReadOnlyList<ServiceBusReceivedMessage> messages =
-                        await _messageReceiver.ReceiveMessagesAsync(Settings.Options.MaxConcurrentCalls, cancellationToken: _receiveMessagesCancellation.Token);
+                    await ProcessMultipleMessagesAsync(cancellationToken);
 
-                    await Task.WhenAll(messages.Select(msg => ProcessMessageAsync(msg, cancellationToken)));
-
-                    if (CircuitState == MessagePumpCircuitState.Open)
+                    if (CircuitState == MessagePumpCircuitState.Open())
                     {
-                        Logger.LogWarning("Circuitbreaker caused message pump '{JobId}' on entity path '{EntityPath}' to transition into an Open state, retrieving messages from ServiceBus is paused", JobId, EntityPath);
-                        await Task.Delay(CurrentCircuitBreakerOptions.MessageRecoveryPeriod, cancellationToken);
+                        await WaitMessageRecoveryPeriodAsync(cancellationToken);
 
                         MessageProcessingResult singleProcessingResult;
-
                         do
                         {
-                            singleProcessingResult = await TryProcessProcessSingleMessageAsync(CurrentCircuitBreakerOptions);
-
+                            singleProcessingResult = await TryProcessProcessSingleMessageAsync();
                             if (!singleProcessingResult.IsSuccessful)
                             {
-                                Logger.LogTrace("Waiting on message-interval during halfopen state");
-                                await Task.Delay(CurrentCircuitBreakerOptions.MessageIntervalDuringRecovery, cancellationToken);
+                                await WaitMessageIntervalPeriodAsync(cancellationToken);
                             }
 
                         } while (!singleProcessingResult.IsSuccessful);
 
-                        ResumeRetrievingMessages();
-                        Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' transitions back to a Closed state, retrieving messages from ServiceBus is resumed", Settings.ServiceBusEntity, JobId, EntityPath);
+                        NotifyResumeRetrievingMessages();
                     }
-
                 }
                 catch (Exception exception) when (exception is TaskCanceledException or OperationCanceledException or ObjectDisposedException)
                 {
@@ -312,6 +257,48 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 {
                     await ProcessErrorAsync(exception, cancellationToken);
                 }
+            }
+        }
+
+        private async Task ProcessMultipleMessagesAsync(CancellationToken cancellationToken)
+        {
+            IReadOnlyList<ServiceBusReceivedMessage> messages =
+                await _messageReceiver.ReceiveMessagesAsync(Settings.Options.MaxConcurrentCalls, cancellationToken: _receiveMessagesCancellation.Token);
+
+            await Task.WhenAll(messages.Select(msg => ProcessMessageAsync(msg, cancellationToken)));
+        }
+
+        private async Task<MessageProcessingResult> TryProcessProcessSingleMessageAsync()
+        {
+            if (_messageReceiver is null)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot try process a single message in the Azure Service Bus {EntityPath} message pump '{JobId}' because there was not a message receiver set before this point, " +
+                    $"this probably happens when the message pump is used in the wrong way or manually called, please let only the circuit breaker functionality call this functionality");
+            }
+
+            Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' tries to process single message during half-open circuit...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
+
+            ServiceBusReceivedMessage message = null;
+            while (message is null)
+            {
+                message = await _messageReceiver.ReceiveMessageAsync();
+                if (message is null)
+                {
+                    Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to receive a single message, trying again...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
+                    await Task.Delay(MessagePollingWaitTime);
+                }
+            }
+
+            try
+            {
+                MessageProcessingResult isSuccessfullyProcessed = await ProcessMessageAsync(message, CancellationToken.None);
+                return isSuccessfullyProcessed;
+            }
+            catch (Exception exception)
+            {
+                Logger.LogError(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to process single message during half-open circuit, retrying after circuit delay", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
+                return MessageProcessingResult.Failure(MessageProcessingError.ProcessingInterrupted, "Failed to process single message during half-open circuit due to an unexpected exception", exception);
             }
         }
 
@@ -436,19 +423,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
         }
 
-        private async Task<bool> ProcessMessageAsync(ServiceBusReceivedMessage message, CancellationToken cancellationToken)
+        private async Task<MessageProcessingResult> ProcessMessageAsync(ServiceBusReceivedMessage message, CancellationToken cancellationToken)
         {
             if (message is null)
             {
                 Logger.LogWarning("Received message on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", Settings.ServiceBusEntity, JobId);
-                return false;
+                return MessageProcessingResult.Failure(MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message is was 'null'");
             }
 
             if (_isHostShuttingDown)
             {
                 Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure Service Bus {EntityType} message pump '{JobId}' is shutting down", message.MessageId, Settings.ServiceBusEntity, JobId);
                 await _messageReceiver.AbandonMessageAsync(message);
-                return false;
+                return MessageProcessingResult.Failure(MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message pump is shutting down");
             }
 
             if (string.IsNullOrEmpty(message.CorrelationId))
@@ -459,9 +446,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
             AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId, Settings.ServiceBusEntity);
 
-            bool processed = await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
+            MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
 
-            if (processed && Settings.Options.AutoComplete)
+            if (routingResult.IsSuccessful && Settings.Options.AutoComplete)
             {
                 try
                 {
@@ -478,7 +465,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 }
             }
 
-            return processed;
+            return routingResult;
         }
 
         private MessageCorrelationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message)

@@ -81,7 +81,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
             catch (Exception exception)
             {
                 Logger.LogError(exception, "Message Processing failed due to thrown exception: {Message}", exception.Message);
-                return MessageProcessingResult.Failure(exception);
+                return MessageProcessingResult.Failure(MessageProcessingError.MatchedHandlerFailed, "Failed to process message due to an exception thrown by the message handler implementation", exception);
             }
         }
 

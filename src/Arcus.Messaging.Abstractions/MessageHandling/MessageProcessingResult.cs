@@ -1,8 +1,31 @@
 ﻿using System;
-using GuardNet;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
+    /// <summary>
+    /// Represents all the possible errors of a <see cref="MessageProcessingResult"/>.
+    /// </summary>
+    public enum MessageProcessingError
+    {
+        /// <summary>
+        /// Defines an error that shows that the message processing was interrupted by some external cause,
+        /// unrelated to the message routing.
+        /// </summary>
+        ProcessingInterrupted,
+
+        /// <summary>
+        /// Defines an error shows that no <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation was found
+        /// that was able to process the received message.
+        /// </summary>
+        CannotFindMatchedHandler,
+
+        /// <summary>
+        /// Defines and error that shows that the matched <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation
+        /// was unable to process the received message.
+        /// </summary>
+        MatchedHandlerFailed,
+    }
+
     /// <summary>
     /// Represents an outcome of a message that was processed by an <see cref="IMessageHandler{TMessage,TMessageContext}"/> implementation.
     /// </summary>
@@ -13,12 +36,12 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             IsSuccessful = true;
         }
 
-        private MessageProcessingResult(Exception processingException)
+        private MessageProcessingResult(MessageProcessingError error, string errorMessage, Exception processingException)
         {
-            Guard.NotNull(processingException, nameof(processingException));
-
-            IsSuccessful = false;
+            Error = error;
+            ErrorMessage = errorMessage;
             ProcessingException = processingException;
+            IsSuccessful = false;
         }
 
         /// <summary>
@@ -27,27 +50,49 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         public bool IsSuccessful { get; }
 
         /// <summary>
-        /// Gets the exception that occurred during the message processing that represents the cause of the processing failure.
+        /// Gets the error type that shows which kind of error the message processing failed.
         /// </summary>
         /// <remarks>
         ///     Only available when this processing result represents an unsuccessful message processing result - when <see cref="IsSuccessful"/> is <c>false</c>.
+        /// </remarks>
+        public MessageProcessingError Error { get; }
+
+        /// <summary>
+        /// Gets the description that explains the context of the <see cref="Error"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Only available when this processing result represents an unsuccessful message processing result - when <see cref="IsSuccessful"/> is <c>false</c>.
+        /// </remarks>
+        public string ErrorMessage { get; }
+
+        /// <summary>
+        /// Gets the exception that occurred during the message processing that represents the cause of the processing failure.
+        /// </summary>
+        /// <remarks>
+        ///     Only possibly available when this processing result represents an unsuccessful message processing result - when <see cref="IsSuccessful"/> is <c>false</c>.
         /// </remarks>
         public Exception ProcessingException { get; }
 
         /// <summary>
         /// Gets an <see cref="MessageProcessingResult"/> instance that represents a result of a message was successfully processed.
         /// </summary>
-        public static MessageProcessingResult Success => new MessageProcessingResult();
+        public static MessageProcessingResult Success => new();
 
         /// <summary>
         /// Creates an <see cref="MessageProcessingResult"/> instance that represents a result of a message that was unsuccessfully processed.
         /// </summary>
-        /// <param name="processingException">The exception that occurred during the message processing that represents the cause of the processing failure.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="processingException"/> is blank.</exception>
-        public static MessageProcessingResult Failure(Exception processingException)
+        public static MessageProcessingResult Failure(MessageProcessingError error, string errorMessage)
         {
-            Guard.NotNull(processingException, nameof(processingException));
-            return new MessageProcessingResult(processingException);
+            return new MessageProcessingResult(error, errorMessage, processingException: null);
+        }
+
+        /// <summary>
+        /// Creates an <see cref="MessageProcessingResult"/> instance that represents a result of a message that was unsuccessfully processed.
+        /// </summary>
+        public static MessageProcessingResult Failure(MessageProcessingError error, string errorMessage, Exception processingException)
+        {
+            ArgumentNullException.ThrowIfNull(processingException);
+            return new MessageProcessingResult(error, errorMessage, processingException);
         }
     }
 }
