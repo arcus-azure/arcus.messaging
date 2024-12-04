@@ -26,15 +26,18 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
     }
 
     /// <summary>
+    /// Represents the available states in the <see cref="MessagePumpCircuitState"/> in which the message pump can transition into.
+    /// </summary>
+    internal enum CircuitBreakerState
+    {
+        Closed, HalfOpen, Open
+    }
+
+    /// <summary>
     /// Represents the available states in which the <see cref="MessagePump"/> is presently in within the circuit breaker context
     /// </summary>
-    public sealed class MessagePumpCircuitState : IEquatable<MessagePumpCircuitState>
+    public sealed class MessagePumpCircuitState
     {
-        private enum CircuitBreakerState
-        {
-            Closed, HalfOpen, Open
-        }
-
         private readonly CircuitBreakerState _state;
 
         private MessagePumpCircuitState(CircuitBreakerState state) : this(state, new MessagePumpCircuitBreakerOptions())
@@ -49,16 +52,16 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         }
 
         /// <summary>
-        /// Gets an instance of the <see cref="MessagePumpCircuitState"/> class that represents a closed state,
-        /// in which the message pump is able to process messages normally.
+        /// Gets the boolean flag that indicates whether the message pump circuit breaker state is in the 'Closed' state,
+        /// and should start retrieving messages.
         /// </summary>
-        public static MessagePumpCircuitState Closed => new(CircuitBreakerState.Closed);
+        public bool IsClosed => _state == CircuitBreakerState.Closed;
 
         /// <summary>
-        /// Creates an instance of the <see cref="MessagePumpCircuitState"/> class that represents a half-open state,
-        /// in which the message pump is under inspection if it can receive messages.
+        /// Gets the boolean flag that indicates whether the message pump circuit breaker state is in the 'Open' state,
+        /// and should stop retrieving messages.
         /// </summary>
-        public static MessagePumpCircuitState HalfOpen => new(CircuitBreakerState.HalfOpen);
+        public bool IsOpen => _state is CircuitBreakerState.Open;
 
         /// <summary>
         /// Gets the accompanied additional options that manipulate the behavior of any given state.
@@ -66,88 +69,37 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         public MessagePumpCircuitBreakerOptions Options { get; }
 
         /// <summary>
-        /// Creates an instance of the <see cref="MessagePumpCircuitState"/> class that represents an open state,
-        /// in which the message pump is unable to process messages.
+        /// Gets an instance of the <see cref="MessagePumpCircuitState"/> class that represents a closed state,
+        /// in which the message pump is able to process messages normally.
         /// </summary>
-        public static MessagePumpCircuitState Open() => Open(new MessagePumpCircuitBreakerOptions());
+        internal static MessagePumpCircuitState Closed => new(CircuitBreakerState.Closed);
 
         /// <summary>
         /// Creates an instance of the <see cref="MessagePumpCircuitState"/> class that represents an open state,
         /// in which the message pump is unable to process messages.
         /// </summary>
-        /// <param name="options">The additional options to configure the message pump during the half-open state.</param>
+        /// <param name="options">The additional options to configure the message pump during the open state.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
-        public static MessagePumpCircuitState Open(MessagePumpCircuitBreakerOptions options)
+        internal static MessagePumpCircuitState Open(MessagePumpCircuitBreakerOptions options)
         {
             return new MessagePumpCircuitState(CircuitBreakerState.Open, options);
         }
 
         /// <summary>
-        /// Indicates whether the current object is equal to another object of the same type.
+        /// Lets the current instance of the state transition to another state.
         /// </summary>
-        /// <param name="other">An object to compare with this object.</param>
-        /// <returns>
-        /// <see langword="true" /> if the current object is equal to the <paramref name="other" /> parameter; otherwise, <see langword="false" />.</returns>
-        public bool Equals(MessagePumpCircuitState other)
+        internal MessagePumpCircuitState TransitionTo(CircuitBreakerState state)
         {
-            if (other is null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
-            return _state == other._state;
+            return new(state, Options);
         }
 
         /// <summary>
-        /// Determines whether the specified object is equal to the current object.
+        /// Returns a string that represents the current object.
         /// </summary>
-        /// <param name="obj">The object to compare with the current object.</param>
-        /// <returns>
-        /// <see langword="true" /> if the specified object  is equal to the current object; otherwise, <see langword="false" />.</returns>
-        public override bool Equals(object obj)
+        /// <returns>A string that represents the current object.</returns>
+        public override string ToString()
         {
-            if (obj is null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            return obj is MessagePumpCircuitState other && Equals(other);
-        }
-
-        /// <summary>
-        /// Serves as the default hash function.
-        /// </summary>
-        /// <returns>A hash code for the current object.</returns>
-        public override int GetHashCode()
-        {
-            return (int) _state;
-        }
-
-        /// <summary>
-        /// Determines whether the specified objects are equal.
-        /// </summary>
-        public static bool operator ==(MessagePumpCircuitState left, MessagePumpCircuitState right)
-        {
-            return Equals(left, right);
-        }
-
-        
-        /// <summary>
-        /// Determines whether the specified objects are not equal.
-        /// </summary>
-        public static bool operator !=(MessagePumpCircuitState left, MessagePumpCircuitState right)
-        {
-            return !Equals(left, right);
+            return _state.ToString();
         }
     }
 }

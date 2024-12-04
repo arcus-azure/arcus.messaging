@@ -220,7 +220,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             RegisterClientInformation(JobId, _messageReceiver.EntityPath);
 
             _receiveMessagesCancellation = new CancellationTokenSource();
-            while (CircuitState == MessagePumpCircuitState.Closed
+            while (CircuitState.IsClosed
                    && !_messageReceiver.IsClosed
                    && !_receiveMessagesCancellation.IsCancellationRequested)
             {
@@ -228,7 +228,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 {
                     await ProcessMultipleMessagesAsync(cancellationToken);
 
-                    if (CircuitState == MessagePumpCircuitState.Open())
+                    if (CircuitState.IsOpen)
                     {
                         await WaitMessageRecoveryPeriodAsync(cancellationToken);
 

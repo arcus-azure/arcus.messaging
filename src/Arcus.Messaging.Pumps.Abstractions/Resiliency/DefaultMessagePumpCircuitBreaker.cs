@@ -50,16 +50,13 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
                 return Task.CompletedTask;
             }
 
-            if (messagePump.CircuitState != MessagePumpCircuitState.Closed)
+            if (!messagePump.CircuitState.IsClosed)
             {
-                _logger.LogWarning("Cannot pause message pump '{JobId}' because the pump's circuit breaker is not in a closed state", jobId);
                 return Task.CompletedTask;
             }
 
             var options = new MessagePumpCircuitBreakerOptions();
             configureOptions?.Invoke(options);
-
-            _logger.LogDebug("Open circuit by pausing message processing for message pump '{JobId}'...", jobId);
 
             messagePump.NotifyPauseReceiveMessages(options);
             return Task.CompletedTask;
