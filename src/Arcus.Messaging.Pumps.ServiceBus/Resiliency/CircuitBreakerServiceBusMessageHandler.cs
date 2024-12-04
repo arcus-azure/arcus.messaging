@@ -61,7 +61,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
                     opt.MessageIntervalDuringRecovery = options.MessageIntervalDuringRecovery;
                     opt.MessageRecoveryPeriod = options.MessageRecoveryPeriod;
                 });
-                await AbandonMessageAsync();
+
                 throw result.ProcessingException;
             }
         }
