@@ -55,7 +55,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// Gets the boolean flag that indicates whether the message pump circuit breaker state is in the 'Closed' state,
         /// and should start retrieving messages.
         /// </summary>
-        public bool IsClosed => _state == CircuitBreakerState.Closed;
+        public bool IsClosed => _state is CircuitBreakerState.Closed;
 
         /// <summary>
         /// Gets the boolean flag that indicates whether the message pump circuit breaker state is in the 'Open' state,
@@ -82,7 +82,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
         internal static MessagePumpCircuitState Open(MessagePumpCircuitBreakerOptions options)
         {
-            return new MessagePumpCircuitState(CircuitBreakerState.Open, options);
+            return new(CircuitBreakerState.Open, options);
         }
 
         /// <summary>
