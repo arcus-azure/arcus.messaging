@@ -238,7 +238,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                             singleProcessingResult = await TryProcessProcessSingleMessageAsync();
                             if (!singleProcessingResult.IsSuccessful)
                             {
-                                await WaitMessageIntervalPeriodAsync(cancellationToken);
+                                await WaitMessageIntervalDuringRecoveryAsync(cancellationToken);
                             }
 
                         } while (!singleProcessingResult.IsSuccessful);
