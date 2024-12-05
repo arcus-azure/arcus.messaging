@@ -131,7 +131,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="cancellationToken">The token to cancel the wait period.</param>
         protected async Task WaitMessageRecoveryPeriodAsync(CancellationToken cancellationToken)
         {
-            Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to wait message interval of '{Interval}' during '{State}' state", JobId, CircuitState.Options.MessageRecoveryPeriod.ToString("g"), CircuitState);
+            Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to wait message recovery period of '{Recovery}' during '{State}' state", JobId, CircuitState.Options.MessageRecoveryPeriod.ToString("g"), CircuitState);
             await Task.Delay(CircuitState.Options.MessageRecoveryPeriod, cancellationToken);
 
             CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
@@ -141,9 +141,9 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// Waits a previously configured amount of time until the next single message can be tried (Half-Open state).
         /// </summary>
         /// <param name="cancellationToken">The token to cancel the wait period.</param>
-        protected async Task WaitMessageIntervalPeriodAsync(CancellationToken cancellationToken)
+        protected async Task WaitMessageIntervalDuringRecoveryAsync(CancellationToken cancellationToken)
         {
-            Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to transition into an '{State}' state, retrieving messages is paused for '{Period}'", JobId, CircuitState, CircuitState.Options.MessageIntervalDuringRecovery.ToString("g"));
+            Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to wait message interval during recovery of '{Interval}' during the '{State}' state", JobId, CircuitState.Options.MessageIntervalDuringRecovery.ToString("g"), CircuitState);
             await Task.Delay(CircuitState.Options.MessageIntervalDuringRecovery, cancellationToken);
 
             CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
