@@ -52,21 +52,29 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         }
 
         /// <summary>
-        /// Gets the boolean flag that indicates whether the message pump is in the 'Closed' circuit breaker state,
+        /// Gets the boolean flag that indicates whether the message pump is in the 'Closed' circuit breaker state or not.
         /// and should start retrieving messages.
         /// </summary>
+        /// <remarks>
+        ///     When the message pump is in the 'Closed' state, the pump is retrieving messages at a normal rate.
+        /// </remarks>
         public bool IsClosed => _state is CircuitBreakerState.Closed;
 
         /// <summary>
-        /// Gets the boolean flag that indicates whether the message pump is in the 'Open' circuit breaker state,
-        /// and should stop retrieving messages.
+        /// Gets the boolean flag that indicates whether the message pump is in the 'Open' circuit breaker state or not.
         /// </summary>
+        /// <remarks>
+        ///     When the message pump is in the 'Open' state, the pump has stopped retrieving messages all together.
+        /// </remarks>
         public bool IsOpen => _state is CircuitBreakerState.Open;
 
         /// <summary>
-        /// Gets the boolean flag tht indicates whether the message pump is in the 'Half-Open' circuit breaker state,
-        /// and should try retrieving a single message at a time before fully starting retrieving messages.
+        /// Gets a boolean flag that indicates whether the message pump is in a 'Half-Open' state or not.
         /// </summary>
+        /// <remarks>
+        ///     When the message pump is in the 'Half-Open' state, the pump retrieves a single message and verifies if the message can be processed.
+        ///     If the message is processed successfully, the pump will transition back into the 'Closed' state.
+        /// </remarks>
         public bool IsHalfOpen => _state is CircuitBreakerState.HalfOpen;
 
         /// <summary>
