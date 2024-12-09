@@ -61,7 +61,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         public bool IsClosed => _state is CircuitBreakerState.Closed;
 
         /// <summary>
-        /// Gets the boolean flag that indicates whether the message pump is in the 'Open' circuit breaker state or not.
+        /// Gets a boolean flag that indicates whether the message pump is in the 'Open' circuit breaker state or not.
         /// </summary>
         /// <remarks>
         ///     When the message pump is in the 'Open' state, the pump has stopped retrieving messages all together.
