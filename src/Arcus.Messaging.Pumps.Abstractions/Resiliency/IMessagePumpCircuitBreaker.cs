@@ -53,7 +53,6 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 
         /// <summary>
         /// Gets a boolean flag that indicates whether the message pump is in the 'Closed' circuit breaker state or not.
-        /// and should start retrieving messages.
         /// </summary>
         /// <remarks>
         ///     When the message pump is in the 'Closed' state, the pump is retrieving messages at a normal rate.
