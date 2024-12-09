@@ -75,22 +75,11 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         internal static MessagePumpCircuitState Closed => new(CircuitBreakerState.Closed);
 
         /// <summary>
-        /// Creates an instance of the <see cref="MessagePumpCircuitState"/> class that represents an open state,
-        /// in which the message pump is unable to process messages.
-        /// </summary>
-        /// <param name="options">The additional options to configure the message pump during the open state.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
-        internal static MessagePumpCircuitState Open(MessagePumpCircuitBreakerOptions options)
-        {
-            return new(CircuitBreakerState.Open, options);
-        }
-
-        /// <summary>
         /// Lets the current instance of the state transition to another state.
         /// </summary>
-        internal MessagePumpCircuitState TransitionTo(CircuitBreakerState state)
+        internal MessagePumpCircuitState TransitionTo(CircuitBreakerState state, MessagePumpCircuitBreakerOptions options = null)
         {
-            return new(state, Options);
+            return new(state, options ?? Options);
         }
 
         /// <summary>

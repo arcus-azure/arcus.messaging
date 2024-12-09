@@ -157,7 +157,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         {
             Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to transition from a '{CurrentState}' an 'Open' state", JobId, CircuitState);
 
-            CircuitState = MessagePumpCircuitState.Open(options);
+            CircuitState = CircuitState.TransitionTo(CircuitBreakerState.Open, options);
         }
 
         /// <summary>
