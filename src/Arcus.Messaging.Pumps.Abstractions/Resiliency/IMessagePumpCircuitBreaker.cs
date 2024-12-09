@@ -64,7 +64,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         public bool IsOpen => _state is CircuitBreakerState.Open;
 
         /// <summary>
-        /// Gets the boolean flag tht indicates whether the message pump is in the 'Half-Open' circuit breaker state,
+        /// Gets the boolean flag that indicates whether the message pump is in the 'Half-Open' circuit breaker state,
         /// and should try retrieving a single message at a time before fully starting retrieving messages.
         /// </summary>
         public bool IsHalfOpen => _state is CircuitBreakerState.HalfOpen;
