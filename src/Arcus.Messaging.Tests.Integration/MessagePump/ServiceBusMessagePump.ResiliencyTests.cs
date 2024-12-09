@@ -34,16 +34,18 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var messageSink = new OrderMessageSink();
 
+            ServiceBusMessage messageBeforeBreak = CreateOrderServiceBusMessageForW3C();
+            ServiceBusMessage messageAfterBreak = CreateOrderServiceBusMessageForW3C();
+
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter)
                    .AddSingleton(messageSink)
                    .AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName)
-                   .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>();
+                   .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>(
+                       messageContextFilter: ctx => ctx.MessageId == messageBeforeBreak.MessageId 
+                                                    || ctx.MessageId == messageAfterBreak.MessageId);
 
             var producer = new TestServiceBusMessageProducer(QueueName, _config.GetServiceBus());
-            ServiceBusMessage messageBeforeBreak = CreateOrderServiceBusMessageForW3C();
-            ServiceBusMessage messageAfterBreak = CreateOrderServiceBusMessageForW3C();
-
             await using var worker = await Worker.StartNewAsync(options);
 
             // Act
