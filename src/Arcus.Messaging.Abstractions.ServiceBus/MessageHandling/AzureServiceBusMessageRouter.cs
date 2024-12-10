@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Serilog.Context;
 using ServiceBusFallbackMessageHandler = Arcus.Messaging.Abstractions.MessageHandling.FallbackMessageHandler<Azure.Messaging.ServiceBus.ServiceBusReceivedMessage, Arcus.Messaging.Abstractions.ServiceBus.AzureServiceBusMessageContext>;
+using static Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingError;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
@@ -158,7 +159,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        public async Task RouteMessageAsync(
+        public async Task<MessageProcessingResult> RouteMessageAsync(
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -168,7 +169,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
 
-            await RouteMessageWithPotentialFallbackAsync(
+            return await RouteMessageWithPotentialFallbackAsync(
                 messageReceiver: null,
                 message: message,
                 messageContext: messageContext,
@@ -178,7 +179,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/>
+        /// and optionally through a registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/>
         /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
@@ -193,7 +194,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        public async Task RouteMessageAsync(
+        public async Task<MessageProcessingResult> RouteMessageAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
@@ -205,12 +206,12 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
 
-            await RouteMessageWithPotentialFallbackAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+            return await RouteMessageWithPotentialFallbackAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
         }
 
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/>
+        /// and optionally through a registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/>
         /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
@@ -225,7 +226,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        protected async Task RouteMessageWithPotentialFallbackAsync(
+        protected async Task<MessageProcessingResult> RouteMessageWithPotentialFallbackAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
@@ -236,29 +237,31 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
             Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
 
-            var isSuccessful = false;
-            using (DurationMeasurement measurement = DurationMeasurement.Start())
-            using (IServiceScope serviceScope = ServiceProvider.CreateScope())
-            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
-            {
-                try
-                {
-                    var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
-                    accessor?.SetCorrelationInfo(correlationInfo);
+            string entityName = messageReceiver?.EntityPath ?? "<not-available>";
+            string serviceBusNamespace = messageReceiver?.FullyQualifiedNamespace ?? "<not-available>";
 
-                    await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
-                    isSuccessful = true;
-                }
-                finally
-                {
-                    string entityName = messageReceiver?.EntityPath ?? "<not-available>";
-                    string serviceBusNamespace = messageReceiver?.FullyQualifiedNamespace ?? "<not-available>";
-                    Logger.LogServiceBusRequest(serviceBusNamespace, entityName, Options.Telemetry.OperationName, isSuccessful, measurement, messageContext.EntityType);
-                }
+            using DurationMeasurement measurement = DurationMeasurement.Start();
+            using IServiceScope serviceScope = ServiceProvider.CreateScope();
+            using IDisposable _ = LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher));
+
+            try
+            {
+                var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
+                accessor?.SetCorrelationInfo(correlationInfo);
+
+                MessageProcessingResult routingResult = await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                
+                Logger.LogServiceBusRequest(serviceBusNamespace, entityName, Options.Telemetry.OperationName, routingResult.IsSuccessful, measurement, messageContext.EntityType);
+                return routingResult;
+            }
+            catch
+            {
+                Logger.LogServiceBusRequest(serviceBusNamespace, entityName, Options.Telemetry.OperationName, false, measurement, messageContext.EntityType);
+                throw;
             }
         }
 
-        private async Task TryRouteMessageWithPotentialFallbackAsync(
+        private async Task<MessageProcessingResult> TryRouteMessageWithPotentialFallbackAsync(
             IServiceProvider serviceProvider,
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
@@ -271,17 +274,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 MessageHandler[] messageHandlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
                 if (messageHandlers.Length <= 0)
                 {
-                    if (messageReceiver != null)
-                    {
-                        Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
-                        await messageReceiver.DeadLetterMessageAsync(message); 
-                    }
-
-                    throw new InvalidOperationException(
-                        $"Azure Service Bus message router cannot correctly process the message in the '{nameof(AzureServiceBusMessageContext)}' "
-                        + "because no 'IAzureServiceBusMessageHandler<>' was registered in the dependency injection container. "
-                        + $"Make sure you call the correct 'WithServiceBusMessageHandler' extension on the {nameof(IServiceCollection)} "
-                        + "during the registration of the Azure Service Bus message pump or message router to register a message handler");
+                    await DeadLetterMessageNoHandlerRegisteredAsync(messageReceiver, message, messageContext);
+                    return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process message in the message pump as no message handler is registered in the dependency container");
                 }
 
                 Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
@@ -301,7 +295,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                         hasGoneThroughMessageHandler = true;
                         if (isProcessed)
                         {
-                            return;
+                            return MessageProcessingResult.Success(message.MessageId);
                         }
                     }
                 }
@@ -316,38 +310,61 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
                 if (hasGoneThroughMessageHandler && !fallbackAvailable)
                 {
-                    if (messageReceiver != null)
-                    {
-                        Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully processed the message and no fallback message handlers configured, abandoning message!", message.MessageId, messageContext.JobId);
-                        await messageReceiver.AbandonMessageAsync(message); 
-                    }
+                    await AbandonMessageMatchedHandlerFailedAsync(messageReceiver, message, messageContext);
+                    return MessageProcessingResult.Failure(message.MessageId, MatchedHandlerFailed, "Failed to process Azure Service Bus message in pump as the matched handler did not successfully processed the message and no fallback message handlers were configured");
                 }
-                else if (!hasGoneThroughMessageHandler && !fallbackAvailable)
+                
+                if (!hasGoneThroughMessageHandler && !fallbackAvailable)
                 {
-                    if (messageReceiver != null)
-                    {
-                        Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
-                        await messageReceiver.DeadLetterMessageAsync(message); 
-                    }
+                    await DeadLetterMessageNoHandlerMatchedAsync(messageReceiver, message, messageContext);
+                    return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process message in pump as no message handler was matched against the message and no fallback message handlers were configured");
                 }
-                else
+
+                bool isProcessedByGeneralFallback = await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+                if (isProcessedByGeneralFallback)
                 {
-                    bool isProcessedByGeneralFallback = await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-                    if (isProcessedByGeneralFallback)
-                    {
-                        return;
-                    }
-                    else
-                    {
-                        await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
-                    }
+                    return MessageProcessingResult.Success(message.MessageId);
                 }
+
+                return await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
 
             }
             catch (Exception exception)
             {
                 Logger.LogCritical(exception, "Unable to process message with ID '{MessageId}'", message.MessageId);
-                throw;
+                if (messageReceiver != null)
+                {
+                    await messageReceiver.AbandonMessageAsync(message);
+                }
+
+                return MessageProcessingResult.Failure(message.MessageId, ProcessingInterrupted, "Failed to process message in pump as there was an unexpected critical problem during processing, please see the logs for more information", exception);
+            }
+        }
+
+        private async Task DeadLetterMessageNoHandlerRegisteredAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        {
+            if (messageReceiver != null)
+            {
+                Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
+                await messageReceiver.DeadLetterMessageAsync(message); 
+            }
+        }
+
+        private async Task DeadLetterMessageNoHandlerMatchedAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        {
+            if (messageReceiver != null)
+            {
+                Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
+                await messageReceiver.DeadLetterMessageAsync(message);
+            }
+        }
+
+        private async Task AbandonMessageMatchedHandlerFailedAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        {
+            if (messageReceiver != null)
+            {
+                Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully processed the message and no fallback message handlers configured, abandoning message!", message.MessageId, messageContext.JobId);
+                await messageReceiver.AbandonMessageAsync(message);
             }
         }
 
@@ -396,7 +413,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
-        protected async Task TryServiceBusFallbackMessageAsync(
+        protected async Task<MessageProcessingResult> TryServiceBusFallbackMessageAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
@@ -432,7 +449,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 if (result)
                 {
                     Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' has processed the message", fallbackMessageHandlerTypeName);
-                    return;
+                    return MessageProcessingResult.Success(message.MessageId);
                 }
 
                 Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' was not able to process the message", fallbackMessageHandlerTypeName);
@@ -443,6 +460,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 Logger.LogWarning("No fallback message handler processed the Azure Service Bus message '{MessageId}' in pump '{JobId}', abandoning message!", message.MessageId, messageContext.JobId);
                 await messageReceiver.AbandonMessageAsync(message);
             }
+
+            return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "No fallback message handler processed the message");
         }
     }
 }

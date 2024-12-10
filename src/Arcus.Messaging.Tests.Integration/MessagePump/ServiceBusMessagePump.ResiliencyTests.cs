@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
@@ -13,100 +12,66 @@ using Arcus.Messaging.Pumps.ServiceBus.Resiliency;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
-using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
-using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
-using Bogus;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
 using Xunit;
 using static Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus.DiskMessageEventConsumer;
 using static Arcus.Messaging.Tests.Integration.MessagePump.TestUnavailableDependencyAzureServiceBusMessageHandler;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
-    public class TestUnavailableDependencyAzureServiceBusMessageHandler : CircuitBreakerServiceBusMessageHandler<Order>
-    {
-        public TestUnavailableDependencyAzureServiceBusMessageHandler(
-            IMessagePumpCircuitBreaker circuitBreaker,
-            ILogger<CircuitBreakerServiceBusMessageHandler<Order>> logger) : base(circuitBreaker, logger)
-        {
-        }
-
-        public static readonly Collection<(Order order, DateTimeOffset timestamp)> TriedOrders = new();
-
-        protected override Task ProcessMessageAsync(
-            Order message,
-            AzureServiceBusMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            MessagePumpCircuitBreakerOptions options,
-            CancellationToken cancellationToken)
-        {
-            options.MessageRecoveryPeriod = TimeSpan.FromSeconds(5);
-            options.MessageIntervalDuringRecovery = TimeSpan.FromSeconds(1);
-
-            Logger.LogDebug("Process order for the {DeliveryCount}nd time", messageContext.DeliveryCount);
-            TriedOrders.Add((message, DateTimeOffset.UtcNow));
-
-            if (TriedOrders.Count < 3)
-            {
-                throw new InvalidOperationException(
-                    $"Simulate an unhealthy dependency system! (DeliveryCount: {messageContext.DeliveryCount})");
-            }
-
-            return Task.CompletedTask;
-        }
-    }
-
     public partial class ServiceBusMessagePumpTests
     {
         [Fact]
         public async Task ServiceBusMessageQueuePump_WithUnavailableDependencySystem_CircuitBreaksUntilDependencyBecomesAvailable()
         {
             // Arrange
-            TriedOrders.Clear();
+            var messageSink = new OrderMessageSink();
 
-            var options = new WorkerOptions();
-            options.AddXunitTestLogging(_outputWriter)
-                   .ConfigureSerilog(logging => logging.MinimumLevel.Debug())
-                   .AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName)
-                   .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>();
-
-            var producer = new TestServiceBusMessageProducer(QueueName, _config.GetServiceBus());
             ServiceBusMessage messageBeforeBreak = CreateOrderServiceBusMessageForW3C();
             ServiceBusMessage messageAfterBreak = CreateOrderServiceBusMessageForW3C();
 
+            var options = new WorkerOptions();
+            options.AddXunitTestLogging(_outputWriter)
+                   .AddSingleton(messageSink)
+                   .AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName)
+                   .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>(
+                       messageContextFilter: ctx => ctx.MessageId == messageBeforeBreak.MessageId 
+                                                    || ctx.MessageId == messageAfterBreak.MessageId);
+
+            var producer = new TestServiceBusMessageProducer(QueueName, _config.GetServiceBus());
             await using var worker = await Worker.StartNewAsync(options);
 
             // Act
             await producer.ProduceAsync(messageBeforeBreak);
 
             // Assert
-            await Poll.Target(() => Assert.Equal(3, TriedOrders.Count));
+            await messageSink.ShouldReceiveOrdersDuringBreakAsync(messageBeforeBreak.MessageId);
 
             await producer.ProduceAsync(messageAfterBreak);
-            await Poll.Target(() => Assert.Equal(4, TriedOrders.Count));
+            await messageSink.ShouldReceiveOrdersAfterBreakAsync(messageAfterBreak.MessageId);
         }
 
         [Fact]
         public async Task ServiceBusMessageTopicPump_WithUnavailableDependencySystem_CircuitBreaksUntilDependencyBecomesAvailable()
         {
             // Arrange
-            TriedOrders.Clear();
             ServiceBusMessage messageBeforeBreak = CreateOrderServiceBusMessageForW3C();
             ServiceBusMessage messageAfterBreak = CreateOrderServiceBusMessageForW3C();
+            
+            var messageSink = new OrderMessageSink();
             await using TemporaryTopicSubscription subscription = await CreateTopicSubscriptionForMessageAsync(messageBeforeBreak, messageAfterBreak);
 
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter)
-                   .ConfigureSerilog(logging => logging.MinimumLevel.Debug())
+                   .ConfigureSerilog(logging => logging.MinimumLevel.Verbose())
+                   .AddSingleton(messageSink)
                    .AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, subscription.Name, HostName)
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>();
 
@@ -117,10 +82,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await producer.ProduceAsync(messageBeforeBreak);
 
             // Assert
-            await Poll.Target(() => Assert.Equal(3, TriedOrders.Count));
-
+            await messageSink.ShouldReceiveOrdersDuringBreakAsync(messageBeforeBreak.MessageId);
+            
             await producer.ProduceAsync(messageAfterBreak);
-            await Poll.Target(() => Assert.Equal(4, TriedOrders.Count));
+            await messageSink.ShouldReceiveOrdersAfterBreakAsync(messageAfterBreak.MessageId);
         }
 
         private async Task<TemporaryTopicSubscription> CreateTopicSubscriptionForMessageAsync(params ServiceBusMessage[] messages)
@@ -134,90 +99,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 _logger,
                 configureOptions: null,
                 rule: new CreateRuleOptions("MessageId", new SqlRuleFilter($"sys.messageid in ({string.Join(", ", messages.Select(m => $"'{m.MessageId}'"))})")));
-        }
-
-        [Fact]
-        public async Task ServiceBusTopicMessagePump_PauseViaCircuitBreaker_RestartsAgainWithOneMessage()
-        {
-            // Arrange
-            var options = new WorkerOptions();
-            ServiceBusMessage[] messages = GenerateShipmentMessages(1);
-            TimeSpan recoveryTime = TimeSpan.FromSeconds(10);
-            TimeSpan messageInterval = TimeSpan.FromSeconds(2);
-
-            options.AddXunitTestLogging(_outputWriter)
-                   .AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
-                   .WithServiceBusMessageHandler<TestCircuitBreakerAzureServiceBusMessageHandler, Shipment>(
-                        implementationFactory: provider => new TestCircuitBreakerAzureServiceBusMessageHandler(
-                            targetMessageIds: messages.Select(m => m.MessageId).ToArray(),
-                            configureOptions: opt =>
-                            {
-                                opt.MessageRecoveryPeriod = recoveryTime;
-                                opt.MessageIntervalDuringRecovery = messageInterval;
-                            },
-                            provider.GetRequiredService<IMessagePumpCircuitBreaker>(),
-                            provider.GetRequiredService<ILogger<TestCircuitBreakerAzureServiceBusMessageHandler>>()));
-
-            var producer = TestServiceBusMessageProducer.CreateFor(TopicName, _config);
-            await using var worker = await Worker.StartNewAsync(options);
-
-            // Act
-            await producer.ProduceAsync(messages);
-
-            // Assert
-            var handler = GetMessageHandler<TestCircuitBreakerAzureServiceBusMessageHandler>(worker);
-
-            await Poll.UntilAvailableAsync(() =>
-            {
-                DateTimeOffset[] arrivals = handler.GetMessageArrivals();
-
-                _outputWriter.WriteLine("Arrivals: {0}", string.Join(", ", arrivals));
-                TimeSpan faultMargin = TimeSpan.FromSeconds(1);
-                Assert.Collection(arrivals.SkipLast(1).Zip(arrivals.Skip(1)),
-                    dates => AssertDateDiff(dates.First, dates.Second, recoveryTime, recoveryTime.Add(faultMargin)),
-                    dates => AssertDateDiff(dates.First, dates.Second, messageInterval, messageInterval.Add(faultMargin)));
-
-                return Task.CompletedTask;
-
-            }, opt => opt.Timeout = TimeSpan.FromMinutes(2));
-
-            var pump = Assert.IsType<AzureServiceBusMessagePump>(worker.Services.GetService<IHostedService>());
-            Assert.True(pump.IsStarted, "pump should be started after circuit breaker scenario");
-        }
-
-        private static TMessageHandler GetMessageHandler<TMessageHandler>(Worker worker)
-        {
-            return Assert.IsType<TMessageHandler>(
-                worker.Services.GetRequiredService<MessageHandler>()
-                               .GetMessageHandlerInstance());
-        }
-
-        private static void AssertDateDiff(DateTimeOffset left, DateTimeOffset right, TimeSpan expectedMin, TimeSpan expectedMax)
-        {
-            left = new DateTimeOffset(left.Year, left.Month, left.Day, left.Hour, left.Minute, left.Second, 0, left.Offset);
-            right = new DateTimeOffset(right.Year, right.Month, right.Day, right.Hour, right.Minute, right.Second, 0, right.Offset);
-
-            TimeSpan actual = right - left;
-            Assert.InRange(actual, expectedMin, expectedMax);
-        }
-
-        private static ServiceBusMessage[] GenerateShipmentMessages(int count)
-        {
-            var generator = new Faker<Shipment>()
-                .RuleFor(s => s.Id, f => f.Random.Guid().ToString())
-                .RuleFor(s => s.Code, f => f.Random.Int(1, 100))
-                .RuleFor(s => s.Date, f => f.Date.RecentOffset())
-                .RuleFor(s => s.Description, f => f.Lorem.Sentence());
-
-            return Enumerable.Repeat(generator, count).Select(g =>
-            {
-                Shipment shipment = g.Generate();
-                string json = JsonConvert.SerializeObject(shipment);
-                return new ServiceBusMessage(json)
-                {
-                    MessageId = shipment.Id
-                };
-            }).ToArray();
         }
 
         [Fact]
@@ -253,6 +134,78 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Assert
             OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId, TimeSpan.FromSeconds(10));
             AssertReceivedOrderEventDataForW3C(message, eventData);
+        }
+    }
+
+    public class TestUnavailableDependencyAzureServiceBusMessageHandler : CircuitBreakerServiceBusMessageHandler<Order>
+    {
+        public const int RequiredAttempts = 3;
+
+        private readonly OrderMessageSink _messageSink;
+
+        public TestUnavailableDependencyAzureServiceBusMessageHandler(
+            OrderMessageSink messageSink,
+            IMessagePumpCircuitBreaker circuitBreaker,
+            ILogger<CircuitBreakerServiceBusMessageHandler<Order>> logger) : base(circuitBreaker, logger)
+        {
+            _messageSink = messageSink;
+        }
+
+        protected override Task ProcessMessageAsync(
+            Order message,
+            AzureServiceBusMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            MessagePumpCircuitBreakerOptions options,
+            CancellationToken cancellationToken)
+        {
+            options.MessageRecoveryPeriod = TimeSpan.FromSeconds(5);
+            options.MessageIntervalDuringRecovery = TimeSpan.FromSeconds(1);
+
+            Logger.LogDebug("Process order for the {DeliveryCount}nd time", messageContext.DeliveryCount);
+            _messageSink.SendOrder(message);
+
+            if (_messageSink.ReceiveOrders().Length < RequiredAttempts)
+            {
+                throw new InvalidOperationException(
+                    $"Simulate an unhealthy dependency system! (DeliveryCount: {messageContext.DeliveryCount})");
+            }
+
+            return Task.CompletedTask;
+        }
+    }
+
+    public class OrderMessageSink
+    {
+        private readonly Collection<Order> _orders = new();
+
+        public void SendOrder(Order message)
+        {
+            _orders.Add(message);
+        }
+
+        public Order[] ReceiveOrders() => _orders.ToArray();
+
+        public async Task ShouldReceiveOrdersDuringBreakAsync(string messageId)
+        {
+            TimeSpan _1s = TimeSpan.FromSeconds(1), _1min = TimeSpan.FromMinutes(1);
+
+            await Poll.Target(() =>
+            {
+                Assert.Equal(RequiredAttempts, _orders.Count(o => o.Id == messageId));
+
+            }).Every(_1s).Timeout(_1min).FailWith($"message should be retried {RequiredAttempts} times with the help of the circuit breaker");
+        }
+
+        public async Task ShouldReceiveOrdersAfterBreakAsync(string messageId)
+        {
+            TimeSpan _1s = TimeSpan.FromSeconds(1), _1min = TimeSpan.FromMinutes(1);
+
+            await Poll.Target(() =>
+            {
+                Assert.Equal(RequiredAttempts + 1, _orders.Count);
+                Assert.Single(_orders.Where(o => o.Id == messageId));
+
+            }).Every(_1s).Timeout(_1min).FailWith("pump should continue normal message processing after the message was retried");
         }
     }
 

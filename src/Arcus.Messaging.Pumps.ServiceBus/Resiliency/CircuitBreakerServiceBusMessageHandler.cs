@@ -61,11 +61,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
                     opt.MessageIntervalDuringRecovery = options.MessageIntervalDuringRecovery;
                     opt.MessageRecoveryPeriod = options.MessageRecoveryPeriod;
                 });
-                await AbandonMessageAsync();
+
                 throw result.ProcessingException;
             }
-
-            await CircuitBreaker.ResumeMessageProcessingAsync(messageContext.JobId);
         }
 
         private async Task<MessageProcessingResult> TryProcessMessageAsync(
@@ -78,12 +76,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
             try
             {
                 await ProcessMessageAsync(message, messageContext, correlationInfo, options, cancellationToken);
-                return MessageProcessingResult.Success;
+                return MessageProcessingResult.Success(messageContext.MessageId);
             }
             catch (Exception exception)
             {
-                Logger.LogError(exception, "Circuit breaker triggered due to thrown exception: {Message}", exception.Message);
-                return MessageProcessingResult.Failure(exception);
+                Logger.LogError(exception, "Message Processing failed due to thrown exception: {Message}", exception.Message);
+                return MessageProcessingResult.Failure(messageContext.MessageId, MessageProcessingError.MatchedHandlerFailed, "Failed to process message due to an exception thrown by the message handler implementation", exception);
             }
         }
 
