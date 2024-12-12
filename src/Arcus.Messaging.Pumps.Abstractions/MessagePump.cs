@@ -41,7 +41,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         public string JobId { get; protected set; } = Guid.NewGuid().ToString();
 
         /// <summary>
-        /// Gets the boolean flag that indicates whether the message pump is started and receiving messages.
+        /// Gets the boolean flag that indicates whether the message pump is started.
         /// </summary>
         public bool IsStarted { get; protected set; }
 
