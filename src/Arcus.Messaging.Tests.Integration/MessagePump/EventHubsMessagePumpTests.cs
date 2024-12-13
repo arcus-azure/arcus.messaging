@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using Arcus.EventGrid.Testing.Logging;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using Arcus.Messaging.Abstractions.MessageHandling;

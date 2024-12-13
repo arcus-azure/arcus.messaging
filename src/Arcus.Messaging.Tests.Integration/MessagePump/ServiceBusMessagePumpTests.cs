@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -16,6 +16,7 @@ using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
+using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -37,6 +38,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private readonly TemporaryManagedIdentityConnection _connection;
         private readonly ILogger _logger;
         private readonly ITestOutputHelper _outputWriter;
+
+        private static readonly Faker Bogus = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessagePumpTests"/> class.

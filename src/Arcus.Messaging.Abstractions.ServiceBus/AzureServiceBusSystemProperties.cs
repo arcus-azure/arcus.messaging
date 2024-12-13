@@ -12,13 +12,13 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         private AzureServiceBusSystemProperties(ServiceBusReceivedMessage message)
         {
             Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus received message to construct a set of Azure Service Bus system properties");
-
+            
             DeadLetterSource = message.DeadLetterSource;
             DeliveryCount = message.DeliveryCount;
             EnqueuedSequenceNumber = message.EnqueuedSequenceNumber;
             EnqueuedTime = message.EnqueuedTime;
             LockToken = message.LockToken;
-            IsLockTokenSet = message.LockToken != null;
+            IsLockTokenSet = message.LockToken != null && message.LockToken != Guid.Empty.ToString();
             LockedUntil = message.LockedUntil;
             IsReceived = message.SequenceNumber > -1;
             SequenceNumber = message.SequenceNumber;

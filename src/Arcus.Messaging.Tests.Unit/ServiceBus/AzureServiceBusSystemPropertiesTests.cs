@@ -16,7 +16,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
     public class AzureServiceBusSystemPropertiesTests
     {
         private static readonly Faker BogusGenerator = new Faker();
-        
+
         [Fact]
         public void CreateProperties_WithoutServiceBusMessage_Fails()
         {
@@ -33,14 +33,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             AmqpAnnotatedMessage amqpMessage = CreateAmqpMessage();
             amqpMessage.Header.DeliveryCount = expected;
             ServiceBusReceivedMessage message = CreateServiceBusReceivedMessage(amqpMessage);
-            
+
             // Act
             var systemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
-            
+
             // Assert
-            Assert.Equal((int) expected, systemProperties.DeliveryCount);
+            Assert.Equal((int)expected, systemProperties.DeliveryCount);
         }
-        
+
         [Fact]
         public void CreateProperties_FromMessage_AssignsContentTypeCorrectly()
         {
@@ -50,14 +50,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             AmqpAnnotatedMessage amqpMessage = CreateAmqpMessage();
             amqpMessage.Properties.ContentType = expected;
             ServiceBusReceivedMessage message = CreateServiceBusReceivedMessage(amqpMessage);
-            
+
             // Act
             var systemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
-            
+
             // Assert
             Assert.Equal(expected, systemProperties.ContentType);
         }
-        
+
         [Fact]
         public void CreateProperties_FromMessage_AssignsDeadLetterSourceCorrectly()
         {
@@ -67,14 +67,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             AmqpAnnotatedMessage amqpMessage = CreateAmqpMessage();
             amqpMessage.MessageAnnotations["x-opt-deadletter-source"] = expected;
             ServiceBusReceivedMessage message = CreateServiceBusReceivedMessage(amqpMessage);
-            
+
             // Act
             var systemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
-            
+
             // Assert
             Assert.Equal(expected, systemProperties.DeadLetterSource);
         }
-        
+
         [Fact]
         public void CreateProperties_FromMessage_AssignsEnqueuedSequenceNumberCorrectly()
         {
@@ -84,14 +84,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             AmqpAnnotatedMessage amqpMessage = CreateAmqpMessage();
             amqpMessage.MessageAnnotations["x-opt-enqueue-sequence-number"] = expected;
             ServiceBusReceivedMessage message = CreateServiceBusReceivedMessage(amqpMessage);
-            
+
             // Act
             var systemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
-            
+
             // Assert
             Assert.Equal(expected, systemProperties.EnqueuedSequenceNumber);
         }
-        
+
         [Fact]
         public void CreateProperties_FromMessage_AssignsIsReceivedCorrectly()
         {
@@ -101,14 +101,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             AmqpAnnotatedMessage amqpMessage = CreateAmqpMessage();
             amqpMessage.MessageAnnotations["x-opt-enqueue-sequence-number"] = expected;
             ServiceBusReceivedMessage message = CreateServiceBusReceivedMessage(amqpMessage);
-            
+
             // Act
             var systemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
-            
+
             // Assert
             Assert.True(systemProperties.IsReceived);
         }
-        
+
         [Fact]
         public void CreateProperties_FromMessage_AssignsEnqueuedTimeCorrectly()
         {
@@ -118,14 +118,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             AmqpAnnotatedMessage amqpMessage = CreateAmqpMessage();
             amqpMessage.MessageAnnotations["x-opt-enqueued-time"] = expected;
             ServiceBusReceivedMessage message = CreateServiceBusReceivedMessage(amqpMessage);
-            
+
             // Act
             var systemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
-            
+
             // Assert
             Assert.Equal(expected, systemProperties.EnqueuedTime);
         }
-        
+
         [Theory]
         [InlineData(null)]
         [InlineData("465924F2-D386-407F-826A-573144085682")]
@@ -139,12 +139,12 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
             // Act
             var systemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
-            
+
             // Assert
             Assert.Equal(expected, Guid.Parse(systemProperties.LockToken));
-            Assert.Equal(expected != null, systemProperties.IsLockTokenSet);
+            Assert.Equal(lockToken != null, systemProperties.IsLockTokenSet);
         }
-        
+
         [Fact]
         public void CreateProperties_FromMessage_AssignsLockedUntilCorrectly()
         {
@@ -154,14 +154,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             AmqpAnnotatedMessage amqpMessage = CreateAmqpMessage();
             amqpMessage.MessageAnnotations["x-opt-locked-until"] = expected;
             ServiceBusReceivedMessage message = CreateServiceBusReceivedMessage(amqpMessage);
-            
+
             // Act
             var systemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
-            
+
             // Assert
             Assert.Equal(expected, systemProperties.LockedUntil);
         }
-        
+
         [Fact]
         public void CreateProperties_FromMessage_AssignsSequenceNumberCorrectly()
         {
@@ -171,10 +171,10 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             AmqpAnnotatedMessage amqpMessage = CreateAmqpMessage();
             amqpMessage.MessageAnnotations["x-opt-sequence-number"] = expected;
             ServiceBusReceivedMessage message = CreateServiceBusReceivedMessage(amqpMessage);
-            
+
             // Act
             var systemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
-            
+
             // Assert
             Assert.Equal(expected, systemProperties.SequenceNumber);
             Assert.Equal(expected > -1, systemProperties.IsReceived);
@@ -182,6 +182,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
         private static void SetLockToken(ServiceBusReceivedMessage message, Guid? expected)
         {
+            if (expected == null || expected == Guid.Empty)
+            {
+                return;
+            }
+
             PropertyInfo lockTokenGuid = message.GetType().GetProperty("LockTokenGuid", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.NotNull(lockTokenGuid);
             lockTokenGuid.SetValue(message, expected);
@@ -193,22 +198,22 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             string json = JsonConvert.SerializeObject(order);
             byte[] bytes = Encoding.UTF8.GetBytes(json);
 
-            var message = new AmqpAnnotatedMessage(new AmqpMessageBody(new[] {new ReadOnlyMemory<byte>(bytes)}));
+            var message = new AmqpAnnotatedMessage(new AmqpMessageBody(new[] { new ReadOnlyMemory<byte>(bytes) }));
             message.Header.DeliveryCount = BogusGenerator.Random.UInt();
-            
+
             return message;
         }
 
         private static ServiceBusReceivedMessage CreateServiceBusReceivedMessage(AmqpAnnotatedMessage amqpMessage)
         {
-            var serviceBusMessage = (ServiceBusReceivedMessage) Activator.CreateInstance(
+            var serviceBusMessage = (ServiceBusReceivedMessage)Activator.CreateInstance(
                 type: typeof(ServiceBusReceivedMessage),
                 bindingAttr: BindingFlags.NonPublic | BindingFlags.Instance,
                 binder: null,
-                args: new object[] {amqpMessage},
+                args: new object[] { amqpMessage },
                 culture: null,
                 activationAttributes: null);
-            
+
             return serviceBusMessage;
         }
     }

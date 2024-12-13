@@ -24,21 +24,30 @@ To interact with the message processing system within your custom message handle
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 
-public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
+public class OrderMessageHandler : CircuitBreakerServiceBusMessageHandler<Order>
 {
     private readonly IMessagePumpCircuitBreaker _circuitBreaker;
 
-    public OrderMessageHandler(IMessagePumpCircuitBreaker circuitBreaker)
+    public OrderMessageHandler(IMessagePumpCircuitBreaker circuitBreaker, ILogger<...> logger) : base(circuitBreaker, logger)
     {
         _circuitBreaker = circuitBreaker;
     }
 
-    public async Task ProcessMessageAsync(Order message, AzureServiceBusMessageContext messageContext, ...)
+    public override async Task ProcessMessageAsync(
+        Order message,
+        AzureServiceBusMessageContext messageContext,
+        MessagePumpCircuitBreakerOptions options,
+        ...)
     {
         // Determine whether your dependent system is healthy...
-
-        // If not, call the circuit breaker, processing will be halted temporarily.
-        await _circuitBreaker.PauseMessageProcessingAsync(messageContext.JobId);
+        if (!IsDependentSystemHealthy())
+        {
+            throw new ...Exception("My dependency system is temporarily unavailable, please halt message processing for now");
+        }
+        else
+        {
+            // Process your message...
+        }
     }
 }
 ```
@@ -47,24 +56,26 @@ The message pump will by default act in the following pattern:
 * Circuit breaker calls `Pause`
   * Message pump stops processing messages for a period of time (circuit is OPEN).
 * Message pump tries processing a single message (circuit is HALF-OPEN).
-  * Dependency still unhealthy? => Tries again later (circuit is OPEN)
-  * Dependency healthy? => Message pump starts receiving message in full again (circuit is CLOSED).
+  * Dependency still unhealthy? => circuit breaker pauses again (circuit is OPEN)
+  * Dependency healthy? => circuit breaker resumes, message pump starts receiving message in full again (circuit is CLOSED).
 
 Both the recovery period after the circuit is open and the interval between messages when the circuit is half-open is configurable when calling the circuit breaker. These time periods are related to your dependent system and could change by the type of transient connection failure.
 
 ```csharp
-await _circuitBreaker.PauseMessageProcessingAsync(
-    messageContext.JobId,
-    options =>
-    {
-        // Sets the time period the circuit breaker should wait before retrying to receive messages.
-        // A.k.a. the time period the circuit is closed (default: 30 seconds).
-        options.MessageRecoveryPeriod = TimeSpan.FromSeconds(15);
-
-        // Sets the time period the circuit breaker should wait between each message after the circuit was closed, during recovery.
-        // A.k.a. the time interval to receive messages during which the circuit is half-open (default: 10 seconds).
-        options.MessageIntervalDuringRecovery = TimeSpan.FromSeconds(1.5);
-    });
+ public override async Task ProcessMessageAsync(
+        Order message,
+        AzureServiceBusMessageContext messageContext,
+        MessagePumpCircuitBreakerOptions options,
+        ...)
+{
+    // Sets the time period the circuit breaker should wait before retrying to receive messages.
+    // A.k.a. the time period the circuit is closed (default: 30 seconds).
+    options.MessageRecoveryPeriod = TimeSpan.FromSeconds(15);
+ 
+    // Sets the time period the circuit breaker should wait between each message after the circuit was closed, during recovery.
+    // A.k.a. the time interval to receive messages during which the circuit is half-open (default: 10 seconds).
+    options.MessageIntervalDuringRecovery = TimeSpan.FromSeconds(1.5);
+}
 ```
 
 ### Pause message processing for a fixed period of time 

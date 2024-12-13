@@ -2,7 +2,6 @@
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using GuardNet;
 using Microsoft.Extensions.Configuration;
@@ -42,9 +41,14 @@ namespace Arcus.Messaging.Pumps.Abstractions
         public string JobId { get; protected set; } = Guid.NewGuid().ToString();
 
         /// <summary>
-        /// Gets the boolean flag that indicates whether the message pump is started and receiving messages.
+        /// Gets the boolean flag that indicates whether the message pump is started.
         /// </summary>
-        public bool IsStarted { get; private set; }
+        public bool IsStarted { get; protected set; }
+
+        /// <summary>
+        /// Gets the current state of the message pump within the circuit breaker context.
+        /// </summary>
+        public MessagePumpCircuitState CircuitState { get; private set; } = MessagePumpCircuitState.Closed;
 
         /// <summary>
         /// Gets hte ID of the client being used to connect to the messaging service.
@@ -98,23 +102,14 @@ namespace Arcus.Messaging.Pumps.Abstractions
         }
 
         /// <summary>
-        /// Try to process a single message after the circuit was broken, a.k.a entering the half-open state.
-        /// </summary>
-        /// <returns>
-        ///     [Success] when the related message handler can again process messages and the message pump can again start receive messages in full; [Failure] otherwise.
-        /// </returns>
-        public virtual Task<MessageProcessingResult> TryProcessProcessSingleMessageAsync(MessagePumpCircuitBreakerOptions options)
-        {
-            return Task.FromResult(MessageProcessingResult.Success);
-        }
-
-        /// <summary>
         /// Start with receiving messages on this message pump.
         /// </summary>
         /// <param name="cancellationToken">The token to indicate the start process should no longer be graceful.</param>
         public virtual Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
         {
             IsStarted = true;
+            CircuitState = MessagePumpCircuitState.Closed;
+
             return Task.CompletedTask;
         }
 
@@ -125,7 +120,54 @@ namespace Arcus.Messaging.Pumps.Abstractions
         public virtual Task StopProcessingMessagesAsync(CancellationToken cancellationToken)
         {
             IsStarted = false;
+            CircuitState = CircuitState.TransitionTo(CircuitBreakerState.Open);
+
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Waits a previously configured amount of time until the message pump is expected to be recovered (Closed to Open state).
+        /// </summary>
+        /// <param name="cancellationToken">The token to cancel the wait period.</param>
+        protected async Task WaitMessageRecoveryPeriodAsync(CancellationToken cancellationToken)
+        {
+            Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to wait message recovery period of '{Recovery}' during '{State}' state", JobId, CircuitState.Options.MessageRecoveryPeriod.ToString("g"), CircuitState);
+            await Task.Delay(CircuitState.Options.MessageRecoveryPeriod, cancellationToken);
+
+            CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
+        }
+
+        /// <summary>
+        /// Waits a previously configured amount of time until the next single message can be tried (Half-Open state).
+        /// </summary>
+        /// <param name="cancellationToken">The token to cancel the wait period.</param>
+        protected async Task WaitMessageIntervalDuringRecoveryAsync(CancellationToken cancellationToken)
+        {
+            Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to wait message interval during recovery of '{Interval}' during the '{State}' state", JobId, CircuitState.Options.MessageIntervalDuringRecovery.ToString("g"), CircuitState);
+            await Task.Delay(CircuitState.Options.MessageIntervalDuringRecovery, cancellationToken);
+
+            CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
+        }
+
+        /// <summary>
+        /// Notifies the message pump about the new state which pauses message retrieval.
+        /// </summary>
+        /// <param name="options">The additional accompanied options that goes with the new state.</param>
+        internal void NotifyPauseReceiveMessages(MessagePumpCircuitBreakerOptions options)
+        {
+            Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to transition from a '{CurrentState}' an 'Open' state", JobId, CircuitState);
+
+            CircuitState = CircuitState.TransitionTo(CircuitBreakerState.Open, options);
+        }
+
+        /// <summary>
+        /// Notifies the message pump about the new state which resumes message retrieval.
+        /// </summary>
+        protected void NotifyResumeRetrievingMessages()
+        {
+            Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to transition back from '{CurrentState}' to a 'Closed' state, retrieving messages is resumed", JobId, CircuitState);
+
+            CircuitState = MessagePumpCircuitState.Closed;
         }
 
         /// <summary>
