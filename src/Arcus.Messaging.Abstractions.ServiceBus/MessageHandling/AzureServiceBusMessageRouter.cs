@@ -363,7 +363,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         {
             if (messageReceiver != null)
             {
-                Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully processed the message and no fallback message handlers configured, abandoning message!", message.MessageId, messageContext.JobId);
+                Logger.LogDebug("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully process the message and no fallback message handlers configured, abandoning message!", message.MessageId, messageContext.JobId);
                 await messageReceiver.AbandonMessageAsync(message);
             }
         }
