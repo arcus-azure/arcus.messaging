@@ -243,7 +243,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
                         } while (!singleProcessingResult.IsSuccessful);
 
-                        NotifyResumeRetrievingMessages();
+                        await NotifyResumeRetrievingMessagesAsync();
                     }
                 }
                 catch (Exception exception) when (exception is TaskCanceledException or OperationCanceledException or ObjectDisposedException)

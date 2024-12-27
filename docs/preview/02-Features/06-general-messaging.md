@@ -78,6 +78,31 @@ Both the recovery period after the circuit is open and the interval between mess
 }
 ```
 
+#### 🔔 Get notified on a circuit breaker state transition
+Transitions from circuit breaker states happens internally and automatically. The library supports a notification system that lets you register event handlers that gets called upon a state transition.
+
+After the message pump and/or message handlers are registered, you can add one or more handlers linked to specific transitions to the previously registered pump.
+
+```csharp
+using Arcus.Messaging.Pumps.Abstractions;
+
+services.AddServiceBusMessagePump(...)
+        .WithCircuitBreakerEventHandler<MyFirstCircuitBreakerEventHandler>()
+        .WithCircuitBreakerEventHandler<MySecondCircuitBreakerEventHandler>();
+```
+
+The instances should implement the `ICircuitBreakerEventHandler`, which allows you to access the new state for the pump.
+
+```csharp
+public class MyFirstCircuitBreakerEventHandler : ICircuitBreakerEventHandler
+{
+    public Task OnTransitionAsync(MessagePumpCircuitState newState)
+    {
+        // ...
+    }
+}
+```
+
 ### Pause message processing for a fixed period of time 
 ⚡ If you use one of the message-type specific packages like `Arcus.Messaging.Pumps.EventHubs`, you will automatically get this functionality. If you implement your own message pump, please use the `services.AddMessagePump(...)` extension which makes sure that you also registers this functionality.
 

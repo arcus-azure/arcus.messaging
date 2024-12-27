@@ -26,6 +26,44 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
     }
 
     /// <summary>
+    /// Represents an instance to notify changes in circuit breaker states for given message pumps.
+    /// </summary>
+    public interface ICircuitBreakerEventHandler
+    {
+        /// <summary>
+        /// Notifies the application on a change in the message pump's circuit breaker state.
+        /// </summary>
+        /// <param name="newState">The new circuit breaker state in which the message pump is currently running on.</param>
+        Task OnTransitionAsync(MessagePumpCircuitState newState);
+    }
+
+    internal sealed class CircuitBreakerEventHandler
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CircuitBreakerEventHandler" /> class.
+        /// </summary>
+        public CircuitBreakerEventHandler(string jobId, ICircuitBreakerEventHandler handler)
+        {
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank job ID for the circuit breaker event handler registration", nameof(jobId));
+            }
+
+            if (handler is null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+
+            JobId = jobId;
+            Handler = handler;
+        }
+
+        public string JobId { get; }
+        
+        public ICircuitBreakerEventHandler Handler { get; }
+    }
+
+    /// <summary>
     /// Represents the available states in the <see cref="MessagePumpCircuitState"/> in which the message pump can transition into.
     /// </summary>
     internal enum CircuitBreakerState

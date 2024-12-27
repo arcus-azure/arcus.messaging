@@ -12,6 +12,7 @@ using Arcus.Messaging.Pumps.ServiceBus.Resiliency;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
+using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Testing;
@@ -33,6 +34,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var messageSink = new OrderMessageSink();
+            var mockEventHandler1 = new MockCircuitBreakerEventHandler();
+            var mockEventHandler2 = new MockCircuitBreakerEventHandler();
 
             ServiceBusMessage messageBeforeBreak = CreateOrderServiceBusMessageForW3C();
             ServiceBusMessage messageAfterBreak = CreateOrderServiceBusMessageForW3C();
@@ -42,8 +45,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .AddSingleton(messageSink)
                    .AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName)
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>(
-                       messageContextFilter: ctx => ctx.MessageId == messageBeforeBreak.MessageId 
-                                                    || ctx.MessageId == messageAfterBreak.MessageId);
+                       messageContextFilter: ctx => ctx.MessageId == messageBeforeBreak.MessageId
+                                                    || ctx.MessageId == messageAfterBreak.MessageId)
+                   .WithCircuitBreakerEventHandler(_ => mockEventHandler1)
+                   .WithCircuitBreakerEventHandler(_ => mockEventHandler2);
 
             var producer = new TestServiceBusMessageProducer(QueueName, _config.GetServiceBus());
             await using var worker = await Worker.StartNewAsync(options);
@@ -56,6 +61,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             await producer.ProduceAsync(messageAfterBreak);
             await messageSink.ShouldReceiveOrdersAfterBreakAsync(messageAfterBreak.MessageId);
+
+            mockEventHandler1.ShouldTransitionCorrectly();
+            mockEventHandler2.ShouldTransitionCorrectly();
         }
 
         [Fact]
@@ -66,6 +74,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             ServiceBusMessage messageAfterBreak = CreateOrderServiceBusMessageForW3C();
             
             var messageSink = new OrderMessageSink();
+            var mockEventHandler1 = new MockCircuitBreakerEventHandler();
+            var mockEventHandler2 = new MockCircuitBreakerEventHandler();
             await using TemporaryTopicSubscription subscription = await CreateTopicSubscriptionForMessageAsync(messageBeforeBreak, messageAfterBreak);
 
             var options = new WorkerOptions();
@@ -73,7 +83,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .ConfigureSerilog(logging => logging.MinimumLevel.Verbose())
                    .AddSingleton(messageSink)
                    .AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, subscription.Name, HostName)
-                   .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>();
+                   .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>()
+                   .WithCircuitBreakerEventHandler(_ => mockEventHandler1)
+                   .WithCircuitBreakerEventHandler(_ => mockEventHandler2);
 
             var producer = new TestServiceBusMessageProducer(TopicName, _config.GetServiceBus());
             await using var worker = await Worker.StartNewAsync(options);
@@ -86,6 +98,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             
             await producer.ProduceAsync(messageAfterBreak);
             await messageSink.ShouldReceiveOrdersAfterBreakAsync(messageAfterBreak.MessageId);
+
+            mockEventHandler1.ShouldTransitionCorrectly();
+            mockEventHandler2.ShouldTransitionCorrectly();
         }
 
         private async Task<TemporaryTopicSubscription> CreateTopicSubscriptionForMessageAsync(params ServiceBusMessage[] messages)
