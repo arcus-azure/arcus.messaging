@@ -37,6 +37,10 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         Task OnTransitionAsync(MessagePumpCircuitState newState);
     }
 
+    /// <summary>
+    /// Represents a registration of an <see cref="ICircuitBreakerEventHandler"/> instance in the application services,
+    /// specifically linked to a message pump.
+    /// </summary>
     internal sealed class CircuitBreakerEventHandler
     {
         /// <summary>
@@ -58,8 +62,14 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             Handler = handler;
         }
 
+        /// <summary>
+        /// Gets the unique ID to distinguish the linked message pump.
+        /// </summary>
         public string JobId { get; }
         
+        /// <summary>
+        /// Gets the event handler implementation to trigger on transition changes in the linked message pump.
+        /// </summary>
         public ICircuitBreakerEventHandler Handler { get; }
     }
 
