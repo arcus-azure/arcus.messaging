@@ -178,6 +178,11 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
+            if (messageBodySerializer is null)
+            {
+                throw new ArgumentNullException(nameof(messageBodySerializer));
+            }
+
             return WithMessageHandler(services, messageContextFilter, _ => messageBodySerializer, messageBodyFilter, implementationFactory);
         }
 
