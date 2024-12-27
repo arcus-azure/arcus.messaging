@@ -32,7 +32,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.Abstractions\Arcus.Messaging.Abstractions.csproj" />
-    <ProjectReference Include="..\Arcus.Messaging.Pumps.Abstractions\Arcus.Messaging.Pumps.Abstractions.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.ServiceBus.Core\Arcus.Messaging.ServiceBus.Core.csproj" />
   </ItemGroup>
 

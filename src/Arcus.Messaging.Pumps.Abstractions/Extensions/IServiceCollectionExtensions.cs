@@ -53,17 +53,17 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Adds an <see cref="ICircuitBreakerEventHandler"/> implementation for a specific message pump to the application services.
         /// </summary>
-        /// <typeparam name="THandler">The custom type of the event handler.</typeparam>
+        /// <typeparam name="TEventHandler">The custom type of the event handler.</typeparam>
         /// <param name="services">The application services to register the event handler.</param>
         /// <param name="jobId">The unique ID to distinguish the message pump to register this event handler for.</param>
         /// <param name="implementationFactory">The factory function to create the custom <see cref="ICircuitBreakerEventHandler"/> implementation.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        public static IServiceCollection AddCircuitBreakerEventHandler<THandler>(
+        public static IServiceCollection AddCircuitBreakerEventHandler<TEventHandler>(
             this IServiceCollection services,
             string jobId,
-            Func<IServiceProvider, THandler> implementationFactory)
-            where THandler : ICircuitBreakerEventHandler
+            Func<IServiceProvider, TEventHandler> implementationFactory)
+            where TEventHandler : ICircuitBreakerEventHandler
         {
             if (services is null)
             {
