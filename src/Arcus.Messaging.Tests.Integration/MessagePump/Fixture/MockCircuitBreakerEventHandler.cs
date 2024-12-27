@@ -48,7 +48,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             }
             else if (oldState.IsOpen)
             {
-                Assert.True(newState.IsHalfOpen, $"when the message pump comes from a open state, the next state should always be half-open, but got: {newState}");
+                Assert.True(newState.IsHalfOpen, $"when the message pump comes from an open state, the next state should always be half-open, but got: {newState}");
             }
             else if (oldState.IsHalfOpen)
             {
