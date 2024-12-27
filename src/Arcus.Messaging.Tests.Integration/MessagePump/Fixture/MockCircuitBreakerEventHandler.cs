@@ -30,7 +30,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             Assert.NotEmpty(_states);
 
             MessagePumpCircuitState firstTransition = _states[0];
-            Assert.True(firstTransition.IsOpen, $"if the message pump starts up, the first transition should always be from a closed to open state, but got: {firstTransition}");
+            Assert.True(firstTransition.IsOpen, $"when the message pump starts up, the first transition should always be from a closed to open state, but got: {firstTransition}");
 
             IEnumerable<(MessagePumpCircuitState oldState, MessagePumpCircuitState newState)> transitions =
                 _states.SkipLast(1).Zip(_states.Skip(1));
@@ -44,15 +44,15 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         {
             if (oldState.IsClosed)
             {
-                Assert.True(newState.IsHalfOpen, $"if the message pump comes from a closed state, the next state should always be half-open, but got: {newState}");
+                Assert.True(newState.IsHalfOpen, $"when the message pump comes from a closed state, the next state should always be half-open, but got: {newState}");
             }
             else if (oldState.IsOpen)
             {
-                Assert.True(newState.IsHalfOpen, $"if the message pump comes from a open state, the next state should always be half-open, but got: {newState}");
+                Assert.True(newState.IsHalfOpen, $"when the message pump comes from a open state, the next state should always be half-open, but got: {newState}");
             }
             else if (oldState.IsHalfOpen)
             {
-                Assert.True(newState.IsClosed, $"if the message pump comes from a half-open state, the next state should always be closed, but got: {newState}");
+                Assert.True(newState.IsClosed, $"when the message pump comes from a half-open state, the next state should always be closed, but got: {newState}");
             }
         }
     }
