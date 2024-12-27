@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -27,10 +26,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageContextFilter);
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageContextFilter);
         }
 
         /// <summary>
@@ -50,11 +46,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageContextFilter, implementationFactory);
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageContextFilter, implementationFactory);
         }
 
         /// <summary>
@@ -74,11 +66,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-                messageContextFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+                services, messageContextFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
          /// <summary>
@@ -100,9 +89,20 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
+            if (services is null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            if (messageContextFilter is null)
+            {
+                throw new ArgumentNullException(nameof(messageContextFilter));
+            }
+
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
 
             services.AddMessageHandler(implementationFactory, messageContextFilter: messageContextFilter);
             return services;

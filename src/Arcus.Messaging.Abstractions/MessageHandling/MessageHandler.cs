@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -35,24 +34,16 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             IMessageBodySerializer messageBodySerializer,
             ILogger logger)
         {
-            Guard.NotNull(messageHandlerInstance, nameof(messageHandlerInstance), "Requires a message handler implementation to apply the message processing filters to");
-            Guard.NotNull(messageHandlerImplementation, nameof(messageHandlerImplementation), "Requires a message handler implementation to apply the message processing filters to");
-            Guard.NotNull(messageContextFilter, nameof(messageContextFilter), "Requires a message context filter to register with the message handler");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a message body filter to register with the message handler");
-            Guard.NotNull(messageType, nameof(messageType), "Requires a message type that the message handler can handle");
-            Guard.NotNull(messageContextType, nameof(messageContextType), "Requires a message context type that the message handler can handle");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write diagnostic messages during the interaction of the message handler");
-
-            _messageHandlerInstance = messageHandlerInstance;
+            _messageHandlerInstance = messageHandlerInstance ?? throw new ArgumentNullException(nameof(messageHandlerInstance));
             _messageHandlerInstanceType = messageHandlerInstance.GetType();
-            _messageHandlerImplementation = messageHandlerImplementation;
-            _messageContextFilter = messageContextFilter;
-            _messageBodyFilter = messageBodyFilter;
+            _messageHandlerImplementation = messageHandlerImplementation ?? throw new ArgumentNullException(nameof(messageHandlerImplementation));
+            _messageContextFilter = messageContextFilter ?? throw new ArgumentNullException(nameof(messageContextFilter));
+            _messageBodyFilter = messageBodyFilter ?? throw new ArgumentNullException(nameof(messageBodyFilter));
             _messageBodySerializer = messageBodySerializer;
-            _logger = logger;
+            _logger = logger ?? NullLogger.Instance;
 
-            MessageType = messageType;
-            MessageContextType = messageContextType;
+            MessageType = messageType ?? throw new ArgumentNullException(nameof(messageType));
+            MessageContextType = messageContextType ?? throw new ArgumentNullException(nameof(messageContextType));
         }
 
         /// <summary>
@@ -73,8 +64,10 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> or <paramref name="logger"/> is <c>null</c>.</exception>
         public static IEnumerable<MessageHandler> SubtractFrom(IServiceProvider serviceProvider, ILogger logger)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a collection of services to subtract the message handlers from");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write trace messages during the lifetime of the message handlers");
+            if (serviceProvider is null)
+            {
+                throw new ArgumentNullException(nameof(serviceProvider));
+            }
 
             MessageHandler[] registrations = 
                 serviceProvider.GetServices<MessageHandler>()
@@ -105,7 +98,10 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             IMessageBodySerializer messageBodySerializer = null) 
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(messageHandler, nameof(messageHandler), "Requires a message handler implementation to register the handler within the application services");
+            if (messageHandler is null)
+            {
+                throw new ArgumentNullException(nameof(messageHandler));
+            }
 
             ProcessMessageAsync processMessageAsync = DetermineMessageImplementation(messageHandler);
             logger = logger ?? NullLogger<IMessageHandler<TMessage, TMessageContext>>.Instance;
@@ -222,7 +218,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         public bool CanProcessMessageBasedOnContext<TMessageContext>(TMessageContext messageContext) 
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires an message context instance to determine if the message handler can process the message");
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
+
             try
             {
                 return _messageContextFilter.Invoke(messageContext);
@@ -331,9 +331,20 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken) where TMessageContext : MessageContext
         {
-            Guard.NotNull(message, nameof(message), "Requires message content to deserialize and process the message");
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
+
+            if (correlationInfo is null)
+            {
+                throw new ArgumentNullException(nameof(correlationInfo));
+            }
 
             Type messageType = message.GetType();
             _logger.LogTrace("Start processing '{MessageType}' message in message handler '{MessageHandlerType}'...", messageType, _messageHandlerInstanceType.Name);

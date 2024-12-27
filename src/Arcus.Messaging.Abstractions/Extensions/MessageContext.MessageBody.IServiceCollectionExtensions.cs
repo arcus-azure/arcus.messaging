@@ -31,12 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageContextFilter, messageBodyFilter, implementationFactory);
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageContextFilter, messageBodyFilter, implementationFactory);
         }
 
         /// <summary>
@@ -56,10 +51,6 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
-
             return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageContextFilter, messageBodyFilter);
         }
 
@@ -82,12 +73,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
-
-            return services.WithMessageHandler(
-                messageContextFilter, messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return WithMessageHandler(
+                services, messageContextFilter, messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
         /// <summary>
@@ -111,10 +98,25 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
+            if (services is null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            if (messageContextFilter is null)
+            {
+                throw new ArgumentNullException(nameof(messageContextFilter));
+            }
+
+            if (messageBodyFilter is null)
+            {
+                throw new ArgumentNullException(nameof(messageBodyFilter));
+            }
+
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
 
             services.AddMessageHandler(implementationFactory, messageBodyFilter, messageContextFilter);
             return services;

@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -25,8 +24,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
         public DefaultMessagePumpLifetime(IServiceProvider serviceProvider)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve the registered message pumps");
-            _serviceProvider = serviceProvider;
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _logger = serviceProvider.GetService<ILogger<DefaultMessagePumpLifetime>>() ?? NullLogger<DefaultMessagePumpLifetime>.Instance;
         }
 
@@ -38,7 +36,10 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         public async Task StartProcessingMessagesAsync(string jobId, CancellationToken cancellationToken)
         {
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a message pump job ID to retrieve the registered message pump in the application services");
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank job ID to distinguish message pumps", nameof(jobId));
+            }
 
             MessagePump messagePump = GetMessagePump(jobId);
             
@@ -57,7 +58,10 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="duration"/> is a negative time range.</exception>
         public async Task PauseProcessingMessagesAsync(string jobId, TimeSpan duration, CancellationToken cancellationToken)
         {
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a message pump job ID to retrieve the registered message pump in the application services");
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank job ID to distinguish message pumps", nameof(jobId));
+            }
 
             MessagePump messagePump = GetMessagePump(jobId);
             _logger.LogTrace("Stopping message pump '{JobId}' via message pump lifetime...", jobId);
@@ -81,7 +85,10 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         public async Task StopProcessingMessagesAsync(string jobId, CancellationToken cancellationToken)
         {
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a message pump job ID to retrieve the registered message pump in the application services");
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank job ID to distinguish message pumps", nameof(jobId));
+            }
 
             MessagePump messagePump = GetMessagePump(jobId);
 

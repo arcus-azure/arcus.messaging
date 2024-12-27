@@ -19,7 +19,11 @@ namespace System
         public static (string transactionId, string operationParentId) GetTraceParent(
             this IReadOnlyDictionary<string, object> applicationProperties)
         {
-            Guard.NotNull(applicationProperties, nameof(applicationProperties), "Requires a set of application properties to retrieve the 'traceparent' property");
+            if (applicationProperties is null)
+            {
+                throw new ArgumentNullException(nameof(applicationProperties));
+            }
+
             return GetTraceParent((IDictionary<string, object>) applicationProperties);
         }
 
@@ -30,7 +34,10 @@ namespace System
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="applicationProperties"/> is <c>null</c>.</exception>
         public static (string transactionId, string operationParentId) GetTraceParent(this IDictionary<string, object> applicationProperties)
         {
-            Guard.NotNull(applicationProperties, nameof(applicationProperties), "Requires a set of application properties to retrieve the 'traceparent' property");
+            if (applicationProperties is null)
+            {
+                throw new ArgumentNullException(nameof(applicationProperties));
+            }
 
             if (applicationProperties.TryGetValue("Diagnostic-Id", out object value)
                 && value != null)

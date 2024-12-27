@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -11,7 +10,7 @@ namespace Arcus.Messaging.Abstractions
     /// Represents the correlation result of a received Azure Service Bus message.
     /// This result will act as the scope of the request telemetry.
     /// </summary>
-    public class MessageCorrelationResult : IDisposable
+    public sealed class MessageCorrelationResult : IDisposable
     {
         private readonly TelemetryClient _telemetryClient;
         private readonly IOperationHolder<RequestTelemetry> _operationHolder;
@@ -21,18 +20,14 @@ namespace Arcus.Messaging.Abstractions
             TelemetryClient client,
             IOperationHolder<RequestTelemetry> operationHolder)
         {
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a hierarchical message correlation information instance for the received message");
-            Guard.NotNull(operationHolder, nameof(operationHolder), "Requires an operation holder to manage the scope where dependencies are automatically tracked");
-
             _telemetryClient = client;
-            _operationHolder = operationHolder;
-            CorrelationInfo = correlationInfo;
+            _operationHolder = operationHolder ?? throw new ArgumentNullException(nameof(operationHolder));
+            CorrelationInfo = correlationInfo ?? throw new ArgumentNullException(nameof(correlationInfo));
         }
 
         private MessageCorrelationResult(MessageCorrelationInfo correlationInfo)
         {
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a hierarchical message correlation information instance for the received message");
-            CorrelationInfo = correlationInfo;
+            CorrelationInfo = correlationInfo ?? throw new ArgumentNullException(nameof(correlationInfo));
         }
 
         /// <summary>
@@ -47,8 +42,7 @@ namespace Arcus.Messaging.Abstractions
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="correlationInfo"/> is <c>null</c>.</exception>
         public static MessageCorrelationResult Create(MessageCorrelationInfo correlationInfo)
         {
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a hierarchical message correlation information instance for the received message");
-            return new MessageCorrelationResult(correlationInfo);
+            return new MessageCorrelationResult(correlationInfo ?? throw new ArgumentNullException(nameof(correlationInfo)));
         }
 
         /// <summary>
@@ -63,8 +57,15 @@ namespace Arcus.Messaging.Abstractions
             string transactionId, 
             string operationParentId)
         {
-            Guard.NotNullOrWhitespace(transactionId, nameof(transactionId), "Requires a transaction ID to determine the message correlation of the received Azure Service Bus message");
-            Guard.NotNullOrWhitespace(operationParentId, nameof(operationParentId), "Requires a operation parent ID to determine the message correlation of the received Azure Service Bus message");
+            if (string.IsNullOrWhiteSpace(transactionId))
+            {
+                throw new ArgumentException("Requires a non-blank transaction ID to determine the message correlation", nameof(transactionId));
+            }
+
+            if (string.IsNullOrWhiteSpace(operationParentId))
+            {
+                throw new ArgumentException("Requires a non-blank operation parent ID to determine the message correlation");
+            }
 
             var telemetry = new RequestTelemetry();
             telemetry.Context.Operation.Id = transactionId;

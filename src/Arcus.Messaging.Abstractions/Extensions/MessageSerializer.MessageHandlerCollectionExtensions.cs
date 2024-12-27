@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -26,10 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageBodySerializer);
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageBodySerializer);
         }
 
         /// <summary>
@@ -48,11 +44,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-                messageBodySerializer, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+                services, messageBodySerializer, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
         /// <summary>
@@ -70,11 +63,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageBodySerializer, implementationFactory);
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageBodySerializer, implementationFactory);
         }
 
         /// <summary>
@@ -95,11 +84,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent services");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+            return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+                services,
                 messageBodySerializerImplementationFactory: _ => messageBodySerializer, 
                 messageHandlerImplementationFactory: implementationFactory);
         }
@@ -118,10 +104,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageBodySerializerImplementationFactory);
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageBodySerializerImplementationFactory);
         }
 
         /// <summary>
@@ -140,10 +123,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+            return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+                services,
                 messageBodySerializerImplementationFactory, 
                 serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
@@ -163,11 +144,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageHandlerImplementationFactory, nameof(messageHandlerImplementationFactory));
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer instance to deserialize incoming message for the message handler");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
+                services,
                 messageBodySerializerImplementationFactory,
                 messageHandlerImplementationFactory);
         }
@@ -190,9 +168,20 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer instance to deserialize incoming message for the message handler");
-            Guard.NotNull(messageHandlerImplementationFactory, nameof(messageHandlerImplementationFactory), "Requires a function to create the message handler with dependent services");
+            if (services is null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            if (messageBodySerializerImplementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(messageBodySerializerImplementationFactory));
+            }
+
+            if (messageHandlerImplementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(messageHandlerImplementationFactory));
+            }
 
             services.AddMessageHandler(messageHandlerImplementationFactory, implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory);
             return services;

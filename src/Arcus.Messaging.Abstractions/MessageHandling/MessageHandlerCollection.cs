@@ -1,5 +1,4 @@
 ﻿using System;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -18,8 +17,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         public MessageHandlerCollection(IServiceCollection services)
         {
-            Guard.NotNull(services, nameof(services), "Requires a collection of services to register the message handling logic into");
-            Services = services;
+            Services = services ?? throw new ArgumentNullException(nameof(services));
         }
 
         /// <summary>
@@ -50,7 +48,10 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Func<IServiceProvider, IMessageBodySerializer> implementationFactoryMessageBodySerializer = null)
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create a message handler implementation to register the handler within the application services");
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
             
             Services.AddTransient(
                 serviceProvider => MessageHandler.Create(
@@ -76,7 +77,10 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the user-defined fallback message handler");
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
 
             Services.AddSingleton(
                 serviceProvider => FallbackMessageHandler<TMessage, TMessageContext>.Create(

@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Health.Publishing;
 using Arcus.Messaging.Health.Tcp;
-using GuardNet;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 // ReSharper disable once CheckNamespace
@@ -38,8 +37,15 @@ namespace Microsoft.Extensions.DependencyInjection
             Action<TcpHealthListenerOptions> configureTcpListenerOptions = null,
             Action<HealthCheckPublisherOptions> configureHealthCheckPublisherOptions = null)
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the TCP health probe to");
-            Guard.NotNullOrWhitespace(tcpConfigurationKey, nameof(tcpConfigurationKey), "Requires a non-blank configuration key to retrieve the TCP port");
+            if (services is null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            if (string.IsNullOrWhiteSpace(tcpConfigurationKey))
+            {
+                throw new ArgumentException("Requires a non-blank configuration key for the TCP port", nameof(tcpConfigurationKey));
+            }
 
             IHealthChecksBuilder healthCheckBuilder = services.AddHealthChecks();
             configureHealthChecks?.Invoke(healthCheckBuilder);

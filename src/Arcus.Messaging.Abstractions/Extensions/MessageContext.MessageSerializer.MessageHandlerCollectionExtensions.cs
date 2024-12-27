@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -28,11 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageContextFilter, messageBodySerializer);
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageContextFilter, messageBodySerializer);
         }
 
         /// <summary>
@@ -51,11 +46,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer to deserialize the incoming message for the message handler");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(messageContextFilter, messageBodySerializerImplementationFactory);
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageContextFilter, messageBodySerializerImplementationFactory);
         }
 
         /// <summary>
@@ -76,13 +67,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-            Guard.NotNull(messageHandlerImplementationFactory, nameof(messageHandlerImplementationFactory), "Requires a function to create the message handler with dependent services");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
-                messageContextFilter, messageBodySerializer, messageHandlerImplementationFactory);
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
+                services, messageContextFilter, messageBodySerializer, messageHandlerImplementationFactory);
         }
 
         /// <summary>
@@ -103,12 +89,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer to deserialize the incoming message for the message handler");
-            Guard.NotNull(messageHandlerImplementationFactory, nameof(messageHandlerImplementationFactory), "Requires a function to create the message handler with dependent services");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
+                services,
                 messageContextFilter, 
                 messageBodySerializerImplementationFactory, 
                 messageHandlerImplementationFactory);
@@ -132,12 +114,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-                messageContextFilter, messageBodySerializer, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+                services, messageContextFilter, messageBodySerializer, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
         /// <summary>
@@ -160,13 +138,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-            Guard.NotNull(messageHandlerImplementationFactory, nameof(messageHandlerImplementationFactory), "Requires a function to create the message handler with dependent services");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-                messageContextFilter: messageContextFilter, messageBodySerializerImplementationFactory: _ => messageBodySerializer, messageHandlerImplementationFactory);
+            return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+                services, messageContextFilter: messageContextFilter, messageBodySerializerImplementationFactory: _ => messageBodySerializer, messageHandlerImplementationFactory);
         }
 
         /// <summary>
@@ -187,12 +160,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer to deserialize the incoming message for the message handler");
-
-            return services.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-                messageContextFilter, messageBodySerializerImplementationFactory, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+                services, messageContextFilter, messageBodySerializerImplementationFactory, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
         /// <summary>
@@ -215,10 +184,25 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageHandlerImplementationFactory, nameof(messageHandlerImplementationFactory), "Requires a function to create the message handler with dependent services");
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer to deserialize the incoming message for the message handler");
+            if (services is null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            if (messageContextFilter is null)
+            {
+                throw new ArgumentNullException(nameof(messageContextFilter));
+            }
+
+            if (messageHandlerImplementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(messageHandlerImplementationFactory));
+            }
+
+            if (messageBodySerializerImplementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(messageBodySerializerImplementationFactory));
+            }
 
             services.AddMessageHandler(
                 messageHandlerImplementationFactory, 

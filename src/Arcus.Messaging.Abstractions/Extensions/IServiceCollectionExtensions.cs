@@ -2,7 +2,6 @@
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Observability.Correlation;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
@@ -21,8 +20,6 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         public static MessageHandlerCollection AddMessageRouting(this IServiceCollection services)
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message routing");
-
             MessageHandlerCollection collection = AddMessageRouting(services, configureOptions: null);
             return collection;
         }
@@ -35,8 +32,6 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         public static MessageHandlerCollection AddMessageRouting(this IServiceCollection services, Action<MessageRouterOptions> configureOptions)
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message routing");
-            
             MessageHandlerCollection collection = AddMessageRouting(services, serviceProvider =>
             {
                 var options = new MessageRouterOptions();
@@ -61,8 +56,15 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, TMessageRouter> implementationFactory)
             where TMessageRouter : IMessageRouter
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the message routing");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message router");
+            if (services is null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
 
             services.AddApplicationInsightsTelemetryWorkerService();
 

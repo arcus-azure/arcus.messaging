@@ -1,5 +1,4 @@
 ﻿using System;
-using GuardNet;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
@@ -28,7 +27,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             get => _transactionIdPropertyName;
             set
             {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Transaction ID message property name for the message cannot be blank");
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Requires a non-blank property name for the transaction ID", nameof(value));
+                }
+
                 _transactionIdPropertyName = value;
             }
         }
@@ -45,7 +48,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             get => _operationParentIdPropertyName;
             set
             {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Operation parent ID message property name for the message cannot be blank");
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Requires a non-blank property name for the operation parent ID", nameof(value));
+                }
+
                 _operationParentIdPropertyName = value;
             }
         }

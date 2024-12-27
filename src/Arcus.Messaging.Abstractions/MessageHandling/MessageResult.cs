@@ -1,5 +1,4 @@
 ﻿using System;
-using GuardNet;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
@@ -64,8 +63,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="message">The deserialized message instance.</param>
         public static MessageResult Success(object message)
         {
-            Guard.NotNull(message, nameof(message), "Requires a deserialized message instance when the message deserialization was successful");
-            return new MessageResult(message);
+            return new MessageResult(message ?? throw new ArgumentNullException(nameof(message)));
         }
 
         /// <summary>
@@ -75,7 +73,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <exception cref="ArgumentException">Thrown when the <paramref name="errorMessage"/> is blank.</exception>
         public static MessageResult Failure(string errorMessage)
         {
-            Guard.NotNullOrWhitespace(errorMessage, nameof(errorMessage), "Requires a non-blank error message describing the deserialization failure");
+            if (string.IsNullOrWhiteSpace(errorMessage))
+            {
+                throw new ArgumentException("Requires a non-blank error message describing the deserialization failure", nameof(errorMessage));
+            }
+
             return new MessageResult(errorMessage);
         }
 
@@ -86,8 +88,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="exception"/> is <c>null</c>.</exception>
         public static MessageResult Failure(Exception exception)
         {
-            Guard.NotNull(exception, nameof(exception), "Requires an exception describing the deserialization failure");
-            return new MessageResult(exception);
+            return new MessageResult(exception ?? throw new ArgumentNullException(nameof(exception)));
         }
     }
 }

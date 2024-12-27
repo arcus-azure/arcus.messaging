@@ -1,4 +1,4 @@
-﻿using GuardNet;
+﻿using System;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Arcus.Messaging.Health.Tcp
@@ -23,7 +23,11 @@ namespace Arcus.Messaging.Health.Tcp
             get => _tcpHealthPort;
             set
             {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Requires a non-blank configuration key for the TCP health port");
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Requires a non-blank configuration key for the TCP port", nameof(value));
+                }
+
                 _tcpHealthPort = value;
             }
         }

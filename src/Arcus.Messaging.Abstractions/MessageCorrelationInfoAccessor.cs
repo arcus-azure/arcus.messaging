@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Observability.Correlation;
-using GuardNet;
 
 namespace Arcus.Messaging.Abstractions
 {
@@ -18,8 +17,7 @@ namespace Arcus.Messaging.Abstractions
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="implementation"/> is <c>null</c>.</exception>
         public MessageCorrelationInfoAccessor(ICorrelationInfoAccessor<MessageCorrelationInfo> implementation)
         {
-            Guard.NotNull(implementation, nameof(implementation), "Requires an implementation of the correlation info accessor using the messaging correlation information");
-            _implementation = implementation;
+            _implementation = implementation ?? throw new ArgumentNullException(nameof(implementation));
         }
 
         /// <summary>
