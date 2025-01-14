@@ -136,13 +136,10 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to wait message recovery period of '{Recovery}' during '{State}' state", JobId, CircuitState.Options.MessageRecoveryPeriod.ToString("g"), CircuitState);
             await Task.Delay(CircuitState.Options.MessageRecoveryPeriod, cancellationToken);
 
-            MessagePumpCircuitState oldState = CircuitState;
-            bool shouldTriggerTransitionEvent = !oldState.IsHalfOpen;
-
-            CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
-
-            if (shouldTriggerTransitionEvent)
+            if (!CircuitState.IsHalfOpen)
             {
+                CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
+
                 await NotifyCircuitBreakerEventHandlersAsync();
             }
         }
@@ -156,13 +153,10 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to wait message interval during recovery of '{Interval}' during the '{State}' state", JobId, CircuitState.Options.MessageIntervalDuringRecovery.ToString("g"), CircuitState);
             await Task.Delay(CircuitState.Options.MessageIntervalDuringRecovery, cancellationToken);
 
-            MessagePumpCircuitState oldState = CircuitState;
-            bool shouldTriggerTransitionEvent = !oldState.IsHalfOpen;
-
-            CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
-
-            if (shouldTriggerTransitionEvent)
+            if (!CircuitState.IsHalfOpen)
             {
+                CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
+
                 await NotifyCircuitBreakerEventHandlersAsync();
             }
         }
