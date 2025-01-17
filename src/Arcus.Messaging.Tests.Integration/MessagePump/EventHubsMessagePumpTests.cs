@@ -44,10 +44,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             _outputWriter = outputWriter;
             _logger = new XunitTestLogger(outputWriter);
-            
+
             _config = TestConfig.Create();
             _eventHubsConfig = _config.GetEventHubs();
-            
+
             EventHubsName = fixture.HubName;
         }
 
@@ -76,7 +76,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         private async Task TestEventHubsMessageHandlingAsync(
-            Action<WorkerOptions> configureOptions, 
+            Action<WorkerOptions> configureOptions,
             MessageCorrelationFormat format = MessageCorrelationFormat.W3C,
             [CallerMemberName] string memberName = null)
         {
@@ -97,11 +97,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     case MessageCorrelationFormat.W3C:
                         AssertReceivedSensorEventDataForW3C(message, eventData);
                         break;
-                
+
                     case MessageCorrelationFormat.Hierarchical:
                         AssertReceivedSensorEventDataForHierarchical(message, eventData);
                         break;
-                
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(format), format, null);
                 }
