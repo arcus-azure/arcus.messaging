@@ -119,7 +119,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Assert
             RequestTelemetry requestViaArcusEventHubs =
                 await Poll.Target(() => GetRequestFrom(spySink.Telemetries, r => r.Name == operationName))
-                          //.Until(r => r.Context.Operation.Id == traceParent.TransactionId)
+                          .Until(r => r.Context.Operation.Id == traceParent.TransactionId)
                           .FailWith("missing request telemetry tracking with W3C format in spied sink");
 
             DependencyTelemetry dependencyViaArcusKeyVault =
