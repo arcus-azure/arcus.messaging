@@ -119,6 +119,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Assert
             TimeSpan timeout = TimeSpan.FromMinutes(2);
 
+            RequestTelemetry requestViaArcusEventHubs =
+                await Poll.Target(() => GetRequestFrom(spySink.Telemetries, r => r.Name == operationName))
+                          .Until(r => r.Context.Operation.Id == traceParent.TransactionId)
+                          .Timeout(timeout)
+                          .FailWith("missing request telemetry tracking with W3C format in spied sink");
+
             DependencyTelemetry dependencyViaArcusKeyVault =
                 await Poll.Target(() => GetDependencyFrom(spySink.Telemetries, d => d.Type == "Azure key vault"))
                           .Until(d => d.Context.Operation.Id == traceParent.TransactionId)
@@ -129,12 +135,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                           .Until(d => d.Context.Operation.Id == traceParent.TransactionId)
                           .Timeout(timeout)
                           .FailWith("missing SQL dependency telemetry tracking via Microsoft with W3C format in spied channel");
-
-            RequestTelemetry requestViaArcusEventHubs =
-                await Poll.Target(() => GetRequestFrom(spySink.Telemetries, r => r.Name == operationName))
-                          .Until(r => r.Context.Operation.Id == traceParent.TransactionId)
-                          .Timeout(timeout)
-                          .FailWith("missing request telemetry tracking with W3C format in spied sink");
 
             Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaArcusKeyVault.Context.Operation.ParentId);
             Assert.Equal(requestViaArcusEventHubs.Id, dependencyViaMicrosoftSql.Context.Operation.ParentId);
