@@ -14,6 +14,7 @@ using Azure.Messaging.EventHubs;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Xunit;
 using static Arcus.Messaging.Tests.Integration.MessagePump.Fixture.AssertX;
@@ -119,7 +120,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Assert
             RequestTelemetry requestViaArcusEventHubs =
                 await Poll.Target(() => GetRequestFrom(spySink.Telemetries, r => r.Name == operationName))
-                          .Until(r => r.Context.Operation.Id == traceParent.TransactionId)
+                          .Until(r =>
+                          {
+                              _logger.LogTrace("Request telemetry: {OperationId} ==? {OtherId}", r.Context.Operation.Id, traceParent.TransactionId);
+                              return r.Context.Operation.Id == traceParent.TransactionId;
+                          })
                           .FailWith("missing request telemetry tracking with W3C format in spied sink");
 
             DependencyTelemetry dependencyViaArcusKeyVault =
