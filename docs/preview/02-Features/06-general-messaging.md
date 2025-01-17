@@ -87,8 +87,8 @@ After the message pump and/or message handlers are registered, you can add one o
 using Arcus.Messaging.Pumps.Abstractions;
 
 services.AddServiceBusMessagePump(...)
-        .WithCircuitBreakerEventHandler<MyFirstCircuitBreakerEventHandler>()
-        .WithCircuitBreakerEventHandler<MySecondCircuitBreakerEventHandler>();
+        .WithCircuitBreakerStateChangedEventHandler<MyFirstCircuitBreakerEventHandler>()
+        .WithCircuitBreakerStateChangedEventHandler<MySecondCircuitBreakerEventHandler>();
 ```
 
 The instances should implement the `ICircuitBreakerEventHandler`, which allows you to access the new state for the pump.

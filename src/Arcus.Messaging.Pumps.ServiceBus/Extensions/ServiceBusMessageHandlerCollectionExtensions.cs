@@ -17,11 +17,11 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TEventHandler">The custom type of the event handler.</typeparam>
         /// <param name="collection">The application services to register the event handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> is <c>null</c>.</exception>
-        public static ServiceBusMessageHandlerCollection WithCircuitBreakerEventHandler<TEventHandler>(
+        public static ServiceBusMessageHandlerCollection WithCircuitBreakerStateChangedEventHandler<TEventHandler>(
             this ServiceBusMessageHandlerCollection collection)
             where TEventHandler : ICircuitBreakerEventHandler
         {
-            return WithCircuitBreakerEventHandler(collection, provider => ActivatorUtilities.CreateInstance<TEventHandler>(provider));
+            return WithCircuitBreakerStateChangedEventHandler(collection, provider => ActivatorUtilities.CreateInstance<TEventHandler>(provider));
         }
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="collection">The application services to register the event handler.</param>
         /// <param name="implementationFactory">The factory function to create the custom <see cref="ICircuitBreakerEventHandler"/> implementation.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        public static ServiceBusMessageHandlerCollection WithCircuitBreakerEventHandler<TEventHandler>(
+        public static ServiceBusMessageHandlerCollection WithCircuitBreakerStateChangedEventHandler<TEventHandler>(
             this ServiceBusMessageHandlerCollection collection,
             Func<IServiceProvider, TEventHandler> implementationFactory)
             where TEventHandler : ICircuitBreakerEventHandler

@@ -47,8 +47,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>(
                        messageContextFilter: ctx => ctx.MessageId == messageBeforeBreak.MessageId
                                                     || ctx.MessageId == messageAfterBreak.MessageId)
-                   .WithCircuitBreakerEventHandler(_ => mockEventHandler1)
-                   .WithCircuitBreakerEventHandler(_ => mockEventHandler2);
+                   .WithCircuitBreakerStateChangedEventHandler(_ => mockEventHandler1)
+                   .WithCircuitBreakerStateChangedEventHandler(_ => mockEventHandler2);
 
             var producer = new TestServiceBusMessageProducer(QueueName, _config.GetServiceBus());
             await using var worker = await Worker.StartNewAsync(options);
@@ -72,7 +72,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             ServiceBusMessage messageBeforeBreak = CreateOrderServiceBusMessageForW3C();
             ServiceBusMessage messageAfterBreak = CreateOrderServiceBusMessageForW3C();
-            
+
             var messageSink = new OrderMessageSink();
             var mockEventHandler1 = new MockCircuitBreakerEventHandler();
             var mockEventHandler2 = new MockCircuitBreakerEventHandler();
@@ -84,8 +84,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .AddSingleton(messageSink)
                    .AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, subscription.Name, HostName)
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>()
-                   .WithCircuitBreakerEventHandler(_ => mockEventHandler1)
-                   .WithCircuitBreakerEventHandler(_ => mockEventHandler2);
+                   .WithCircuitBreakerStateChangedEventHandler(_ => mockEventHandler1)
+                   .WithCircuitBreakerStateChangedEventHandler(_ => mockEventHandler2);
 
             var producer = new TestServiceBusMessageProducer(TopicName, _config.GetServiceBus());
             await using var worker = await Worker.StartNewAsync(options);
@@ -95,7 +95,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             // Assert
             await messageSink.ShouldReceiveOrdersDuringBreakAsync(messageBeforeBreak.MessageId);
-            
+
             await producer.ProduceAsync(messageAfterBreak);
             await messageSink.ShouldReceiveOrdersAfterBreakAsync(messageAfterBreak.MessageId);
 
