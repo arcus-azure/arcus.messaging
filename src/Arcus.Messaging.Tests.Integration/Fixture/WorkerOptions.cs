@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -53,8 +53,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write diagnostic trace messages to the test output");
 
-           _outputWriter = logger;
-           return this;
+            _outputWriter = logger;
+            return this;
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         internal void ApplyOptions(IHostBuilder hostBuilder)
         {
             Guard.NotNull(hostBuilder, nameof(hostBuilder), "Requires a host builder instance to apply the worker options to");
-            
+
             hostBuilder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(Configuration))
                        .ConfigureServices(services =>
                        {
@@ -124,7 +124,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <returns>An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the collection.</returns>
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((IEnumerable) Services).GetEnumerator();
+            return ((IEnumerable)Services).GetEnumerator();
         }
 
         /// <summary>

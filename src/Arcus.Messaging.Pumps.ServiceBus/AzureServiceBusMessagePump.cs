@@ -8,7 +8,6 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions;
-using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
@@ -243,7 +242,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
                         } while (!singleProcessingResult.IsSuccessful);
 
-                        await NotifyResumeRetrievingMessagesAsync();
+                        NotifyResumeRetrievingMessages();
                     }
                 }
                 catch (Exception exception) when (exception is TaskCanceledException or OperationCanceledException or ObjectDisposedException)

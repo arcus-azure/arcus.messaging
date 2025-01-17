@@ -38,7 +38,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <param name="jobId">The unique identifier to distinguish the message pump in the application services.</param>
         /// <param name="configureOptions">The optional user-configurable options to manipulate the workings of the message pump interaction.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        public virtual async Task PauseMessageProcessingAsync(string jobId, Action<MessagePumpCircuitBreakerOptions> configureOptions)
+        public virtual Task PauseMessageProcessingAsync(string jobId, Action<MessagePumpCircuitBreakerOptions> configureOptions)
         {
             Guard.NotNullOrWhitespace(jobId, nameof(jobId));
 
@@ -47,18 +47,19 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             if (!messagePump.IsStarted)
             {
                 _logger.LogWarning("Cannot pause message pump '{JobId}' because the pump has not been started", jobId);
-                return;
+                return Task.CompletedTask;
             }
 
             if (!messagePump.CircuitState.IsClosed)
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var options = new MessagePumpCircuitBreakerOptions();
             configureOptions?.Invoke(options);
 
-            await messagePump.NotifyPauseReceiveMessagesAsync(options);
+            messagePump.NotifyPauseReceiveMessages(options);
+            return Task.CompletedTask;
         }
 
         /// <summary>

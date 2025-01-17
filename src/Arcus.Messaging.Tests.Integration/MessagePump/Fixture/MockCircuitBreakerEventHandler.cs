@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Xunit;
 
@@ -18,11 +17,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// Notifies the application on a change in the message pump's circuit breaker state.
         /// </summary>
         /// <param name="newState">The new circuit breaker state in which the message pump is currently running on.</param>
-        public Task OnTransitionAsync(MessagePumpCircuitState newState)
+        public void OnTransition(MessagePumpCircuitState newState)
         {
             _states.Add(newState);
-
-            return Task.CompletedTask;
         }
 
         public void ShouldTransitionCorrectly()

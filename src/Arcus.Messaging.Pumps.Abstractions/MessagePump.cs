@@ -140,7 +140,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             {
                 CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
 
-                await NotifyCircuitBreakerEventHandlersAsync();
+                NotifyCircuitBreakerEventHandlers();
             }
         }
 
@@ -157,7 +157,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             {
                 CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
 
-                await NotifyCircuitBreakerEventHandlersAsync();
+                NotifyCircuitBreakerEventHandlers();
             }
         }
 
@@ -165,32 +165,35 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// Notifies the message pump about the new state which pauses message retrieval.
         /// </summary>
         /// <param name="options">The additional accompanied options that goes with the new state.</param>
-        internal async Task NotifyPauseReceiveMessagesAsync(MessagePumpCircuitBreakerOptions options)
+        internal void NotifyPauseReceiveMessages(MessagePumpCircuitBreakerOptions options)
         {
             Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to transition from a '{CurrentState}' an 'Open' state", JobId, CircuitState);
 
             CircuitState = CircuitState.TransitionTo(CircuitBreakerState.Open, options);
 
-            await NotifyCircuitBreakerEventHandlersAsync();
+            NotifyCircuitBreakerEventHandlers();
         }
 
         /// <summary>
         /// Notifies the message pump about the new state which resumes message retrieval.
         /// </summary>
-        protected async Task NotifyResumeRetrievingMessagesAsync()
+        protected void NotifyResumeRetrievingMessages()
         {
             Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to transition back from '{CurrentState}' to a 'Closed' state, retrieving messages is resumed", JobId, CircuitState);
 
             CircuitState = MessagePumpCircuitState.Closed;
 
-            await NotifyCircuitBreakerEventHandlersAsync();
+            NotifyCircuitBreakerEventHandlers();
         }
 
-        private async Task NotifyCircuitBreakerEventHandlersAsync()
+        private void NotifyCircuitBreakerEventHandlers()
         {
             ICircuitBreakerEventHandler[] eventHandlers = GetEventHandlersForPump();
 
-            await Task.WhenAll(eventHandlers.Select(h => h.OnTransitionAsync(CircuitState)));
+            foreach (var handler in eventHandlers)
+            {
+                Task.Run(() => handler.OnTransition(CircuitState));
+            }
         }
 
         private ICircuitBreakerEventHandler[] GetEventHandlersForPump()

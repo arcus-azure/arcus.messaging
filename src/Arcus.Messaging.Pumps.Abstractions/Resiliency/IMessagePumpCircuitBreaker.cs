@@ -34,7 +34,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// Notifies the application on a change in the message pump's circuit breaker state.
         /// </summary>
         /// <param name="newState">The new circuit breaker state in which the message pump is currently running on.</param>
-        Task OnTransitionAsync(MessagePumpCircuitState newState);
+        void OnTransition(MessagePumpCircuitState newState);
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// Gets the unique ID to distinguish the linked message pump.
         /// </summary>
         public string JobId { get; }
-        
+
         /// <summary>
         /// Gets the event handler implementation to trigger on transition changes in the linked message pump.
         /// </summary>
