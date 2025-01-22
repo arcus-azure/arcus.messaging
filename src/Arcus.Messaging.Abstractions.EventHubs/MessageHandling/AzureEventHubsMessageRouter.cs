@@ -34,7 +34,7 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureEventHubsMessageHandler{TMessage}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public AzureEventHubsMessageRouter(IServiceProvider serviceProvider, ILogger<AzureEventHubsMessageRouter> logger) 
+        public AzureEventHubsMessageRouter(IServiceProvider serviceProvider, ILogger<AzureEventHubsMessageRouter> logger)
             : this(serviceProvider, new AzureEventHubsMessageRouterOptions(), logger)
         {
         }
@@ -57,7 +57,7 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
         /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public AzureEventHubsMessageRouter(IServiceProvider serviceProvider, AzureEventHubsMessageRouterOptions options, ILogger<AzureEventHubsMessageRouter> logger) 
+        public AzureEventHubsMessageRouter(IServiceProvider serviceProvider, AzureEventHubsMessageRouterOptions options, ILogger<AzureEventHubsMessageRouter> logger)
             : this(serviceProvider, options, (ILogger) logger)
         {
         }
@@ -68,7 +68,7 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureEventHubsMessageHandler{TMessage}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        protected AzureEventHubsMessageRouter(IServiceProvider serviceProvider, ILogger logger) 
+        protected AzureEventHubsMessageRouter(IServiceProvider serviceProvider, ILogger logger)
             : this(serviceProvider, new AzureEventHubsMessageRouterOptions(), logger)
         {
         }
@@ -80,7 +80,7 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
         /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        protected AzureEventHubsMessageRouter(IServiceProvider serviceProvider, AzureEventHubsMessageRouterOptions  options, ILogger logger) 
+        protected AzureEventHubsMessageRouter(IServiceProvider serviceProvider, AzureEventHubsMessageRouterOptions options, ILogger logger)
             : base(serviceProvider, options, logger)
         {
             EventHubsOptions = options ?? new AzureEventHubsMessageRouterOptions();
@@ -144,6 +144,10 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
                     await RouteMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
                     isSuccessful = true;
                 }
+                catch (Exception ex)
+                {
+                    Logger.LogInformation(ex, "!!! Exception: {Message}", ex.Message);
+                }
                 finally
                 {
                     string eventHubsNamespace = "<not-available>";
@@ -158,8 +162,8 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
                     }
 
                     Logger.LogEventHubsRequest(
-                        eventHubsNamespace, 
-                        consumerGroup, 
+                        eventHubsNamespace,
+                        consumerGroup,
                         eventHubsName,
                         Options.Telemetry.OperationName,
                         isSuccessful,
