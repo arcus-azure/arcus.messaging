@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.EventHubs;
+using Arcus.Messaging.Tests.Core.Correlation;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
@@ -34,7 +35,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     [storageAccountConnectionStringSecretName] = _eventHubsConfig.Storage.ConnectionString
                 }));
 
-                options.AddEventHubsMessagePump(EventHubsName,  eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName)
+                options.AddEventHubsMessagePump(EventHubsName, eventHubsConnectionStringSecretName, ContainerName, storageAccountConnectionStringSecretName)
                        .WithEventHubsMessageHandler<WriteSensorToDiskEventHubsMessageHandler, SensorReading>();
             });
         }
@@ -47,11 +48,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             AddEventHubsMessagePump(options)
                 .WithEventHubsMessageHandler<WriteSensorToDiskEventHubsMessageHandler, SensorReading>();
 
-            EventData expected = CreateSensorEventDataForW3C();
+            EventData expected = CreateSensorEventDataForW3C(traceParent: TraceParent.Generate());
             TestEventHubsMessageProducer producer = CreateEventHubsMessageProducer();
 
             await using var worker = await Worker.StartNewAsync(options);
-            
+
             IEnumerable<AzureEventHubsMessagePump> messagePumps =
                 worker.Services.GetServices<IHostedService>()
                       .OfType<AzureEventHubsMessagePump>();
@@ -78,11 +79,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             AddEventHubsMessagePump(options, opt => opt.JobId = jobId)
                 .WithEventHubsMessageHandler<WriteSensorToDiskEventHubsMessageHandler, SensorReading>();
 
-            EventData expected = CreateSensorEventDataForW3C();
+            EventData expected = CreateSensorEventDataForW3C(traceParent: TraceParent.Generate());
             TestEventHubsMessageProducer producer = CreateEventHubsMessageProducer();
-            
+
             await using var worker = await Worker.StartNewAsync(options);
-            
+
             var lifetime = worker.Services.GetRequiredService<IMessagePumpLifetime>();
             await lifetime.PauseProcessingMessagesAsync(jobId, TimeSpan.FromSeconds(5), CancellationToken.None);
 

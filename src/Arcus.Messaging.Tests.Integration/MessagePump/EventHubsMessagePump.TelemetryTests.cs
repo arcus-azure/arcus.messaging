@@ -118,7 +118,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
                 // Assert
                 RequestTelemetry requestViaArcusEventHubs =
-                    await Poll.Target(() => GetRequestFrom(spySink.Telemetries, r => r.Name == operationName))
+                    await Poll.Target(() => GetRequestFrom(spySink.Telemetries, r => r.Context.Operation.Name == operationName))
                               .Timeout(TimeSpan.FromMinutes(2))
                               .FailWith("missing request telemetry with operation name in spied sink");
 
