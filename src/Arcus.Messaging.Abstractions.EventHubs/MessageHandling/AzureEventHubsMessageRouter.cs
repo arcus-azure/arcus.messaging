@@ -144,10 +144,6 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
                     await RouteMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
                     isSuccessful = true;
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogInformation(ex, "!!! Exception: {Message}", ex.Message);
-                }
                 finally
                 {
                     string eventHubsNamespace = "<not-available>";

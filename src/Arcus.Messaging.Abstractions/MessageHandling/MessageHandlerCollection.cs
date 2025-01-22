@@ -55,7 +55,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Services.AddTransient(
                 serviceProvider => MessageHandler.Create(
                     implementationFactory(serviceProvider),
-                    serviceProvider.GetRequiredService<ILogger<MessageHandler>>(),
+                    serviceProvider.GetService<ILogger<IMessageHandler<TMessage, TMessageContext>>>(),
                     JobId,
                     messageBodyFilter,
                     messageContextFilter,

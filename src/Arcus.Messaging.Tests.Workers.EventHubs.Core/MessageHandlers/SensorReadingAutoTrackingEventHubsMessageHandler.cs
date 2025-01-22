@@ -19,7 +19,6 @@ namespace Arcus.Messaging.Tests.Workers.EventHubs.Core.MessageHandlers
         /// </summary>
         public SensorReadingAutoTrackingEventHubsMessageHandler(ILogger<SensorReadingAutoTrackingEventHubsMessageHandler> logger)
         {
-            Console.WriteLine(logger.GetType().Name);
             _logger = logger;
         }
 
