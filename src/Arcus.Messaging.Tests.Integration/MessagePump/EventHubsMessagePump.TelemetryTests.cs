@@ -17,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Xunit;
+using Xunit.Sdk;
 using static Arcus.Messaging.Tests.Integration.MessagePump.Fixture.AssertX;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
@@ -119,7 +120,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
                 // Assert
                 RequestTelemetry requestViaArcusEventHubs =
-                    await Poll.Target(() => GetRequestFrom(spySink.Telemetries, r =>
+                    await Poll.Target<RequestTelemetry, XunitException>(() => GetRequestFrom(spySink.Telemetries, r =>
                               {
                                   _logger.LogTrace("Operation name {OperationName} request name {RequestName}", r.Context.Operation.Name, r.Name);
 
