@@ -82,7 +82,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             EventData message = format switch
             {
-                MessageCorrelationFormat.W3C => CreateSensorEventDataForW3C(),
+                MessageCorrelationFormat.W3C => CreateSensorEventDataForW3C(traceParent: TraceParent.Generate()),
                 MessageCorrelationFormat.Hierarchical => CreateSensorEventDataForHierarchical(),
             };
 
