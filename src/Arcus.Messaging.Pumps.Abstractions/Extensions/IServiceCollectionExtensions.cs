@@ -32,22 +32,22 @@ namespace Microsoft.Extensions.DependencyInjection
             services.TryAddSingleton<IMessagePumpLifetime, DefaultMessagePumpLifetime>();
             services.TryAddSingleton<IMessagePumpCircuitBreaker>(
                 provider => new DefaultMessagePumpCircuitBreaker(provider, provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>()));
-            
+
             return services.AddHostedService(implementationFactory);
         }
 
         /// <summary>
         /// Adds an <see cref="ICircuitBreakerEventHandler"/> implementation for a specific message pump to the application services.
         /// </summary>
-        /// <typeparam name="THandler">The custom type of the event handler.</typeparam>
+        /// <typeparam name="TEventHandler">The custom type of the event handler.</typeparam>
         /// <param name="services">The application services to register the event handler.</param>
         /// <param name="jobId">The unique ID to distinguish the message pump to register this event handler for.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        public static IServiceCollection AddCircuitBreakerEventHandler<THandler>(this IServiceCollection services, string jobId)
-            where THandler : ICircuitBreakerEventHandler
+        public static IServiceCollection AddCircuitBreakerEventHandler<TEventHandler>(this IServiceCollection services, string jobId)
+            where TEventHandler : ICircuitBreakerEventHandler
         {
-            return AddCircuitBreakerEventHandler(services, jobId, provider => ActivatorUtilities.CreateInstance<THandler>(provider));
+            return AddCircuitBreakerEventHandler(services, jobId, provider => ActivatorUtilities.CreateInstance<TEventHandler>(provider));
         }
 
         /// <summary>
