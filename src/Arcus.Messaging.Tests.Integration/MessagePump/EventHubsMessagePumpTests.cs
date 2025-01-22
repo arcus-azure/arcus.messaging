@@ -151,7 +151,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private static EventData CreateSensorEventDataForW3C(Encoding encoding = null, TraceParent traceParent = null)
         {
             encoding ??= Encoding.UTF8;
-            traceParent ??= TraceParent.Generate();
 
             SensorReading reading = SensorReadingGenerator.Generate();
             string json = JsonConvert.SerializeObject(reading);
@@ -167,7 +166,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 }
             };
 
-            return message.WithDiagnosticId(traceParent);
+            return traceParent is null
+                ? message
+                : message.WithDiagnosticId(traceParent);
         }
 
         private static void AssertReceivedSensorEventDataForHierarchical(
