@@ -14,10 +14,8 @@ using Azure.Messaging.EventHubs;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Xunit;
-using Xunit.Sdk;
 using static Arcus.Messaging.Tests.Integration.MessagePump.Fixture.AssertX;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
@@ -120,12 +118,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
                 // Assert
                 RequestTelemetry requestViaArcusEventHubs =
-                    await Poll.Target<RequestTelemetry, XunitException>(() => GetRequestFrom(spySink.Telemetries, r =>
-                              {
-                                  _logger.LogTrace("Operation name {OperationName} request name {RequestName}", r.Context.Operation.Name, r.Name);
-
-                                  return r.Context.Operation.Name == operationName;
-                              }))
+                    await Poll.Target(() => GetRequestFrom(spySink.Telemetries, r => r.Context.Operation.Name == operationName))
                               .Timeout(TimeSpan.FromMinutes(2))
                               .FailWith("missing request telemetry with operation name in spied sink");
 

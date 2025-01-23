@@ -92,14 +92,14 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                            config.MinimumLevel.Verbose()
                                  .Enrich.FromLogContext();
 
-                           if (_outputWriter != null)
-                           {
-                               config.WriteTo.XunitTestLogging(_outputWriter);
-                           }
-
                            foreach (Action<LoggerConfiguration> configure in _additionalSerilogConfigOptions)
                            {
                                configure(config);
+                           }
+
+                           if (_outputWriter != null)
+                           {
+                               config.WriteTo.XunitTestLogging(_outputWriter);
                            }
                        });
 
@@ -124,7 +124,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <returns>An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the collection.</returns>
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((IEnumerable)Services).GetEnumerator();
+            return ((IEnumerable) Services).GetEnumerator();
         }
 
         /// <summary>
