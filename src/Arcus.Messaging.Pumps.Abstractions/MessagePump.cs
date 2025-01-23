@@ -140,7 +140,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             {
                 CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
 
-                NotifyCircuitBreakerEventHandlers();
+                NotifyCircuitBreakerStateChangedSubscribers();
             }
         }
 
@@ -157,7 +157,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             {
                 CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
 
-                NotifyCircuitBreakerEventHandlers();
+                NotifyCircuitBreakerStateChangedSubscribers();
             }
         }
 
@@ -171,7 +171,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             CircuitState = CircuitState.TransitionTo(CircuitBreakerState.Open, options);
 
-            NotifyCircuitBreakerEventHandlers();
+            NotifyCircuitBreakerStateChangedSubscribers();
         }
 
         /// <summary>
@@ -183,10 +183,10 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             CircuitState = MessagePumpCircuitState.Closed;
 
-            NotifyCircuitBreakerEventHandlers();
+            NotifyCircuitBreakerStateChangedSubscribers();
         }
 
-        private void NotifyCircuitBreakerEventHandlers()
+        private void NotifyCircuitBreakerStateChangedSubscribers()
         {
             ICircuitBreakerEventHandler[] eventHandlers = GetEventHandlersForPump();
 
