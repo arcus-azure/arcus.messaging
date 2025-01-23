@@ -67,6 +67,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             Guard.NotNull(configure, nameof(configure));
 
             _additionalSerilogConfigOptions.Add(configure);
+
             return this;
         }
 
@@ -79,7 +80,24 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             Guard.NotNull(hostBuilder, nameof(hostBuilder), "Requires a host builder instance to apply the worker options to");
 
-            hostBuilder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(Configuration))
+            LoggerConfiguration config =
+                new LoggerConfiguration()
+                    .MinimumLevel.Verbose()
+                    .Enrich.FromLogContext();
+
+            if (_outputWriter != null)
+            {
+                config.WriteTo.XunitTestLogging(_outputWriter);
+            }
+
+            foreach (Action<LoggerConfiguration> configure in _additionalSerilogConfigOptions)
+            {
+                configure(config);
+            }
+
+            Log.Logger = config.CreateLogger();
+
+            hostBuilder.ConfigureAppConfiguration(builder => builder.AddInMemoryCollection(Configuration))
                        .ConfigureServices(services =>
                        {
                            foreach (ServiceDescriptor service in Services)
@@ -87,21 +105,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                                services.Add(service);
                            }
                        })
-                       .UseSerilog((context, config) =>
-                       {
-                           config.MinimumLevel.Verbose()
-                                 .Enrich.FromLogContext();
-
-                           foreach (Action<LoggerConfiguration> configure in _additionalSerilogConfigOptions)
-                           {
-                               configure(config);
-                           }
-
-                           if (_outputWriter != null)
-                           {
-                               config.WriteTo.XunitTestLogging(_outputWriter);
-                           }
-                       });
+                       .UseSerilog(Log.Logger);
 
             foreach (Action<IHostBuilder> additionalHostOption in _additionalHostOptions)
             {
