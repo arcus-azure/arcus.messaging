@@ -27,7 +27,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// This ID can be used to get a reference of the previously registered message pump while registering message handlers and other functionality related to the message pump.
         /// </summary>
         public string JobId { get; set; }
-        
+
         /// <summary>
         /// Gets the current available collection of services to register the message handling logic into.
         /// </summary>
@@ -51,7 +51,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             where TMessageContext : MessageContext
         {
             Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create a message handler implementation to register the handler within the application services");
-            
+
             Services.AddTransient(
                 serviceProvider => MessageHandler.Create(
                     implementationFactory(serviceProvider),
@@ -71,7 +71,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="implementationFactory">The function to create the user-defined fallback message handler instance.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="implementationFactory"/> is <c>null</c>.</exception>
         public void AddFallbackMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-            Func<IServiceProvider, TMessageHandler> implementationFactory) 
+            Func<IServiceProvider, TMessageHandler> implementationFactory)
             where TMessageHandler : IFallbackMessageHandler<TMessage, TMessageContext>
             where TMessage : class
             where TMessageContext : MessageContext
@@ -80,7 +80,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
             Services.AddSingleton(
                 serviceProvider => FallbackMessageHandler<TMessage, TMessageContext>.Create(
-                    implementationFactory(serviceProvider), 
+                    implementationFactory(serviceProvider),
                     JobId,
                     serviceProvider.GetService<ILogger<IFallbackMessageHandler<TMessage, TMessageContext>>>()));
         }

@@ -76,7 +76,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a collection of services to subtract the message handlers from");
             Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write trace messages during the lifetime of the message handlers");
 
-            MessageHandler[] registrations = 
+            MessageHandler[] registrations =
                 serviceProvider.GetServices<MessageHandler>()
                                .ToArray();
 
@@ -98,17 +98,17 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         internal static MessageHandler Create<TMessage, TMessageContext>(
             IMessageHandler<TMessage, TMessageContext> messageHandler,
-            ILogger<IMessageHandler<TMessage, TMessageContext>> logger,
+            ILogger logger,
             string jobId,
             Func<TMessage, bool> messageBodyFilter = null,
             Func<TMessageContext, bool> messageContextFilter = null,
-            IMessageBodySerializer messageBodySerializer = null) 
+            IMessageBodySerializer messageBodySerializer = null)
             where TMessageContext : MessageContext
         {
             Guard.NotNull(messageHandler, nameof(messageHandler), "Requires a message handler implementation to register the handler within the application services");
 
             ProcessMessageAsync processMessageAsync = DetermineMessageImplementation(messageHandler);
-            logger = logger ?? NullLogger<IMessageHandler<TMessage, TMessageContext>>.Instance;
+            logger ??= NullLogger.Instance;
             Type messageHandlerType = messageHandler.GetType();
 
             Func<object, bool> messageFilter = DetermineMessageBodyFilter(messageBodyFilter, messageHandlerType, logger);
@@ -125,7 +125,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 logger: logger);
         }
 
-        private static ProcessMessageAsync DetermineMessageImplementation<TMessage, TMessageContext>(IMessageHandler<TMessage, TMessageContext> messageHandler) 
+        private static ProcessMessageAsync DetermineMessageImplementation<TMessage, TMessageContext>(IMessageHandler<TMessage, TMessageContext> messageHandler)
             where TMessageContext : MessageContext
         {
             return async (rawMessage, generalMessageContext, correlationInfo, cancellationToken) =>
@@ -144,8 +144,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
         private static Func<object, bool> DetermineMessageBodyFilter<TMessage>(Func<TMessage, bool> messageBodyFilter, Type messageHandlerType, ILogger logger)
         {
-           return rawMessage =>
-           {
+            return rawMessage =>
+            {
                 if (messageBodyFilter is null)
                 {
                     return true;
@@ -172,8 +172,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             ILogger logger)
             where TMessageContext : MessageContext
         {
-           return rawContext =>
-           {
+            return rawContext =>
+            {
                 if (rawContext is not null && jobId is not null && rawContext.JobId != jobId)
                 {
                     return false;
@@ -219,7 +219,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
         /// <param name="messageContext">The context in which the incoming message is processed.</param>
-        public bool CanProcessMessageBasedOnContext<TMessageContext>(TMessageContext messageContext) 
+        public bool CanProcessMessageBasedOnContext<TMessageContext>(TMessageContext messageContext)
             where TMessageContext : MessageContext
         {
             Guard.NotNull(messageContext, nameof(messageContext), "Requires an message context instance to determine if the message handler can process the message");
@@ -341,9 +341,9 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             const string methodName = nameof(IMessageHandler<object, MessageContext>.ProcessMessageAsync);
             try
             {
-                Task<bool> processMessageAsync = 
+                Task<bool> processMessageAsync =
                     _messageHandlerImplementation(message, messageContext, correlationInfo, cancellationToken);
-                
+
                 if (processMessageAsync is null)
                 {
                     throw new InvalidOperationException(
