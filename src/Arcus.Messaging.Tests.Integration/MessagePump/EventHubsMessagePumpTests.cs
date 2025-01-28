@@ -44,10 +44,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             _outputWriter = outputWriter;
             _logger = new XunitTestLogger(outputWriter);
-            
+
             _config = TestConfig.Create();
             _eventHubsConfig = _config.GetEventHubs();
-            
+
             EventHubsName = fixture.HubName;
         }
 
@@ -76,13 +76,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         private async Task TestEventHubsMessageHandlingAsync(
-            Action<WorkerOptions> configureOptions, 
+            Action<WorkerOptions> configureOptions,
             MessageCorrelationFormat format = MessageCorrelationFormat.W3C,
             [CallerMemberName] string memberName = null)
         {
             EventData message = format switch
             {
-                MessageCorrelationFormat.W3C => CreateSensorEventDataForW3C(),
+                MessageCorrelationFormat.W3C => CreateSensorEventDataForW3C(traceParent: TraceParent.Generate()),
                 MessageCorrelationFormat.Hierarchical => CreateSensorEventDataForHierarchical(),
             };
 
@@ -97,11 +97,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     case MessageCorrelationFormat.W3C:
                         AssertReceivedSensorEventDataForW3C(message, eventData);
                         break;
-                
+
                     case MessageCorrelationFormat.Hierarchical:
                         AssertReceivedSensorEventDataForHierarchical(message, eventData);
                         break;
-                
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(format), format, null);
                 }
@@ -151,7 +151,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private static EventData CreateSensorEventDataForW3C(Encoding encoding = null, TraceParent traceParent = null)
         {
             encoding ??= Encoding.UTF8;
-            traceParent ??= TraceParent.Generate();
 
             SensorReading reading = SensorReadingGenerator.Generate();
             string json = JsonConvert.SerializeObject(reading);
@@ -167,7 +166,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 }
             };
 
-            return message.WithDiagnosticId(traceParent);
+            return traceParent is null
+                ? message
+                : message.WithDiagnosticId(traceParent);
         }
 
         private static void AssertReceivedSensorEventDataForHierarchical(

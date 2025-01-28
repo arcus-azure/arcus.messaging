@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -141,7 +143,12 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to wait message recovery period of '{Recovery}' during '{State}' state", JobId, CircuitState.Options.MessageRecoveryPeriod.ToString("g"), CircuitState);
             await Task.Delay(CircuitState.Options.MessageRecoveryPeriod, cancellationToken);
 
-            CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
+            if (!CircuitState.IsHalfOpen)
+            {
+                CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
+
+                NotifyCircuitBreakerStateChangedSubscribers();
+            }
         }
 
         /// <summary>
@@ -153,7 +160,12 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to wait message interval during recovery of '{Interval}' during the '{State}' state", JobId, CircuitState.Options.MessageIntervalDuringRecovery.ToString("g"), CircuitState);
             await Task.Delay(CircuitState.Options.MessageIntervalDuringRecovery, cancellationToken);
 
-            CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
+            if (!CircuitState.IsHalfOpen)
+            {
+                CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
+
+                NotifyCircuitBreakerStateChangedSubscribers();
+            }
         }
 
         /// <summary>
@@ -165,6 +177,8 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to transition from a '{CurrentState}' an 'Open' state", JobId, CircuitState);
 
             CircuitState = CircuitState.TransitionTo(CircuitBreakerState.Open, options);
+
+            NotifyCircuitBreakerStateChangedSubscribers();
         }
 
         /// <summary>
@@ -175,6 +189,26 @@ namespace Arcus.Messaging.Pumps.Abstractions
             Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to transition back from '{CurrentState}' to a 'Closed' state, retrieving messages is resumed", JobId, CircuitState);
 
             CircuitState = MessagePumpCircuitState.Closed;
+
+            NotifyCircuitBreakerStateChangedSubscribers();
+        }
+
+        private void NotifyCircuitBreakerStateChangedSubscribers()
+        {
+            ICircuitBreakerEventHandler[] eventHandlers = GetEventHandlersForPump();
+
+            foreach (var handler in eventHandlers)
+            {
+                Task.Run(() => handler.OnTransition(CircuitState));
+            }
+        }
+
+        private ICircuitBreakerEventHandler[] GetEventHandlersForPump()
+        {
+            return ServiceProvider.GetServices<CircuitBreakerEventHandler>()
+                                  .Where(registration => registration.JobId == JobId)
+                                  .Select(handler => handler.Handler)
+                                  .ToArray();
         }
 
         /// <summary>
