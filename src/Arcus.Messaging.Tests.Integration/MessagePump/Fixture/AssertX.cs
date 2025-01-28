@@ -34,6 +34,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             IEnumerable<ITelemetry> telemetries,
             Predicate<RequestTelemetry> filter)
         {
+            Assert.NotEmpty(telemetries);
+
             ITelemetry[] result = telemetries.Where(t => t is RequestTelemetry r && filter(r)).ToArray();
             Assert.True(result.Length > 0, "Should find at least a single request telemetry, but got none");
 
@@ -44,6 +46,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             IEnumerable<ITelemetry> telemetries,
             Predicate<DependencyTelemetry> filter)
         {
+            Assert.NotEmpty(telemetries);
+
             ITelemetry[] result = telemetries.Where(t => t is DependencyTelemetry r && filter(r)).ToArray();
             Assert.True(result.Length > 0, "Should find at least a single dependency telemetry, but got none");
 
