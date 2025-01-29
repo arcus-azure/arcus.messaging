@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
-using GuardNet;
 
 namespace Arcus.Messaging.Abstractions.EventHubs
 {
@@ -13,7 +12,7 @@ namespace Arcus.Messaging.Abstractions.EventHubs
     public class AzureEventHubsMessageContext : MessageContext
     {
         private AzureEventHubsMessageContext(
-            EventData eventData, 
+            EventData eventData,
             string eventHubsName,
             string consumerGroup,
             string eventHubsNamespace,
@@ -125,8 +124,10 @@ namespace Arcus.Messaging.Abstractions.EventHubs
             EventData message,
             EventProcessorClient eventProcessor)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure EventHubs event data message to retrieve the information to create a messaging context for this message");
-            Guard.NotNull(eventProcessor, nameof(eventProcessor), "Requires an Azure EventHubs event processor to retrieve the information to create a messaging context for the consumed event");
+            if (eventProcessor is null)
+            {
+                throw new ArgumentNullException(nameof(eventProcessor));
+            }
 
             return CreateFrom(
                 message,
@@ -157,11 +158,6 @@ namespace Arcus.Messaging.Abstractions.EventHubs
             string consumerGroup,
             string eventHubsName)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure EventHubs event data message to retrieve the information to create a messaging context for this message");
-            Guard.NotNullOrWhitespace(eventHubsNamespace, nameof(eventHubsNamespace), "Requires a non-blank Azure EventHubs fully qualified namespace to relate the messaging context to the event message");
-            Guard.NotNullOrWhitespace(consumerGroup, nameof(consumerGroup), "Requires a non-blank Azure EventHubs consumer group to relate the messaging context to the event message");
-            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank Azure EventHubs name to relate the messaging context to the event message");
-
             return CreateFrom(message, eventHubsNamespace, consumerGroup, eventHubsName, "<not-defined>");
         }
 
@@ -179,9 +175,10 @@ namespace Arcus.Messaging.Abstractions.EventHubs
             EventProcessorClient eventProcessor,
             string jobId)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure EventHubs event data message to retrieve the information to create a messaging context for this message");
-            Guard.NotNull(eventProcessor, nameof(eventProcessor), "Requires an Azure EventHubs event processor to retrieve the information to create a messaging context for the consumed event");
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a non-blank job ID to link this message context to a message pump that processes the event message");
+            if (eventProcessor is null)
+            {
+                throw new ArgumentNullException(nameof(eventProcessor));
+            }
 
             return CreateFrom(
                 message,
@@ -213,11 +210,30 @@ namespace Arcus.Messaging.Abstractions.EventHubs
             string eventHubsName,
             string jobId)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure EventHubs event data message to retrieve the information to create a messaging context for this message");
-            Guard.NotNullOrWhitespace(eventHubsNamespace, nameof(eventHubsNamespace), "Requires a non-blank Azure EventHubs fully qualified namespace to relate the messaging context to the event message");
-            Guard.NotNullOrWhitespace(consumerGroup, nameof(consumerGroup), "Requires a non-blank Azure EventHubs consumer group to relate the messaging context to the event message");
-            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank Azure EventHubs name to relate the messaging context to the event message");
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a non-blank job ID to link this message context to a message pump that processes the event message");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (string.IsNullOrWhiteSpace(eventHubsNamespace))
+            {
+                throw new ArgumentException("Requires a non-blank Azure EventHubs fully qualified namespace to relate the messaging context to the event message", nameof(eventHubsNamespace));
+            }
+
+            if (string.IsNullOrWhiteSpace(consumerGroup))
+            {
+                throw new ArgumentException("Requires a non-blank Azure EventHubs consumer group to relate the messaging context to the event message", nameof(consumerGroup));
+            }
+
+            if (string.IsNullOrWhiteSpace(eventHubsName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure EventHubs name to relate the messaging context to the event message", nameof(eventHubsName));
+            }
+
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank job ID to link this message context to a message pump that processes the event message", nameof(jobId));
+            }
 
             return new AzureEventHubsMessageContext(message, eventHubsName, consumerGroup, eventHubsNamespace, jobId);
         }

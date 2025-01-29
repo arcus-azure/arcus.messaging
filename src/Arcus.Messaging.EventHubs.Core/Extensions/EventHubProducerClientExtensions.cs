@@ -4,11 +4,9 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.EventHubs.Core;
 using Arcus.Observability.Correlation;
 using Arcus.Observability.Telemetry.Core;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
@@ -55,13 +53,6 @@ namespace Azure.Messaging.EventHubs.Producer
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(client, nameof(client), "Requires an Azure EventHubs producer client while sending a correlated message");
-            Guard.NotNull(eventBatch, nameof(eventBatch), "Requires a series of Azure EventHubs messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure EventHubs dependency while sending the correlated messages");
-            Guard.NotAny(eventBatch, nameof(eventBatch), "Requires at least a single message to send to Azure EventHubs");
-            Guard.For(() => eventBatch.Any(message => message is null), new ArgumentException("Requires non-null items in Azure EventHubs message sequence", nameof(eventBatch)));
-
             await SendAsync(client, eventBatch, correlationInfo, logger, sendEventOptions: null, configureOptions: null, cancellationToken);
         }
 
@@ -103,13 +94,6 @@ namespace Azure.Messaging.EventHubs.Producer
             Action<EventHubProducerClientMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(client, nameof(client), "Requires an Azure EventHubs producer client while sending a correlated message");
-            Guard.NotNull(eventBatch, nameof(eventBatch), "Requires a series of Azure EventHubs messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure EventHubs dependency while sending the correlated messages");
-            Guard.NotAny(eventBatch, nameof(eventBatch), "Requires at least a single message to send to Azure EventHubs");
-            Guard.For(() => eventBatch.Any(message => message is null), new ArgumentException("Requires non-null items in Azure EventHubs message sequence", nameof(eventBatch)));
-
             await SendAsync(client, eventBatch, correlationInfo, logger, sendEventOptions: null, configureOptions, cancellationToken);
         }
 
@@ -152,13 +136,6 @@ namespace Azure.Messaging.EventHubs.Producer
             SendEventOptions sendEventOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(client, nameof(client), "Requires an Azure EventHubs producer client while sending a correlated message");
-            Guard.NotNull(eventBatch, nameof(eventBatch), "Requires a series of Azure EventHubs messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure EventHubs dependency while sending the correlated messages");
-            Guard.NotAny(eventBatch, nameof(eventBatch), "Requires at least a single message to send to Azure EventHubs");
-            Guard.For(() => eventBatch.Any(message => message is null), new ArgumentException("Requires non-null items in Azure EventHubs message sequence", nameof(eventBatch)));
-
             await SendAsync(client, eventBatch, correlationInfo, logger, sendEventOptions, configureOptions: null, cancellationToken);
         }
 
@@ -203,7 +180,9 @@ namespace Azure.Messaging.EventHubs.Producer
             Action<EventHubProducerClientMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            EventData[] eventMessages = eventBatch.Select(ev => EventDataBuilder.CreateForBody(ev).Build()).ToArray();
+            object[] batchArr = eventBatch?.ToArray() ?? throw new ArgumentNullException(nameof(eventBatch));
+            EventData[] eventMessages = batchArr.Select(ev => EventDataBuilder.CreateForBody(ev).Build()).ToArray();
+
             await SendAsync(client, eventMessages, correlationInfo, logger, sendEventOptions, configureOptions, cancellationToken);
         }
 
@@ -243,13 +222,6 @@ namespace Azure.Messaging.EventHubs.Producer
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(client, nameof(client), "Requires an Azure EventHubs producer client while sending a correlated message");
-            Guard.NotNull(eventBatch, nameof(eventBatch), "Requires a series of Azure EventHubs messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure EventHubs dependency while sending the correlated messages");
-            Guard.NotAny(eventBatch, nameof(eventBatch), "Requires at least a single message to send to Azure EventHubs");
-            Guard.For(() => eventBatch.Any(message => message is null), new ArgumentException("Requires non-null items in Azure EventHubs message sequence", nameof(eventBatch)));
-
             await SendAsync(client, eventBatch, correlationInfo, logger, sendEventOptions: null, configureOptions: null, cancellationToken);
         }
 
@@ -291,13 +263,6 @@ namespace Azure.Messaging.EventHubs.Producer
             Action<EventHubProducerClientMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(client, nameof(client), "Requires an Azure EventHubs producer client while sending a correlated message");
-            Guard.NotNull(eventBatch, nameof(eventBatch), "Requires a series of Azure EventHubs messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure EventHubs dependency while sending the correlated messages");
-            Guard.NotAny(eventBatch, nameof(eventBatch), "Requires at least a single message to send to Azure EventHubs");
-            Guard.For(() => eventBatch.Any(message => message is null), new ArgumentException("Requires non-null items in Azure EventHubs message sequence", nameof(eventBatch)));
-
             await SendAsync(client, eventBatch, correlationInfo, logger, sendEventOptions: null, configureOptions, cancellationToken);
         }
 
@@ -340,13 +305,6 @@ namespace Azure.Messaging.EventHubs.Producer
             SendEventOptions sendEventOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(client, nameof(client), "Requires an Azure EventHubs producer client while sending a correlated message");
-            Guard.NotNull(eventBatch, nameof(eventBatch), "Requires a series of Azure EventHubs messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure EventHubs dependency while sending the correlated messages");
-            Guard.NotAny(eventBatch, nameof(eventBatch), "Requires at least a single message to send to Azure EventHubs");
-            Guard.For(() => eventBatch.Any(message => message is null), new ArgumentException("Requires non-null items in Azure EventHubs message sequence", nameof(eventBatch)));
-
             await SendAsync(client, eventBatch, correlationInfo, logger, sendEventOptions, configureOptions: null, cancellationToken);
         }
 
@@ -383,7 +341,7 @@ namespace Azure.Messaging.EventHubs.Producer
         ///     that is an unsupported type for serialization.  See the <see cref="EventData.Properties" /> remarks for details.
         /// </exception>
         public static async Task SendAsync(
-            this EventHubProducerClient client, 
+            this EventHubProducerClient client,
             IEnumerable<EventData> eventBatch,
             CorrelationInfo correlationInfo,
             ILogger logger,
@@ -391,12 +349,20 @@ namespace Azure.Messaging.EventHubs.Producer
             Action<EventHubProducerClientMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(client, nameof(client), "Requires an Azure EventHubs producer client while sending a correlated message");
-            Guard.NotNull(eventBatch, nameof(eventBatch), "Requires a series of Azure EventHubs messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure EventHubs dependency while sending the correlated messages");
-            Guard.NotAny(eventBatch, nameof(eventBatch), "Requires at least a single message to send to Azure EventHubs");
-            Guard.For(() => eventBatch.Any(message => message is null), new ArgumentException("Requires non-null items in Azure EventHubs message sequence", nameof(eventBatch)));
+            if (client is null)
+            {
+                throw new ArgumentNullException(nameof(client));
+            }
+
+            if (eventBatch is null)
+            {
+                throw new ArgumentNullException(nameof(eventBatch));
+            }
+
+            if (correlationInfo is null)
+            {
+                throw new ArgumentNullException(nameof(correlationInfo));
+            }
 
             var options = new EventHubProducerClientMessageCorrelationOptions();
             configureOptions?.Invoke(options);

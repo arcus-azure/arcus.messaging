@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.EventHubs;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.EventHubs
@@ -20,10 +19,6 @@ namespace Azure.Messaging.EventHubs
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         public static AzureEventHubsMessageContext GetMessageContext(this EventData message, EventProcessorClient eventProcessor, string jobId)
         {
-            Guard.NotNull(message, nameof(message), "Requires an event data to retrieve the Azure EventHubs message context");
-            Guard.NotNull(eventProcessor, nameof(eventProcessor), "Requires an Azure EventHubs event processor to retrieve the information to create a messaging context for the consumed event");
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a non-blank job ID to link this message context to a message pump that processes the event message");
-
             return AzureEventHubsMessageContext.CreateFrom(message, eventProcessor, jobId);
         }
 
@@ -44,12 +39,6 @@ namespace Azure.Messaging.EventHubs
         /// </exception>
         public static AzureEventHubsMessageContext GetMessageContext(this EventData message, string eventHubsNamespace, string eventHubsName, string consumerGroup, string jobId)
         {
-            Guard.NotNull(message, nameof(message), "Requires an event data to retrieve the Azure EventHubs message context");
-            Guard.NotNullOrWhitespace(eventHubsNamespace, nameof(eventHubsNamespace), "Requires an Azure EventHubs namespace to built-up the message context");
-            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires an Azure EventHubs name to built-up the message context");
-            Guard.NotNullOrWhitespace(consumerGroup, nameof(consumerGroup), "Requires an Azure EventHubs consumer group to built-up the message context");
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires a non-blank job ID to link this message context to a message pump that processes the event message");
-
             return AzureEventHubsMessageContext.CreateFrom(message, eventHubsNamespace, consumerGroup, eventHubsName, jobId);
         }
     }

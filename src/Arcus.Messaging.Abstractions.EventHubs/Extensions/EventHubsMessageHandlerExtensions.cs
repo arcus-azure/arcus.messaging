@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.EventHubs;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -24,7 +23,10 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureEventHubsMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureEventHubsMessageContext>();
             return handlers;
@@ -45,8 +47,15 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureEventHubsMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent handlers");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
+
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureEventHubsMessageContext>(implementationFactory);
             return handlers;

@@ -2,13 +2,12 @@
 using Arcus.Security.Core;
 using Azure.Core.Extensions;
 using Azure.Messaging.EventHubs.Producer;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 // ReSharper disable once CheckNamespace
-namespace  Microsoft.Extensions.Azure
+namespace Microsoft.Extensions.Azure
 {
     /// <summary>
     /// Extensions on the <see cref="IAzureClientFactoryBuilder"/> to add more easily Azure EventHubs producer clients with Arcus components.
@@ -41,9 +40,6 @@ namespace  Microsoft.Extensions.Azure
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName)
         {
-            Guard.NotNull(builder, nameof(builder), "Requires an Azure client factory builder to add the Azure EventHubs producer client");
-            Guard.NotNullOrWhitespace(connectionStringSecretName, nameof(connectionStringSecretName), "Requires a non-blank secret name to retrieve the Azure EventHubs connection string from the Arcus secret store");
-
             return AddEventHubProducerClient(builder, connectionStringSecretName: connectionStringSecretName, configureOptions: null);
         }
 
@@ -75,8 +71,15 @@ namespace  Microsoft.Extensions.Azure
             string connectionStringSecretName,
             Action<EventHubProducerClientOptions> configureOptions)
         {
-            Guard.NotNull(builder, nameof(builder), "Requires an Azure client factory builder to add the Azure EventHubs producer client");
-            Guard.NotNullOrWhitespace(connectionStringSecretName, nameof(connectionStringSecretName), "Requires a non-blank secret name to retrieve the Azure EventHubs connection string from the Arcus secret store");
+            if (builder is null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
+
+            if (string.IsNullOrWhiteSpace(connectionStringSecretName))
+            {
+                throw new ArgumentException("Requires a non-blank secret name that points to an Azure Event Hubs connection string", nameof(connectionStringSecretName));
+            }
 
             return builder.AddClient<EventHubProducerClient, EventHubProducerClientOptions>((options, serviceProvider) =>
             {
@@ -87,7 +90,7 @@ namespace  Microsoft.Extensions.Azure
             });
         }
 
-         /// <summary>
+        /// <summary>
         /// Registers a <see cref="EventHubProducerClient" /> instance into the Azure client factory <paramref name="builder"/>
         /// via a connection string available via the <paramref name="connectionStringSecretName"/> in the Arcus secret store.
         /// </summary>
@@ -115,10 +118,6 @@ namespace  Microsoft.Extensions.Azure
             string connectionStringSecretName,
             string eventHubName)
         {
-            Guard.NotNull(builder, nameof(builder), "Requires an Azure client factory builder to add the Azure EventHubs producer client");
-            Guard.NotNullOrWhitespace(connectionStringSecretName, nameof(connectionStringSecretName), "Requires a non-blank secret name to retrieve the Azure EventHubs connection string from the Arcus secret store");
-            Guard.NotNullOrWhitespace(eventHubName, nameof(eventHubName), "Requires a non-blank Azure EventHubs name to register the Azure EventHubs producer client");
-
             return AddEventHubProducerClient(builder, connectionStringSecretName: connectionStringSecretName, eventHubName, configureOptions: null);
         }
 
@@ -152,9 +151,20 @@ namespace  Microsoft.Extensions.Azure
             string eventHubName,
             Action<EventHubProducerClientOptions> configureOptions)
         {
-            Guard.NotNull(builder, nameof(builder), "Requires an Azure client factory builder to add the Azure EventHubs producer client");
-            Guard.NotNullOrWhitespace(connectionStringSecretName, nameof(connectionStringSecretName), "Requires a non-blank secret name to retrieve the Azure EventHubs connection string from the Arcus secret store");
-            Guard.NotNullOrWhitespace(eventHubName, nameof(eventHubName), "Requires a non-blank Azure EventHubs name to register the Azure EventHubs producer client");
+            if (builder is null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
+
+            if (string.IsNullOrWhiteSpace(connectionStringSecretName))
+            {
+                throw new ArgumentException("Requires a non-blank secret name that points to an Azure Event Hubs connection string", nameof(connectionStringSecretName));
+            }
+
+            if (string.IsNullOrWhiteSpace(eventHubName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure EventHubs name to register the Azure EventHubs producer client", nameof(eventHubName));
+            }
 
             return builder.AddClient<EventHubProducerClient, EventHubProducerClientOptions>((options, serviceProvider) =>
             {
@@ -182,8 +192,8 @@ namespace  Microsoft.Extensions.Azure
             }
             catch (Exception exception)
             {
-                ILogger logger = 
-                    serviceProvider.GetService<ILogger<EventHubProducerClient>>() 
+                ILogger logger =
+                    serviceProvider.GetService<ILogger<EventHubProducerClient>>()
                     ?? NullLogger<EventHubProducerClient>.Instance;
 
                 logger.LogTrace(exception, "Cannot synchronously retrieve Azure EventHubs connection string secret for '{SecretName}', fallback on asynchronously", connectionStringSecretName);

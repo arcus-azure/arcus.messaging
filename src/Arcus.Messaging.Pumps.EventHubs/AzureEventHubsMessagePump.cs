@@ -9,7 +9,6 @@ using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.EventHubs.Configuration;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Processor;
-using GuardNet;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,18 +46,12 @@ namespace Arcus.Messaging.Pumps.EventHubs
             IConfiguration applicationConfiguration,
             IServiceProvider serviceProvider,
             IAzureEventHubsMessageRouter messageRouter,
-            ILogger<AzureEventHubsMessagePump> logger) 
+            ILogger<AzureEventHubsMessagePump> logger)
             : base(applicationConfiguration, serviceProvider, logger)
         {
-            Guard.NotNull(eventHubsConfiguration, nameof(eventHubsConfiguration), "Requires an Azure EventHubs configuration instance to setup the interaction with the Azure EventHubs when consuming event messages");
-            Guard.NotNull(applicationConfiguration, nameof(applicationConfiguration), "Requires an application configuration instance to retrieve additional information for the message pump");
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an application's service provider to retrieve registered services during the lifetime of the message pump, like Azure EventHubs message handlers and its dependencies");
-            Guard.NotNull(messageRouter, nameof(messageRouter), "Requires an Azure EventHubs message router when consuming event messages from Azure EventHubs and routing them though Azure EventHubs message handlers");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write diagnostic messages during the lifetime of the message pump");
+            _eventHubsConfig = eventHubsConfiguration ?? throw new ArgumentNullException(nameof(eventHubsConfiguration));
+            _messageRouter = messageRouter ?? throw new ArgumentNullException(nameof(messageRouter));
 
-            _eventHubsConfig = eventHubsConfiguration;
-            _messageRouter = messageRouter;
-            
             JobId = _eventHubsConfig.Options.JobId;
             _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
         }
@@ -86,7 +79,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
             }
             catch (Exception exception)
             {
-                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}': {Message}", JobId, ConsumerGroup, EventHubName, Namespace, exception.Message); 
+                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}': {Message}", JobId, ConsumerGroup, EventHubName, Namespace, exception.Message);
             }
             finally
             {
@@ -119,7 +112,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
             _eventProcessor = await _eventHubsConfig.CreateEventProcessorClientAsync();
             _eventProcessor.ProcessEventAsync += ProcessMessageAsync;
             _eventProcessor.ProcessErrorAsync += ProcessErrorAsync;
-            
+
             Logger.LogTrace("Starting Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}'", JobId, ConsumerGroup, EventHubName, Namespace);
             await _eventProcessor.StartProcessingAsync(stoppingToken);
             Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' started: {Time}", JobId, ConsumerGroup, EventHubName, Namespace, DateTimeOffset.UtcNow);
@@ -136,7 +129,7 @@ namespace Arcus.Messaging.Pumps.EventHubs
 
             if (_isHostShuttingDown)
             {
-                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure EventHubs message pump is shutting down",  args.Data.MessageId);
+                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure EventHubs message pump is shutting down", args.Data.MessageId);
                 return;
             }
 
@@ -199,20 +192,20 @@ namespace Arcus.Messaging.Pumps.EventHubs
 
             try
             {
-                Logger.LogTrace("Stopping Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}'",  JobId, ConsumerGroup, EventHubName , Namespace);
+                Logger.LogTrace("Stopping Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}'", JobId, ConsumerGroup, EventHubName, Namespace);
 
                 if (_eventProcessor != null)
                 {
                     await _eventProcessor.StopProcessingAsync(cancellationToken);
                     _eventProcessor.ProcessEventAsync -= ProcessMessageAsync;
-                    _eventProcessor.ProcessErrorAsync -= ProcessErrorAsync; 
+                    _eventProcessor.ProcessErrorAsync -= ProcessErrorAsync;
                 }
 
-                Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' stopped: {Time}",  JobId, ConsumerGroup, EventHubName , Namespace, DateTimeOffset.UtcNow);
+                Logger.LogInformation("Azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}' stopped: {Time}", JobId, ConsumerGroup, EventHubName, Namespace, DateTimeOffset.UtcNow);
             }
             catch (Exception exception)
             {
-                Logger.LogWarning(exception, "Cannot correctly close the azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}': {Message}", JobId, ConsumerGroup, EventHubName , Namespace, exception.Message);
+                Logger.LogWarning(exception, "Cannot correctly close the azure EventHubs message pump '{JobId}' on '{ConsumerGroup}/{EventHubsName}' in '{Namespace}': {Message}", JobId, ConsumerGroup, EventHubName, Namespace, exception.Message);
             }
         }
 

@@ -5,7 +5,6 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Observability.Correlation;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.EventHubs.Core
@@ -28,7 +27,11 @@ namespace Arcus.Messaging.EventHubs.Core
             get => _transactionIdPropertyName;
             set
             {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Requires a non-blank value for the message correlation transaction ID Azure Service Bus application property name");
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Requires a non-blank value for the message correlation transaction ID Azure Service Bus application property name", nameof(value));
+                }
+
                 _transactionIdPropertyName = value;
             }
         }
@@ -42,7 +45,11 @@ namespace Arcus.Messaging.EventHubs.Core
             get => _upstreamServicePropertyName;
             set
             {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Requires a non-blank value for the message correlation upstream service Azure Service Bus application property name");
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Requires a non-blank value for the message correlation upstream service Azure Service Bus application property name", nameof(value));
+                }
+
                 _upstreamServicePropertyName = value;
             }
         }
@@ -53,11 +60,7 @@ namespace Arcus.Messaging.EventHubs.Core
         public Func<string> GenerateDependencyId
         {
             get => _generateDependencyId;
-            set
-            {
-                Guard.NotNull(value, nameof(value), "Requires a function to generate the dependency ID used when tracking Azure Service Bus dependencies");
-                _generateDependencyId = value;
-            }
+            set => _generateDependencyId = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         /// <summary>
@@ -72,7 +75,11 @@ namespace Arcus.Messaging.EventHubs.Core
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="telemetryContext"/> is <c>null</c>.</exception>
         public void AddTelemetryContext(Dictionary<string, object> telemetryContext)
         {
-            Guard.NotNull(telemetryContext, nameof(telemetryContext), "Requires a telemetry context instance to add to the dependency tracking");
+            if (telemetryContext is null)
+            {
+                throw new ArgumentNullException(nameof(telemetryContext));
+            }
+
             foreach (KeyValuePair<string, object> item in telemetryContext)
             {
                 TelemetryContext[item.Key] = item.Value;

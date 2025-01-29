@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.EventHubs
@@ -22,7 +21,6 @@ namespace Azure.Messaging.EventHubs
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="eventData"/> is <c>null</c>.</exception>
         public static MessageCorrelationInfo GetCorrelationInfo(this EventData eventData)
         {
-            Guard.NotNull(eventData, nameof(eventData), "Requires an event data instance to retrieve the message correlation information");
             return GetCorrelationInfo(eventData, PropertyNames.TransactionId);
         }
 
@@ -44,9 +42,6 @@ namespace Azure.Messaging.EventHubs
             this EventData eventData,
             string transactionIdPropertyName)
         {
-            Guard.NotNull(eventData, nameof(eventData), "Requires an event data instance to retrieve the message correlation information");
-            Guard.NotNullOrWhitespace(transactionIdPropertyName, nameof(transactionIdPropertyName), "Requires a non-blank application property name to retrieve the transaction ID from the event data's properties");
-
             return GetCorrelationInfo(eventData, transactionIdPropertyName, PropertyNames.OperationParentId);
         }
 
@@ -74,9 +69,20 @@ namespace Azure.Messaging.EventHubs
             string transactionIdPropertyName,
             string operationParentIdPropertyName)
         {
-            Guard.NotNull(eventData, nameof(eventData), "Requires an event data instance to retrieve the message correlation information");
-            Guard.NotNullOrWhitespace(transactionIdPropertyName, nameof(transactionIdPropertyName), "Requires a non-blank application property name to retrieve the transaction ID from the event data's properties");
-            Guard.NotNullOrWhitespace(operationParentIdPropertyName, nameof(operationParentIdPropertyName), "Requires a non-blank application property name to retrieve the operation parent ID from the event data's properties");
+            if (eventData is null)
+            {
+                throw new ArgumentNullException(nameof(eventData));
+            }
+
+            if (string.IsNullOrWhiteSpace(transactionIdPropertyName))
+            {
+                throw new ArgumentException("Requires a non-blank application property name to retrieve the transaction ID from the event data's properties", nameof(transactionIdPropertyName));
+            }
+
+            if (string.IsNullOrWhiteSpace(operationParentIdPropertyName))
+            {
+                throw new ArgumentException("Requires a non-blank application property name to retrieve the operation parent ID from the event data's properties", nameof(operationParentIdPropertyName));
+            }
 
             string transactionId = DetermineTransactionId(eventData, transactionIdPropertyName);
             string operationId = DetermineOperationId(eventData.CorrelationId);

@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using Arcus.Messaging.AzureFunctions.EventHubs;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
@@ -22,8 +21,6 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
         public static EventHubsMessageHandlerCollection AddEventHubsMessageRouting(
             this IFunctionsHostBuilder builder)
         {
-            Guard.NotNull(builder, nameof(builder), "Requires a functions host builder to add the Azure EventHubs message router");
-
             return AddEventHubsMessageRouting(builder, configureOptions: null);
         }
 
@@ -38,7 +35,10 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
             this IFunctionsHostBuilder builder,
             Action<AzureEventHubsMessageRouterOptions> configureOptions)
         {
-            Guard.NotNull(builder, nameof(builder), "Requires a functions host builder to add the Azure EventHubs message router");
+            if (builder is null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
 
             return builder.Services.AddSingleton<AzureFunctionsInProcessMessageCorrelation>()
                           .AddEventHubsMessageRouting(configureOptions);
@@ -57,9 +57,6 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
             Func<IServiceProvider, TMessageRouter> implementationFactory)
             where TMessageRouter : IAzureEventHubsMessageRouter
         {
-            Guard.NotNull(builder, nameof(builder), "Requires a functions host builder to add the Azure EventHubs message router");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure EventHubs message router");
-
             return AddEventHubsMessageRouting(builder, (provider, options) => implementationFactory(provider), configureOptions: null);
         }
 
@@ -78,8 +75,15 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
             Action<AzureEventHubsMessageRouterOptions> configureOptions)
             where TMessageRouter : IAzureEventHubsMessageRouter
         {
-            Guard.NotNull(builder, nameof(builder), "Requires a functions host builder to add the Azure EventHubs message router");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure EventHubs message router");
+            if (builder is null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
+
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
 
             return builder.Services.AddSingleton<AzureFunctionsInProcessMessageCorrelation>()
                           .AddEventHubsMessageRouting(implementationFactory, configureOptions);
