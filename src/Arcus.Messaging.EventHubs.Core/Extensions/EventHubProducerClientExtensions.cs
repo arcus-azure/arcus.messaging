@@ -364,6 +364,11 @@ namespace Azure.Messaging.EventHubs.Producer
                 throw new ArgumentNullException(nameof(correlationInfo));
             }
 
+            if (logger is null)
+            {
+                throw new ArgumentNullException(nameof(logger));
+            }
+
             var options = new EventHubProducerClientMessageCorrelationOptions();
             configureOptions?.Invoke(options);
 
