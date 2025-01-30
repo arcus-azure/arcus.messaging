@@ -6,7 +6,6 @@ using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Security.Core;
 using Azure.Core;
 using Azure.Identity;
-using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -126,6 +125,11 @@ namespace Microsoft.Extensions.DependencyInjection
             string secretName,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
+            if (string.IsNullOrWhiteSpace(queueName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(queueName));
+            }
+
             if (string.IsNullOrWhiteSpace(secretName))
             {
                 throw new ArgumentException("Requires a non-blank secret name", nameof(secretName));
@@ -161,6 +165,11 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
+            if (string.IsNullOrWhiteSpace(queueName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(queueName));
+            }
+
             var collection = AddServiceBusQueueMessagePump(
                 services,
                 entityName: queueName,
@@ -187,6 +196,11 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
+            if (string.IsNullOrWhiteSpace(queueName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(queueName));
+            }
+
             var collection = AddServiceBusQueueMessagePump(
                 services,
                 entityName: queueName,
@@ -216,6 +230,11 @@ namespace Microsoft.Extensions.DependencyInjection
             string clientId = null,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
+            if (string.IsNullOrWhiteSpace(queueName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(queueName));
+            }
+
             var collection = AddServiceBusQueueMessagePump(
                 services,
                 entityName: queueName,
@@ -375,10 +394,10 @@ namespace Microsoft.Extensions.DependencyInjection
             string secretName,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to add the Azure Service Bus Topic message pump");
-            Guard.NotNullOrWhitespace(topicName, nameof(topicName), "Requires a non-blank Azure Service Bus Topic name");
-            Guard.NotNullOrWhitespace(subscriptionName, nameof(subscriptionName), "Requires a non-blank Azure Service Bus Topic subscription name");
-            Guard.NotNullOrWhitespace(secretName, nameof(secretName), "Requires a non-blank secret name to look up the connection string to authenticate with the Azure Service Bus Topic");
+            if (string.IsNullOrWhiteSpace(topicName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
+            }
 
             var collection = AddServiceBusTopicMessagePump(
                 services,
@@ -411,6 +430,11 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
+            if (string.IsNullOrWhiteSpace(topicName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
+            }
+
             var collection = AddServiceBusTopicMessagePump(
                 services,
                 entityName: topicName,
@@ -440,6 +464,11 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
+            if (string.IsNullOrWhiteSpace(topicName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
+            }
+
             var collection = AddServiceBusTopicMessagePump(
                 services,
                 entityName: topicName,
@@ -474,6 +503,11 @@ namespace Microsoft.Extensions.DependencyInjection
             string clientId = null,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
+            if (string.IsNullOrWhiteSpace(topicName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
+            }
+
             var collection = AddServiceBusTopicMessagePump(
                 services,
                 entityName: topicName,
@@ -616,6 +650,11 @@ namespace Microsoft.Extensions.DependencyInjection
             string secretName,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
+            if (string.IsNullOrWhiteSpace(topicName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
+            }
+
             if (string.IsNullOrWhiteSpace(secretName))
             {
                 throw new ArgumentException("Requires a non-blank secret name", nameof(secretName));
@@ -654,6 +693,11 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
+            if (string.IsNullOrWhiteSpace(topicName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
+            }
+
             var collection = AddServiceBusTopicMessagePumpWithPrefix(
                 services,
                 entityName: topicName,
@@ -685,6 +729,11 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
+            if (string.IsNullOrWhiteSpace(topicName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
+            }
+
             var collection = AddServiceBusTopicMessagePumpWithPrefix(
                 services,
                 entityName: topicName,
@@ -721,6 +770,11 @@ namespace Microsoft.Extensions.DependencyInjection
             string clientId = null,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
+            if (string.IsNullOrWhiteSpace(topicName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
+            }
+
             var collection = AddServiceBusTopicMessagePumpWithPrefix(
                 services,
                 entityName: topicName,
@@ -802,11 +856,6 @@ namespace Microsoft.Extensions.DependencyInjection
             if (services is null)
             {
                 throw new ArgumentNullException(nameof(services));
-            }
-
-            if (string.IsNullOrWhiteSpace(entityName))
-            {
-                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(entityName));
             }
 
             if (serviceBusEntity is ServiceBusEntityType.Topic && string.IsNullOrWhiteSpace(subscriptionName))

@@ -47,11 +47,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             AzureServiceBusMessagePumpOptions options,
             IServiceProvider serviceProvider)
         {
-            if (string.IsNullOrWhiteSpace(entityName))
-            {
-                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(entityName));
-            }
-
             if (serviceBusEntity is ServiceBusEntityType.Topic && string.IsNullOrWhiteSpace(subscriptionName))
             {
                 throw new ArgumentException("Requires a non-blank Azure Service bus topic subscription name", nameof(subscriptionName));

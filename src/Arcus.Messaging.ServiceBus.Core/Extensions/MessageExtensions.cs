@@ -26,7 +26,7 @@ namespace Microsoft.Azure.ServiceBus
         {
             if (message is null)
             {
-                throw new ArgumentNullException(nameof(message))
+                throw new ArgumentNullException(nameof(message));
             }
 
             if (string.IsNullOrWhiteSpace(key))

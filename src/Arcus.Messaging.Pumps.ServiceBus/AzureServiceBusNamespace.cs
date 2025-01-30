@@ -47,7 +47,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 throw new ArgumentException("Requires a non-blank authorization rule name", nameof(authorizationRuleName));
             }
 
-            if (!Enum.IsDefined(entity) || entity is ServiceBusEntityType.Unknown)
+            if (!Enum.IsDefined(typeof(ServiceBusEntityType), entity) || entity is ServiceBusEntityType.Unknown)
             {
                 throw new ArgumentException($"Requires either a '{ServiceBusEntityType.Topic}' or '{ServiceBusEntityType.Queue}' as Azure Service bus entity type", nameof(entity));
             }

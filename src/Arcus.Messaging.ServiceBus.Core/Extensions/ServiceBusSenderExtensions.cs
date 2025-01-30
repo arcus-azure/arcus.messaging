@@ -188,6 +188,11 @@ namespace Azure.Messaging.ServiceBus
             Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
             await SendMessagesAsync(sender, new[] { message }, correlationInfo, logger, configureOptions, cancellationToken);
         }
 

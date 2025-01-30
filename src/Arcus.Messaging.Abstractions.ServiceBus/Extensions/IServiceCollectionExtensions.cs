@@ -57,6 +57,11 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, TMessageRouter> implementationFactory)
             where TMessageRouter : IAzureServiceBusMessageRouter
         {
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
+
             return AddServiceBusMessageRouting(services, (provider, options) => implementationFactory(provider), configureOptions: null);
         }
 
