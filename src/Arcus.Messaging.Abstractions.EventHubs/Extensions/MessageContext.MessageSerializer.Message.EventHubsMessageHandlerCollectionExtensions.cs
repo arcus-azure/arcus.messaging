@@ -1,8 +1,7 @@
 ﻿using System;
-using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.EventHubs;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
-using GuardNet;
+using Arcus.Messaging.Abstractions.MessageHandling;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -32,9 +31,10 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureEventHubsMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureEventHubsMessageContext>(messageContextFilter, messageBodySerializer, messageBodyFilter);
             return handlers;
@@ -59,9 +59,10 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureEventHubsMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer instance to deserialize incoming message for the message handler");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureEventHubsMessageContext>(messageContextFilter, messageBodySerializerImplementationFactory, messageBodyFilter);
             return handlers;
@@ -88,12 +89,12 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureEventHubsMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
-            handlers.WithMessageHandler<TMessageHandler, TMessage, AzureEventHubsMessageContext>(messageContextFilter, messageBodySerializer, messageBodyFilter, implementationFactory);
+            handlers.WithMessageHandler(messageContextFilter, messageBodySerializer, messageBodyFilter, implementationFactory);
             return handlers;
         }
 
@@ -118,12 +119,12 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureEventHubsMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer instance to deserialize incoming message for the message handler");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
-            Guard.NotNull(messageHandlerImplementationFactory, nameof(messageHandlerImplementationFactory), "Requires a function to create the message handler");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
-            handlers.WithMessageHandler<TMessageHandler, TMessage, AzureEventHubsMessageContext>(messageContextFilter, messageBodySerializerImplementationFactory, messageBodyFilter, messageHandlerImplementationFactory);
+            handlers.WithMessageHandler(messageContextFilter, messageBodySerializerImplementationFactory, messageBodyFilter, messageHandlerImplementationFactory);
             return handlers;
         }
     }

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text.Json;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,9 +29,6 @@ namespace Microsoft.Azure.Functions.Worker
             this FunctionContext context,
             Dictionary<string, JsonElement> applicationProperties)
         {
-            Guard.NotNull(context, nameof(context), "Requires a function context to retrieve the message correlation from");
-            Guard.NotNull(applicationProperties, nameof(applicationProperties), "Requires a series of application properties associated with the received event");
-
             return GetCorrelationInfo(context, applicationProperties, MessageCorrelationFormat.W3C);
         }
 
@@ -52,8 +48,15 @@ namespace Microsoft.Azure.Functions.Worker
             Dictionary<string, JsonElement> applicationProperties,
             MessageCorrelationFormat correlationFormat)
         {
-            Guard.NotNull(context, nameof(context), "Requires a function context to retrieve the message correlation from");
-            Guard.NotNull(applicationProperties, nameof(applicationProperties), "Requires a series of application properties associated with the received event");
+            if (context is null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
+            if (applicationProperties is null)
+            {
+                throw new ArgumentNullException(nameof(applicationProperties));
+            }
 
             if (correlationFormat is MessageCorrelationFormat.W3C)
             {
@@ -70,7 +73,7 @@ namespace Microsoft.Azure.Functions.Worker
             }
 
             if (correlationFormat is MessageCorrelationFormat.Hierarchical)
-            { 
+            {
                 string transactionId = DetermineTransactionId(applicationProperties, PropertyNames.TransactionId);
                 string operationId = DetermineOperationId(applicationProperties);
                 string operationParentId = GetOptionalUserProperty(applicationProperties, PropertyNames.OperationParentId);
@@ -87,9 +90,9 @@ namespace Microsoft.Azure.Functions.Worker
         {
             IDictionary<string, object> castProperties =
                 applicationProperties.ToDictionary(
-                    item => item.Key, 
+                    item => item.Key,
                     item => (object) item.Value.GetString());
-            
+
             return castProperties.GetTraceParent();
         }
 

@@ -4,7 +4,6 @@ using Arcus.Security.Core;
 using Azure.Core;
 using Azure.Messaging.EventHubs;
 using Azure.Storage.Blobs;
-using GuardNet;
 
 namespace Arcus.Messaging.Pumps.EventHubs.Configuration
 {
@@ -52,19 +51,42 @@ namespace Arcus.Messaging.Pumps.EventHubs.Configuration
         /// </exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="secretProvider"/> or the <paramref name="options"/> is <c>null</c>.</exception>
         internal static AzureEventHubsMessagePumpConfig CreateByConnectionString(
-            string eventHubsName, 
-            string eventHubsConnectionStringSecretName, 
-            string blobContainerName, 
+            string eventHubsName,
+            string eventHubsConnectionStringSecretName,
+            string blobContainerName,
             string storageAccountConnectionStringSecretName,
             ISecretProvider secretProvider,
             AzureEventHubsMessagePumpOptions options)
         {
-            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank Azure EventHubs name where the events will be sent to when adding an Azure EvenHubs message pump");
-            Guard.NotNullOrWhitespace(eventHubsConnectionStringSecretName, nameof(eventHubsConnectionStringSecretName), "Requires a non-blank secret name to retrieve the connection string to the Azure EventHubs where the message pump will retrieve its event messages");
-            Guard.NotNullOrWhitespace(blobContainerName, nameof(blobContainerName), "Requires a non-blank Azure Blob storage container name to store event checkpoints and load balance the consumed event messages send to the message pump");
-            Guard.NotNullOrWhitespace(storageAccountConnectionStringSecretName, nameof(storageAccountConnectionStringSecretName), "Requires a non-blank secret name to retrieve the connection string to the Azure Blob storage where the event checkpoints will be stored and events will be load balanced during the event processing of the message pump");
-            Guard.NotNull(secretProvider, nameof(secretProvider), "Requires an application's service provider to retrieve registered services during the lifetime of the message pump, like Azure EventHubs message handlers and its dependencies");
-            Guard.NotNull(options, nameof(options), "Requires a set of user-defined options to influence the behavior of the Azure EventHubs message pump");
+            if (string.IsNullOrWhiteSpace(eventHubsName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Event hubs name to add a message pump", nameof(eventHubsName));
+            }
+
+            if (string.IsNullOrWhiteSpace(eventHubsConnectionStringSecretName))
+            {
+                throw new ArgumentException("Requires a non-blank secret name that points to an Azure Event Hubs connection string", nameof(eventHubsConnectionStringSecretName));
+            }
+
+            if (string.IsNullOrWhiteSpace(blobContainerName))
+            {
+                throw new ArgumentException("Requires a non-blank name for the Azure Blob container name, linked to the Azure Event Hubs", nameof(blobContainerName));
+            }
+
+            if (string.IsNullOrWhiteSpace(storageAccountConnectionStringSecretName))
+            {
+                throw new ArgumentException("Requires a non-blank secret name that points to an Azure Blob storage connection string", nameof(storageAccountConnectionStringSecretName));
+            }
+
+            if (secretProvider is null)
+            {
+                throw new ArgumentNullException(nameof(secretProvider));
+            }
+
+            if (options is null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
 
             return new AzureEventHubsMessagePumpConfig(async () =>
             {
@@ -80,7 +102,7 @@ namespace Arcus.Messaging.Pumps.EventHubs.Configuration
 
         private static async Task<string> GetConnectionStringFromSecretAsync(
             ISecretProvider secretProvider,
-            string connectionStringSecretName, 
+            string connectionStringSecretName,
             string connectionStringType)
         {
             Task<string> getConnectionStringTask = secretProvider.GetRawSecretAsync(connectionStringSecretName);
@@ -115,12 +137,31 @@ namespace Arcus.Messaging.Pumps.EventHubs.Configuration
             TokenCredential credential,
             AzureEventHubsMessagePumpOptions options)
         {
-            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank Azure EventHubs name where the events will be sent to when adding an Azure EvenHubs message pump");
-            Guard.NotNullOrWhitespace(eventHubsName, nameof(eventHubsName), "Requires a non-blank Azure EventHubs name where the events will be sent to when adding an Azure EvenHubs message pump");
-            Guard.NotNullOrWhitespace(fullyQualifiedNamespace, nameof(fullyQualifiedNamespace), "Requires a non-blank Azure EventHubs namespace to connect to");
-            Guard.For<UriFormatException>(() => !blobContainerUri.IsAbsoluteUri, "Requires a valid absolute URI endpoint for the Azure Blob container to store event checkpoints and load balance the consumed event messages send to the message pump");
-            Guard.NotNull(credential, nameof(credential), "Requires a token credential to authenticate the interaction with the Azure EventHubs resource");
-            Guard.NotNull(options, nameof(options), "Requires a set of user-defined options to influence the behavior of the Azure EventHubs message pump");
+
+            if (string.IsNullOrWhiteSpace(eventHubsName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Event hubs name to add a message pump config", nameof(eventHubsName));
+            }
+
+            if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Event hubs fully-qualified namespace to add a message pump config", nameof(eventHubsName));
+            }
+
+            if (!blobContainerUri.IsAbsoluteUri)
+            {
+                throw new UriFormatException("Requires a valid absolute URI endpoint for the Azure Blob container to store event checkpoints and load balance the consumed event messages send to the message pump");
+            }
+
+            if (credential is null)
+            {
+                throw new ArgumentNullException(nameof(credential));
+            }
+
+            if (options is null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
 
             return new AzureEventHubsMessagePumpConfig(() =>
             {

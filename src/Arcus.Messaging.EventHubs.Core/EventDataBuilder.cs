@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using Arcus.Messaging.Abstractions;
-using GuardNet;
 using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
@@ -31,7 +30,6 @@ namespace Azure.Messaging.EventHubs
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="eventBody"/> or the is <c>null</c>.</exception>
         public static EventDataBuilder CreateForBody(object eventBody)
         {
-            Guard.NotNull(eventBody, nameof(eventBody), "Requires a message body to include in the to-be-created Azure EventHubs message");
             return CreateForBody(eventBody, Encoding.UTF8);
         }
 
@@ -43,10 +41,9 @@ namespace Azure.Messaging.EventHubs
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="eventBody"/> or the <paramref name="encoding"/> is <c>null</c>.</exception>
         public static EventDataBuilder CreateForBody(object eventBody, Encoding encoding)
         {
-            Guard.NotNull(eventBody, nameof(eventBody), "Requires a message body to include in the to-be-created Azure EventHubs message");
-            Guard.NotNull(encoding, nameof(encoding), "Requires an encoding instance to encode the passed-in message body so it can be included in the Azure EventHubs message");
-
-            return new EventDataBuilder(eventBody, encoding);
+            return new EventDataBuilder(
+                eventBody ?? throw new ArgumentNullException(nameof(eventBody)),
+                encoding ?? throw new ArgumentNullException(nameof(encoding)));
         }
 
         /// <summary>
@@ -110,7 +107,7 @@ namespace Azure.Messaging.EventHubs
             {
                 _transactionIdProperty = new KeyValuePair<string, object>(
                     transactionIdPropertyName ?? PropertyNames.TransactionId,
-                    transactionId); 
+                    transactionId);
             }
 
             return this;
@@ -145,7 +142,7 @@ namespace Azure.Messaging.EventHubs
             {
                 _operationParentIdProperty = new KeyValuePair<string, object>(
                     operationParentIdPropertyName ?? PropertyNames.OperationParentId,
-                    operationParentId); 
+                    operationParentId);
             }
 
             return this;
@@ -170,7 +167,7 @@ namespace Azure.Messaging.EventHubs
             if (_operationIdProperty.Key is null && _operationIdProperty.Value is not null)
             {
                 eventData.CorrelationId = _operationIdProperty.Value?.ToString();
-            } 
+            }
             else if (_operationIdProperty.Value is not null)
             {
                 eventData.Properties.Add(_operationIdProperty);

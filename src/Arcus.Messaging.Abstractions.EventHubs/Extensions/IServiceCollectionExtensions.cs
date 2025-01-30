@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
@@ -22,8 +21,6 @@ namespace Microsoft.Extensions.DependencyInjection
         public static EventHubsMessageHandlerCollection AddEventHubsMessageRouting(
             this IServiceCollection services)
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure EventHubs message routing");
-
             return AddEventHubsMessageRouting(services, configureOptions: null);
         }
 
@@ -38,8 +35,6 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             Action<AzureEventHubsMessageRouterOptions> configureOptions)
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure EventHubs message routing");
-
             return AddEventHubsMessageRouting(services, (serviceProvider, options) =>
             {
                 var logger = serviceProvider.GetService<ILogger<AzureEventHubsMessageRouter>>();
@@ -60,9 +55,6 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, TMessageRouter> implementationFactory)
             where TMessageRouter : IAzureEventHubsMessageRouter
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure EventHubs message routing");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure EventHubs message router");
-
             return AddEventHubsMessageRouting(services, (serviceProvider, options) => implementationFactory(serviceProvider), configureOptions: null);
         }
 
@@ -81,8 +73,15 @@ namespace Microsoft.Extensions.DependencyInjection
             Action<AzureEventHubsMessageRouterOptions> configureOptions)
             where TMessageRouter : IAzureEventHubsMessageRouter
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure EventHubs message routing");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure EventHubs message router");
+            if (services is null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
 
             services.TryAddSingleton<IAzureEventHubsMessageRouter>(serviceProvider =>
             {
