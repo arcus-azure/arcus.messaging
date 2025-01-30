@@ -1,6 +1,5 @@
 ﻿using System;
 using Azure.Messaging.ServiceBus;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -24,7 +23,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// Gets the current event args of the received Azure Service Bus message to run message-specific operations.
         /// </summary>
         internal ProcessMessageEventArgs EventArgs { get; private set; }
-        
+
         /// <summary>
         /// Gets the logger to write diagnostic messages during the handling of the message.
         /// </summary>
@@ -38,8 +37,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="args"/> is <c>null</c>.</exception>
         internal void SetProcessMessageEventArgs(ProcessMessageEventArgs args)
         {
-            Guard.NotNull(args, nameof(args), "Requires a messaging event args instance to run Azure Service Bus message-specific operations during the message handling");
-            EventArgs = args;
+            EventArgs = args ?? throw new ArgumentNullException(nameof(args));
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.AzureFunctions.ServiceBus;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
@@ -20,8 +19,6 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="builder"/> is <c>null</c>.</exception>
         public static ServiceBusMessageHandlerCollection AddServiceBusMessageRouting(this IFunctionsHostBuilder builder)
         {
-            Guard.NotNull(builder, nameof(builder), "Requires a set of builder to register the Azure Service Bus message routing");
-
             return AddServiceBusMessageRouting(builder, configureOptions: null);
         }
 
@@ -35,7 +32,10 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
             this IFunctionsHostBuilder builder,
             Action<AzureServiceBusMessageRouterOptions> configureOptions)
         {
-            Guard.NotNull(builder, nameof(builder), "Requires a set of builder to register the Azure Service Bus message routing");
+            if (builder is null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
 
             return builder.Services.AddSingleton<AzureFunctionsInProcessMessageCorrelation>()
                                    .AddServiceBusMessageRouting(configureOptions);
@@ -53,9 +53,6 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
             Func<IServiceProvider, TMessageRouter> implementationFactory)
             where TMessageRouter : IAzureServiceBusMessageRouter
         {
-            Guard.NotNull(builder, nameof(builder), "Requires a set of builder to register the Azure Service Bus message routing");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure Service Bus message router");
-
             return AddServiceBusMessageRouting(builder, (provider, options) => implementationFactory(provider), configureOptions: null);
         }
 
@@ -73,8 +70,10 @@ namespace Microsoft.Azure.Functions.Extensions.DependencyInjection
             Action<AzureServiceBusMessageRouterOptions> configureOptions)
             where TMessageRouter : IAzureServiceBusMessageRouter
         {
-            Guard.NotNull(builder, nameof(builder), "Requires a set of builder to register the Azure Service Bus message routing");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure Service Bus message router");
+            if (builder is null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
 
             return builder.Services.AddSingleton<AzureFunctionsInProcessMessageCorrelation>()
                                    .AddServiceBusMessageRouting(implementationFactory, configureOptions);

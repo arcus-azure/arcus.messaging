@@ -1,5 +1,4 @@
 ﻿using System;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.ServiceBus
@@ -24,20 +23,35 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         public AzureServiceBusNamespace(
             string resourceGroup,
             string @namespace,
-            ServiceBusEntityType entity, 
+            ServiceBusEntityType entity,
             string entityName,
             string authorizationRuleName)
         {
-            Guard.NotNullOrWhitespace(resourceGroup, nameof(resourceGroup));
-            Guard.NotNullOrWhitespace(@namespace, nameof(@namespace));
-            Guard.NotNullOrWhitespace(entityName, nameof(entityName));
-            Guard.NotNullOrWhitespace(authorizationRuleName, nameof(authorizationRuleName));
-            Guard.For<ArgumentException>(
-                () => !Enum.IsDefined(typeof(ServiceBusEntityType), entity), 
-                $"Azure Service Bus entity '{entity}' is not defined in the '{nameof(ServiceBusEntityType)}' enumeration");
-            Guard.For<ArgumentOutOfRangeException>(
-                () => entity is ServiceBusEntityType.Unknown, "Azure Service Bus entity type 'Unknown' is not supported here");
-            
+            if (string.IsNullOrWhiteSpace(resourceGroup))
+            {
+                throw new ArgumentException("Requires a non-blank resource group name", nameof(resourceGroup));
+            }
+
+            if (string.IsNullOrWhiteSpace(@namespace))
+            {
+                throw new ArgumentException("Requires a non-blank namespace", nameof(@namespace));
+            }
+
+            if (string.IsNullOrWhiteSpace(entityName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(entityName));
+            }
+
+            if (string.IsNullOrWhiteSpace(authorizationRuleName))
+            {
+                throw new ArgumentException("Requires a non-blank authorization rule name", nameof(authorizationRuleName));
+            }
+
+            if (!Enum.IsDefined(entity) || entity is ServiceBusEntityType.Unknown)
+            {
+                throw new ArgumentException($"Requires either a '{ServiceBusEntityType.Topic}' or '{ServiceBusEntityType.Queue}' as Azure Service bus entity type", nameof(entity));
+            }
+
             ResourceGroup = resourceGroup;
             Namespace = @namespace;
             Entity = entity;
@@ -59,7 +73,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// Gets the entity type of the Azure Service Bus resource.
         /// </summary>
         public ServiceBusEntityType Entity { get; }
-        
+
         /// <summary>
         /// Gets the entity name of the Azure Service Bus resource.
         /// </summary>

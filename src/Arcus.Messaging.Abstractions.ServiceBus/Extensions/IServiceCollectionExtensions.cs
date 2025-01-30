@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
@@ -21,8 +20,6 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         public static ServiceBusMessageHandlerCollection AddServiceBusMessageRouting(this IServiceCollection services)
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
-
             return AddServiceBusMessageRouting(services, configureOptions: null);
         }
 
@@ -37,8 +34,6 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             Action<AzureServiceBusMessageRouterOptions> configureOptions)
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
-            
             return AddServiceBusMessageRouting(services, serviceProvider =>
             {
                 var options = new AzureServiceBusMessageRouterOptions();
@@ -62,10 +57,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, TMessageRouter> implementationFactory)
             where TMessageRouter : IAzureServiceBusMessageRouter
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure Service Bus message router");
-
-           return AddServiceBusMessageRouting(services, (provider, options) => implementationFactory(provider), configureOptions: null);
+            return AddServiceBusMessageRouting(services, (provider, options) => implementationFactory(provider), configureOptions: null);
         }
 
         /// <summary>
@@ -83,8 +75,15 @@ namespace Microsoft.Extensions.DependencyInjection
             Action<AzureServiceBusMessageRouterOptions> configureOptions)
             where TMessageRouter : IAzureServiceBusMessageRouter
         {
-            Guard.NotNull(services, nameof(services), "Requires a set of services to register the Azure Service Bus message routing");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the Azure Service Bus message router");
+            if (services is null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
 
             services.TryAddSingleton<IAzureServiceBusMessageRouter>(serviceProvider =>
             {

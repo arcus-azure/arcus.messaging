@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
@@ -78,7 +77,10 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
         protected async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription = null)
         {
-            Guard.NotNullOrWhitespace(deadLetterReason, nameof(deadLetterReason), "Requires a non-blank dead letter reason for the message");
+            if (string.IsNullOrWhiteSpace(deadLetterReason))
+            {
+                throw new ArgumentException("Requires a non-blank dead letter reason for the message", nameof(deadLetterReason));
+            }
 
             if (EventArgs is null)
             {

@@ -2,7 +2,6 @@
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -30,9 +29,10 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(messageContextFilter, messageBodySerializer);
             return handlers;
@@ -55,9 +55,10 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer instance to deserialize incoming message for the message handler");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(messageContextFilter, messageBodySerializerImplementationFactory);
             return handlers;
@@ -82,10 +83,10 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodySerializer, nameof(messageBodySerializer), "Requires an custom message body serializer instance to deserialize incoming message for the message handler");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(messageContextFilter, messageBodySerializer, implementationFactory);
             return handlers;
@@ -110,10 +111,10 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(messageContextFilter,  nameof(messageContextFilter), "Requires a filter to restrict the message processing within a certain message context");
-            Guard.NotNull(messageBodySerializerImplementationFactory, nameof(messageBodySerializerImplementationFactory), "Requires a function to create an custom message body serializer instance to deserialize incoming message for the message handler");
-            Guard.NotNull(messageHandlerImplementationFactory, nameof(messageHandlerImplementationFactory), "Requires a function to create the message handler");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(messageContextFilter, messageBodySerializerImplementationFactory, messageHandlerImplementationFactory);
             return handlers;

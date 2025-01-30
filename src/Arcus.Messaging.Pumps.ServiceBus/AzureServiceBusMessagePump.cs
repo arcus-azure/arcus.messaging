@@ -11,7 +11,6 @@ using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
-using GuardNet;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,17 +48,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ILogger<AzureServiceBusMessagePump> logger)
             : base(applicationConfiguration, serviceProvider, logger)
         {
-            Guard.NotNull(settings, nameof(settings), "Requires a set of settings to correctly configure the message pump");
-            Guard.NotNull(applicationConfiguration, nameof(applicationConfiguration), "Requires a configuration instance to retrieve application-specific information");
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to retrieve the registered message handlers");
-            Guard.NotNull(messageRouter, nameof(messageRouter), "Requires a message router to route incoming Azure Service Bus messages through registered message handlers");
-
-            Settings = settings;
+            Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             JobId = Settings.Options.JobId;
             SubscriptionName = Settings.SubscriptionName;
 
-            _messageRouter = messageRouter;
-            _loggingScope = logger.BeginScope("Job: {JobId}", JobId);
+            _messageRouter = messageRouter ?? throw new ArgumentNullException(nameof(messageRouter));
+            _loggingScope = logger?.BeginScope("Job: {JobId}", JobId);
         }
 
         /// <summary>
@@ -84,9 +78,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
         public void ReconfigureOptions(Action<AzureServiceBusMessagePumpOptions> reconfigure)
         {
-            Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus options");
+            if (reconfigure is null)
+            {
+                throw new ArgumentNullException(nameof(reconfigure));
+            }
 
-            reconfigure(Settings.Options);
+            reconfigure.Invoke(Settings.Options);
         }
 
         /// <summary>
@@ -97,10 +94,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Queues.</exception>
         public void ReconfigureQueueOptions(Action<IAzureServiceBusQueueMessagePumpOptions> reconfigure)
         {
-            Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus Queue options");
-            Guard.For<NotSupportedException>(
-                () => Settings.ServiceBusEntity is ServiceBusEntityType.Topic,
-                "Requires the message pump to be configured for Azure Service Bus Queue to reconfigure these options, use the Topic overload instead");
+            if (reconfigure is null)
+            {
+                throw new ArgumentNullException(nameof(reconfigure));
+            }
+
+            if (Settings.ServiceBusEntity is ServiceBusEntityType.Topic)
+            {
+                throw new NotSupportedException(
+                    "Requires the message pump to be configured for Azure Service Bus Queue to reconfigure these options, use the Topic overload instead");
+            }
 
             reconfigure(Settings.Options);
         }
@@ -113,10 +116,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Topics.</exception>
         public void ReconfigureTopicOptions(Action<IAzureServiceBusTopicMessagePumpOptions> reconfigure)
         {
-            Guard.NotNull(reconfigure, nameof(reconfigure), "Requires a function to reconfigure the Azure Service Bus Topics options");
-            Guard.For<NotSupportedException>(
-                () => Settings.ServiceBusEntity is ServiceBusEntityType.Queue,
-                "Requires a message pump to be configured for Azure Service Bus Topic to reconfigure these options, use the Queue overload instead");
+            if (reconfigure is null)
+            {
+                throw new ArgumentNullException(nameof(reconfigure));
+            }
+
+            if (Settings.ServiceBusEntity is ServiceBusEntityType.Queue)
+            {
+                throw new NotSupportedException(
+                    "Requires a message pump to be configured for Azure Service Bus Topic to reconfigure these options, use the Queue overload instead");
+            }
 
             reconfigure(Settings.Options);
         }

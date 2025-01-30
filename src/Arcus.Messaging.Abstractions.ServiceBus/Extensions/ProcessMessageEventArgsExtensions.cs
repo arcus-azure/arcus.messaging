@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.ServiceBus
@@ -22,7 +21,10 @@ namespace Azure.Messaging.ServiceBus
         [Obsolete("Service Bus receiver is used internally instead, no need to go via the processor")]
         public static ServiceBusReceiver GetServiceBusReceiver(this ProcessMessageEventArgs args)
         {
-            Guard.NotNull(args, nameof(args), "Requires an event args instance to retrieve the original Service Bus message receiver");
+            if (args is null)
+            {
+                throw new ArgumentNullException(nameof(args));
+            }
 
             FieldInfo receiverField = args.GetType().GetField("_receiver", BindingFlags.Instance | BindingFlags.NonPublic);
             if (receiverField is null)

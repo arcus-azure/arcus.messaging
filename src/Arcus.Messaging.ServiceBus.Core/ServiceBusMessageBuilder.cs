@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using Arcus.Messaging.Abstractions;
-using GuardNet;
 using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
@@ -19,8 +18,8 @@ namespace Azure.Messaging.ServiceBus
 
         private ServiceBusMessageBuilder(object messageBody, Encoding encoding)
         {
-            _messageBody = messageBody;
-            _encoding = encoding;
+            _messageBody = messageBody ?? throw new ArgumentNullException(nameof(messageBody));
+            _encoding = encoding ?? throw new ArgumentNullException(nameof(encoding));
         }
 
         /// <summary>
@@ -30,7 +29,6 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageBody"/> is <c>null</c>.</exception>
         public static ServiceBusMessageBuilder CreateForBody(object messageBody)
         {
-            Guard.NotNull(messageBody, nameof(messageBody), "Requires a message body to include in the to-be-created Azure Service Bus message");
             return new ServiceBusMessageBuilder(messageBody, Encoding.UTF8);
         }
 
@@ -42,9 +40,6 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageBody"/> or the <paramref name="encoding"/> is <c>null</c>.</exception>
         public static ServiceBusMessageBuilder CreateForBody(object messageBody, Encoding encoding)
         {
-            Guard.NotNull(messageBody, nameof(messageBody), "Requires a message body to include in the to-be-created Azure Service Bus message");
-            Guard.NotNull(encoding, nameof(encoding), "Requires an encoding instance to encode the passed-in message body so it can be included in the Azure Service Bus message");
-
             return new ServiceBusMessageBuilder(messageBody, encoding);
         }
 
@@ -109,7 +104,7 @@ namespace Azure.Messaging.ServiceBus
             {
                 _transactionIdProperty = new KeyValuePair<string, object>(
                     transactionIdPropertyName ?? PropertyNames.TransactionId,
-                    transactionId); 
+                    transactionId);
             }
 
             return this;
@@ -144,7 +139,7 @@ namespace Azure.Messaging.ServiceBus
             {
                 _operationParentIdProperty = new KeyValuePair<string, object>(
                     operationParentIdPropertyName ?? PropertyNames.OperationParentId,
-                    operationParentId); 
+                    operationParentId);
             }
 
             return this;
@@ -169,7 +164,7 @@ namespace Azure.Messaging.ServiceBus
             if (_operationIdProperty.Key is null && _operationIdProperty.Value is not null)
             {
                 message.CorrelationId = _operationIdProperty.Value?.ToString();
-            } 
+            }
             else if (_operationIdProperty.Value is not null)
             {
                 message.ApplicationProperties.Add(_operationIdProperty);
