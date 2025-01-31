@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -20,8 +19,6 @@ namespace Arcus.Messaging.Abstractions
         /// <param name="messageContext">The context of the message.</param>
         public static Encoding GetMessageEncodingProperty(this MessageContext messageContext)
         {
-            Guard.NotNull(messageContext, nameof(messageContext));
-
             Encoding encoding = GetMessageEncodingProperty(messageContext, NullLogger.Instance);
             return encoding;
         }
@@ -33,8 +30,12 @@ namespace Arcus.Messaging.Abstractions
         /// <param name="logger"></param>
         public static Encoding GetMessageEncodingProperty(this MessageContext messageContext, ILogger logger)
         {
-            Guard.NotNull(messageContext, nameof(messageContext));
-            logger = logger ?? NullLogger.Instance;
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
+
+            logger ??= NullLogger.Instance;
 
             if (messageContext.Properties.TryGetValue(PropertyNames.Encoding, out object annotatedEncoding))
             {

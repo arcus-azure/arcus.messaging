@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.ServiceBus.Core;
-using GuardNet;
-using Microsoft.ApplicationInsights;
 
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.ServiceBus
@@ -26,9 +22,16 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="InvalidCastException">Thrown when the application property's value cannot be cast to the provided <typeparamref name="TProperty"/> type.</exception>
         public static TProperty GetApplicationProperty<TProperty>(this ServiceBusReceivedMessage message, string key)
         {
-            Guard.NotNull(message, nameof(message), "Requires an received Azure Service Bus message to retrieve the application property");
-            Guard.NotNullOrWhitespace(key, nameof(key), "Requires an application property key to retrieve the application property from the received Azure Service Bus message");
-            
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                throw new ArgumentException("Requires an application property key to retrieve the application property from the received Azure Service Bus message", nameof(key));
+            }
+
             if (message.ApplicationProperties.TryGetValue(key, out object value))
             {
                 if (value is TProperty typed)
@@ -60,8 +63,6 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         public static MessageCorrelationInfo GetCorrelationInfo(this ServiceBusReceivedMessage message)
         {
-            Guard.NotNull(message, nameof(message), "Requires an received Azure Service Bus message to retrieve the correlation information");
-
             return GetCorrelationInfo(message, PropertyNames.TransactionId);
         }
 
@@ -83,10 +84,7 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionIdPropertyName"/> is blank.</exception>
         public static MessageCorrelationInfo GetCorrelationInfo(this ServiceBusReceivedMessage message, string transactionIdPropertyName)
         {
-            Guard.NotNull(message, nameof(message), "Requires an received Azure Service Bus message to retrieve the correlation information");
-            Guard.NotNullOrWhitespace(transactionIdPropertyName, nameof(transactionIdPropertyName), "Requires a non-blank property name to retrieve the correlation transaction ID from the received Azure Service Bus message");
-
-            MessageCorrelationInfo messageCorrelationInfo = 
+            MessageCorrelationInfo messageCorrelationInfo =
                 GetCorrelationInfo(message, transactionIdPropertyName, PropertyNames.OperationParentId);
 
             return messageCorrelationInfo;
@@ -116,9 +114,20 @@ namespace Azure.Messaging.ServiceBus
             string transactionIdPropertyName,
             string operationParentIdPropertyName)
         {
-            Guard.NotNull(message, nameof(message), "Requires an received Azure Service Bus message to retrieve the correlation information");
-            Guard.NotNullOrWhitespace(transactionIdPropertyName, nameof(transactionIdPropertyName), "Requires a non-blank property name to retrieve the correlation transaction ID from the received Azure Service Bus message");
-            Guard.NotNullOrWhitespace(operationParentIdPropertyName, nameof(operationParentIdPropertyName), "Requires a non-blank property name to retrieve the correlation operation parent ID from the received Azure Service Bus message");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (string.IsNullOrWhiteSpace(transactionIdPropertyName))
+            {
+                throw new ArgumentException("Requires a non-blank property name to retrieve the correlation transaction ID from the received Azure Service Bus message", nameof(transactionIdPropertyName));
+            }
+
+            if (string.IsNullOrWhiteSpace(operationParentIdPropertyName))
+            {
+                throw new ArgumentException("Requires a non-blank property name to retrieve the correlation operation parent ID from the received Azure Service Bus message", nameof(operationParentIdPropertyName));
+            }
 
             string transactionId = DetermineTransactionId(message, transactionIdPropertyName);
             string operationId = DetermineOperationId(message.CorrelationId);
@@ -165,8 +174,6 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         public static string GetTransactionId(this ServiceBusReceivedMessage message)
         {
-            Guard.NotNull(message,nameof(message), "Requires an received Azure Service Bus message to retrieve the correlation transaction ID");
-
             return GetTransactionId(message, PropertyNames.TransactionId);
         }
 
@@ -186,8 +193,15 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionIdPropertyName"/> is blank.</exception>
         public static string GetTransactionId(this ServiceBusReceivedMessage message, string transactionIdPropertyName)
         {
-            Guard.NotNull(message, nameof(message), "Requires an received Azure Service Bus message to retrieve the correlation transaction ID");
-            Guard.NotNullOrWhitespace(transactionIdPropertyName, nameof(transactionIdPropertyName), "Requires a non-blank property name to retrieve the correlation transaction ID from the received Azure Service Bus message");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (string.IsNullOrWhiteSpace(transactionIdPropertyName))
+            {
+                throw new ArgumentException("Requires a non-blank property name to retrieve the correlation transaction ID from the received Azure Service Bus message", nameof(transactionIdPropertyName));
+            }
 
             return GetOptionalUserProperty(message, transactionIdPropertyName);
         }

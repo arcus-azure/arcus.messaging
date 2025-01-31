@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
@@ -13,7 +12,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     public class AzureServiceBusCorrelationOptions
     {
         private readonly MessageCorrelationOptions _correlationOptions;
-        
+
         private string _transactionIdPropertyName = PropertyNames.TransactionId,
                        _operationParentIdPropertyName = PropertyNames.OperationParentId;
 
@@ -50,7 +49,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _transactionIdPropertyName;
             set
             {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Transaction ID message property name for the Azure Service Bus message cannot be blank");
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Transaction ID message property name for the Azure Service Bus message cannot be blank", nameof(value));
+                }
+
                 _transactionIdPropertyName = value;
                 _correlationOptions.TransactionIdPropertyName = value;
             }
@@ -65,7 +68,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _operationParentIdPropertyName;
             set
             {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Operation parent ID message property name for the Azure Service Bus message cannot be blank");
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Operation parent ID message property name for the Azure Service Bus message cannot be blank", nameof(value));
+                }
+
                 _operationParentIdPropertyName = value;
                 _correlationOptions.OperationParentIdPropertyName = value;
             }

@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using GuardNet;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
@@ -42,7 +41,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _maxConcurrentCalls;
             set
             {
-                Guard.For<ArgumentException>(() => value <= 0, "Max concurrent calls has to be 1 or above.");
+                if (value <= 0)
+                {
+                    throw new ArgumentException("Max concurrent calls has to be 1 or above", nameof(value));
+                }
 
                 _maxConcurrentCalls = value;
             }
@@ -60,7 +62,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _prefetchCount;
             set
             {
-                Guard.For<ArgumentException>(() => value < 0, "PrefetchCount has to be 0 or above.");
+                if (value < 0)
+                {
+                    throw new ArgumentException("PrefetchCount has to be 0 or above", nameof(value));
+                }
+
                 _prefetchCount = value;
             }
         }
@@ -85,7 +91,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _jobId;
             set
             {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Requires a non-blank job identifier for the Azure Service Bus message pump");
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Requires a non-blank job identifier for the Azure Service Bus message pump", nameof(value));
+                }
+
                 _jobId = value;
             }
         }
@@ -99,7 +109,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _keyRotationTimeout;
             set
             {
-                Guard.NotLessThan(value, TimeSpan.Zero, nameof(value), "Key rotation timeout cannot be less than a zero time range");
+                if (value < TimeSpan.Zero)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Key rotation timeout cannot be less than a zero time range");
+                }
+
                 _keyRotationTimeout = value;
             }
         }
@@ -114,7 +128,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _maximumUnauthorizedExceptionsBeforeRestart;
             set
             {
-                Guard.NotLessThan(value, 0, nameof(value), "Requires an unauthorized exceptions count that's greater than zero");
+                if (value < 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), value, "Requires an unauthorized exceptions count that's greater than zero");
+                }
+
                 _maximumUnauthorizedExceptionsBeforeRestart = value;
             }
         }

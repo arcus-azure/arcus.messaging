@@ -2,7 +2,6 @@
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Azure.Messaging.ServiceBus;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -25,7 +24,10 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>();
             return handlers;
@@ -46,8 +48,10 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent handlers");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(implementationFactory);
             return handlers;
@@ -63,7 +67,10 @@ namespace Microsoft.Extensions.DependencyInjection
             this ServiceBusMessageHandlerCollection handlers)
             where TMessageHandler : IAzureServiceBusFallbackMessageHandler
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a handlers collection to add the Azure Service Bus fallback message handler to");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithServiceBusFallbackMessageHandler(serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
             return handlers;
@@ -81,8 +88,10 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, TMessageHandler> createImplementation)
             where TMessageHandler : IAzureServiceBusFallbackMessageHandler
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a handlers collection to add the fallback message handler to");
-            Guard.NotNull(createImplementation, nameof(createImplementation), "Requires a function to create the fallback message handler");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.AddFallbackMessageHandler<TMessageHandler, ServiceBusReceivedMessage, AzureServiceBusMessageContext>(createImplementation);
             return handlers;

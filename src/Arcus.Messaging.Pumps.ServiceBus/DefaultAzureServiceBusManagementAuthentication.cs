@@ -2,7 +2,6 @@
 using System.Security.Authentication;
 using System.Threading.Tasks;
 using Arcus.Security.Core;
-using GuardNet;
 using Microsoft.Azure.Management.ServiceBus;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.Rest;
@@ -38,11 +37,30 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             string tenantId,
             ISecretProvider secretProvider)
         {
-            Guard.NotNullOrWhitespace(clientId, nameof(clientId), "Requires an client ID with the necessary permissions to rotate Azure Service Bus connection string keys");
-            Guard.NotNullOrWhitespace(clientSecretKey, nameof(clientSecretKey), "Requires an secret name that points to the client secret with the necessary permissions to rotate Azure Service Bus connection string keys");
-            Guard.NotNullOrWhitespace(subscriptionId, nameof(subscriptionId), "Requires an account subscription ID that is in change of managing the Azure Service Bus resource");
-            Guard.NotNullOrWhitespace(tenantId, nameof(tenantId), "Requires an tenant ID where the Azure Service Bus resource is located");
-            Guard.NotNull(secretProvider, nameof(secretProvider), $"Requires an '{nameof(ISecretProvider)}' implementation to retrieve the client secret by requesting the '{nameof(clientSecretKey)}'");
+            if (string.IsNullOrWhiteSpace(clientId))
+            {
+                throw new ArgumentException("Requires an client ID with the necessary permissions to rotate Azure Service Bus connection string keys", nameof(clientId));
+            }
+
+            if (string.IsNullOrWhiteSpace(clientSecretKey))
+            {
+                throw new ArgumentException("Requires an secret name that points to the client secret with the necessary permissions to rotate Azure Service Bus connection string keys", nameof(clientSecretKey));
+            }
+
+            if (string.IsNullOrWhiteSpace(subscriptionId))
+            {
+                throw new ArgumentException("Requires an account subscription ID that is in change of managing the Azure Service Bus resource", nameof(subscriptionId));
+            }
+
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                throw new ArgumentException("Requires an tenant ID where the Azure Service Bus resource is located", nameof(tenantId));
+            }
+
+            if (secretProvider is null)
+            {
+                throw new ArgumentNullException(nameof(secretProvider));
+            }
 
             _secretProvider = secretProvider;
             _clientId = clientId;

@@ -1,6 +1,5 @@
 ﻿using System;
 using Azure.Messaging.ServiceBus;
-using GuardNet;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus
 {
@@ -11,8 +10,11 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
     {
         private AzureServiceBusSystemProperties(ServiceBusReceivedMessage message)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus received message to construct a set of Azure Service Bus system properties");
-            
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
             DeadLetterSource = message.DeadLetterSource;
             DeliveryCount = message.DeliveryCount;
             EnqueuedSequenceNumber = message.EnqueuedSequenceNumber;
@@ -32,8 +34,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         public static AzureServiceBusSystemProperties CreateFrom(ServiceBusReceivedMessage message)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus received message to construct a set of Azure Service Bus system properties");
-
             return new AzureServiceBusSystemProperties(message);
         }
 

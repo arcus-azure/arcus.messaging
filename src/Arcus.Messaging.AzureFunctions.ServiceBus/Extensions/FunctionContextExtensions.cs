@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text.Json;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,10 +23,6 @@ namespace Microsoft.Azure.Functions.Worker
         /// <exception cref="InvalidOperationException">Thrown when no 'UserProperties' binding data can be found in the <paramref name="context"/>.</exception>
         public static MessageCorrelationResult GetCorrelationInfo(this FunctionContext context)
         {
-            Guard.NotNull(context, nameof(context), "Requires a function context instance to retrieve the message correlation");
-            Guard.NotNull(context.BindingContext, nameof(context), "Requires a function context instance with a binding context to retrieve the message correlation");
-            Guard.NotNull(context.BindingContext.BindingData, nameof(context), "Requires a function context with a binding data to retrieve the message correlation");
-
             return GetCorrelationInfo(context, MessageCorrelationFormat.W3C);
         }
 
@@ -40,16 +35,17 @@ namespace Microsoft.Azure.Functions.Worker
         /// <exception cref="InvalidOperationException">Thrown when no 'UserProperties' binding data can be found in the <paramref name="context"/>.</exception>
         public static MessageCorrelationResult GetCorrelationInfo(this FunctionContext context, MessageCorrelationFormat correlationFormat)
         {
-            Guard.NotNull(context, nameof(context), "Requires a function context instance to retrieve the message correlation");
-            Guard.NotNull(context.BindingContext, nameof(context), "Requires a function context instance with a binding context to retrieve the message correlation");
-            Guard.NotNull(context.BindingContext.BindingData, nameof(context), "Requires a function context with a binding data to retrieve the message correlation");
+            if (context?.BindingContext?.BindingData is null)
+            {
+                throw new ArgumentNullException(nameof(context), "Requires a function context with a binding data to retrieve the message correlation");
+            }
 
             IDictionary<string, object> userPropertiesJson = GetUserPropertiesJson(context);
             switch (correlationFormat)
             {
-                case MessageCorrelationFormat.W3C: 
+                case MessageCorrelationFormat.W3C:
                     return GetCorrelationInfoViaW3C(context, userPropertiesJson);
-                case MessageCorrelationFormat.Hierarchical: 
+                case MessageCorrelationFormat.Hierarchical:
                     return GetCorrelationInfoViaHierarchical(userPropertiesJson);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(correlationFormat), correlationFormat, "Unknown message correlation format");
@@ -78,15 +74,23 @@ namespace Microsoft.Azure.Functions.Worker
             string transactionIdPropertyName,
             string operationParentIdPropertyName)
         {
-            Guard.NotNull(context, nameof(context), "Requires a function context instance to retrieve the message correlation");
-            Guard.NotNull(context.BindingContext, nameof(context), "Requires a function context instance with a binding context to retrieve the message correlation");
-            Guard.NotNull(context.BindingContext.BindingData, nameof(context), "Requires a function context with a binding data to retrieve the message correlation");
-            Guard.NotNullOrWhitespace(transactionIdPropertyName, nameof(transactionIdPropertyName), "Requires a non-blank property name to retrieve the transaction ID from the binding data");
-            Guard.NotNullOrWhitespace(operationParentIdPropertyName, nameof(operationParentIdPropertyName), "Requires a non-blank property name to retrieve the operation parent ID from the binding data");
+            if (context?.BindingContext?.BindingData is null)
+            {
+                throw new ArgumentNullException(nameof(context), "Requires a function context with a binding data to retrieve the message correlation");
+            }
+
+            if (string.IsNullOrWhiteSpace(transactionIdPropertyName))
+            {
+                throw new ArgumentException("Requires a non-blank property name to retrieve the transaction ID from the binding data", nameof(transactionIdPropertyName));
+            }
+
+            if (string.IsNullOrWhiteSpace(operationParentIdPropertyName))
+            {
+                throw new ArgumentException("Requires a non-blank property name to retrieve the operation parent ID from the binding data", nameof(operationParentIdPropertyName));
+            }
 
             IDictionary<string, object> userPropertiesJson = GetUserPropertiesJson(context);
             return GetCorrelationInfoViaHierarchical(userPropertiesJson, transactionIdPropertyName, operationParentIdPropertyName);
-
         }
 
         private static MessageCorrelationResult GetCorrelationInfoViaHierarchical(
@@ -112,8 +116,8 @@ namespace Microsoft.Azure.Functions.Worker
 
                 return JsonSerializer.Deserialize<Dictionary<string, object>>(userPropertiesJson);
             }
-            
-            
+
+
             throw new InvalidOperationException(
                 "Cannot determine message correlation because function context does not contain any 'UserProperties' binding data");
         }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus
@@ -21,7 +20,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="systemProperties"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         public AzureServiceBusMessageContext(
-            string messageId, 
+            string messageId,
             string jobId,
             AzureServiceBusSystemProperties systemProperties,
             IReadOnlyDictionary<string, object> properties)
@@ -45,12 +44,12 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             AzureServiceBusSystemProperties systemProperties,
             IReadOnlyDictionary<string, object> properties,
             ServiceBusEntityType entityType)
-            : base(messageId, jobId, properties.ToDictionary(item => item.Key, item => item.Value))
+            : base(messageId, jobId, properties?.ToDictionary(item => item.Key, item => item.Value) ?? throw new ArgumentNullException(nameof(properties)))
         {
-            Guard.NotNullOrWhitespace(messageId, nameof(messageId), "Requires an ID to identify the message");
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires an job ID that is not blank to identify the message pump");
-            Guard.NotNull(systemProperties, nameof(systemProperties), "Requires a set of system properties provided by the Azure Service Bus runtime");
-            Guard.NotNull(properties, nameof(properties), "Requires contextual properties provided by the message publisher");
+            if (systemProperties is null)
+            {
+                throw new ArgumentNullException(nameof(systemProperties));
+            }
 
             SystemProperties = systemProperties;
             LockToken = systemProperties.LockToken;

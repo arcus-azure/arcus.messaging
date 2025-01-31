@@ -7,7 +7,6 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Arcus.Observability.Telemetry.Core;
 using Azure.Messaging.ServiceBus;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -32,7 +31,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options, ILogger<AzureServiceBusMessageRouter> logger)
             : this(serviceProvider, options, (ILogger) logger)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
         }
 
         /// <summary>
@@ -44,7 +42,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options)
             : this(serviceProvider, options, NullLogger.Instance)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
         }
 
         /// <summary>
@@ -56,7 +53,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger<AzureServiceBusMessageRouter> logger)
             : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), (ILogger) logger)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
         }
 
         /// <summary>
@@ -67,7 +63,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         public AzureServiceBusMessageRouter(IServiceProvider serviceProvider)
             : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), NullLogger.Instance)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
         }
 
         /// <summary>
@@ -79,7 +74,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         protected AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger logger)
             : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), logger)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
         }
 
         /// <summary>
@@ -92,8 +86,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         protected AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options, ILogger logger)
             : base(serviceProvider, options, logger ?? NullLogger<AzureServiceBusMessageRouter>.Instance)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires an service provider to retrieve the registered message handlers");
-
             ServiceBusOptions = options;
         }
 
@@ -165,10 +157,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus message to be processed by the registered message handlers");
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
-
             return await RouteMessageWithPotentialFallbackAsync(
                 messageReceiver: null,
                 message: message,
@@ -201,11 +189,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            Guard.NotNull(messageReceiver, nameof(messageReceiver), "Requires an Azure Service Bus message receiver while processing the message, so message handlers can call Azure Service Bus specific operations");
-            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus message to be processed by the registered message handlers");
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
-
             return await RouteMessageWithPotentialFallbackAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
         }
 
@@ -233,9 +216,20 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus message to be processed by the registered message handlers");
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
+
+            if (correlationInfo is null)
+            {
+                throw new ArgumentNullException(nameof(correlationInfo));
+            }
 
             string entityName = messageReceiver?.EntityPath ?? "<not-available>";
             string serviceBusNamespace = messageReceiver?.FullyQualifiedNamespace ?? "<not-available>";
@@ -381,8 +375,15 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             ProcessMessageEventArgs eventArgs,
             AzureServiceBusMessageContext messageContext)
         {
-            Guard.NotNull(messageHandler, nameof(messageHandler), "Requires an Azure Service Bus message handler to set the specific Service Bus properties");
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
+            if (messageHandler is null)
+            {
+                throw new ArgumentNullException(nameof(messageHandler));
+            }
+
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
 
             object messageHandlerInstance = messageHandler.GetMessageHandlerInstance();
             Type messageHandlerType = messageHandlerInstance.GetType();
@@ -420,9 +421,20 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus message to be processed by the registered fallback message handler");
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires an Azure Service Bus message context in which the incoming message can be processed");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires an correlation information to correlate between incoming Azure Service Bus messages");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
+
+            if (correlationInfo is null)
+            {
+                throw new ArgumentNullException(nameof(correlationInfo));
+            }
 
             ServiceBusFallbackMessageHandler[] fallbackHandlers =
                 GetAvailableFallbackMessageHandlersByContext<ServiceBusReceivedMessage, AzureServiceBusMessageContext>(messageContext);
