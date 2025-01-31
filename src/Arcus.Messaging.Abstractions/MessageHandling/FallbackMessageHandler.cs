@@ -24,12 +24,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             string jobId,
             ILogger logger)
         {
-            Guard.NotNull(messageHandlerInstance, nameof(messageHandlerInstance));
-
             _jobId = jobId;
             _logger = logger ?? NullLogger.Instance;
+
+            MessageHandlerInstance = messageHandlerInstance ?? throw new ArgumentNullException(nameof(messageHandlerInstance));
             MessageHandlerType = messageHandlerInstance.GetType();
-            MessageHandlerInstance = messageHandlerInstance;
         }
 
         /// <summary>
@@ -54,8 +53,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             string jobId,
             ILogger<IFallbackMessageHandler<TMessage, TMessageContext>> logger)
         {
-            Guard.NotNull(messageHandlerInstance, nameof(messageHandlerInstance), "Requires the original instance of the fallback message handler");
-            return new FallbackMessageHandler<TMessage, TMessageContext>(messageHandlerInstance, jobId, logger);
+            return new FallbackMessageHandler<TMessage, TMessageContext>(messageHandlerInstance ?? throw new ArgumentNullException(nameof(messageHandlerInstance)), jobId, logger);
         }
 
         /// <summary>
@@ -64,8 +62,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="messageContext">The context in which the incoming message is processed.</param>
         public bool CanProcessMessageBasedOnContext(TMessageContext messageContext)
         {
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires an message context instance to determine if the fallback message handler can process the message");
-           
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
+
             return _jobId is null || messageContext.JobId == _jobId;
         }
 
@@ -85,9 +86,20 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            Guard.NotNull(message, nameof(message), "Requires message content to process the message fallback operation");
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the fallback message handler");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the fallback message handler");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
+
+            if (correlationInfo is null)
+            {
+                throw new ArgumentNullException(nameof(correlationInfo));
+            }
 
             if (CanProcessMessageBasedOnContext(messageContext))
             {

@@ -4,11 +4,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
-using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using ArgumentException = System.ArgumentException;
 
 namespace Arcus.Messaging.Pumps.Abstractions
 {
@@ -28,11 +29,17 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// </exception>
         protected MessagePump(IConfiguration configuration, IServiceProvider serviceProvider, ILogger logger)
         {
-            Guard.NotNull(configuration, nameof(configuration));
-            Guard.NotNull(serviceProvider, nameof(serviceProvider));
-            Guard.NotNull(logger, nameof(logger));
+            if (configuration is null)
+            {
+                throw new ArgumentNullException(nameof(configuration));
+            }
 
-            Logger = logger;
+            if (serviceProvider is null)
+            {
+                throw new ArgumentNullException(nameof(serviceProvider));
+            }
+
+            Logger = logger ?? NullLogger.Instance;
             Configuration = configuration;
             ServiceProvider = serviceProvider;
         }
@@ -211,7 +218,10 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="entityPath">Entity path that is being processed</param>
         protected void RegisterClientInformation(string clientId, string entityPath)
         {
-            Guard.NotNullOrWhitespace(clientId, nameof(clientId));
+            if (string.IsNullOrWhiteSpace(clientId))
+            {
+                throw new ArgumentException("Requires a non-blank client ID", nameof(clientId));
+            }
 
             ClientId = clientId;
             EntityPath = entityPath;

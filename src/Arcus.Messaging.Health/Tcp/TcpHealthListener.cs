@@ -6,13 +6,11 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -62,13 +60,9 @@ namespace Arcus.Messaging.Health.Tcp
             HealthCheckService healthService, 
             ILogger<TcpHealthListener> logger)
         {
-            Guard.NotNull(tcpListenerOptions, nameof(tcpListenerOptions), "Requires a set of TCP listener options to correctly run the TCP listener");
-            Guard.NotNull(healthService, nameof(healthService), "Requires a health service to retrieve the current health status of the application");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger implementation to write diagnostic messages during the running of the TCP listener");
-
-            _tcpListenerOptions = tcpListenerOptions;
-            _healthService = healthService;
-            _logger = logger;
+            _tcpListenerOptions = tcpListenerOptions ?? throw new ArgumentNullException(nameof(tcpListenerOptions));
+            _healthService = healthService ?? throw new ArgumentNullException(nameof(healthService));
+            _logger = logger ?? NullLogger<TcpHealthListener>.Instance;
 
             Port = GetTcpHealthPort(configuration, _tcpListenerOptions.TcpPortConfigurationKey);
             _listener = new CustomTcpListener(IPAddress.Any, Port);
@@ -174,7 +168,7 @@ namespace Arcus.Messaging.Health.Tcp
             }
             catch (Exception exception) when (exception is ObjectDisposedException || exception is InvalidOperationException)
             {
-                _logger.LogTrace("Rejected TCP client on port {Port}", Port);
+                _logger.LogTrace(exception, "Rejected TCP client on port {Port}", Port);
             }
         }
 

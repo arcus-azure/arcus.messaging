@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -24,10 +23,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
-
-            return collection.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
-                serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
+                collection, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
         /// <summary>
@@ -45,10 +42,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
         {
-            Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent collection");
-
-            return collection.WithMessageHandler<TMessageHandler, TMessage, MessageContext>(implementationFactory);
+            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(collection, implementationFactory);
         }
 
         /// <summary>
@@ -65,10 +59,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
-
-            return collection.WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-                serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
+            return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
+                collection, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
         /// <summary>
@@ -88,8 +80,15 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(collection, nameof(collection), "Requires a set of collection to add the message handler");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent collection");
+            if (collection is null)
+            {
+                throw new ArgumentNullException(nameof(collection));
+            }
+
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
 
             collection.AddMessageHandler(implementationFactory);
             return collection;
@@ -104,10 +103,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static MessageHandlerCollection WithFallbackMessageHandler<TMessageHandler>(this MessageHandlerCollection collection)
             where TMessageHandler : IFallbackMessageHandler<string, MessageContext>
         {
-            Guard.NotNull(collection, nameof(collection), "Requires a collection collection to add the fallback message handler to");
-
-            collection.WithFallbackMessageHandler(serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
-            return collection;
+            return WithFallbackMessageHandler(collection, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
         /// <summary>
@@ -121,10 +117,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : IFallbackMessageHandler<string, TMessageContext>
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(collection, nameof(collection), "Requires a collection collection to add the fallback message handler to");
-
-            collection.WithFallbackMessageHandler<TMessageHandler, TMessageContext>(serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
-            return collection;
+            return WithFallbackMessageHandler<TMessageHandler, TMessageContext>(collection, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
         /// <summary>
@@ -139,8 +132,15 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, TMessageHandler> createImplementation)
             where TMessageHandler : IFallbackMessageHandler<string, MessageContext>
         {
-            Guard.NotNull(collection, nameof(collection), "Requires a collection collection to add the fallback message handler to");
-            Guard.NotNull(createImplementation, nameof(createImplementation), "Requires a function to create the fallback message handler");
+            if (collection is null)
+            {
+                throw new ArgumentNullException(nameof(collection));
+            }
+
+            if (createImplementation is null)
+            {
+                throw new ArgumentNullException(nameof(createImplementation));
+            }
 
             collection.AddFallbackMessageHandler<TMessageHandler, string, MessageContext>(createImplementation);
             return collection;
@@ -160,8 +160,15 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : IFallbackMessageHandler<string, TMessageContext> 
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(collection, nameof(collection), "Requires a collection collection to add the fallback message handler to");
-            Guard.NotNull(createImplementation, nameof(createImplementation), "Requires a function to create the fallback message handler");
+            if (collection is null)
+            {
+                throw new ArgumentNullException(nameof(collection));
+            }
+
+            if (createImplementation is null)
+            {
+                throw new ArgumentNullException(nameof(createImplementation));
+            }
 
             collection.AddFallbackMessageHandler<TMessageHandler, string, TMessageContext>(createImplementation);
             return collection;

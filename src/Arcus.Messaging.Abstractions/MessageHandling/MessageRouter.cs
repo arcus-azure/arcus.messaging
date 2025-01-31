@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.Telemetry;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -30,7 +29,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         public MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger<MessageRouter> logger)
             : this(serviceProvider, options, (ILogger) logger)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
         }
         
         /// <summary>
@@ -42,7 +40,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         public MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options)
             : this(serviceProvider, options, NullLogger.Instance)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
         }
 
         /// <summary>
@@ -54,7 +51,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         public MessageRouter(IServiceProvider serviceProvider, ILogger<MessageRouter> logger)
             : this(serviceProvider, new MessageRouterOptions(), (ILogger) logger)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
         }
 
         /// <summary>
@@ -65,7 +61,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         public MessageRouter(IServiceProvider serviceProvider)
             : this(serviceProvider, new MessageRouterOptions(), NullLogger.Instance)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
         }
         
         /// <summary>
@@ -77,7 +72,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         protected MessageRouter(IServiceProvider serviceProvider, ILogger logger)
             : this(serviceProvider, new MessageRouterOptions(), logger)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
         }
 
         /// <summary>
@@ -89,9 +83,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
         protected MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger logger)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider instance to retrieve all the registered message handlers");
-
-            ServiceProvider = serviceProvider;
+            ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             Options = options ?? new MessageRouterOptions();
             Logger = logger ?? NullLogger<MessageRouter>.Instance;
         }
@@ -133,9 +125,20 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(message, nameof(message), "Requires message content to deserialize and process the message");
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
+
+            if (correlationInfo is null)
+            {
+                throw new ArgumentNullException(nameof(correlationInfo));
+            }
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
             using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
@@ -167,9 +170,20 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(message, nameof(message), "Requires message content to deserialize and process the message");
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
+
+            if (correlationInfo is null)
+            {
+                throw new ArgumentNullException(nameof(correlationInfo));
+            }
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
             using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
@@ -260,8 +274,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
         protected IEnumerable<MessageHandler> GetRegisteredMessageHandlers(IServiceProvider serviceProvider)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to extract the registered services from");
-            
+            if (serviceProvider is null)
+            {
+                throw new ArgumentNullException(nameof(serviceProvider));
+            }
+
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(serviceProvider, Logger);
             return handlers;
         }
@@ -283,7 +300,10 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             MessageHandler handler)
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(handler, nameof(handler), "Requires an message handler instance for which the incoming message can be deserialized");
+            if (handler is null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
 
             Type messageHandlerType = handler.GetMessageHandlerType();
             Logger.LogTrace("Determine if message handler '{MessageHandlerType}' can process the message...", messageHandlerType.Name);
@@ -348,8 +368,15 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             CancellationToken cancellationToken)
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to send to the message handler");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires correlation information to send to the message handler");
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
+
+            if (correlationInfo is null)
+            {
+                throw new ArgumentNullException(nameof(correlationInfo));
+            }
 
             bool isProcessedByTypedContext = await TryFallbackProcessMessageByContextAsync(message, messageContext, correlationInfo, cancellationToken);
             if (isProcessedByTypedContext)
@@ -421,7 +448,10 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             where TMessage : class
             where TMessageContext : MessageContext
         {
-            Guard.NotNull(messageContext, nameof(messageContext), "Requires a message context to filter out fallback message handlers that are registered with the same message context's Job ID");
+            if (messageContext is null)
+            {
+                throw new ArgumentNullException(nameof(messageContext));
+            }
 
             return ServiceProvider.GetServices<FallbackMessageHandler<TMessage, TMessageContext>>()
                                   .Where(handler => handler.CanProcessMessageBasedOnContext(messageContext))
@@ -440,7 +470,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <exception cref="ArgumentException">Thrown when the <paramref name="messageType"/> is blank.</exception>
         protected virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object result)
         {
-            Guard.NotNullOrWhitespace(message, nameof(message), "Can't parse a blank raw message against a message handler's contract");
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                throw new ArgumentException("Requires a non-blank message to deserialize to a given type", nameof(message));
+            }
+
             Logger.LogTrace("Try to JSON deserialize incoming message to message type '{MessageType}'...", messageType.Name);
 
             var success = true;

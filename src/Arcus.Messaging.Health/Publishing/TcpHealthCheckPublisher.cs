@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Health.Tcp;
-using GuardNet;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -40,13 +39,9 @@ namespace Arcus.Messaging.Health.Publishing
         /// <exception cref="ArgumentException">Thrown when the <paramref name="options"/> doesn't have a filled-out value.</exception>
         public TcpHealthCheckPublisher(TcpHealthListener healthListener, TcpHealthListenerOptions options, ILogger<TcpHealthCheckPublisher> logger)
         {
-            Guard.NotNull(healthListener, nameof(healthListener), "Requires a TCP health listener to accept or reject TCP connections");
-            Guard.NotNull(options, nameof(options), "Requires a set of registered options to determine if the TCP connections should be accepted or rejected based on the health report");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write diagnostic trace messages when TCP connections are accepted or rejected");
-            
-            _healthListener = healthListener;
-            _options = options;
-            _logger = logger;
+            _healthListener = healthListener ?? throw new ArgumentNullException(nameof(healthListener));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+            _logger = logger ?? NullLogger<TcpHealthCheckPublisher>.Instance;
         }
         
         /// <summary>
@@ -58,7 +53,10 @@ namespace Arcus.Messaging.Health.Publishing
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="report"/> is <c>null</c>.</exception>
         public Task PublishAsync(HealthReport report, CancellationToken cancellationToken)
         {
-            Guard.NotNull(report, nameof(report), "Requires a health report to determine whether or not to accept or reject TCP connections");
+            if (report is null)
+            {
+                throw new ArgumentNullException(nameof(report));
+            }
 
             if (_options.RejectTcpConnectionWhenUnhealthy)
             {

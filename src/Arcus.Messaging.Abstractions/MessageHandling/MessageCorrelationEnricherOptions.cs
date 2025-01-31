@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Arcus.Observability.Telemetry.Serilog.Enrichers.Configuration;
-using GuardNet;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
@@ -21,7 +20,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             get => _cycleIdPropertyName;
             set
             {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Requires a non-blank property name to enrich the log event with the correlation information cycle ID");
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Requires a non-blank property name for the cycle ID", nameof(value));
+                }
+
                 _cycleIdPropertyName = value;
             }
         }

@@ -1,5 +1,4 @@
 ﻿using System;
-using GuardNet;
 
 namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 {
@@ -24,7 +23,11 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             get => _messageRecoveryPeriod;
             set
             {
-                Guard.NotLessThanOrEqualTo(value, TimeSpan.Zero, nameof(value));
+                if (value <= TimeSpan.Zero)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), "Requires a positive time period for the message recovery");
+                }
+
                 _messageRecoveryPeriod = value;
             }
         }
@@ -42,7 +45,11 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             get => _messageIntervalDuringRecovery;
             set
             {
-                Guard.NotLessThanOrEqualTo(value, TimeSpan.Zero, nameof(value));
+                if (value <= TimeSpan.Zero)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), "Requires a positive time period for the message interval");
+                }
+
                 _messageIntervalDuringRecovery = value;
             }
         }

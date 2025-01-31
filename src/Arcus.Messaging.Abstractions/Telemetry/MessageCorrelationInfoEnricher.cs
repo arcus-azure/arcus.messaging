@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 using Serilog.Core;
 using Serilog.Events;
 
@@ -22,11 +21,8 @@ namespace Arcus.Messaging.Abstractions.Telemetry
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageCorrelationInfo"/> or <paramref name="options"/> is <c>null</c>.</exception>
         public MessageCorrelationInfoEnricher(MessageCorrelationInfo messageCorrelationInfo, MessageCorrelationEnricherOptions options)
         {
-            Guard.NotNull(messageCorrelationInfo, nameof(messageCorrelationInfo), "Requires a message correlation instance to enrich the log events");
-            Guard.NotNull(options, nameof(options), "Requires a set of options to control the message correlation enrichment on the log events");
-
-            _messageCorrelationInfo = messageCorrelationInfo;
-            _options = options;
+            _messageCorrelationInfo = messageCorrelationInfo ?? throw new ArgumentNullException(nameof(messageCorrelationInfo));
+            _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         /// <summary>

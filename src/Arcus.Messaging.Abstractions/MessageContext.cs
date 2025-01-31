@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using GuardNet;
 
 namespace Arcus.Messaging.Abstractions
 {
@@ -18,11 +17,13 @@ namespace Arcus.Messaging.Abstractions
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="properties"/> is <c>null</c>.</exception>
         public MessageContext(string messageId, IDictionary<string, object> properties)
         {
-            Guard.NotNullOrEmpty(messageId, nameof(messageId));
-            Guard.NotNull(properties, nameof(properties));
+            if (string.IsNullOrWhiteSpace(messageId))
+            {
+                throw new ArgumentException("Requires a non-blank message ID", nameof(messageId));
+            }
 
             MessageId = messageId;
-            Properties = properties;
+            Properties = properties ?? throw new ArgumentNullException(nameof(properties));
         }
 
         /// <summary>
@@ -35,13 +36,19 @@ namespace Arcus.Messaging.Abstractions
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="properties"/> is <c>null</c>.</exception>
         public MessageContext(string messageId, string jobId, IDictionary<string, object> properties)
         {
-            Guard.NotNullOrEmpty(messageId, nameof(messageId));
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId));
-            Guard.NotNull(properties, nameof(properties));
+            if (string.IsNullOrWhiteSpace(messageId))
+            {
+                throw new ArgumentException("Requires a non-blank message ID", nameof(messageId));
+            }
+
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank job ID", nameof(jobId));
+            }
 
             MessageId = messageId;
             JobId = jobId;
-            Properties = properties;
+            Properties = properties ?? throw new ArgumentNullException(nameof(properties));
         }
 
         /// <summary>

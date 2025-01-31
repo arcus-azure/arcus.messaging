@@ -1,5 +1,4 @@
 ﻿using System;
-using GuardNet;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
@@ -19,7 +18,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             get => _operationName;
             set
             {
-                Guard.NotNullOrWhitespace(value, nameof(value), "Operation name for the message cannot be blank");
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Requires a non-blank operation name", nameof(value));
+                }
+
                 _operationName = value;
             }
         }
