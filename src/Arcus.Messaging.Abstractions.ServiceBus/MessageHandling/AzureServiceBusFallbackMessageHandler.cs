@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
@@ -45,14 +44,17 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
         protected async Task CompleteMessageAsync(ServiceBusReceivedMessage message)
         {
-            Guard.NotNull(message, nameof(message), "Requires a message to be completed");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
 
             if (EventArgs is null)
             {
                 throw new InvalidOperationException(
                     "Cannot complete the Azure Service Bus message because the message handler running Azure Service Bus-specific operations was not yet initialized correctly");
             }
-            
+
             Logger.LogTrace("Completing message '{MessageId}'...", message.MessageId);
             await EventArgs.CompleteMessageAsync(message, EventArgs.CancellationToken);
             Logger.LogTrace("Message '{MessageId}' is completed!", message.MessageId);
@@ -68,7 +70,10 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
         protected async Task DeadLetterMessageAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
         {
-            Guard.NotNull(message, nameof(message), "Requires a message to be dead lettered");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
 
             if (EventArgs is null)
             {
@@ -92,8 +97,15 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
         protected async Task DeadLetterMessageAsync(ServiceBusReceivedMessage message, string deadLetterReason, string deadLetterErrorDescription = null)
         {
-            Guard.NotNull(message, nameof(message), "Requires a message to be dead lettered");
-            Guard.NotNullOrWhitespace(deadLetterReason, nameof(deadLetterReason), "Requires a non-blank dead letter reason for the message");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            if (string.IsNullOrWhiteSpace(deadLetterReason))
+            {
+                throw new ArgumentException("Requires a non-blank dead letter reason for the message", nameof(deadLetterReason));
+            }
 
             if (EventArgs is null)
             {
@@ -103,7 +115,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
             Logger.LogTrace("Dead-lettering message '{MessageId}' because '{Reason}'...", message.MessageId, deadLetterReason);
             await EventArgs.DeadLetterMessageAsync(message, deadLetterReason, deadLetterErrorDescription, EventArgs.CancellationToken);
-            Logger.LogTrace("Message '{MessageId}' is dead-lettered because '{Reason}'!", message.MessageId,  deadLetterReason);
+            Logger.LogTrace("Message '{MessageId}' is dead-lettered because '{Reason}'!", message.MessageId, deadLetterReason);
         }
 
         /// <summary>
@@ -121,7 +133,10 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
         protected async Task AbandonMessageAsync(ServiceBusReceivedMessage message, IDictionary<string, object> newMessageProperties = null)
         {
-            Guard.NotNull(message, nameof(message), "Requires a message to be abandoned");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
 
             if (EventArgs is null)
             {

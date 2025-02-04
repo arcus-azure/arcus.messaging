@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using GuardNet;
 using Microsoft.Azure.Management.ServiceBus;
 using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Extensions.Logging;
@@ -29,14 +28,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             AzureServiceBusNamespace @namespace,
             ILogger logger)
         {
-            Guard.NotNull(authentication, nameof(authentication), "Requires an authentication implementation to connect to the Azure Service Bus resource");
-            Guard.NotNull(@namespace, nameof(@namespace), "Requires an instance to locate teh Service Bus resource on Azure");
-            Guard.NotNull(logger, nameof(logger), "Requires an logger instance to write diagnostic trace messages when interacting with the Azure Service Bus resource");
+            _authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _authentication = authentication;
-            _logger = logger;
-
-            Namespace = @namespace;
+            Namespace = @namespace ?? throw new ArgumentNullException(nameof(@namespace));
         }
 
         /// <summary>
@@ -51,14 +46,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="keyType"/> is outside the bounds of the enumeration.</exception>
         public async Task<string> RotateConnectionStringKeyAsync(KeyType keyType)
         {
-            Guard.For<ArgumentOutOfRangeException>(
-                () => !Enum.IsDefined(typeof(KeyType), keyType), 
-                $"Requires the KeyType value to be either '{nameof(KeyType.PrimaryKey)}' or '{nameof(KeyType.SecondaryKey)}'");
+            if (!Enum.IsDefined(typeof(KeyType), keyType))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(keyType), $"Requires the KeyType value to be either '{nameof(KeyType.PrimaryKey)}' or '{nameof(KeyType.SecondaryKey)}'");
+            }
 
             try
             {
                 using IServiceBusManagementClient client = await _authentication.AuthenticateAsync();
-                
+
                 _logger.LogTrace(
                     "Start rotating {KeyType} connection string of Azure Service Bus {EntityType} '{EntityName}'...",
                     keyType, Namespace.Entity, Namespace.EntityName);
@@ -78,9 +75,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             catch (Exception exception)
             {
-                _logger.LogError(
-                    exception, "Failed to rotate the {KeyType} connection string of the Azure Service Bus {EntityType} '{EntityName}'", keyType, Namespace.Entity, Namespace.EntityName);
-                
+                _logger.LogError(exception, "Failed to rotate the {KeyType} connection string of the Azure Service Bus {EntityType} '{EntityName}'", keyType, Namespace.Entity, Namespace.EntityName);
+
                 throw;
             }
         }

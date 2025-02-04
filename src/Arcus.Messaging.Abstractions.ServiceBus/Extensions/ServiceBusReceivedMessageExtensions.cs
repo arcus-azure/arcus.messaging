@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
@@ -18,7 +17,10 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         public static AzureServiceBusSystemProperties GetSystemProperties(this ServiceBusReceivedMessage message)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus received message to construct a set of Azure Service Bus system properties");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
 
             return AzureServiceBusSystemProperties.CreateFrom(message);
         }
@@ -32,9 +34,11 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         public static AzureServiceBusMessageContext GetMessageContext(this ServiceBusReceivedMessage message, string jobId)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus received message to construct an Azure Service Bus messaging context");
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires an job ID that is not blank to identify the messaging job, pump or router");
-            
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
             return message.GetMessageContext(jobId, ServiceBusEntityType.Unknown);
         }
 
@@ -48,9 +52,11 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         public static AzureServiceBusMessageContext GetMessageContext(this ServiceBusReceivedMessage message, string jobId, ServiceBusEntityType entityType)
         {
-            Guard.NotNull(message, nameof(message), "Requires an Azure Service Bus received message to construct an Azure Service Bus messaging context");
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId), "Requires an job ID that is not blank to identify the messaging job, pump or router");
-            
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
             return new AzureServiceBusMessageContext(message.MessageId, jobId, message.GetSystemProperties(), message.ApplicationProperties, entityType);
         }
     }

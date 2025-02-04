@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -27,8 +26,10 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(messageBodyFilter);
             return handlers;
@@ -51,9 +52,10 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            Guard.NotNull(handlers, nameof(handlers), "Requires a set of handlers to add the message handler");
-            Guard.NotNull(messageBodyFilter, nameof(messageBodyFilter), "Requires a filter to restrict the message processing based on the incoming message body");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a function to create the message handler with dependent handlers");
+            if (handlers is null)
+            {
+                throw new ArgumentNullException(nameof(handlers));
+            }
 
             handlers.WithMessageHandler<TMessageHandler, TMessage, AzureServiceBusMessageContext>(messageBodyFilter, implementationFactory);
             return handlers;

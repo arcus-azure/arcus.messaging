@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.ServiceBus.Core;
 using Arcus.Observability.Correlation;
 using Arcus.Observability.Telemetry.Core;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
@@ -40,11 +38,6 @@ namespace Azure.Messaging.ServiceBus
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(sender, nameof(sender), "Requires an Azure Service Bus sender to while sending a correlated message");
-            Guard.NotNull(messageBody, nameof(messageBody), "Requires a series of Azure Service Bus messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure Service Bus dependency while sending the correlated messages");
-
             await SendMessageAsync(sender, messageBody, correlationInfo, logger, configureOptions: null, cancellationToken);
         }
 
@@ -72,12 +65,7 @@ namespace Azure.Messaging.ServiceBus
             Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(sender, nameof(sender), "Requires an Azure Service Bus sender to while sending a correlated message");
-            Guard.NotNull(messageBody, nameof(messageBody), "Requires a series of Azure Service Bus messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure Service Bus dependency while sending the correlated messages");
-
-            await SendMessagesAsync(sender, new [] { messageBody }, correlationInfo, logger, configureOptions, cancellationToken);
+            await SendMessagesAsync(sender, new[] { messageBody }, correlationInfo, logger, configureOptions, cancellationToken);
         }
 
         /// <summary>
@@ -107,13 +95,6 @@ namespace Azure.Messaging.ServiceBus
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(sender, nameof(sender), "Requires an Azure Service Bus sender to while sending a correlated message");
-            Guard.NotNull(messageBodies, nameof(messageBodies), "Requires a series of Azure Service Bus messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure Service Bus dependency while sending the correlated messages");
-            Guard.NotAny(messageBodies, nameof(messageBodies), "Requires at least a single message to send to Azure Service Bus");
-            Guard.For(() => messageBodies.Any(message => message is null), new ArgumentException("Requires non-null items in Azure Service Bus message sequence", nameof(messageBodies)));
-
             await SendMessagesAsync(sender, messageBodies, correlationInfo, logger, configureOptions: null, cancellationToken);
         }
 
@@ -146,12 +127,10 @@ namespace Azure.Messaging.ServiceBus
             Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(sender, nameof(sender), "Requires an Azure Service Bus sender to while sending a correlated message");
-            Guard.NotNull(messageBodies, nameof(messageBodies), "Requires a series of Azure Service Bus messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure Service Bus dependency while sending the correlated messages");
-            Guard.NotAny(messageBodies, nameof(messageBodies), "Requires at least a single message to send to Azure Service Bus");
-            Guard.For(() => messageBodies.Any(message => message is null), new ArgumentException("Requires non-null items in Azure Service Bus message sequence", nameof(messageBodies)));
+            if (messageBodies is null)
+            {
+                throw new ArgumentNullException(nameof(messageBodies));
+            }
 
             ServiceBusMessage[] messages =
                 messageBodies.Select(messageBody => ServiceBusMessageBuilder.CreateForBody(messageBody).Build())
@@ -182,12 +161,7 @@ namespace Azure.Messaging.ServiceBus
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(sender, nameof(sender), "Requires an Azure Service Bus sender to while sending a correlated message");
-            Guard.NotNull(message, nameof(message), "Requires a Azure Service Bus message to send as a correlated message");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure Service Bus dependency while sending the correlated messages");
-
-            await SendMessageAsync(sender, message , correlationInfo, logger, configureOptions: null, cancellationToken);
+            await SendMessageAsync(sender, message, correlationInfo, logger, configureOptions: null, cancellationToken);
         }
 
         /// <summary>
@@ -214,10 +188,10 @@ namespace Azure.Messaging.ServiceBus
             Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(sender, nameof(sender), "Requires an Azure Service Bus sender to while sending a correlated message");
-            Guard.NotNull(message, nameof(message), "Requires a Azure Service Bus message to send as a correlated message");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure Service Bus dependency while sending the correlated messages");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
 
             await SendMessagesAsync(sender, new[] { message }, correlationInfo, logger, configureOptions, cancellationToken);
         }
@@ -249,13 +223,6 @@ namespace Azure.Messaging.ServiceBus
             ILogger logger,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(sender, nameof(sender), "Requires an Azure Service Bus sender to while sending a correlated message");
-            Guard.NotNull(messages, nameof(messages), "Requires a series of Azure Service Bus messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure Service Bus dependency while sending the correlated messages");
-            Guard.NotAny(messages, nameof(messages), "Requires at least a single message to send to Azure Service Bus");
-            Guard.For(() => messages.Any(message => message is null), new ArgumentException("Requires non-null items in Azure Service Bus message sequence", nameof(messages)));
-
             await SendMessagesAsync(sender, messages, correlationInfo, logger, configureOptions: null, cancellationToken);
         }
 
@@ -281,19 +248,32 @@ namespace Azure.Messaging.ServiceBus
         ///   <see href="https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quotas#messaging-quotas" />.
         /// </exception>
         public static async Task SendMessagesAsync(
-            this ServiceBusSender sender, 
-            IEnumerable<ServiceBusMessage> messages, 
+            this ServiceBusSender sender,
+            IEnumerable<ServiceBusMessage> messages,
             CorrelationInfo correlationInfo,
             ILogger logger,
             Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            Guard.NotNull(sender, nameof(sender), "Requires an Azure Service Bus sender to send a correlated message");
-            Guard.NotNull(messages, nameof(messages), "Requires a series of Azure Service Bus messages to send as correlated messages");
-            Guard.NotNull(correlationInfo, nameof(correlationInfo), "Requires a message correlation instance to include the transaction ID in the send out messages");
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to track the Azure Service Bus dependency while sending the correlated messages");
-            Guard.NotAny(messages, nameof(messages), "Requires at least a single message to send to Azure Service Bus");
-            Guard.For(() => messages.Any(message => message is null), new ArgumentException("Requires non-null items in Azure Service Bus message sequence", nameof(messages)));
+            if (sender is null)
+            {
+                throw new ArgumentNullException(nameof(sender));
+            }
+
+            if (messages is null)
+            {
+                throw new ArgumentNullException(nameof(messages));
+            }
+
+            if (correlationInfo is null)
+            {
+                throw new ArgumentNullException(nameof(correlationInfo));
+            }
+
+            if (logger is null)
+            {
+                throw new ArgumentNullException(nameof(logger));
+            }
 
             var options = new ServiceBusSenderMessageCorrelationOptions();
             configureOptions?.Invoke(options);
@@ -308,7 +288,7 @@ namespace Azure.Messaging.ServiceBus
             }
 
             bool isSuccessful = false;
-            using (var measurement = DurationMeasurement.Start()) 
+            using (var measurement = DurationMeasurement.Start())
             {
                 try
                 {

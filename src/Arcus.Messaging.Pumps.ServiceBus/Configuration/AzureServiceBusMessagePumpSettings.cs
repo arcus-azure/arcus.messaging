@@ -6,7 +6,6 @@ using Arcus.Security.Core.Caching;
 using Azure.Core;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
-using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -48,25 +47,31 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             AzureServiceBusMessagePumpOptions options,
             IServiceProvider serviceProvider)
         {
-            Guard.For<ArgumentException>(
-                () => getConnectionStringFromConfigurationFunc is null && getConnectionStringFromSecretFunc is null,
-                $"Requires an function that determines the connection string from either either an {nameof(IConfiguration)} or {nameof(ISecretProvider)} instance");
-            Guard.NotNull(options, nameof(options), "Requires message pump options that influence the behavior of the message pump");
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to get additional registered services during the lifetime of the message pump");
-            Guard.For<ArgumentException>(
-                () => !Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity),
-                $"Azure Service Bus entity '{serviceBusEntity}' is not defined in the '{nameof(ServiceBusEntityType)}' enumeration");
-            Guard.For<ArgumentOutOfRangeException>(
-                () => serviceBusEntity is ServiceBusEntityType.Unknown, "Azure Service Bus entity type 'Unknown' is not supported here");
+            if (serviceBusEntity is ServiceBusEntityType.Topic && string.IsNullOrWhiteSpace(subscriptionName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus topic subscription name", nameof(subscriptionName));
+            }
 
-            _serviceProvider = serviceProvider;
+            if (getConnectionStringFromConfigurationFunc is null && getConnectionStringFromSecretFunc is null)
+            {
+                throw new ArgumentException(
+                    $"Requires an function that determines the connection string from either either an {nameof(IConfiguration)} or {nameof(ISecretProvider)} instance");
+            }
+
+            if (!Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity) || serviceBusEntity is ServiceBusEntityType.Unknown)
+            {
+                throw new ArgumentException(
+                    $"Azure Service Bus entity type should either be '{ServiceBusEntityType.Queue}' or '{ServiceBusEntityType.Topic}'", nameof(serviceBusEntity));
+            }
+
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _getConnectionStringFromConfigurationFunc = getConnectionStringFromConfigurationFunc;
             _getConnectionStringFromSecretFunc = getConnectionStringFromSecretFunc;
 
             EntityName = entityName;
             SubscriptionName = subscriptionName;
             ServiceBusEntity = serviceBusEntity;
-            Options = options;
+            Options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         /// <summary>
@@ -99,23 +104,34 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             AzureServiceBusMessagePumpOptions options,
             IServiceProvider serviceProvider)
         {
-            Guard.NotNull(options, nameof(options), "Requires message pump options that influence the behavior of the message pump");
-            Guard.NotNull(serviceProvider, nameof(serviceProvider), "Requires a service provider to get additional registered services during the lifetime of the message pump");
-            Guard.NotNull(tokenCredential, nameof(tokenCredential), "Requires a token credential instance to authenticate with the Azure Service Bus");
-            Guard.NotNullOrWhitespace(entityName, nameof(entityName), "Requires a non-blank entity name for the Azure Service Bus when using the token credentials");
-            Guard.NotNullOrWhitespace(serviceBusNamespace, nameof(serviceBusNamespace), "Requires a non-blank fully qualified Azure Service Bus namespace when using the token credentials");
-            Guard.For<ArgumentException>(() => !Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity),
-                $"Azure Service Bus entity '{serviceBusEntity}' is not defined in the '{nameof(ServiceBusEntityType)}' enumeration");
-            Guard.For<ArgumentOutOfRangeException>(() => serviceBusEntity is ServiceBusEntityType.Unknown,
-                "Azure Service Bus entity type 'Unknown' is not supported here");
+            if (string.IsNullOrWhiteSpace(entityName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(entityName));
+            }
 
-            _serviceProvider = serviceProvider;
-            _tokenCredential = tokenCredential;
+            if (serviceBusEntity is ServiceBusEntityType.Topic && string.IsNullOrWhiteSpace(subscriptionName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus topic subscription name", nameof(subscriptionName));
+            }
+
+            if (!Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity) || serviceBusEntity is ServiceBusEntityType.Unknown)
+            {
+                throw new ArgumentException(
+                    $"Azure Service Bus entity type should either be '{ServiceBusEntityType.Queue}' or '{ServiceBusEntityType.Topic}'", nameof(serviceBusEntity));
+            }
+
+            if (string.IsNullOrWhiteSpace(serviceBusNamespace))
+            {
+                throw new ArgumentException("Requires a non-blank fully qualified Azure Service Bus namespace when using the token credentials", nameof(serviceBusNamespace));
+            }
+
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _tokenCredential = tokenCredential ?? throw new ArgumentNullException(nameof(tokenCredential));
 
             EntityName = entityName;
             SubscriptionName = subscriptionName;
             ServiceBusEntity = serviceBusEntity;
-            Options = options;
+            Options = options ?? throw new ArgumentNullException(nameof(options));
 
             if (serviceBusNamespace.EndsWith(".servicebus.windows.net"))
             {
@@ -246,17 +262,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             }
 
             return EntityName;
-        }
-
-        private ServiceBusReceiverOptions DetermineMessageReceiverOptions()
-        {
-            var options = new ServiceBusReceiverOptions();
-            if (Options != null)
-            {
-                options.PrefetchCount = Options.PrefetchCount;
-            }
-
-            return options;
         }
 
         private async Task<string> GetConnectionStringAsync()

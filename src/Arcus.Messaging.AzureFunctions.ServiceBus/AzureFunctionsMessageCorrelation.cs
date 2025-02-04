@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions;
 using Azure.Messaging.ServiceBus;
-using GuardNet;
 using Microsoft.ApplicationInsights;
 
 namespace Arcus.Messaging.AzureFunctions.ServiceBus
@@ -20,8 +19,7 @@ namespace Arcus.Messaging.AzureFunctions.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="client"/> is <c>null</c>.</exception>
         public AzureFunctionsMessageCorrelation(TelemetryClient client)
         {
-            Guard.NotNull(client, nameof(client), "Requires a Microsoft telemetry client to automatically track outgoing built-in Microsoft dependencies");
-            _telemetryClient = client;
+            _telemetryClient = client ?? throw new ArgumentNullException(nameof(client));
         }
 
         /// <summary>
@@ -32,7 +30,10 @@ namespace Arcus.Messaging.AzureFunctions.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         public MessageCorrelationResult CorrelateMessage(ServiceBusReceivedMessage message)
         {
-            Guard.NotNull(message, nameof(message), "Requires an incoming Azure Service Bus message to W3C correlate the message");
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
 
             (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
             return MessageCorrelationResult.Create(_telemetryClient, transactionId, operationParentId);
