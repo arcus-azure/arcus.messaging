@@ -62,8 +62,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await producer.ProduceAsync(messageAfterBreak);
             await messageSink.ShouldReceiveOrdersAfterBreakAsync(messageAfterBreak.MessageId);
 
-            mockEventHandler1.ShouldTransitionCorrectly();
-            mockEventHandler2.ShouldTransitionCorrectly();
+            await mockEventHandler1.ShouldTransitionedCorrectlyAsync();
+            await mockEventHandler2.ShouldTransitionedCorrectlyAsync();
         }
 
         [Fact]
@@ -99,8 +99,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await producer.ProduceAsync(messageAfterBreak);
             await messageSink.ShouldReceiveOrdersAfterBreakAsync(messageAfterBreak.MessageId);
 
-            mockEventHandler1.ShouldTransitionCorrectly();
-            mockEventHandler2.ShouldTransitionCorrectly();
+            await mockEventHandler1.ShouldTransitionedCorrectlyAsync();
+            await mockEventHandler2.ShouldTransitionedCorrectlyAsync();
         }
 
         private async Task<TemporaryTopicSubscription> CreateTopicSubscriptionForMessageAsync(params ServiceBusMessage[] messages)

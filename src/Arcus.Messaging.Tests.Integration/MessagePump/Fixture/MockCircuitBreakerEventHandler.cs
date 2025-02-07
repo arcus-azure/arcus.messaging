@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Collections.ObjectModel;
-using System.Linq;
+using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
+using Arcus.Testing;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 {
@@ -11,28 +13,32 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
     /// </summary>
     internal class MockCircuitBreakerEventHandler : ICircuitBreakerEventHandler
     {
-        private readonly Collection<MessagePumpCircuitState> _states = new();
+        private readonly Collection<MessagePumpCircuitStateChange> _states = new();
 
         /// <summary>
         /// Notifies the application on a change in the message pump's circuit breaker state.
         /// </summary>
-        /// <param name="newState">The new circuit breaker state in which the message pump is currently running on.</param>
-        public void OnTransition(MessagePumpCircuitState newState)
+        /// <param name="change">The change in the circuit breaker state for a message pump.</param>
+        public void OnTransition(MessagePumpCircuitStateChange change)
         {
-            _states.Add(newState);
+            _states.Add(change);
         }
 
-        public void ShouldTransitionCorrectly()
+        /// <summary>
+        /// Verifies that all fired circuit breaker state transitions are happening correctly.
+        /// </summary>
+        public async Task ShouldTransitionedCorrectlyAsync()
         {
-            Assert.NotEmpty(_states);
+            await Poll.Target<XunitException>(() =>
+            {
+                Assert.NotEmpty(_states);
+                Assert.Equal(3, _states.Count);
 
-            MessagePumpCircuitState firstTransition = _states[0];
-            Assert.True(firstTransition.IsOpen, $"when the message pump starts up, the first transition should always be from a closed to open state, but got: {firstTransition}");
+            }).Every(TimeSpan.FromSeconds(1))
+              .Timeout(TimeSpan.FromSeconds(10))
+              .FailWith("could not in time find all the fired circuit breaker change events, possibly the message pump did not fired them");
 
-            IEnumerable<(MessagePumpCircuitState oldState, MessagePumpCircuitState newState)> transitions =
-                _states.SkipLast(1).Zip(_states.Skip(1));
-
-            Assert.All(transitions, t => VerifyCorrectTransition(t.oldState, t.newState));
+            Assert.All(_states, t => VerifyCorrectTransition(t.OldState, t.NewState));
         }
 
         private static void VerifyCorrectTransition(
@@ -41,7 +47,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         {
             if (oldState.IsClosed)
             {
-                Assert.True(newState.IsHalfOpen, $"when the message pump comes from a closed state, the next state should always be half-open, but got: {newState}");
+                Assert.True(newState.IsOpen, $"when the message pump comes from a closed state, the next state should always be open, but got: {newState}");
             }
             else if (oldState.IsOpen)
             {
