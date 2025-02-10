@@ -96,9 +96,16 @@ The instances should implement the `ICircuitBreakerEventHandler`, which allows y
 ```csharp
 public class MyFirstCircuitBreakerEventHandler : ICircuitBreakerEventHandler
 {
-    public Task OnTransitionAsync(MessagePumpCircuitState newState)
+    public Task OnTransitionAsync(MessagePumpCircuitStateChang change)
     {
-        // ...
+        // The job ID of the message pump that was transitioned.
+        string jobId = change.JobId;
+
+        // The circuit breaker state transitions.
+        MessagePumpCircuitState oldState = change.OldState;
+        MessagePumpCircuitState newState = change.NewState;
+
+        // Process the state change event...
     }
 }
 ```

@@ -33,8 +33,47 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <summary>
         /// Notifies the application on a change in the message pump's circuit breaker state.
         /// </summary>
-        /// <param name="newState">The new circuit breaker state in which the message pump is currently running on.</param>
-        void OnTransition(MessagePumpCircuitState newState);
+        /// <param name="args">The change in the circuit breaker state for a message pump.</param>
+        void OnTransition(MessagePumpCircuitStateChangedEventArgs args);
+    }
+
+    /// <summary>
+    /// Represents a change event of the <see cref="MessagePumpCircuitState"/> in a <see cref="MessagePump"/>.
+    /// </summary>
+    public class MessagePumpCircuitStateChangedEventArgs
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MessagePumpCircuitStateChangedEventArgs" /> class.
+        /// </summary>
+        internal MessagePumpCircuitStateChangedEventArgs(
+            string jobId,
+            MessagePumpCircuitState oldState,
+            MessagePumpCircuitState newState)
+        {
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank job ID for the circuit breaker event state change registration", nameof(jobId));
+            }
+
+            JobId = jobId;
+            OldState = oldState;
+            NewState = newState;
+        }
+
+        /// <summary>
+        /// Gets the unique ID to distinguish the linked message pump that had it circuit breaker state changed.
+        /// </summary>
+        public string JobId { get; }
+
+        /// <summary>
+        /// Gets the original circuit breaker state the linked message pump was in.
+        /// </summary>
+        public MessagePumpCircuitState OldState { get; }
+
+        /// <summary>
+        /// Gets the current circuit breaker state the linked message pump is in.
+        /// </summary>
+        public MessagePumpCircuitState NewState { get; }
     }
 
     /// <summary>

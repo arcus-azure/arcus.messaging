@@ -145,9 +145,12 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             if (!CircuitState.IsHalfOpen)
             {
-                CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
+                MessagePumpCircuitState
+                    oldState = CircuitState,
+                    newState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
 
-                NotifyCircuitBreakerStateChangedSubscribers();
+                CircuitState = newState;
+                NotifyCircuitBreakerStateChangedSubscribers(oldState, newState);
             }
         }
 
@@ -162,9 +165,12 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             if (!CircuitState.IsHalfOpen)
             {
-                CircuitState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
+                MessagePumpCircuitState
+                    oldState = CircuitState,
+                    newState = CircuitState.TransitionTo(CircuitBreakerState.HalfOpen);
 
-                NotifyCircuitBreakerStateChangedSubscribers();
+                CircuitState = newState;
+                NotifyCircuitBreakerStateChangedSubscribers(oldState, newState);
             }
         }
 
@@ -176,9 +182,12 @@ namespace Arcus.Messaging.Pumps.Abstractions
         {
             Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to transition from a '{CurrentState}' an 'Open' state", JobId, CircuitState);
 
-            CircuitState = CircuitState.TransitionTo(CircuitBreakerState.Open, options);
+            MessagePumpCircuitState
+                oldState = CircuitState,
+                newState = CircuitState.TransitionTo(CircuitBreakerState.Open, options);
 
-            NotifyCircuitBreakerStateChangedSubscribers();
+            CircuitState = newState;
+            NotifyCircuitBreakerStateChangedSubscribers(oldState, newState);
         }
 
         /// <summary>
@@ -188,18 +197,21 @@ namespace Arcus.Messaging.Pumps.Abstractions
         {
             Logger.LogDebug("Circuit breaker caused message pump '{JobId}' to transition back from '{CurrentState}' to a 'Closed' state, retrieving messages is resumed", JobId, CircuitState);
 
-            CircuitState = MessagePumpCircuitState.Closed;
+            MessagePumpCircuitState
+                oldState = CircuitState,
+                newState = MessagePumpCircuitState.Closed;
 
-            NotifyCircuitBreakerStateChangedSubscribers();
+            CircuitState = newState;
+            NotifyCircuitBreakerStateChangedSubscribers(oldState, newState);
         }
 
-        private void NotifyCircuitBreakerStateChangedSubscribers()
+        private void NotifyCircuitBreakerStateChangedSubscribers(MessagePumpCircuitState oldState, MessagePumpCircuitState newState)
         {
             ICircuitBreakerEventHandler[] eventHandlers = GetEventHandlersForPump();
 
             foreach (var handler in eventHandlers)
             {
-                Task.Run(() => handler.OnTransition(CircuitState));
+                Task.Run(() => handler.OnTransition(new MessagePumpCircuitStateChangedEventArgs(JobId, oldState, newState)));
             }
         }
 
