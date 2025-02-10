@@ -34,18 +34,18 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// Notifies the application on a change in the message pump's circuit breaker state.
         /// </summary>
         /// <param name="args">The change in the circuit breaker state for a message pump.</param>
-        void OnTransition(MessagePumpCircuitStateChangeEventArgs args);
+        void OnTransition(MessagePumpCircuitStateChangedEventArgs args);
     }
 
     /// <summary>
     /// Represents a change event of the <see cref="MessagePumpCircuitState"/> in a <see cref="MessagePump"/>.
     /// </summary>
-    public class MessagePumpCircuitStateChangeEventArgs
+    public class MessagePumpCircuitStateChangedEventArgs
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessagePumpCircuitStateChangeEventArgs" /> class.
+        /// Initializes a new instance of the <see cref="MessagePumpCircuitStateChangedEventArgs" /> class.
         /// </summary>
-        internal MessagePumpCircuitStateChangeEventArgs(
+        internal MessagePumpCircuitStateChangedEventArgs(
             string jobId,
             MessagePumpCircuitState oldState,
             MessagePumpCircuitState newState)

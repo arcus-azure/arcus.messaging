@@ -211,7 +211,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
 
             foreach (var handler in eventHandlers)
             {
-                Task.Run(() => handler.OnTransition(new MessagePumpCircuitStateChangeEventArgs(JobId, oldState, newState)));
+                Task.Run(() => handler.OnTransition(new MessagePumpCircuitStateChangedEventArgs(JobId, oldState, newState)));
             }
         }
 
