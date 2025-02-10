@@ -13,15 +13,15 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
     /// </summary>
     internal class MockCircuitBreakerEventHandler : ICircuitBreakerEventHandler
     {
-        private readonly Collection<MessagePumpCircuitStateChange> _states = new();
+        private readonly Collection<MessagePumpCircuitStateChangeEventArgs> _states = new();
 
         /// <summary>
         /// Notifies the application on a change in the message pump's circuit breaker state.
         /// </summary>
-        /// <param name="change">The change in the circuit breaker state for a message pump.</param>
-        public void OnTransition(MessagePumpCircuitStateChange change)
+        /// <param name="args">The change in the circuit breaker state for a message pump.</param>
+        public void OnTransition(MessagePumpCircuitStateChangeEventArgs args)
         {
-            _states.Add(change);
+            _states.Add(args);
         }
 
         /// <summary>
