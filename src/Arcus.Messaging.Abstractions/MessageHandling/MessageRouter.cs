@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 using Serilog.Context;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
@@ -30,7 +29,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             : this(serviceProvider, options, (ILogger) logger)
         {
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
@@ -62,7 +61,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             : this(serviceProvider, new MessageRouterOptions(), NullLogger.Instance)
         {
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
@@ -92,12 +91,12 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// Gets the instance that provides all the registered services in the current application.
         /// </summary>
         protected IServiceProvider ServiceProvider { get; }
-        
+
         /// <summary>
         /// Gets the consumer-configurable options to change the behavior of the router.
         /// </summary>
         protected MessageRouterOptions Options { get; }
-        
+
         /// <summary>
         /// Gets the logger instance that writes diagnostic trace messages during the routing of the messages.
         /// </summary>
@@ -147,7 +146,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 accessor?.SetCorrelationInfo(correlationInfo);
 
                 bool isProcessed = await TryProcessMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
-                return isProcessed; 
+                return isProcessed;
             }
         }
 
@@ -226,7 +225,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             if (!isFallbackProcessed)
             {
                 Logger.LogDebug("Message router cannot correctly process the message in the '{MessageContextType}' because none of the registered '{MessageHandlerType}' implementations in the dependency container matches the incoming message type and context. Make sure you call the correct '.With...' extension on the '{ServiceCollectionType}' during the registration of the message pump/router to register a message handler", typeof(TMessageContext).Name, typeof(IMessageHandler<,>).Name, nameof(IServiceCollection));
-            } 
+            }
         }
 
         private async Task<bool> TryProcessMessageAsync<TMessageContext>(
@@ -238,7 +237,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             where TMessageContext : MessageContext
         {
             MessageHandler[] handlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
-            FallbackMessageHandler<string, TMessageContext>[] fallbackHandlers = 
+            FallbackMessageHandler<string, TMessageContext>[] fallbackHandlers =
                 GetAvailableFallbackMessageHandlersByContext<string, TMessageContext>(messageContext);
 
             if (handlers.Length <= 0 && fallbackHandlers.Length <= 0)
@@ -477,66 +476,40 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
             Logger.LogTrace("Try to JSON deserialize incoming message to message type '{MessageType}'...", messageType.Name);
 
-            var success = true;
-            JsonSerializer jsonSerializer = CreateJsonSerializer();
-            EventHandler<ErrorEventArgs> eventHandler = (sender, args) =>
-            {
-                success = false;
-                Logger.LogTrace(args.ErrorContext.Error, "Incoming message failed to be JSON deserialized to message type '{MessageType}' at {Path}", messageType.Name, args.ErrorContext.Path);
-                args.ErrorContext.Handled = true;
-            };
-            jsonSerializer.Error += eventHandler;
-            
+            JsonSerializerOptions options = CreateJsonSerializerOptions();
             try
             {
-                var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
-                if (success)
+                result = JsonSerializer.Deserialize(message, messageType, options);
+                if (result != null)
                 {
                     Logger.LogTrace("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
-
-                    result = value;
                     return true;
                 }
             }
-            catch (Exception exception)
+            catch (JsonException exception)
             {
-                Logger.LogError(exception, "Incoming message failed to be JSON deserialized to message type '{MessageType}' due to an exception", messageType.Name);
+                Logger.LogTrace(exception, "Incoming message failed to be JSON deserialized to message type '{MessageType}' due to an exception", messageType.Name);
             }
-            finally
-            {
-                jsonSerializer.Error -= eventHandler;
-            }
-            
+
             result = null;
             return false;
         }
 
-        private JsonSerializer CreateJsonSerializer()
+        private JsonSerializerOptions CreateJsonSerializerOptions()
         {
-            var jsonSerializer = new JsonSerializer();
-            
-            if (Options.Deserialization is null)
+            var options = new JsonSerializerOptions
             {
-                jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
-            }
-            else
-            {
-                switch (Options.Deserialization.AdditionalMembers)
+                UnmappedMemberHandling = Options.Deserialization?.AdditionalMembers switch
                 {
-                    case AdditionalMemberHandling.Error:
-                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
-                        break;
-                    case AdditionalMemberHandling.Ignore:
-                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Ignore;
-                        break;
-                    default:
-                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
-                        break;
+                    null => JsonUnmappedMemberHandling.Disallow,
+                    AdditionalMemberHandling.Error => JsonUnmappedMemberHandling.Disallow,
+                    AdditionalMemberHandling.Ignore => JsonUnmappedMemberHandling.Skip,
+                    _ => JsonUnmappedMemberHandling.Disallow
                 }
-            }
+            };
 
-            Logger.LogTrace($"JSON deserialization uses '{jsonSerializer.MissingMemberHandling}' result when encountering additional members");
-            return jsonSerializer;
+            Logger.LogTrace("JSON deserialization uses '{UnmappedMemberHandling}' result when encountering additional members", options.UnmappedMemberHandling);
+            return options;
         }
     }
 }

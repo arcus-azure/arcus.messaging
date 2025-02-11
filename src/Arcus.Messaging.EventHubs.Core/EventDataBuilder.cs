@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
 using Arcus.Messaging.Abstractions;
-using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.EventHubs
@@ -153,7 +153,7 @@ namespace Azure.Messaging.EventHubs
         /// </summary>
         public EventData Build()
         {
-            string json = JsonConvert.SerializeObject(_eventBody);
+            string json = JsonSerializer.Serialize(_eventBody);
             byte[] raw = _encoding.GetBytes(json);
             var eventData = new EventData(raw)
             {

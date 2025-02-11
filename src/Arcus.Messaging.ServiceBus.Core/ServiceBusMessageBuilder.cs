@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
 using Arcus.Messaging.Abstractions;
-using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.ServiceBus
@@ -150,7 +150,7 @@ namespace Azure.Messaging.ServiceBus
         /// </summary>
         public ServiceBusMessage Build()
         {
-            string json = JsonConvert.SerializeObject(_messageBody);
+            string json = JsonSerializer.Serialize(_messageBody);
             byte[] raw = _encoding.GetBytes(json);
             var message = new ServiceBusMessage(raw)
             {

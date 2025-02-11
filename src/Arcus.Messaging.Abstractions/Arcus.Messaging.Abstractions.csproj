@@ -29,7 +29,10 @@
   <ItemGroup>
     <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Enrichers" Version="[3.0.0,4.0.0)" />
     <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.21.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+
+    <!-- TODO: will be removed in v3.0 -->
+    <PackageReference Include="System.Text.Json" Version="[8.0.5,10.0.0)" Condition="'$(TargetFramework)' != 'net8.0'" />
+    <!-- TODO: will be removed in v3.0 -->
   </ItemGroup>
 
 </Project>
