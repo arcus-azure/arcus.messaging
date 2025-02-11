@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Tests.Unit.MessagePump.Fixture;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
