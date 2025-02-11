@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Arcus.Messaging.Tests.Unit.MessagePump.Fixture;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -44,7 +44,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
         {
             // Arrange
             var services = new ServiceCollection();
-            services.AddMessagePump(p => (Pumps.Abstractions.MessagePump)new TestMessagePump("same-job-id", Mock.Of<IConfiguration>(), p, _logger));
+            services.AddMessagePump(p => (Pumps.Abstractions.MessagePump) new TestMessagePump("same-job-id", Mock.Of<IConfiguration>(), p, _logger));
             services.AddMessagePump(p => new TestMessagePump("same-job-id", Mock.Of<IConfiguration>(), p, _logger));
             IServiceProvider provider = services.BuildServiceProvider();
 

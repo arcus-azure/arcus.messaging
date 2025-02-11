@@ -6,7 +6,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Unit.ServiceBus.Fixture;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
 using Bogus;
 using Moq;
@@ -114,7 +114,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation));
         }
 
@@ -134,7 +134,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             AssertDependencyTelemetry(logger, dependencyId);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedServiceBusMessageWithDependencyId(item.First, item.Second, correlation, dependencyId));
         }
 
@@ -154,7 +154,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation, transactionIdPropertyName: transactionIdPropertyName));
         }
 
@@ -174,11 +174,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation, operationParentPropertyName: upstreamServicePropertyName));
         }
 
-         [Fact]
+        [Fact]
         public async Task SendMessageWithoutOptions_WithMessageCorrelation_Succeeds()
         {
             // Arrange
@@ -250,7 +250,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var spySender = new InMemoryServiceBusSender();
             var expectedOrder = OrderGenerator.Generate();
             var expected = ServiceBusMessageBuilder.CreateForBody(expectedOrder).Build();
-            
+
             var upstreamServicePropertyName = "My-UpstreamService-Id";
             MessageCorrelationInfo correlation = GenerateMessageCorrelationInfo();
             var logger = new InMemoryLogger();
@@ -282,7 +282,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation));
         }
 
@@ -304,7 +304,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             AssertDependencyTelemetry(logger, dependencyId);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedServiceBusMessageWithDependencyId(item.First, item.Second, correlation, dependencyId));
         }
 
@@ -326,7 +326,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation, transactionIdPropertyName: transactionIdPropertyName));
         }
 
@@ -348,7 +348,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation, operationParentPropertyName: upstreamServicePropertyName));
         }
 
@@ -379,7 +379,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.Contains(key2, logMessage);
             Assert.Contains(value2, logMessage);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedServiceBusMessage(item.First, item.Second, correlation));
         }
 
@@ -444,7 +444,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(messageBody: null, correlation, logger));
@@ -457,7 +457,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = OrderGenerator.Generate();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(order, correlationInfo: null, logger));
@@ -470,7 +470,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = OrderGenerator.Generate();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(order, correlation, logger: null));
@@ -483,7 +483,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(messageBody: null, correlation, logger, options => { }));
@@ -496,7 +496,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = OrderGenerator.Generate();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(order, correlationInfo: null, logger, options => { }));
@@ -509,7 +509,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = OrderGenerator.Generate();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(order, correlation, logger: null, options => { }));
@@ -522,7 +522,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(messageBodies: null, correlation, logger));
@@ -535,7 +535,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = OrderGenerator.Generate();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(new[] { order }, correlationInfo: null, logger));
@@ -548,7 +548,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = OrderGenerator.Generate();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(new[] { order }, correlation, logger: null));
@@ -561,7 +561,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(messageBodies: null, correlation, logger, options => { }));
@@ -574,7 +574,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = OrderGenerator.Generate();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(new[] { order }, correlationInfo: null, logger, options => { }));
@@ -587,7 +587,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = OrderGenerator.Generate();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(new[] { order }, correlation, logger: null, options => { }));
@@ -600,7 +600,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(message: null, correlation, logger));
@@ -613,7 +613,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(order, correlationInfo: null, logger));
@@ -626,7 +626,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(order, correlation, logger: null));
@@ -639,7 +639,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(message: null, correlation, logger, options => { }));
@@ -652,7 +652,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(order, correlationInfo: null, logger, options => { }));
@@ -665,7 +665,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessageAsync(order, correlation, logger: null, options => { }));
@@ -678,7 +678,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(messages: null, correlation, logger));
@@ -691,7 +691,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(new[] { order }, correlationInfo: null, logger));
@@ -704,7 +704,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(new[] { order }, correlation, logger: null));
@@ -717,7 +717,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(messages: null, correlation, logger, options => { }));
@@ -730,7 +730,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(new[] { order }, correlationInfo: null, logger, options => { }));
@@ -743,7 +743,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var sender = Mock.Of<ServiceBusSender>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendMessagesAsync(new[] { order }, correlation, logger: null, options => { }));
