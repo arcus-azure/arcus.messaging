@@ -30,6 +30,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="getConnectionStringFromSecretFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the secret store.</param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
@@ -85,6 +86,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="secretName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             string secretName,
@@ -119,6 +121,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> or <paramref name="secretName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             string queueName,
@@ -159,6 +162,7 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             string queueName,
@@ -284,6 +288,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> or <paramref name="secretName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string subscriptionName,
@@ -322,6 +327,7 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     Thrown when the <paramref name="services"/> or the <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string subscriptionName,
@@ -387,6 +393,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="topicName"/>, the <paramref name="subscriptionName"/>, or the <paramref name="secretName"/> is blank.
         /// </exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string topicName,
@@ -423,6 +430,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="topicName"/> or the <paramref name="subscriptionName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string topicName,
@@ -537,6 +545,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionPrefix"/> or the <paramref name="secretName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithPrefix(
             this IServiceCollection services,
             string subscriptionPrefix,
@@ -574,6 +583,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or the <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionPrefix"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithPrefix(
             this IServiceCollection services,
             string subscriptionPrefix,
@@ -643,6 +653,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="topicName"/>, the <paramref name="subscriptionPrefix"/>, or the <paramref name="services"/> is blank.
         /// </exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithPrefix(
             this IServiceCollection services,
             string topicName,
@@ -686,6 +697,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or the <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="topicName"/> or the <paramref name="subscriptionPrefix"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use other overload without " + nameof(ISecretProvider) + " requirement")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithPrefix(
             this IServiceCollection services,
             string topicName,
@@ -885,8 +897,10 @@ namespace Microsoft.Extensions.DependencyInjection
                 AzureServiceBusMessagePumpSettings settings;
                 if (tokenCredential is null)
                 {
+#pragma warning disable CS0618 // Type or member is obsolete: will use other overload in v3.0.
                     settings = new AzureServiceBusMessagePumpSettings(
                         entityName, subscriptionName, serviceBusEntity, getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, options, serviceProvider);
+#pragma warning restore CS0618 // Type or member is obsolete
                 }
                 else
                 {
