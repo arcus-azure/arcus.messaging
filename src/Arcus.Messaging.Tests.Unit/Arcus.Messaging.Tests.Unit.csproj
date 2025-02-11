@@ -6,12 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="ServiceBus\AzureFunctions\**" />
-    <EmbeddedResource Remove="ServiceBus\AzureFunctions\**" />
-    <None Remove="ServiceBus\AzureFunctions\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Arcus.Security.Core" Version="2.0.0" />
     <PackageReference Include="Arcus.Testing.Security.Providers.InMemory" Version="0.5.0" />
     <PackageReference Include="Arcus.Testing.Logging" Version="0.5.0" />
