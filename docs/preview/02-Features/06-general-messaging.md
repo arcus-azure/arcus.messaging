@@ -86,7 +86,7 @@ After the message pump and/or message handlers are registered, you can add one o
 ```csharp
 using Arcus.Messaging.Pumps.Abstractions;
 
-services.AddServiceBusMessagePump(...)
+services.AddServiceBusMessagePumpUsingManagedIdentity(...)
         .WithCircuitBreakerStateChangedEventHandler<MyFirstCircuitBreakerEventHandler>()
         .WithCircuitBreakerStateChangedEventHandler<MySecondCircuitBreakerEventHandler>();
 ```
@@ -127,10 +127,10 @@ public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddServiceBusMessagePump(..., options => options.JobId = "abc-123")
+        services.AddServiceBusMessagePumpUsingManagedIdentity(..., options => options.JobId = "abc-123")
                 .WithServiceBusMessageHandler<..., ...>();
 
-        services.AddEventHubsMessagePump(..., options => options.JobId = "def-456")
+        services.AddEventHubsMessagePumpUsingManagedIdentity(..., options => options.JobId = "def-456")
                 .WithEventHubsMessageHandler<..., ...>();
     }
 }
