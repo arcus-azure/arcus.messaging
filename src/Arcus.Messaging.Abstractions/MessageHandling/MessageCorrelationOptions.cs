@@ -9,6 +9,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// </summary>
     public class MessageCorrelationOptions
     {
+        [Obsolete("Will be removed in v3.0")]
         private string _transactionIdPropertyName = PropertyNames.TransactionId,
                        _operationParentIdPropertyName = PropertyNames.OperationParentId;
 
