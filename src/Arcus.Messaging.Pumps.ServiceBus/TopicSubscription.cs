@@ -1,11 +1,8 @@
-﻿using System;
-
-namespace Arcus.Messaging.Pumps.ServiceBus
+﻿namespace Arcus.Messaging.Pumps.ServiceBus
 {
     /// <summary>
     /// Represents the option to control the topic subscription existence during the lifecycle of the <see cref="AzureServiceBusMessagePump"/>.
     /// </summary>
-    [Flags]
     public enum TopicSubscription
     {
         /// <summary>
