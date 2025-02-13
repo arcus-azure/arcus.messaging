@@ -14,6 +14,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CS0618 // Deprecated functionality will be removed in v3.0.
+
 namespace Arcus.Messaging.Pumps.EventHubs
 {
     /// <summary>
