@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Azure.Management.ServiceBus;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Pumps.ServiceBus
@@ -6,6 +7,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// <summary>
     /// Represents the namespace of a Azure Service Bus resource; where the Azure Service Bus is located.
     /// </summary>
+    [Obsolete("Will be removed in v3.0, please use Microsoft's built-in Azure SDK clients to construct " + nameof(ServiceBusManagementClient) + " instances which can rotate Azure Service bus keys")]
     public class AzureServiceBusNamespace
     {
         /// <summary>
