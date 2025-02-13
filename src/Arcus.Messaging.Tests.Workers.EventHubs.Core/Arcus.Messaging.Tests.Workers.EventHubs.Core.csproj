@@ -18,7 +18,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Arcus.Messaging.Health\Arcus.Messaging.Health.csproj" />
-    <ProjectReference Include="..\Arcus.Messaging.Pumps.EventHubs\Arcus.Messaging.Pumps.EventHubs.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Workers\Arcus.Messaging.Tests.Workers.csproj" />
   </ItemGroup>
