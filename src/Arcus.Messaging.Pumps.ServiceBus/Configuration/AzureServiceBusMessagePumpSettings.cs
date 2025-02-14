@@ -31,6 +31,51 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <param name="subscriptionName">The name of the subscription to process.</param>
         /// <param name="serviceBusEntity">The entity type of the Azure Service Bus.</param>
         /// <param name="getConnectionStringFromConfigurationFunc">The function to look up the connection string from the configuration.</param>
+        /// <param name="options">The options that influence the behavior of the <see cref="AzureServiceBusMessagePump"/>.</param>
+        /// <param name="serviceProvider">The collection of services to use during the lifetime of the <see cref="AzureServiceBusMessagePump"/>.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when the <paramref name="getConnectionStringFromConfigurationFunc"/>, <paramref name="options"/> or <paramref name="serviceProvider"/> is <c>null</c>.
+        /// </exception>
+        public AzureServiceBusMessagePumpSettings(
+            string entityName,
+            string subscriptionName,
+            ServiceBusEntityType serviceBusEntity,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
+            AzureServiceBusMessagePumpOptions options,
+            IServiceProvider serviceProvider)
+        {
+            if (serviceBusEntity is ServiceBusEntityType.Topic && string.IsNullOrWhiteSpace(subscriptionName))
+            {
+                throw new ArgumentException("Requires a non-blank Azure Service bus topic subscription name", nameof(subscriptionName));
+            }
+
+            if (getConnectionStringFromConfigurationFunc is null)
+            {
+                throw new ArgumentNullException(nameof(getConnectionStringFromConfigurationFunc));
+            }
+
+            if (!Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity) || serviceBusEntity is ServiceBusEntityType.Unknown)
+            {
+                throw new ArgumentException(
+                    $"Azure Service Bus entity type should either be '{ServiceBusEntityType.Queue}' or '{ServiceBusEntityType.Topic}'", nameof(serviceBusEntity));
+            }
+
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _getConnectionStringFromConfigurationFunc = getConnectionStringFromConfigurationFunc;
+
+            EntityName = entityName;
+            SubscriptionName = subscriptionName;
+            ServiceBusEntity = serviceBusEntity;
+            Options = options ?? throw new ArgumentNullException(nameof(options));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpSettings"/> class.
+        /// </summary>
+        /// <param name="entityName">The name of the entity to process.</param>
+        /// <param name="subscriptionName">The name of the subscription to process.</param>
+        /// <param name="serviceBusEntity">The entity type of the Azure Service Bus.</param>
+        /// <param name="getConnectionStringFromConfigurationFunc">The function to look up the connection string from the configuration.</param>
         /// <param name="getConnectionStringFromSecretFunc">Function to look up the connection string from the secret store.</param>
         /// <param name="options">The options that influence the behavior of the <see cref="AzureServiceBusMessagePump"/>.</param>
         /// <param name="serviceProvider">The collection of services to use during the lifetime of the <see cref="AzureServiceBusMessagePump"/>.</param>
@@ -38,6 +83,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="getConnectionStringFromConfigurationFunc"/> nor the <paramref name="getConnectionStringFromSecretFunc"/> is available.
         /// </exception>
+        [Obsolete("Will be removed in v3.0, please use the other constructor without the " + nameof(ISecretProvider))]
         public AzureServiceBusMessagePumpSettings(
             string entityName,
             string subscriptionName,
