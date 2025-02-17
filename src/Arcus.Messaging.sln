@@ -43,8 +43,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Worke
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Workers.EventHubs.Core", "Arcus.Messaging.Tests.Workers.EventHubs.Core\Arcus.Messaging.Tests.Workers.EventHubs.Core.csproj", "{0D6C38A7-B684-43BA-9BCF-1EF4C1A943CD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.AzureFunctions.EventHubs", "Arcus.Messaging.AzureFunctions.EventHubs\Arcus.Messaging.AzureFunctions.EventHubs.csproj", "{619AA74F-CDE4-48F6-B6E4-4B7C191CCB1B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -119,10 +117,6 @@ Global
 		{0D6C38A7-B684-43BA-9BCF-1EF4C1A943CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0D6C38A7-B684-43BA-9BCF-1EF4C1A943CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0D6C38A7-B684-43BA-9BCF-1EF4C1A943CD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{619AA74F-CDE4-48F6-B6E4-4B7C191CCB1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{619AA74F-CDE4-48F6-B6E4-4B7C191CCB1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{619AA74F-CDE4-48F6-B6E4-4B7C191CCB1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{619AA74F-CDE4-48F6-B6E4-4B7C191CCB1B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -142,7 +136,6 @@ Global
 		{05EA4B3A-C619-44BB-88C4-F067FCCF83AA} = {31250C96-0F22-482F-B3D7-127898A28CF3}
 		{F1B24FD4-099E-489D-B45D-A1A992CA5C3A} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
 		{0D6C38A7-B684-43BA-9BCF-1EF4C1A943CD} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
-		{619AA74F-CDE4-48F6-B6E4-4B7C191CCB1B} = {31250C96-0F22-482F-B3D7-127898A28CF3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {066FD85A-3DDE-4615-B550-BF67ACCDAA51}
