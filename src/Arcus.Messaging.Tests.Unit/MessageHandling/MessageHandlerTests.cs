@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
 using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -310,7 +310,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             // Assert
             MessageHandler messageHandler = Assert.Single(messageHandlers);
             Assert.NotNull(messageHandler);
-            
+
             var context = TestMessageContext.Generate();
             Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
         }
@@ -337,7 +337,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             // Assert
             MessageHandler messageHandler = Assert.Single(messageHandlers);
             Assert.NotNull(messageHandler);
-            
+
             var context = TestMessageContext.Generate();
             Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
             Assert.Equal(matchesBody, messageHandler.CanProcessMessageBasedOnMessage(new TestMessage()));
@@ -354,7 +354,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             collection.WithMessageHandler<StubTestMessageHandler<TestMessage, MessageContext>, TestMessage>();
 
             IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
-            
+
             // Act
             IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
 
@@ -411,7 +411,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
 
             var purchase = new Purchase
             {
-                CustomerName = _bogusGenerator.Name.FullName(), 
+                CustomerName = _bogusGenerator.Name.FullName(),
                 Price = _bogusGenerator.Commerce.Price()
             };
             string purchaseJson = JsonConvert.SerializeObject(purchase);
@@ -424,17 +424,17 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             // Assert
             Assert.True(spyHandler.IsProcessed);
         }
-        
+
         [Fact]
         public void WithMultipleMessageHandlers_WithSameMessageType_RegistersBoth()
         {
             // Arrange
             var services = new MessageHandlerCollection(new ServiceCollection());
             services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(message => message.TestProperty == "Some value");
-            
+
             // Act
             services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(message => message.TestProperty == "Some other value");
-            
+
             // Assert
             IServiceProvider provider = services.Services.BuildServiceProvider();
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);

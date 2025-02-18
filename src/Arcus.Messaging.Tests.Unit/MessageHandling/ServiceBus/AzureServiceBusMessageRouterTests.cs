@@ -14,7 +14,7 @@ using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -125,7 +125,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var spyHandler = new StubServiceBusMessageHandler<Order>();
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(serviceProvider => spyHandler)
                       .WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(serviceProvider => ignoredHandler);
-            
+
             // Act
             services.AddServiceBusMessageRouting();
 
@@ -339,7 +339,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var expectedMessage = new TestMessage { TestProperty = "Some value" };
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, OrderGenerator.Generate());
-            
+
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                           messageContextFilter: ctx => ctx != null,
                           messageBodyFilter: body => body != null,
@@ -349,7 +349,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                           messageBodyFilter: body => body is null,
                           implementationFactory: serviceProvider => ignoredHandler2)
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
-                          messageBodySerializer: serializer, 
+                          messageBodySerializer: serializer,
                           messageBodyFilter: body => body.Customer != null,
                           messageContextFilter: ctx => ctx.MessageId.StartsWith("message-id"),
                           implementationFactory: serviceProvider => spyHandler)
@@ -381,11 +381,11 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var services = new ServiceCollection();
             var collection = new ServiceBusMessageHandlerCollection(services);
             collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>();
-            
+
             // Act
             services.AddServiceBusMessageRouting(serviceProvider =>
                 new TestAzureServiceBusMessageRouter(serviceProvider, NullLogger.Instance));
-            
+
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
             Assert.IsType<TestAzureServiceBusMessageRouter>(provider.GetRequiredService<IAzureServiceBusMessageRouter>());
@@ -404,10 +404,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var messageHandlerV2 = new OrderV2AzureServiceBusMessageHandler();
             collection.WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(provider => messageHandlerV1)
                       .WithServiceBusMessageHandler<OrderV2AzureServiceBusMessageHandler, OrderV2>(provider => messageHandlerV2);
-            
+
             // Act
             services.AddServiceBusMessageRouting(options => options.Deserialization.AdditionalMembers = additionalMemberHandling);
-            
+
             // Assert
             IServiceProvider serviceProvider = services.BuildServiceProvider();
             var router = serviceProvider.GetRequiredService<IAzureServiceBusMessageRouter>();
@@ -417,7 +417,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
-            
+
             Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Error, messageHandlerV2.IsProcessed);
             Assert.Equal(additionalMemberHandling is AdditionalMemberHandling.Ignore, messageHandlerV1.IsProcessed);
         }
@@ -431,7 +431,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             var spyOrderV1MessageHandler = new OrderV1AzureServiceBusMessageHandler();
             var spyOrderV2MessageHandler = new OrderV2AzureServiceBusMessageHandler();
-            
+
             collection.WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(messageBodyFilter: order => order.ArticleNumber == "NotExisting")
                       .WithServiceBusMessageHandler<OrderV2AzureServiceBusMessageHandler, OrderV2>(implementationFactory: provider => spyOrderV2MessageHandler)
                       .WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>()
@@ -440,7 +440,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                       .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>();
 
             services.AddServiceBusMessageRouting();
-            
+
             // Assert
             IServiceProvider serviceProvider = services.BuildServiceProvider();
             var router = serviceProvider.GetRequiredService<IAzureServiceBusMessageRouter>();
@@ -452,7 +452,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                           {
                               var orderV1 = OrderGenerator.Generate().AsServiceBusReceivedMessage();
                               var orderV2 = OrderV2Generator.Generate().AsServiceBusReceivedMessage();
-                              return new[] {orderV1, orderV2};
+                              return new[] { orderV1, orderV2 };
                           });
 
             foreach (ServiceBusReceivedMessage message in messages)
@@ -466,7 +466,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                     new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}"),
                     CancellationToken.None);
             }
-            
+
             Assert.Equal(messageCount, spyOrderV1MessageHandler.ProcessedMessages.Length);
             Assert.Equal(messageCount, spyOrderV2MessageHandler.ProcessedMessages.Length);
         }
