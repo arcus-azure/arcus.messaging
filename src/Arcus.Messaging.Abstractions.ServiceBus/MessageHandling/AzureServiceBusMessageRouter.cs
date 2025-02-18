@@ -272,8 +272,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process message in the message pump as no message handler is registered in the dependency container");
                 }
 
-                Encoding encoding = messageContext.GetMessageEncodingProperty(Logger);
-                string messageBody = encoding.GetString(message.Body.ToArray());
+                string messageBody = LoadMessageBody(message, messageContext);
                 bool hasGoneThroughMessageHandler = false;
 
                 foreach (MessageHandler messageHandler in messageHandlers)
@@ -332,6 +331,32 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 }
 
                 return MessageProcessingResult.Failure(message.MessageId, ProcessingInterrupted, "Failed to process message in pump as there was an unexpected critical problem during processing, please see the logs for more information", exception);
+            }
+        }
+
+        private static string LoadMessageBody(ServiceBusReceivedMessage message, AzureServiceBusMessageContext context)
+        {
+            Encoding encoding = DetermineEncoding();
+            string messageBody = encoding.GetString(message.Body.ToArray());
+
+            return messageBody;
+
+            Encoding DetermineEncoding()
+            {
+                Encoding fallbackEncoding = Encoding.UTF8;
+
+                if (context.Properties.TryGetValue(PropertyNames.Encoding, out object encodingNameObj)
+                    && encodingNameObj is string encodingName
+                    && !string.IsNullOrWhiteSpace(encodingName))
+                {
+                    EncodingInfo foundEncoding =
+                        Encoding.GetEncodings()
+                                .FirstOrDefault(e => e.Name.Equals(encodingName, StringComparison.OrdinalIgnoreCase));
+
+                    return foundEncoding?.GetEncoding() ?? fallbackEncoding;
+                }
+
+                return fallbackEncoding;
             }
         }
 
