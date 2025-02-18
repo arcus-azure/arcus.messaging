@@ -435,10 +435,6 @@ public class Startup
                 // this job instance in a multi-instance deployment (default: guid).
                 options.JobId = Guid.NewGuid().ToString();
 
-                // The format of the message correlation used when receiving Azure Service Bus messages.
-                // (default: W3C).
-                options.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
-
                 // The name of the operation used when tracking the request telemetry.
                 // (default: Process)
                 options.Routing.Correlation.OperationName = "Order";
@@ -490,10 +486,6 @@ public class Startup
                 // The unique identifier for this background job to distinguish 
                 // this job instance in a multi-instance deployment (default: guid).
                 options.JobId = Guid.NewGuid().ToString();
-
-                // The format of the message correlation used when receiving Azure Service Bus messages.
-                // (default: W3C).
-                options.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
 
                 // The name of the operation used when tracking the request telemetry.
                 // (default: Process)

@@ -8,6 +8,8 @@ using Arcus.Observability.Correlation;
 using Arcus.Observability.Telemetry.Core;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable S1133 // Disable usage of deprecated functionality until v3.0 is released.
+
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.ServiceBus
 {
@@ -31,6 +33,7 @@ namespace Azure.Messaging.ServiceBus
         ///   For more information on service limits, see
         ///   <see href="https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quotas#messaging-quotas" />.
         /// </exception>
+        [Obsolete("Will be removed in v3.0 as this extension on the Azure Service bus sender is only used in the deprecated 'Hierarchical' correlation format")]
         public static async Task SendMessageAsync(
             this ServiceBusSender sender,
             object messageBody,
@@ -57,6 +60,7 @@ namespace Azure.Messaging.ServiceBus
         ///   For more information on service limits, see
         ///   <see href="https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quotas#messaging-quotas" />.
         /// </exception>
+        [Obsolete("Will be removed in v3.0 as this extension on the Azure Service bus sender is only used in the deprecated 'Hierarchical' correlation format")]
         public static async Task SendMessageAsync(
             this ServiceBusSender sender,
             object messageBody,
@@ -66,6 +70,65 @@ namespace Azure.Messaging.ServiceBus
             CancellationToken cancellationToken = default(CancellationToken))
         {
             await SendMessagesAsync(sender, new[] { messageBody }, correlationInfo, logger, configureOptions, cancellationToken);
+        }
+
+        /// <summary>
+        ///   Sends a message to the associated entity of Service Bus.
+        /// </summary>
+        /// <param name="sender">The Azure Service Bus sender when sending the <paramref name="message"/></param>
+        /// <param name="message">The message to send.</param>
+        /// <param name="correlationInfo">The message correlation instance to enrich the <paramref name="message"/> with.</param>
+        /// <param name="logger">The logger instance to track the Azure Service Bus dependency.</param>
+        /// <param name="cancellationToken">An optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
+        /// <returns>A task to be resolved on when the operation has completed.</returns>
+        /// <exception cref="ServiceBusException">
+        ///   The message exceeds the maximum size allowed, as determined by the Service Bus service.
+        ///   The <see cref="ServiceBusException.Reason" /> will be set to <see cref="ServiceBusFailureReason.MessageSizeExceeded" /> in this case.
+        ///   For more information on service limits, see
+        ///   <see href="https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quotas#messaging-quotas" />.
+        /// </exception>
+        [Obsolete("Will be removed in v3.0 as this extension on the Azure Service bus sender is only used in the deprecated 'Hierarchical' correlation format")]
+        public static async Task SendMessageAsync(
+            this ServiceBusSender sender,
+            ServiceBusMessage message,
+            CorrelationInfo correlationInfo,
+            ILogger logger,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            await SendMessageAsync(sender, message, correlationInfo, logger, configureOptions: null, cancellationToken);
+        }
+
+        /// <summary>
+        ///   Sends a message to the associated entity of Service Bus.
+        /// </summary>
+        /// <param name="sender">The Azure Service Bus sender when sending the <paramref name="message"/></param>
+        /// <param name="message">The message to send.</param>
+        /// <param name="correlationInfo">The message correlation instance to enrich the <paramref name="message"/> with.</param>
+        /// <param name="logger">The logger instance to track the Azure Service Bus dependency.</param>
+        /// <param name="configureOptions">The function to configure additional options to the correlated <paramref name="message"/>.</param>
+        /// <param name="cancellationToken">An optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
+        /// <returns>A task to be resolved on when the operation has completed.</returns>
+        /// <exception cref="ServiceBusException">
+        ///   The message exceeds the maximum size allowed, as determined by the Service Bus service.
+        ///   The <see cref="ServiceBusException.Reason" /> will be set to <see cref="ServiceBusFailureReason.MessageSizeExceeded" /> in this case.
+        ///   For more information on service limits, see
+        ///   <see href="https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quotas#messaging-quotas" />.
+        /// </exception>
+        [Obsolete("Will be removed in v3.0 as this extension on the Azure Service bus sender is only used in the deprecated 'Hierarchical' correlation format")]
+        public static async Task SendMessageAsync(
+            this ServiceBusSender sender,
+            ServiceBusMessage message,
+            CorrelationInfo correlationInfo,
+            ILogger logger,
+            Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
+
+            await SendMessagesAsync(sender, new[] { message }, correlationInfo, logger, configureOptions, cancellationToken);
         }
 
         /// <summary>
@@ -88,6 +151,7 @@ namespace Azure.Messaging.ServiceBus
         ///   For more information on service limits, see
         ///   <see href="https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quotas#messaging-quotas" />.
         /// </exception>
+        [Obsolete("Will be removed in v3.0 as this extension on the Azure Service bus sender is only used in the deprecated 'Hierarchical' correlation format")]
         public static async Task SendMessagesAsync(
             this ServiceBusSender sender,
             IEnumerable<object> messageBodies,
@@ -119,6 +183,7 @@ namespace Azure.Messaging.ServiceBus
         ///   For more information on service limits, see
         ///   <see href="https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quotas#messaging-quotas" />.
         /// </exception>
+        [Obsolete("Will be removed in v3.0 as this extension on the Azure Service bus sender is only used in the deprecated 'Hierarchical' correlation format")]
         public static async Task SendMessagesAsync(
             this ServiceBusSender sender,
             IEnumerable<object> messageBodies,
@@ -137,63 +202,6 @@ namespace Azure.Messaging.ServiceBus
                              .ToArray();
 
             await SendMessagesAsync(sender, messages, correlationInfo, logger, configureOptions, cancellationToken);
-        }
-
-        /// <summary>
-        ///   Sends a message to the associated entity of Service Bus.
-        /// </summary>
-        /// <param name="sender">The Azure Service Bus sender when sending the <paramref name="message"/></param>
-        /// <param name="message">The message to send.</param>
-        /// <param name="correlationInfo">The message correlation instance to enrich the <paramref name="message"/> with.</param>
-        /// <param name="logger">The logger instance to track the Azure Service Bus dependency.</param>
-        /// <param name="cancellationToken">An optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
-        /// <returns>A task to be resolved on when the operation has completed.</returns>
-        /// <exception cref="ServiceBusException">
-        ///   The message exceeds the maximum size allowed, as determined by the Service Bus service.
-        ///   The <see cref="ServiceBusException.Reason" /> will be set to <see cref="ServiceBusFailureReason.MessageSizeExceeded" /> in this case.
-        ///   For more information on service limits, see
-        ///   <see href="https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quotas#messaging-quotas" />.
-        /// </exception>
-        public static async Task SendMessageAsync(
-            this ServiceBusSender sender,
-            ServiceBusMessage message,
-            CorrelationInfo correlationInfo,
-            ILogger logger,
-            CancellationToken cancellationToken = default(CancellationToken))
-        {
-            await SendMessageAsync(sender, message, correlationInfo, logger, configureOptions: null, cancellationToken);
-        }
-
-        /// <summary>
-        ///   Sends a message to the associated entity of Service Bus.
-        /// </summary>
-        /// <param name="sender">The Azure Service Bus sender when sending the <paramref name="message"/></param>
-        /// <param name="message">The message to send.</param>
-        /// <param name="correlationInfo">The message correlation instance to enrich the <paramref name="message"/> with.</param>
-        /// <param name="logger">The logger instance to track the Azure Service Bus dependency.</param>
-        /// <param name="configureOptions">The function to configure additional options to the correlated <paramref name="message"/>.</param>
-        /// <param name="cancellationToken">An optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
-        /// <returns>A task to be resolved on when the operation has completed.</returns>
-        /// <exception cref="ServiceBusException">
-        ///   The message exceeds the maximum size allowed, as determined by the Service Bus service.
-        ///   The <see cref="ServiceBusException.Reason" /> will be set to <see cref="ServiceBusFailureReason.MessageSizeExceeded" /> in this case.
-        ///   For more information on service limits, see
-        ///   <see href="https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quotas#messaging-quotas" />.
-        /// </exception>
-        public static async Task SendMessageAsync(
-            this ServiceBusSender sender,
-            ServiceBusMessage message,
-            CorrelationInfo correlationInfo,
-            ILogger logger,
-            Action<ServiceBusSenderMessageCorrelationOptions> configureOptions,
-            CancellationToken cancellationToken = default(CancellationToken))
-        {
-            if (message is null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-
-            await SendMessagesAsync(sender, new[] { message }, correlationInfo, logger, configureOptions, cancellationToken);
         }
 
         /// <summary>
@@ -216,6 +224,7 @@ namespace Azure.Messaging.ServiceBus
         ///   For more information on service limits, see
         ///   <see href="https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quotas#messaging-quotas" />.
         /// </exception>
+        [Obsolete("Will be removed in v3.0 as this extension on the Azure Service bus sender is only used in the deprecated 'Hierarchical' correlation format")]
         public static async Task SendMessagesAsync(
             this ServiceBusSender sender,
             IEnumerable<ServiceBusMessage> messages,
@@ -247,6 +256,7 @@ namespace Azure.Messaging.ServiceBus
         ///   For more information on service limits, see
         ///   <see href="https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-quotas#messaging-quotas" />.
         /// </exception>
+        [Obsolete("Will be removed in v3.0 as this extension on the Azure Service bus sender is only used in the deprecated 'Hierarchical' correlation format")]
         public static async Task SendMessagesAsync(
             this ServiceBusSender sender,
             IEnumerable<ServiceBusMessage> messages,

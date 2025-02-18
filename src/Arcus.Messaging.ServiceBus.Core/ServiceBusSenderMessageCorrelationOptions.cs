@@ -2,15 +2,19 @@
 using System.Collections.Generic;
 using System.Threading;
 using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Observability.Correlation;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
+
+#pragma warning disable S1133 // Disable usage of deprecated functionality until v3.0 is released.
 
 namespace Arcus.Messaging.ServiceBus.Core
 {
     /// <summary>
     /// Represents the user-configurable options to influence the message correlation tracking behavior of the <see cref="ServiceBusSenderExtensions.SendMessageAsync(ServiceBusSender,ServiceBusMessage,CorrelationInfo,ILogger,Action{ServiceBusSenderMessageCorrelationOptions},CancellationToken)"/> extensions.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 as this options model is only used in the deprecated " + nameof(MessageCorrelationFormat.Hierarchical) + " correlation format")]
     public class ServiceBusSenderMessageCorrelationOptions
     {
         private string _transactionIdPropertyName = PropertyNames.TransactionId;

@@ -7,6 +7,8 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.DependencyInjection;
 
+#pragma warning disable CS0618 // Deprecated functionality will be removed in v3.0.
+
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Azure.Functions.Worker
 {
