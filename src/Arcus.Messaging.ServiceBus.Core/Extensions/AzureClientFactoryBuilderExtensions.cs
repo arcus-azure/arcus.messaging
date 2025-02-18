@@ -29,6 +29,7 @@ namespace Microsoft.Extensions.Azure
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
         /// <exception cref="SecretNotFoundException">Thrown when no Azure EventHubs connection string secret was found in the Arcus secret store.</exception>
+        [Obsolete("Will be removed in v3.0, please use Microsoft's built-in Azure SDK clients to register a " + nameof(ServiceBusClient) + " to remove the " + nameof(ISecretProvider) + " requirement")]
         public static IAzureClientBuilder<ServiceBusClient, ServiceBusClientOptions> AddServiceBusClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName)
@@ -51,6 +52,7 @@ namespace Microsoft.Extensions.Azure
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionStringSecretName"/> is blank.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the Arcus secret store is not registered.</exception>
         /// <exception cref="SecretNotFoundException">Thrown when no Azure EventHubs connection string secret was found in the Arcus secret store.</exception>
+        [Obsolete("Will be removed in v3.0, please use Microsoft's built-in Azure SDK clients to register a " + nameof(ServiceBusClient) + " to remove the " + nameof(ISecretProvider) + " requirement")]
         public static IAzureClientBuilder<ServiceBusClient, ServiceBusClientOptions> AddServiceBusClient(
             this AzureClientFactoryBuilder builder,
             string connectionStringSecretName,
