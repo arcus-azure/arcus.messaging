@@ -4,6 +4,8 @@ using System.Collections.ObjectModel;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -11,14 +13,11 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 
 namespace Arcus.Messaging.Health.Tcp
 {
     /// <summary>
-    /// Representing a TCP listener as a background process to expose an endpoint where the <see cref="HealthReport"/> is being broadcasted.
+    /// Representing a TCP listener as a background process to expose an endpoint where the <see cref="HealthReport"/> is being broadcast.
     /// </summary>
     public class TcpHealthListener : BackgroundService
     {
@@ -27,7 +26,13 @@ namespace Arcus.Messaging.Health.Tcp
         private readonly TcpHealthListenerOptions _tcpListenerOptions;
         private readonly ILogger<TcpHealthListener> _logger;
 
-        private static readonly JsonSerializerSettings SerializationSettings = CreateDefaultSerializerSettings();
+        private static readonly JsonSerializerOptions SerializationOptions = new JsonSerializerOptions
+        {
+            WriteIndented = false,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            Converters = { new JsonStringEnumConverter(allowIntegerValues: false) }
+        };
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
@@ -36,7 +41,7 @@ namespace Arcus.Messaging.Health.Tcp
         /// <param name="tcpListenerOptions">The additional options to configure the TCP listener.</param>
         /// <param name="healthService">The service to retrieve the current health of the application.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/>, <paramref name="tcpListenerOptions"/>, or <paramref name="healthService"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> doesn't have a filled-out value.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> does not have a filled-out value.</exception>
         public TcpHealthListener(
             IConfiguration configuration,
             TcpHealthListenerOptions tcpListenerOptions,
@@ -44,7 +49,7 @@ namespace Arcus.Messaging.Health.Tcp
             : this(configuration, tcpListenerOptions, healthService, NullLogger<TcpHealthListener>.Instance)
         {
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
         /// </summary>
@@ -53,11 +58,11 @@ namespace Arcus.Messaging.Health.Tcp
         /// <param name="healthService">The service to retrieve the current health of the application.</param>
         /// <param name="logger">The logging implementation to write diagnostic messages during the running of the TCP listener.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/>, <paramref name="tcpListenerOptions"/>, <paramref name="healthService"/>, or <paramref name="logger"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> doesn't have a filled-out value.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> does not have a filled-out value.</exception>
         public TcpHealthListener(
             IConfiguration configuration,
             TcpHealthListenerOptions tcpListenerOptions,
-            HealthCheckService healthService, 
+            HealthCheckService healthService,
             ILogger<TcpHealthListener> logger)
         {
             _tcpListenerOptions = tcpListenerOptions ?? throw new ArgumentNullException(nameof(tcpListenerOptions));
@@ -79,31 +84,16 @@ namespace Arcus.Messaging.Health.Tcp
             return tcpPort;
         }
 
-        private static JsonSerializerSettings CreateDefaultSerializerSettings()
-        {
-            var serializingSettings = new JsonSerializerSettings
-            {
-                Formatting = Formatting.None, 
-                NullValueHandling = NullValueHandling.Ignore,
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
-
-            var enumConverter = new StringEnumConverter { AllowIntegerValues = false };
-            serializingSettings.Converters.Add(enumConverter);
-
-            return serializingSettings;
-        }
-
         /// <summary>
         /// Gets the port on which the TCP health server is listening to.
         /// </summary>
         public int Port { get; }
 
         /// <summary>
-        /// Gets the flag indicating whether or not the TCP probe is listening for client connections.
+        /// Gets the flag indicating whether the TCP probe is listening for client connections.
         /// </summary>
         internal bool IsListening => _listener.Active;
-        
+
         /// <summary>
         /// Triggered when the application host is ready to start the service.
         /// </summary>
@@ -126,10 +116,10 @@ namespace Arcus.Messaging.Health.Tcp
 
         /// <summary>
         /// This method is called when the <see cref="T:Microsoft.Extensions.Hosting.IHostedService" /> starts. The implementation should return a task that represents
-        /// the lifetime of the long running operation(s) being performed.
+        /// the lifetime of the long-running operation(s) being performed.
         /// </summary>
         /// <param name="stoppingToken">Triggered when <see cref="M:Microsoft.Extensions.Hosting.IHostedService.StopAsync(System.Threading.CancellationToken)" /> is called.</param>
-        /// <returns>A <see cref="T:System.Threading.Tasks.Task" /> that represents the long running operations.</returns>
+        /// <returns>A <see cref="T:System.Threading.Tasks.Task" /> that represents the long-running operations.</returns>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
@@ -158,7 +148,7 @@ namespace Arcus.Messaging.Health.Tcp
 
                         if (report.Status != HealthStatus.Healthy)
                         {
-                            _logger.LogWarning($"Health probe is reporting '{report.Status}' status");
+                            _logger.LogWarning("Health probe is reporting '{Status}' status", report.Status);
                         }
 
                         byte[] response = SerializeHealthReport(report);
@@ -178,7 +168,7 @@ namespace Arcus.Messaging.Health.Tcp
             if (reportSerializer is null)
             {
                 HealthReport updatedReport = RemoveExceptionDetails(healthReport);
-                string json = JsonConvert.SerializeObject(updatedReport, SerializationSettings);
+                string json = JsonSerializer.Serialize(updatedReport, SerializationOptions);
                 byte[] response = Encoding.UTF8.GetBytes(json);
 
                 return response;
