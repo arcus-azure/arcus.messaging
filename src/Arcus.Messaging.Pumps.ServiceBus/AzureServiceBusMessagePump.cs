@@ -486,9 +486,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
 
             MessageCorrelationInfo correlationInfo =
+#pragma warning disable CS0618 // Type or member is obsolete: will be removed in v3.0, once the 'Hierarchical' correlation format is removed.
                 message.GetCorrelationInfo(
                     Settings.Options.Routing.Correlation?.TransactionIdPropertyName ?? PropertyNames.TransactionId,
                     Settings.Options.Routing.Correlation?.OperationParentIdPropertyName ?? PropertyNames.OperationParentId);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             return MessageCorrelationResult.Create(correlationInfo);
         }
