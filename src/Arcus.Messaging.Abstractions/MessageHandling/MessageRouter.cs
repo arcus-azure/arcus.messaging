@@ -30,7 +30,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             : this(serviceProvider, options, (ILogger) logger)
         {
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
@@ -62,7 +62,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             : this(serviceProvider, new MessageRouterOptions(), NullLogger.Instance)
         {
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
@@ -92,12 +92,12 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// Gets the instance that provides all the registered services in the current application.
         /// </summary>
         protected IServiceProvider ServiceProvider { get; }
-        
+
         /// <summary>
         /// Gets the consumer-configurable options to change the behavior of the router.
         /// </summary>
         protected MessageRouterOptions Options { get; }
-        
+
         /// <summary>
         /// Gets the logger instance that writes diagnostic trace messages during the routing of the messages.
         /// </summary>
@@ -141,13 +141,15 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+#pragma warning disable CS0618 // Type or member is obsolete: will be refactored when moving towards v3.0.
             using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
+#pragma warning restore CS0618 // Type or member is obsolete
             {
                 var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                 accessor?.SetCorrelationInfo(correlationInfo);
 
                 bool isProcessed = await TryProcessMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
-                return isProcessed; 
+                return isProcessed;
             }
         }
 
@@ -186,7 +188,9 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+#pragma warning disable CS0618 // Type or member is obsolete: will be refactored when moving towards v3.0.
             using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
+#pragma warning restore CS0618 // Type or member is obsolete
             {
                 var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                 accessor?.SetCorrelationInfo(correlationInfo);
@@ -226,7 +230,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             if (!isFallbackProcessed)
             {
                 Logger.LogDebug("Message router cannot correctly process the message in the '{MessageContextType}' because none of the registered '{MessageHandlerType}' implementations in the dependency container matches the incoming message type and context. Make sure you call the correct '.With...' extension on the '{ServiceCollectionType}' during the registration of the message pump/router to register a message handler", typeof(TMessageContext).Name, typeof(IMessageHandler<,>).Name, nameof(IServiceCollection));
-            } 
+            }
         }
 
         private async Task<bool> TryProcessMessageAsync<TMessageContext>(
@@ -238,7 +242,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             where TMessageContext : MessageContext
         {
             MessageHandler[] handlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
-            FallbackMessageHandler<string, TMessageContext>[] fallbackHandlers = 
+            FallbackMessageHandler<string, TMessageContext>[] fallbackHandlers =
                 GetAvailableFallbackMessageHandlersByContext<string, TMessageContext>(messageContext);
 
             if (handlers.Length <= 0 && fallbackHandlers.Length <= 0)
@@ -486,7 +490,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 args.ErrorContext.Handled = true;
             };
             jsonSerializer.Error += eventHandler;
-            
+
             try
             {
                 var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
@@ -506,7 +510,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             {
                 jsonSerializer.Error -= eventHandler;
             }
-            
+
             result = null;
             return false;
         }
@@ -514,7 +518,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         private JsonSerializer CreateJsonSerializer()
         {
             var jsonSerializer = new JsonSerializer();
-            
+
             if (Options.Deserialization is null)
             {
                 jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
