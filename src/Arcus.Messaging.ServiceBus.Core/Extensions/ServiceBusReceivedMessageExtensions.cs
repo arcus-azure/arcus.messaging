@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Arcus.Messaging.Abstractions;
 
+#pragma warning disable S1133 // Disable usage of deprecated functionality until v3.0 is released.
+
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.ServiceBus
 {
@@ -61,6 +63,7 @@ namespace Azure.Messaging.ServiceBus
         ///     otherwise both will be generated GUID's.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as the extension on the Azure Service bus message is only used for the deprecated 'Hierarchical' correlation format")]
         public static MessageCorrelationInfo GetCorrelationInfo(this ServiceBusReceivedMessage message)
         {
             return GetCorrelationInfo(message, PropertyNames.TransactionId);
@@ -82,6 +85,7 @@ namespace Azure.Messaging.ServiceBus
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionIdPropertyName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0 as the extension on the Azure Service bus message is only used for the deprecated 'Hierarchical' correlation format")]
         public static MessageCorrelationInfo GetCorrelationInfo(this ServiceBusReceivedMessage message, string transactionIdPropertyName)
         {
             MessageCorrelationInfo messageCorrelationInfo =
@@ -109,6 +113,7 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="transactionIdPropertyName"/> or the <paramref name="operationParentIdPropertyName"/> is blank.
         /// </exception>
+        [Obsolete("Will be removed in v3.0 as the extension on the Azure Service bus message is only used for the deprecated 'Hierarchical' correlation format")]
         public static MessageCorrelationInfo GetCorrelationInfo(
             this ServiceBusReceivedMessage message,
             string transactionIdPropertyName,
@@ -137,6 +142,7 @@ namespace Azure.Messaging.ServiceBus
             return messageCorrelationInfo;
         }
 
+        [Obsolete("Will be removed in v3.0")]
         private static string DetermineTransactionId(ServiceBusReceivedMessage message, string transactionIdPropertyName)
         {
             string transactionId = GetTransactionId(message, transactionIdPropertyName);
@@ -172,6 +178,7 @@ namespace Azure.Messaging.ServiceBus
         ///     The correlation transaction ID for message if an application property could be found with the key <see cref="PropertyNames.TransactionId"/>; <c>null</c> otherwise.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as the extension on the Azure Service bus message is only used for the deprecated 'Hierarchical' correlation format")]
         public static string GetTransactionId(this ServiceBusReceivedMessage message)
         {
             return GetTransactionId(message, PropertyNames.TransactionId);
@@ -191,6 +198,7 @@ namespace Azure.Messaging.ServiceBus
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionIdPropertyName"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0 as the extension on the Azure Service bus message is only used for the deprecated 'Hierarchical' correlation format")]
         public static string GetTransactionId(this ServiceBusReceivedMessage message, string transactionIdPropertyName)
         {
             if (message is null)
