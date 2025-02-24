@@ -7,7 +7,7 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Unit.EventHubs.Fixture;
-using Arcus.Testing.Logging;
+using Arcus.Testing;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using Azure.Messaging.ServiceBus;
@@ -34,12 +34,12 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var logger = new InMemoryLogger();
 
             // Act
-           await spySender.SendAsync(expectedOrders, correlation, logger);
+            await spySender.SendAsync(expectedOrders, correlation, logger);
 
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedEventData(item.First, item.Second, correlation));
         }
 
@@ -59,7 +59,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Assert
             AssertDependencyTelemetry(logger, dependencyId);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedEventDataWithDependencyId(item.First, item.Second, correlation, dependencyId));
         }
 
@@ -79,7 +79,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedEventData(item.First, item.Second, correlation, transactionIdPropertyName: transactionIdPropertyName));
         }
 
@@ -99,7 +99,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedEventData(item.First, item.Second, correlation, operationParentPropertyName: upstreamServicePropertyName));
         }
 
@@ -122,7 +122,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             Assert.Contains(key, logMessage);
             Assert.Contains(value, logMessage);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedEventData(item.First, item.Second, correlation));
         }
 
@@ -143,7 +143,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedEventData(item.First, item.Second, correlation));
         }
 
@@ -165,7 +165,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Assert
             AssertDependencyTelemetry(logger, dependencyId);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedEventDataWithDependencyId(item.First, item.Second, correlation, dependencyId));
         }
 
@@ -187,7 +187,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedEventData(item.First, item.Second, correlation, transactionIdPropertyName: transactionIdPropertyName));
         }
 
@@ -209,7 +209,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             // Assert
             AssertDependencyTelemetry(logger);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedEventData(item.First, item.Second, correlation, operationParentPropertyName: upstreamServicePropertyName));
         }
 
@@ -234,7 +234,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             Assert.Contains(key, logMessage);
             Assert.Contains(value, logMessage);
             Assert.All(
-                spySender.Messages.Zip(expectedOrders), 
+                spySender.Messages.Zip(expectedOrders),
                 item => AssertEnrichedEventData(item.First, item.Second, correlation));
         }
 
@@ -291,7 +291,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             Assert.Equal(correlation.TransactionId, Assert.Contains(transactionIdPropertyName, message.Properties));
             Assert.Equal(dependencyId, Assert.Contains(operationParentIdPropertyName, message.Properties));
         }
-        
+
         [Fact]
         public async Task SendMessagesBodyWithoutOptions_WithoutMessageBody_Fails()
         {
@@ -299,7 +299,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(eventBatch: (IEnumerable<object>) null, correlation, logger));
@@ -312,7 +312,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var order = OrderGenerator.Generate();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(new[] { order }, correlationInfo: null, logger));
@@ -325,7 +325,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var order = OrderGenerator.Generate();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(new[] { order }, correlation, logger: null));
@@ -338,7 +338,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(eventBatch: (IEnumerable<object>) null, correlation, logger, options => { }));
@@ -351,7 +351,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var order = OrderGenerator.Generate();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(new[] { order }, correlationInfo: null, logger, options => { }));
@@ -364,7 +364,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var order = OrderGenerator.Generate();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(new[] { order }, correlation, logger: null, options => { }));
@@ -377,7 +377,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(eventBatch: null, correlation, logger));
@@ -390,7 +390,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(eventBatch: null, correlation, logger, options => { }));
@@ -403,7 +403,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(eventBatch: null, correlation, logger));
@@ -416,7 +416,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(new[] { order }, correlationInfo: null, logger));
@@ -429,7 +429,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(new[] { order }, correlation, logger: null));
@@ -442,7 +442,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(eventBatch: null, correlation, logger, options => { }));
@@ -455,7 +455,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var logger = new InMemoryLogger();
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(new[] { order }, correlationInfo: null, logger, options => { }));
@@ -468,7 +468,7 @@ namespace Arcus.Messaging.Tests.Unit.EventHubs
             var sender = Mock.Of<EventHubProducerClient>();
             var order = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
             var correlation = new MessageCorrelationInfo("operation ID", "transaction ID", "parent ID");
-            
+
             // Act
             await Assert.ThrowsAnyAsync<ArgumentException>(
                 () => sender.SendAsync(new[] { order }, correlation, logger: null, options => { }));
