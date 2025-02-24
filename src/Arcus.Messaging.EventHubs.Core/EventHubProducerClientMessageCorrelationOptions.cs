@@ -7,6 +7,8 @@ using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CS0618 // All EventHubs-functionality will be removed anyway, so ignore deprecated correlation properties.
+
 namespace Arcus.Messaging.EventHubs.Core
 {
     /// <summary>
