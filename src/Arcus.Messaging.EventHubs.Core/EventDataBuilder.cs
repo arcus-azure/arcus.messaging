@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.Json;
 using Arcus.Messaging.Abstractions;
 
+#pragma warning disable CS0618 // All EventHubs-functionality will be removed anyway, so ignore deprecated correlation properties.
+
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.EventHubs
 {
