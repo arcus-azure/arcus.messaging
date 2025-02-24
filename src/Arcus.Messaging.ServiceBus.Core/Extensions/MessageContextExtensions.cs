@@ -17,6 +17,7 @@ namespace Arcus.Messaging.Abstractions
         /// Gets the encoding property value in the messaging context, using UTF-8 as default if no such encoding value can be retrieved.
         /// </summary>
         /// <param name="messageContext">The context of the message.</param>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(PropertyNames.Encoding) + " to extract the encoding yourself from the message context")]
         public static Encoding GetMessageEncodingProperty(this MessageContext messageContext)
         {
             Encoding encoding = GetMessageEncodingProperty(messageContext, NullLogger.Instance);
@@ -28,6 +29,7 @@ namespace Arcus.Messaging.Abstractions
         /// </summary>
         /// <param name="messageContext">The context of the message.</param>
         /// <param name="logger"></param>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(PropertyNames.Encoding) + " to extract the encoding yourself from the message context")]
         public static Encoding GetMessageEncodingProperty(this MessageContext messageContext, ILogger logger)
         {
             if (messageContext is null)
