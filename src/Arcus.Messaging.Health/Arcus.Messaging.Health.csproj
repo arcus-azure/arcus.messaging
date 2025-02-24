@@ -31,7 +31,7 @@
     
     <!-- TODO: will be removed in v3.0 -->
     <PackageReference Include="System.Text.Json" Version="[8.0.5,10.0.0)" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
-    <!-- TODO: will be removed in v3. -->
+    <!-- TODO: will be removed in v3.0 -->
   </ItemGroup>
 
 </Project>
