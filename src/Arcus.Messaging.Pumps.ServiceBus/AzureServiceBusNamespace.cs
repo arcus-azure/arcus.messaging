@@ -6,6 +6,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// <summary>
     /// Represents the namespace of a Azure Service Bus resource; where the Azure Service Bus is located.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 as the pump project will solely focus on providing message routing functionality")]
     public class AzureServiceBusNamespace
     {
         /// <summary>
