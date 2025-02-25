@@ -13,6 +13,7 @@ namespace Microsoft.Extensions.Azure
     /// Extensions on the <see cref="IAzureClientFactoryBuilder"/> to add more easily Azure Service Bus clients with Arcus components.
     /// </summary>
     // ReSharper disable once InconsistentNaming
+    [Obsolete("Will be removed in v3.0, please use Microsoft's built-in Azure SDK clients to register a " + nameof(ServiceBusClient) + " to remove the " + nameof(ISecretProvider) + " requirement")]
     public static class AzureClientFactoryBuilderExtensions
     {
         /// <summary>
