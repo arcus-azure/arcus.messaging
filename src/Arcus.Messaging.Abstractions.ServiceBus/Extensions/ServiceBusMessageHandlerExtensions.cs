@@ -95,7 +95,7 @@ namespace Microsoft.Extensions.DependencyInjection
             handlers.Services.AddTransient(
                 serviceProvider => MessageHandler.Create(
                     implementationFactory(serviceProvider),
-                    serviceProvider.GetService<ILogger<IAzureServiceBusMessageHandler<TMessage>>>(),
+                    serviceProvider.GetService<ILogger<TMessageHandler>>(),
                     handlers.JobId,
                     options.MessageBodyFilter,
                     options.MessageContextFilter,
