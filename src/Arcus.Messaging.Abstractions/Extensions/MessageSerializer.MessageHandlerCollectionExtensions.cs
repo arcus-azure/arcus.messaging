@@ -91,7 +91,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
                 services,
-                messageBodySerializerImplementationFactory: _ => messageBodySerializer, 
+                messageBodySerializerImplementationFactory: _ => messageBodySerializer,
                 messageHandlerImplementationFactory: implementationFactory);
         }
 
@@ -130,7 +130,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
                 services,
-                messageBodySerializerImplementationFactory, 
+                messageBodySerializerImplementationFactory,
                 serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
@@ -188,7 +188,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(messageHandlerImplementationFactory));
             }
 
-            services.AddMessageHandler(messageHandlerImplementationFactory, implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory);
+            services.AddMessageHandler(messageHandlerImplementationFactory, implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory, messageBodyFilter: null, messageContextFilter: null);
             return services;
         }
     }

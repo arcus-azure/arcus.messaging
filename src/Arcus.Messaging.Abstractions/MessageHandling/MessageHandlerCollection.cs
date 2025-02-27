@@ -43,16 +43,16 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="implementationFactory"/> is <c>null</c>.</exception>
         internal void AddMessageHandler<TMessage, TMessageContext>(
             Func<IServiceProvider, IMessageHandler<TMessage, TMessageContext>> implementationFactory,
-            Func<TMessage, bool> messageBodyFilter = null,
-            Func<TMessageContext, bool> messageContextFilter = null,
-            Func<IServiceProvider, IMessageBodySerializer> implementationFactoryMessageBodySerializer = null)
+            Func<TMessage, bool> messageBodyFilter,
+            Func<TMessageContext, bool> messageContextFilter,
+            Func<IServiceProvider, IMessageBodySerializer> implementationFactoryMessageBodySerializer)
             where TMessageContext : MessageContext
         {
             if (implementationFactory is null)
             {
                 throw new ArgumentNullException(nameof(implementationFactory));
             }
-            
+
             Services.AddTransient(
                 serviceProvider => MessageHandler.Create(
                     implementationFactory(serviceProvider),

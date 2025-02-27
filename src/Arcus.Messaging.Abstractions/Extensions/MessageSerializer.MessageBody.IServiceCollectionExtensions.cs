@@ -218,10 +218,11 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             services.AddMessageHandler(
-                messageHandlerImplementationFactory, 
-                messageBodyFilter, 
-                implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory);
-            
+                messageHandlerImplementationFactory,
+                messageBodyFilter,
+                implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory,
+                messageContextFilter: null);
+
             return services;
         }
     }

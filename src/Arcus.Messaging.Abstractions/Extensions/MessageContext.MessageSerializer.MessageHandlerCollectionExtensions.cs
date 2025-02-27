@@ -91,8 +91,8 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
                 services,
-                messageContextFilter, 
-                messageBodySerializerImplementationFactory, 
+                messageContextFilter,
+                messageBodySerializerImplementationFactory,
                 messageHandlerImplementationFactory);
         }
 
@@ -210,10 +210,11 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             services.AddMessageHandler(
-                messageHandlerImplementationFactory, 
-                messageContextFilter: messageContextFilter, 
+                messageHandlerImplementationFactory,
+                messageContextFilter: messageContextFilter,
+                messageBodyFilter: null,
                 implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory);
-            
+
             return services;
         }
     }

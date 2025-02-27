@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -118,7 +117,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(implementationFactory));
             }
 
-            services.AddMessageHandler(implementationFactory, messageBodyFilter, messageContextFilter);
+            services.AddMessageHandler(implementationFactory, messageBodyFilter, messageContextFilter, implementationFactoryMessageBodySerializer: null);
             return services;
         }
     }

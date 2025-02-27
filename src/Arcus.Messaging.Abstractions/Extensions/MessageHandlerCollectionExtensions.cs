@@ -55,7 +55,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="collection">The collection of collection to use in the application.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> is <c>null</c>.</exception>
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(this MessageHandlerCollection collection)
-            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext> 
+            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
             where TMessage : class
             where TMessageContext : MessageContext
         {
@@ -76,7 +76,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this MessageHandlerCollection collection,
             Func<IServiceProvider, TMessageHandler> implementationFactory)
-            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext> 
+            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
             where TMessage : class
             where TMessageContext : MessageContext
         {
@@ -90,7 +90,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(implementationFactory));
             }
 
-            collection.AddMessageHandler(implementationFactory);
+            collection.AddMessageHandler(implementationFactory, messageContextFilter: null, messageBodyFilter: null, implementationFactoryMessageBodySerializer: null);
             return collection;
         }
 
@@ -157,7 +157,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static MessageHandlerCollection WithFallbackMessageHandler<TMessageHandler, TMessageContext>(
             this MessageHandlerCollection collection,
             Func<IServiceProvider, TMessageHandler> createImplementation)
-            where TMessageHandler : IFallbackMessageHandler<string, TMessageContext> 
+            where TMessageHandler : IFallbackMessageHandler<string, TMessageContext>
             where TMessageContext : MessageContext
         {
             if (collection is null)
