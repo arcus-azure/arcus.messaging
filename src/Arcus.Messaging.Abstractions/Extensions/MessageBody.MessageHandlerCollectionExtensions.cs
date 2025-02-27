@@ -20,6 +20,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to use in the application.</param>
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
+
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection services,
             Func<TMessage, bool> messageBodyFilter)
