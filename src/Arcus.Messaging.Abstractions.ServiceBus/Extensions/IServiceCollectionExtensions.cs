@@ -97,7 +97,9 @@ namespace Microsoft.Extensions.DependencyInjection
 
                 return implementationFactory(serviceProvider, options);
             });
+#pragma warning disable CS0618 // Type or member is obsolete: message router will be registered directly in v3.0.
             services.AddMessageRouting(serviceProvider => serviceProvider.GetRequiredService<IAzureServiceBusMessageRouter>());
+#pragma warning restore CS0618 // Type or member is obsolete
 
             return new ServiceBusMessageHandlerCollection(services);
         }

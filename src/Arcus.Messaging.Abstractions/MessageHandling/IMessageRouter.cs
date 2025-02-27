@@ -7,11 +7,12 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// <summary>
     /// Represents how incoming messages can be routed through registered <see cref="IMessageHandler{TMessage}"/> instances.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
     public interface IMessageRouter
     {
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
+        /// and optionally through a registered <see cref="IFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message that was received.</param>
         /// <param name="messageContext">The context providing more information concerning the processing.</param>
@@ -21,6 +22,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         Task RouteMessageAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
