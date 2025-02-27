@@ -91,7 +91,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
                 services,
-                messageBodySerializerImplementationFactory: _ => messageBodySerializer,
+                messageBodySerializerImplementationFactory: _ => messageBodySerializer, 
                 messageHandlerImplementationFactory: implementationFactory);
         }
 
