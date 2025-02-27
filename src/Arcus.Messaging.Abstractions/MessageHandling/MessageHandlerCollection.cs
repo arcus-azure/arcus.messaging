@@ -52,7 +52,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             {
                 throw new ArgumentNullException(nameof(implementationFactory));
             }
-
+            
             Services.AddTransient(
                 serviceProvider => MessageHandler.Create(
                     implementationFactory(serviceProvider),
