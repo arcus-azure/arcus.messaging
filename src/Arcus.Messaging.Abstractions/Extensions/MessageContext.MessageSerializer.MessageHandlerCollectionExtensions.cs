@@ -212,7 +212,6 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddMessageHandler(
                 messageHandlerImplementationFactory,
                 messageContextFilter: messageContextFilter,
-                messageBodyFilter: null,
                 implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory);
 
             return services;
