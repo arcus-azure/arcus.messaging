@@ -25,7 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            return handlers.WithServiceBusMessageHandler<TMessageHandler, TMessage>(configureOptions: null);
+            return WithServiceBusMessageHandler<TMessageHandler, TMessage>(handlers, configureOptions: null);
         }
 
         /// <summary>
@@ -42,13 +42,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            if (handlers is null)
-            {
-                throw new ArgumentNullException(nameof(handlers));
-            }
-
-            handlers.WithServiceBusMessageHandler(provider => ActivatorUtilities.CreateInstance<TMessageHandler>(provider), configureOptions);
-            return handlers;
+            return WithServiceBusMessageHandler(handlers, provider => ActivatorUtilities.CreateInstance<TMessageHandler>(provider), configureOptions);
         }
 
         /// <summary>
@@ -65,7 +59,7 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            return handlers.WithServiceBusMessageHandler<TMessageHandler, TMessage>(implementationFactory, configureOptions: null);
+            return WithServiceBusMessageHandler<TMessageHandler, TMessage>(handlers, implementationFactory, configureOptions: null);
         }
 
         /// <summary>
