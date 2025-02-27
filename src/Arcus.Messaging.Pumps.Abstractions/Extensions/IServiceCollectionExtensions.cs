@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
@@ -26,8 +25,15 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, TMessagePump> implementationFactory)
             where TMessagePump : MessagePump
         {
-            Guard.NotNull(services, nameof(services), "Requires an application services instance to register the custom message pump instance");
-            Guard.NotNull(implementationFactory, nameof(implementationFactory), "Requires a factory implementation function to create the custom message pump instance");
+            if (services is null)
+            {
+                throw new ArgumentNullException(nameof(services));
+            }
+
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
 
             services.TryAddSingleton<IMessagePumpLifetime, DefaultMessagePumpLifetime>();
             services.TryAddSingleton<IMessagePumpCircuitBreaker>(
