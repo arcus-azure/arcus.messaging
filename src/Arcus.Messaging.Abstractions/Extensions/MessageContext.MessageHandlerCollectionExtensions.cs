@@ -104,7 +104,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(implementationFactory));
             }
 
-            services.AddMessageHandler(implementationFactory, messageContextFilter: messageContextFilter, messageBodyFilter: null, implementationFactoryMessageBodySerializer: null);
+            services.AddMessageHandler(implementationFactory, messageContextFilter: messageContextFilter);
             return services;
         }
     }

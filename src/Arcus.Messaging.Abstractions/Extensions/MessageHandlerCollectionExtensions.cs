@@ -90,7 +90,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(implementationFactory));
             }
 
-            collection.AddMessageHandler(implementationFactory, messageContextFilter: null, messageBodyFilter: null, implementationFactoryMessageBodySerializer: null);
+            collection.AddMessageHandler(implementationFactory);
             return collection;
         }
 
