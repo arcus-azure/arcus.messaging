@@ -130,7 +130,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
                 services,
-                messageBodySerializerImplementationFactory,
+                messageBodySerializerImplementationFactory, 
                 serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
