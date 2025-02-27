@@ -213,7 +213,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 messageHandlerImplementationFactory, 
                 messageContextFilter: messageContextFilter, 
                 implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory);
-
+            
             return services;
         }
     }
