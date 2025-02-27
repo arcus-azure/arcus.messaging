@@ -157,7 +157,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static MessageHandlerCollection WithFallbackMessageHandler<TMessageHandler, TMessageContext>(
             this MessageHandlerCollection collection,
             Func<IServiceProvider, TMessageHandler> createImplementation)
-            where TMessageHandler : IFallbackMessageHandler<string, TMessageContext>
+            where TMessageHandler : IFallbackMessageHandler<string, TMessageContext> 
             where TMessageContext : MessageContext
         {
             if (collection is null)
