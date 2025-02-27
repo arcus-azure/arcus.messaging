@@ -27,7 +27,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 
             if (string.IsNullOrWhiteSpace(jobId))
             {
-                throw new ArgumentException("Requires a non-blank unique job ID to identify he message pump", nameof(jobId))
+                throw new ArgumentException("Requires a non-blank unique job ID to identify he message pump", nameof(jobId));
             }
 
             await circuitBreaker.PauseMessageProcessingAsync(jobId, _ => { });
