@@ -76,7 +76,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this MessageHandlerCollection collection,
             Func<IServiceProvider, TMessageHandler> implementationFactory)
-            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
+            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext> 
             where TMessage : class
             where TMessageContext : MessageContext
         {
