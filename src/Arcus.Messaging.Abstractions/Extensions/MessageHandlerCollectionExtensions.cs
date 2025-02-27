@@ -55,7 +55,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="collection">The collection of collection to use in the application.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> is <c>null</c>.</exception>
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(this MessageHandlerCollection collection)
-            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
+            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext> 
             where TMessage : class
             where TMessageContext : MessageContext
         {
