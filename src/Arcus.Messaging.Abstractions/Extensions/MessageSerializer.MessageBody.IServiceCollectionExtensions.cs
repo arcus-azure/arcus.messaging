@@ -221,7 +221,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 messageHandlerImplementationFactory, 
                 messageBodyFilter, 
                 implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory);
-
+            
             return services;
         }
     }
