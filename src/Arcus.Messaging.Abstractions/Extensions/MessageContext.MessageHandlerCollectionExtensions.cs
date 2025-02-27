@@ -70,7 +70,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services, messageContextFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
-        /// <summary>
+         /// <summary>
         /// Adds a <see cref="IMessageHandler{TMessage, TMessageContext}" /> implementation to process the messages from an Azure Service Bus.
         /// resources.
         /// </summary>
