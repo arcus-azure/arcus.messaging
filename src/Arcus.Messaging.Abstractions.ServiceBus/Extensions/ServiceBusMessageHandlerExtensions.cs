@@ -89,6 +89,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(handlers));
             }
 
+            if (implementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(implementationFactory));
+            }
+
             var options = new ServiceBusMessageHandlerOptions<TMessage>();
             configureOptions?.Invoke(options);
 
