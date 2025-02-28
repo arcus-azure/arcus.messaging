@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
@@ -21,8 +20,15 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             this IMessagePumpCircuitBreaker circuitBreaker,
             string jobId)
         {
-            Guard.NotNull(circuitBreaker, nameof(circuitBreaker));
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId));
+            if (circuitBreaker is null)
+            {
+                throw new ArgumentNullException(nameof(circuitBreaker));
+            }
+
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank unique job ID to identify he message pump", nameof(jobId));
+            }
 
             await circuitBreaker.PauseMessageProcessingAsync(jobId, _ => { });
         }
