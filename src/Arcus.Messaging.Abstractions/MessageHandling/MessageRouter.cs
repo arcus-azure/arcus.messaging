@@ -18,6 +18,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// </summary>
     public class MessageRouter : IMessageRouter
     {
+        private readonly JsonSerializerOptions _jsonOptions;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
@@ -85,6 +87,25 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             Options = options ?? new MessageRouterOptions();
             Logger = logger ?? NullLogger<MessageRouter>.Instance;
+
+            _jsonOptions = CreateJsonSerializerOptions(Options.Deserialization, Logger);
+        }
+
+        private static JsonSerializerOptions CreateJsonSerializerOptions(MessageDeserializationOptions deserializationOptions, ILogger logger)
+        {
+            var jsonOptions = new JsonSerializerOptions
+            {
+                UnmappedMemberHandling = deserializationOptions?.AdditionalMembers switch
+                {
+                    null => JsonUnmappedMemberHandling.Disallow,
+                    AdditionalMemberHandling.Error => JsonUnmappedMemberHandling.Disallow,
+                    AdditionalMemberHandling.Ignore => JsonUnmappedMemberHandling.Skip,
+                    _ => JsonUnmappedMemberHandling.Disallow
+                }
+            };
+
+            logger.LogTrace("JSON deserialization uses '{UnmappedMemberHandling}' result when encountering additional members", jsonOptions.UnmappedMemberHandling);
+            return jsonOptions;
         }
 
         /// <summary>
@@ -476,10 +497,9 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
             Logger.LogTrace("Try to JSON deserialize incoming message to message type '{MessageType}'...", messageType.Name);
 
-            JsonSerializerOptions options = CreateJsonSerializerOptions();
             try
             {
-                result = JsonSerializer.Deserialize(message, messageType, options);
+                result = JsonSerializer.Deserialize(message, messageType, _jsonOptions);
                 if (result != null)
                 {
                     Logger.LogTrace("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
@@ -493,23 +513,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
             result = null;
             return false;
-        }
-
-        private JsonSerializerOptions CreateJsonSerializerOptions()
-        {
-            var options = new JsonSerializerOptions
-            {
-                UnmappedMemberHandling = Options.Deserialization?.AdditionalMembers switch
-                {
-                    null => JsonUnmappedMemberHandling.Disallow,
-                    AdditionalMemberHandling.Error => JsonUnmappedMemberHandling.Disallow,
-                    AdditionalMemberHandling.Ignore => JsonUnmappedMemberHandling.Skip,
-                    _ => JsonUnmappedMemberHandling.Disallow
-                }
-            };
-
-            Logger.LogTrace("JSON deserialization uses '{UnmappedMemberHandling}' result when encountering additional members", options.UnmappedMemberHandling);
-            return options;
         }
     }
 }
