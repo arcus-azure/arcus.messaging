@@ -20,6 +20,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to use in the application.</param>
         /// <param name="messageContextFilter">The function that determines if the message handler should handle the message based on the context.</param>
         /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> that deserializes the incoming message for the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</param>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection services,
             Func<MessageContext, bool> messageContextFilter,
@@ -39,6 +40,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to use in the application.</param>
         /// <param name="messageContextFilter">The function that determines if the message handler should handle the message based on the context.</param>
         /// <param name="messageBodySerializerImplementationFactory">The custom <see cref="IMessageBodySerializer"/> that deserializes the incoming message for the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</param>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection services,
             Func<MessageContext, bool> messageContextFilter,
@@ -59,6 +61,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageContextFilter">The function that determines if the message handler should handle the message based on the context.</param>
         /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> that deserializes the incoming message for the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</param>
         /// <param name="messageHandlerImplementationFactory">The function that creates the service.</param>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection services,
             Func<MessageContext, bool> messageContextFilter,
@@ -81,6 +84,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageContextFilter">The function that determines if the message handler should handle the message based on the context.</param>
         /// <param name="messageBodySerializerImplementationFactory">The custom <see cref="IMessageBodySerializer"/> that deserializes the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
         /// <param name="messageHandlerImplementationFactory">The function that creates the service.</param>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection services,
             Func<MessageContext, bool> messageContextFilter,
@@ -91,8 +95,8 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
                 services,
-                messageContextFilter, 
-                messageBodySerializerImplementationFactory, 
+                messageContextFilter,
+                messageBodySerializerImplementationFactory,
                 messageHandlerImplementationFactory);
         }
 
@@ -210,10 +214,10 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             services.AddMessageHandler(
-                messageHandlerImplementationFactory, 
-                messageContextFilter: messageContextFilter, 
+                messageHandlerImplementationFactory,
+                messageContextFilter: messageContextFilter,
                 implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory);
-            
+
             return services;
         }
     }

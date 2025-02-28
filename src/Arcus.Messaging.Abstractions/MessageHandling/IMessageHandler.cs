@@ -31,6 +31,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// Represents a handler for a specific <typeparamref name="TMessage"/> in a <see cref="MessageContext"/>
     /// during the processing of the message pump or router.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
     public interface IMessageHandler<in TMessage> : IMessageHandler<TMessage, MessageContext>
     {
     }
