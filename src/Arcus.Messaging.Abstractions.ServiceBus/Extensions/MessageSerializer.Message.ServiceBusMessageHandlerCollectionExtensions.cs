@@ -22,6 +22,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <see cref="IAzureServiceBusMessageHandler{TMessage}"/>.</param>
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/>, <paramref name="messageBodySerializer"/>, or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             IMessageBodySerializer messageBodySerializer,
@@ -49,6 +50,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
         /// <param name="implementationFactory">The function that creates the message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/>, <paramref name="messageBodySerializer"/>, <paramref name="messageBodyFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<TMessage, bool> messageBodyFilter,
@@ -76,6 +78,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBodySerializerImplementationFactory">The function to create the custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <see cref="IAzureServiceBusMessageHandler{TMessage}"/>.</param>
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/>, <paramref name="messageBodySerializerImplementationFactory"/>, or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<IServiceProvider, IMessageBodySerializer> messageBodySerializerImplementationFactory,
@@ -103,6 +106,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
         /// <param name="messageHandlerImplementationFactory">The function that creates the message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/>, <paramref name="messageBodySerializerImplementationFactory"/>, <paramref name="messageBodyFilter"/>, or <paramref name="messageHandlerImplementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<TMessage, bool> messageBodyFilter,

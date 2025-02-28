@@ -60,7 +60,7 @@ Once the message handler is created, you can very easily register it:
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 
-public class Startup
+public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
@@ -113,12 +113,15 @@ We would like that this handler only processed the message when the context cont
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 
-public class Startup
+public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddServiceBusTopicMessagePump(...)
-                .WithServiceBusMessageHandler<OrderMessageHandler, Order>(context => context.Properties["MessageType"].ToString() == "Order");
+                .WithServiceBusMessageHandler<OrderMessageHandler, Order>(options =>
+                {
+                    options.AddMessageContextFilter(context => context.Properties["MessageType"].ToString() == "Order"));
+                });
     }
 }
 ```
@@ -156,20 +159,22 @@ The registration of these message body serializers can be done just as easily as
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 
-public class Startup
+public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        // Register the message body serializer in the dependency container where the dependent services will be injected.
         services.AddServiceBusTopicMessagePump(...)
-                .WitServiceBusMessageHandler<OrderBatchMessageHandler>(..., messageBodySerializer: new OrderBatchMessageBodySerializer());
-
-        // Register the message body serializer  in the dependency container where the dependent services are manually injected.
-        services.AddServiceBusTopicMessagePump(...)
-                .WithServiceBusMessageHandler(..., messageBodySerializerImplementationFactory: serviceProvider => 
+                .WitServiceBusMessageHandler<OrderBatchMessageHandler>(options =>
                 {
-                    var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
-                    return new OrderBatchMessageHandler(logger);
+                    // Option #1
+                    options.AddMessageBodySerializer(new OrderBatchMessageBodySerializer());
+
+                    // Option #2
+                    options.AddMessageBodySerializer(serviceProvider => 
+                    {
+                        var logger = serviceProvider.GetService<ILogger<OrderBatchMessageHandler>>();
+                        return new OrderBatchMessageHandler(logger);
+                    });
                 });
     }
 }
@@ -209,12 +214,15 @@ public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
 using Microsoft.Extensions.DependencyInjection;
 
 // Message handler registration
-public class Startup
+public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddServiceBusTopicMessagePump(...)
-                .WithServiceMessageHandler<OrderMessageHandler, Order>((Order order) => order.Type == Department.Sales);
+                .WithServiceMessageHandler<OrderMessageHandler, Order>(options =>
+                {
+                    options.AddMessageBodyFilter((Order order) => order.Type == Department.Sales));
+        });
     }
 }
 ```

@@ -9,7 +9,9 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
     /// <summary>
     /// Represents an <see cref="IMessageRouter"/> that can route Azure EventHubs <see cref="EventData"/>s.
     /// </summary>
+#pragma warning disable CS0618 // Type or member is obsolete: EventHubs-related projects will be removed anyway.
     public interface IAzureEventHubsMessageRouter : IMessageRouter
+#pragma warning restore CS0618 // Type or member is obsolete
     {
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureEventHubsMessageHandler{TMessage}"/>s

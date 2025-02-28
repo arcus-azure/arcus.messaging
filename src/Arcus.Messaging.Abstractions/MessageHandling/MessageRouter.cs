@@ -16,7 +16,9 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// <summary>
     /// Represents how incoming messages gets routed through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.
     /// </summary>
+#pragma warning disable CS0618 // Type or member is obsolete: deprecated interface will be removed in v3.0.
     public class MessageRouter : IMessageRouter
+#pragma warning restore CS0618 // Type or member is obsolete
     {
         private readonly JsonSerializerOptions _jsonOptions;
 
@@ -27,6 +29,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         public MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger<MessageRouter> logger)
             : this(serviceProvider, options, (ILogger) logger)
         {
@@ -38,6 +41,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         public MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options)
             : this(serviceProvider, options, NullLogger.Instance)
         {
@@ -49,6 +53,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         public MessageRouter(IServiceProvider serviceProvider, ILogger<MessageRouter> logger)
             : this(serviceProvider, new MessageRouterOptions(), (ILogger) logger)
         {
@@ -59,6 +64,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         public MessageRouter(IServiceProvider serviceProvider)
             : this(serviceProvider, new MessageRouterOptions(), NullLogger.Instance)
         {
@@ -70,6 +76,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         protected MessageRouter(IServiceProvider serviceProvider, ILogger logger)
             : this(serviceProvider, new MessageRouterOptions(), logger)
         {
@@ -138,6 +145,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <returns>
         ///     [true] if the router was able to process the message through one of the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s; [false] otherwise.
         /// </returns>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         protected async Task<bool> RouteMessageWithoutFallbackAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -183,6 +191,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         public virtual async Task RouteMessageAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -228,6 +237,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         protected async Task RouteMessageAsync<TMessageContext>(
             IServiceProvider serviceProvider,
             string message,
@@ -381,6 +391,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <returns>
         ///     [true] if the received <paramref name="message"/> was handled by the registered <see cref="IFallbackMessageHandler"/>; [false] otherwise.
         /// </returns>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         protected async Task<bool> TryFallbackProcessMessageAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -496,7 +507,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             Logger.LogTrace("Try to JSON deserialize incoming message to message type '{MessageType}'...", messageType.Name);
-
             try
             {
                 result = JsonSerializer.Deserialize(message, messageType, _jsonOptions);
