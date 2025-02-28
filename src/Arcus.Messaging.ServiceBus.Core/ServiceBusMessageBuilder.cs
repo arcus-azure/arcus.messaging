@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using Newtonsoft.Json;
 
 #pragma warning disable S1133 // Disable usage of deprecated functionality until v3.0 is released.
 
@@ -154,7 +154,7 @@ namespace Azure.Messaging.ServiceBus
         /// </summary>
         public ServiceBusMessage Build()
         {
-            string json = JsonConvert.SerializeObject(_messageBody);
+            string json = JsonSerializer.Serialize(_messageBody);
             byte[] raw = _encoding.GetBytes(json);
             var message = new ServiceBusMessage(raw)
             {

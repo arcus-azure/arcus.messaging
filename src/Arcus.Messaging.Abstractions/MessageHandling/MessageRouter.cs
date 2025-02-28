@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 using Serilog.Context;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
@@ -21,6 +20,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     public class MessageRouter : IMessageRouter
 #pragma warning restore CS0618 // Type or member is obsolete
     {
+        private readonly JsonSerializerOptions _jsonOptions;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
@@ -93,6 +94,25 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             Options = options ?? new MessageRouterOptions();
             Logger = logger ?? NullLogger<MessageRouter>.Instance;
+
+            _jsonOptions = CreateJsonSerializerOptions(Options.Deserialization, Logger);
+        }
+
+        private static JsonSerializerOptions CreateJsonSerializerOptions(MessageDeserializationOptions deserializationOptions, ILogger logger)
+        {
+            var jsonOptions = new JsonSerializerOptions
+            {
+                UnmappedMemberHandling = deserializationOptions?.AdditionalMembers switch
+                {
+                    null => JsonUnmappedMemberHandling.Disallow,
+                    AdditionalMemberHandling.Error => JsonUnmappedMemberHandling.Disallow,
+                    AdditionalMemberHandling.Ignore => JsonUnmappedMemberHandling.Skip,
+                    _ => JsonUnmappedMemberHandling.Disallow
+                }
+            };
+
+            logger.LogTrace("JSON deserialization uses '{UnmappedMemberHandling}' result when encountering additional members", jsonOptions.UnmappedMemberHandling);
+            return jsonOptions;
         }
 
         /// <summary>
@@ -487,67 +507,22 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             Logger.LogTrace("Try to JSON deserialize incoming message to message type '{MessageType}'...", messageType.Name);
-
-            var success = true;
-            JsonSerializer jsonSerializer = CreateJsonSerializer();
-            EventHandler<ErrorEventArgs> eventHandler = (sender, args) =>
-            {
-                success = false;
-                Logger.LogTrace(args.ErrorContext.Error, "Incoming message failed to be JSON deserialized to message type '{MessageType}' at {Path}", messageType.Name, args.ErrorContext.Path);
-                args.ErrorContext.Handled = true;
-            };
-            jsonSerializer.Error += eventHandler;
-
             try
             {
-                var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
-                if (success)
+                result = JsonSerializer.Deserialize(message, messageType, _jsonOptions);
+                if (result != null)
                 {
                     Logger.LogTrace("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
-
-                    result = value;
                     return true;
                 }
             }
-            catch (Exception exception)
+            catch (JsonException exception)
             {
-                Logger.LogError(exception, "Incoming message failed to be JSON deserialized to message type '{MessageType}' due to an exception", messageType.Name);
-            }
-            finally
-            {
-                jsonSerializer.Error -= eventHandler;
+                Logger.LogTrace(exception, "Incoming message failed to be JSON deserialized to message type '{MessageType}' due to an exception", messageType.Name);
             }
 
             result = null;
             return false;
-        }
-
-        private JsonSerializer CreateJsonSerializer()
-        {
-            var jsonSerializer = new JsonSerializer();
-
-            if (Options.Deserialization is null)
-            {
-                jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
-            }
-            else
-            {
-                switch (Options.Deserialization.AdditionalMembers)
-                {
-                    case AdditionalMemberHandling.Error:
-                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
-                        break;
-                    case AdditionalMemberHandling.Ignore:
-                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Ignore;
-                        break;
-                    default:
-                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
-                        break;
-                }
-            }
-
-            Logger.LogTrace($"JSON deserialization uses '{jsonSerializer.MissingMemberHandling}' result when encountering additional members");
-            return jsonSerializer;
         }
     }
 }
