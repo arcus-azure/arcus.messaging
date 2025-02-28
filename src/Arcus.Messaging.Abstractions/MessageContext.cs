@@ -15,6 +15,7 @@ namespace Arcus.Messaging.Abstractions
         /// <param name="properties">The contextual properties provided on the message.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="messageId"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="properties"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only job-linked message contexts are supported from now on")]
         public MessageContext(string messageId, IDictionary<string, object> properties)
         {
             if (string.IsNullOrWhiteSpace(messageId))
