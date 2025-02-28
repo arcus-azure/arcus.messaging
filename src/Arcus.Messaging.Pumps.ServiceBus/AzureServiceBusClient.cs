@@ -9,7 +9,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// <summary>
     /// Represents a client to interact with a Azure Service Bus.
     /// </summary>
-    [Obsolete("Will be removed in v3.0 as the pump project will solely focus on providing message routing functionality")]
+    [Obsolete("Will be removed in v3.0, please use Microsoft's built-in Azure SDK clients to construct " + nameof(ServiceBusManagementClient) + " instances which can rotate Azure Service bus keys")]
     public class AzureServiceBusClient
     {
         private readonly IAzureServiceBusManagementAuthentication _authentication;
