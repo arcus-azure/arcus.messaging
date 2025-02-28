@@ -19,9 +19,8 @@
     <PackageReference Include="Azure.ResourceManager.EventHubs" Version="1.1.0" />
     <PackageReference Include="Azure.ResourceManager.ServiceBus" Version="1.0.1" />
     <PackageReference Include="Microsoft.Azure.ApplicationInsights.Query" Version="1.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
     <PackageReference Include="Serilog" Version="2.11.0" />

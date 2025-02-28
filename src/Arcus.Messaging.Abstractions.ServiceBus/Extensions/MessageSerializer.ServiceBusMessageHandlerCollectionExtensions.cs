@@ -21,6 +21,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="handlers">The collection of handlers to use in the application.</param>
         /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <see cref="IAzureServiceBusMessageHandler{TMessage}"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/>, <paramref name="messageBodySerializer"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             IMessageBodySerializer messageBodySerializer)
@@ -45,6 +46,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="handlers">The collection of handlers to use in the application.</param>
         /// <param name="messageBodySerializerImplementationFactory">The function to create the custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <see cref="IAzureServiceBusMessageHandler{TMessage}"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/>, <paramref name="messageBodySerializerImplementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<IServiceProvider, IMessageBodySerializer> messageBodySerializerImplementationFactory)
@@ -70,6 +72,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <see cref="IAzureServiceBusMessageHandler{TMessage}"/>.</param>
         /// <param name="implementationFactory">The function that creates the message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/>, <paramref name="implementationFactory"/>, <paramref name="messageBodySerializer"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             IMessageBodySerializer messageBodySerializer,
@@ -96,6 +99,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBodySerializerImplementationFactory">The function to create the custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <see cref="IAzureServiceBusMessageHandler{TMessage}"/>.</param>
         /// <param name="messageHandlerImplementationFactory">The function that creates the message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/>, <paramref name="messageBodySerializerImplementationFactory"/>, or <paramref name="messageHandlerImplementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<IServiceProvider, IMessageBodySerializer> messageBodySerializerImplementationFactory,

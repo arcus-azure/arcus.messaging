@@ -1,4 +1,4 @@
-# Migrate from v0.x to v1.0
+# Migration guide towards v1.0
 Starting from v1.0, there are some major breaking changes. To make it easier for you migrate towards this new version, we have assembled a migration guide to help you in the process.
 
 ## New Azure SDK

@@ -20,6 +20,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="handlers">The collection of handlers to use in the application.</param>
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<TMessage, bool> messageBodyFilter)
@@ -45,6 +46,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
         /// <param name="implementationFactory">The function that creates the message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/>, <paramref name="messageBodyFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<TMessage, bool> messageBodyFilter,

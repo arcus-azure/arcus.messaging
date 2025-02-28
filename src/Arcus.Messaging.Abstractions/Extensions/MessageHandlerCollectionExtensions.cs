@@ -19,6 +19,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
         /// <param name="collection">The collection of collection to use in the application.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(this MessageHandlerCollection collection)
             where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
             where TMessage : class
@@ -36,6 +37,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="collection">The collection of collection to use in the application.</param>
         /// <param name="implementationFactory">The function that creates the service.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection collection,
             Func<IServiceProvider, TMessageHandler> implementationFactory)
@@ -55,7 +57,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="collection">The collection of collection to use in the application.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> is <c>null</c>.</exception>
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(this MessageHandlerCollection collection)
-            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext> 
+            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
             where TMessage : class
             where TMessageContext : MessageContext
         {
@@ -76,7 +78,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this MessageHandlerCollection collection,
             Func<IServiceProvider, TMessageHandler> implementationFactory)
-            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext> 
+            where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
             where TMessage : class
             where TMessageContext : MessageContext
         {
@@ -157,7 +159,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static MessageHandlerCollection WithFallbackMessageHandler<TMessageHandler, TMessageContext>(
             this MessageHandlerCollection collection,
             Func<IServiceProvider, TMessageHandler> createImplementation)
-            where TMessageHandler : IFallbackMessageHandler<string, TMessageContext> 
+            where TMessageHandler : IFallbackMessageHandler<string, TMessageContext>
             where TMessageContext : MessageContext
         {
             if (collection is null)

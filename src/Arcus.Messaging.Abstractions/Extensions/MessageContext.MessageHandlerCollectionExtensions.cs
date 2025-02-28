@@ -20,6 +20,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to use in the application.</param>
         /// <param name="messageContextFilter">The function that determines if the message handler should handle the message based on the context.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="messageContextFilter"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection services,
             Func<MessageContext, bool> messageContextFilter)
@@ -39,6 +40,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageContextFilter">The function that determines if the message handler should handle the message based on the context.</param>
         /// <param name="implementationFactory">The function that creates the service.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/>, <paramref name="messageContextFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection services,
             Func<MessageContext, bool> messageContextFilter,
@@ -70,7 +72,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 services, messageContextFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
         }
 
-         /// <summary>
+        /// <summary>
         /// Adds a <see cref="IMessageHandler{TMessage, TMessageContext}" /> implementation to process the messages from an Azure Service Bus.
         /// resources.
         /// </summary>
