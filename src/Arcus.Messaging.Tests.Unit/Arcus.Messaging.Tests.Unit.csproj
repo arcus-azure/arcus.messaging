@@ -7,8 +7,8 @@
 
   <ItemGroup>
     <PackageReference Include="Arcus.Security.Core" Version="2.0.0" />
-    <PackageReference Include="Arcus.Testing.Security.Providers.InMemory" Version="0.5.0" />
-    <PackageReference Include="Arcus.Testing.Logging" Version="0.5.0" />
+    <PackageReference Include="Arcus.Testing.Security.Providers.InMemory" Version="1.2.0" />
+    <PackageReference Include="Arcus.Testing.Logging.Xunit" Version="1.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
     <PackageReference Include="Moq" Version="4.13.1" />
     <PackageReference Include="Serilog" Version="2.10.0" />
@@ -18,8 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Arcus.Messaging.AzureFunctions.EventHubs\Arcus.Messaging.AzureFunctions.EventHubs.csproj" />
-    <ProjectReference Include="..\Arcus.Messaging.AzureFunctions.ServiceBus\Arcus.Messaging.AzureFunctions.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Pumps.EventHubs\Arcus.Messaging.Pumps.EventHubs.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj" />

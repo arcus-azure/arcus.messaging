@@ -89,7 +89,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="logger">The logger instance to write diagnostic messages during the message handler interaction.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageHandler"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        internal static MessageHandler Create<TMessage, TMessageContext>(
+        public static MessageHandler Create<TMessage, TMessageContext>(
             IMessageHandler<TMessage, TMessageContext> messageHandler,
             ILogger logger,
             string jobId,

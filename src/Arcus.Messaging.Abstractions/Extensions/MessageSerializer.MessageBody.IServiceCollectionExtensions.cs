@@ -21,6 +21,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
         /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection services,
             IMessageBodySerializer messageBodySerializer,
@@ -41,6 +42,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
         /// <param name="messageBodySerializerImplementationFactory">The function to create an custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection services,
             Func<IServiceProvider, IMessageBodySerializer> messageBodySerializerImplementationFactory,
@@ -108,6 +110,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="implementationFactory">The function that creates the service.</param>
         /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/>, <paramref name="messageBodyFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection services,
             IMessageBodySerializer messageBodySerializer,
@@ -131,6 +134,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageHandlerImplementationFactory">The function that creates the service.</param>
         /// <param name="messageBodySerializerImplementationFactory">The function to create an custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/>, <paramref name="messageBodyFilter"/>, or <paramref name="messageHandlerImplementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
             this MessageHandlerCollection services,
             Func<IServiceProvider, IMessageBodySerializer> messageBodySerializerImplementationFactory,
@@ -218,10 +222,10 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             services.AddMessageHandler(
-                messageHandlerImplementationFactory, 
-                messageBodyFilter, 
+                messageHandlerImplementationFactory,
+                messageBodyFilter,
                 implementationFactoryMessageBodySerializer: messageBodySerializerImplementationFactory);
-            
+
             return services;
         }
     }
