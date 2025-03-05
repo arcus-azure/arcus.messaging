@@ -28,7 +28,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="[8.0.13,10.0.0)" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    
+    <!-- TODO: will be removed in v3.0 -->
+    <PackageReference Include="System.Text.Json" Version="8.*" Condition="'$(TargetFramework)' != 'net8.0'" />
+    <!-- TODO: will be removed in v3.0 -->
   </ItemGroup>
 
 </Project>
