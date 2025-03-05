@@ -7,7 +7,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// <summary>
     /// Represents the contract on how to authenticate with the Azure Service Bus.
     /// </summary>
-    [Obsolete("Will be removed in v3.0 as the pump project will solely focus on providing message routing functionality")]
+    [Obsolete("Will be removed in v3.0, please use Microsoft's built-in Azure SDK clients to construct " + nameof(ServiceBusManagementClient) + " instances")]
     public interface IAzureServiceBusManagementAuthentication
     {
         /// <summary>
