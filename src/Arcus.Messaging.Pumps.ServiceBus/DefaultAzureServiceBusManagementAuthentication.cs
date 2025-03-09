@@ -11,6 +11,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// <summary>
     /// Represents the authentication with the Azure Service Bus.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 as the pump project will solely focus on providing message routing functionality")]
     public class DefaultAzureServiceBusManagementAuthentication : IAzureServiceBusManagementAuthentication
     {
         private readonly string _clientId, _clientSecretKey, _subscriptionId, _tenantId;

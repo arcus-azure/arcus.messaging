@@ -22,6 +22,7 @@ namespace Azure.Messaging.ServiceBus
         /// <exception cref="ArgumentException">Thrown when the <paramref name="key"/> is blank.</exception>
         /// <exception cref="KeyNotFoundException">Thrown when there's no application property for the provided <paramref name="key"/>.</exception>
         /// <exception cref="InvalidCastException">Thrown when the application property's value cannot be cast to the provided <typeparamref name="TProperty"/> type.</exception>
+        [Obsolete("Will be removed in v3.0 as the extension is not providing enough added-value")]
         public static TProperty GetApplicationProperty<TProperty>(this ServiceBusReceivedMessage message, string key)
         {
             if (message is null)

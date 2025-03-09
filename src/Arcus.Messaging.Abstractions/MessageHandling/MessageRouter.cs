@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 using Serilog.Context;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
@@ -17,8 +16,12 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// <summary>
     /// Represents how incoming messages gets routed through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.
     /// </summary>
+#pragma warning disable CS0618 // Type or member is obsolete: deprecated interface will be removed in v3.0.
     public class MessageRouter : IMessageRouter
+#pragma warning restore CS0618 // Type or member is obsolete
     {
+        private readonly JsonSerializerOptions _jsonOptions;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
@@ -26,17 +29,19 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         public MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger<MessageRouter> logger)
             : this(serviceProvider, options, (ILogger) logger)
         {
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         public MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options)
             : this(serviceProvider, options, NullLogger.Instance)
         {
@@ -48,6 +53,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         public MessageRouter(IServiceProvider serviceProvider, ILogger<MessageRouter> logger)
             : this(serviceProvider, new MessageRouterOptions(), (ILogger) logger)
         {
@@ -58,17 +64,19 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         public MessageRouter(IServiceProvider serviceProvider)
             : this(serviceProvider, new MessageRouterOptions(), NullLogger.Instance)
         {
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         protected MessageRouter(IServiceProvider serviceProvider, ILogger logger)
             : this(serviceProvider, new MessageRouterOptions(), logger)
         {
@@ -86,18 +94,37 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             Options = options ?? new MessageRouterOptions();
             Logger = logger ?? NullLogger<MessageRouter>.Instance;
+
+            _jsonOptions = CreateJsonSerializerOptions(Options.Deserialization, Logger);
+        }
+
+        private static JsonSerializerOptions CreateJsonSerializerOptions(MessageDeserializationOptions deserializationOptions, ILogger logger)
+        {
+            var jsonOptions = new JsonSerializerOptions
+            {
+                UnmappedMemberHandling = deserializationOptions?.AdditionalMembers switch
+                {
+                    null => JsonUnmappedMemberHandling.Disallow,
+                    AdditionalMemberHandling.Error => JsonUnmappedMemberHandling.Disallow,
+                    AdditionalMemberHandling.Ignore => JsonUnmappedMemberHandling.Skip,
+                    _ => JsonUnmappedMemberHandling.Disallow
+                }
+            };
+
+            logger.LogTrace("JSON deserialization uses '{UnmappedMemberHandling}' result when encountering additional members", jsonOptions.UnmappedMemberHandling);
+            return jsonOptions;
         }
 
         /// <summary>
         /// Gets the instance that provides all the registered services in the current application.
         /// </summary>
         protected IServiceProvider ServiceProvider { get; }
-        
+
         /// <summary>
         /// Gets the consumer-configurable options to change the behavior of the router.
         /// </summary>
         protected MessageRouterOptions Options { get; }
-        
+
         /// <summary>
         /// Gets the logger instance that writes diagnostic trace messages during the routing of the messages.
         /// </summary>
@@ -118,6 +145,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <returns>
         ///     [true] if the router was able to process the message through one of the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s; [false] otherwise.
         /// </returns>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         protected async Task<bool> RouteMessageWithoutFallbackAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -147,7 +175,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 accessor?.SetCorrelationInfo(correlationInfo);
 
                 bool isProcessed = await TryProcessMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
-                return isProcessed; 
+                return isProcessed;
             }
         }
 
@@ -163,6 +191,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         public virtual async Task RouteMessageAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -208,6 +237,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         protected async Task RouteMessageAsync<TMessageContext>(
             IServiceProvider serviceProvider,
             string message,
@@ -226,7 +256,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             if (!isFallbackProcessed)
             {
                 Logger.LogDebug("Message router cannot correctly process the message in the '{MessageContextType}' because none of the registered '{MessageHandlerType}' implementations in the dependency container matches the incoming message type and context. Make sure you call the correct '.With...' extension on the '{ServiceCollectionType}' during the registration of the message pump/router to register a message handler", typeof(TMessageContext).Name, typeof(IMessageHandler<,>).Name, nameof(IServiceCollection));
-            } 
+            }
         }
 
         private async Task<bool> TryProcessMessageAsync<TMessageContext>(
@@ -238,7 +268,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             where TMessageContext : MessageContext
         {
             MessageHandler[] handlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
-            FallbackMessageHandler<string, TMessageContext>[] fallbackHandlers = 
+            FallbackMessageHandler<string, TMessageContext>[] fallbackHandlers =
                 GetAvailableFallbackMessageHandlersByContext<string, TMessageContext>(messageContext);
 
             if (handlers.Length <= 0 && fallbackHandlers.Length <= 0)
@@ -361,6 +391,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <returns>
         ///     [true] if the received <paramref name="message"/> was handled by the registered <see cref="IFallbackMessageHandler"/>; [false] otherwise.
         /// </returns>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         protected async Task<bool> TryFallbackProcessMessageAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -476,67 +507,22 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             Logger.LogTrace("Try to JSON deserialize incoming message to message type '{MessageType}'...", messageType.Name);
-
-            var success = true;
-            JsonSerializer jsonSerializer = CreateJsonSerializer();
-            EventHandler<ErrorEventArgs> eventHandler = (sender, args) =>
-            {
-                success = false;
-                Logger.LogTrace(args.ErrorContext.Error, "Incoming message failed to be JSON deserialized to message type '{MessageType}' at {Path}", messageType.Name, args.ErrorContext.Path);
-                args.ErrorContext.Handled = true;
-            };
-            jsonSerializer.Error += eventHandler;
-            
             try
             {
-                var value = JToken.Parse(message).ToObject(messageType, jsonSerializer);
-                if (success)
+                result = JsonSerializer.Deserialize(message, messageType, _jsonOptions);
+                if (result != null)
                 {
                     Logger.LogTrace("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
-
-                    result = value;
                     return true;
                 }
             }
-            catch (Exception exception)
+            catch (JsonException exception)
             {
-                Logger.LogError(exception, "Incoming message failed to be JSON deserialized to message type '{MessageType}' due to an exception", messageType.Name);
+                Logger.LogTrace(exception, "Incoming message failed to be JSON deserialized to message type '{MessageType}' due to an exception", messageType.Name);
             }
-            finally
-            {
-                jsonSerializer.Error -= eventHandler;
-            }
-            
+
             result = null;
             return false;
-        }
-
-        private JsonSerializer CreateJsonSerializer()
-        {
-            var jsonSerializer = new JsonSerializer();
-            
-            if (Options.Deserialization is null)
-            {
-                jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
-            }
-            else
-            {
-                switch (Options.Deserialization.AdditionalMembers)
-                {
-                    case AdditionalMemberHandling.Error:
-                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
-                        break;
-                    case AdditionalMemberHandling.Ignore:
-                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Ignore;
-                        break;
-                    default:
-                        jsonSerializer.MissingMemberHandling = MissingMemberHandling.Error;
-                        break;
-                }
-            }
-
-            Logger.LogTrace($"JSON deserialization uses '{jsonSerializer.MissingMemberHandling}' result when encountering additional members");
-            return jsonSerializer;
         }
     }
 }

@@ -33,6 +33,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// <summary>
     /// Fallback version of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> to have a safety net when no message handlers able to process the message.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
     public interface IFallbackMessageHandler<in TMessage> : IMessageHandler<TMessage, MessageContext>
     {
     }
@@ -40,6 +41,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// <summary>
     /// Fallback version of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> to have a safety net when no message handlers able to process the message.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
     public interface IFallbackMessageHandler : IFallbackMessageHandler<string, MessageContext>
     {
     }

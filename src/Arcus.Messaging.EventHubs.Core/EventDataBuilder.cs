@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
 using Arcus.Messaging.Abstractions;
-using Newtonsoft.Json;
 
 #pragma warning disable CS0618 // All EventHubs-functionality will be removed anyway, so ignore deprecated correlation properties.
 
@@ -155,7 +155,7 @@ namespace Azure.Messaging.EventHubs
         /// </summary>
         public EventData Build()
         {
-            string json = JsonConvert.SerializeObject(_eventBody);
+            string json = JsonSerializer.Serialize(_eventBody);
             byte[] raw = _encoding.GetBytes(json);
             var eventData = new EventData(raw)
             {
