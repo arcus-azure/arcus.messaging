@@ -1,7 +1,7 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
-using Azure.Messaging.ServiceBus;
+using Azure.Identity;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,7 +13,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// </summary>
     public static class WorkerOptionsExtensions
     {
-         /// <summary>
+        /// <summary>
         /// Adds a message pump to consume messages from Azure Service Bus Topic.
         /// </summary>
         /// <remarks>
@@ -29,7 +29,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             Guard.NotNullOrWhitespace(connectionString, nameof(connectionString));
 
             return options.Services.AddServiceBusTopicMessagePump(
-                subscriptionName: Guid.NewGuid().ToString(),
+                subscriptionName: $"test-{Guid.NewGuid()}",
                 _ => connectionString, opt =>
                 {
                     opt.TopicSubscription = TopicSubscription.Automatic;
@@ -42,10 +42,11 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             string topicName,
             string hostName)
         {
-            return options.Services.AddServiceBusTopicMessagePumpUsingManagedIdentity(
+            return options.Services.AddServiceBusTopicMessagePump(
                 topicName,
-                subscriptionName: Guid.NewGuid().ToString(),
-                serviceBusNamespace: hostName,
+                subscriptionName: $"test-{Guid.NewGuid()}",
+                fullyQualifiedNamespace: hostName,
+                credential: new DefaultAzureCredential(),
                 configureMessagePump: opt =>
                 {
                     opt.TopicSubscription = TopicSubscription.Automatic;
