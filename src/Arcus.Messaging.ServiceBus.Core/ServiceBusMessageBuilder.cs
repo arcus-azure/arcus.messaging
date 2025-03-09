@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json;
 using Arcus.Messaging.Abstractions;
-using Newtonsoft.Json;
+using Arcus.Messaging.Abstractions.MessageHandling;
+
+#pragma warning disable S1133 // Disable usage of deprecated functionality until v3.0 is released.
 
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.ServiceBus
@@ -10,6 +13,7 @@ namespace Azure.Messaging.ServiceBus
     /// <summary>
     /// Represents a builder instance to create <see cref="ServiceBusMessage"/> instances in different ways.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 as this builder is only used when Azure Service bus messages are send with the deprecated " + nameof(MessageCorrelationFormat.Hierarchical) + " correlation format")]
     public class ServiceBusMessageBuilder
     {
         private readonly object _messageBody;
@@ -150,7 +154,7 @@ namespace Azure.Messaging.ServiceBus
         /// </summary>
         public ServiceBusMessage Build()
         {
-            string json = JsonConvert.SerializeObject(_messageBody);
+            string json = JsonSerializer.Serialize(_messageBody);
             byte[] raw = _encoding.GetBytes(json);
             var message = new ServiceBusMessage(raw)
             {

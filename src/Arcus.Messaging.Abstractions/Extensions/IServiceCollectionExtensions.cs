@@ -18,6 +18,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         /// <param name="services">The collection of services to add the router to.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         public static MessageHandlerCollection AddMessageRouting(this IServiceCollection services)
         {
             MessageHandlerCollection collection = AddMessageRouting(services, configureOptions: null);
@@ -30,6 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to add the router to.</param>
         /// <param name="configureOptions">The consumer-configurable options to change the behavior of the router.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         public static MessageHandlerCollection AddMessageRouting(this IServiceCollection services, Action<MessageRouterOptions> configureOptions)
         {
             MessageHandlerCollection collection = AddMessageRouting(services, serviceProvider =>
@@ -51,6 +53,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to add the router to.</param>
         /// <param name="implementationFactory">The function to create the <see cref="MessageRouter"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         public static MessageHandlerCollection AddMessageRouting<TMessageRouter>(
             this IServiceCollection services,
             Func<IServiceProvider, TMessageRouter> implementationFactory)

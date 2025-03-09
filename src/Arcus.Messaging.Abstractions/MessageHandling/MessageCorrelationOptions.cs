@@ -1,5 +1,7 @@
 ﻿using System;
 
+#pragma warning disable S1133 // Disable usage of deprecated functionality until v3.0 is released.
+
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
     /// <summary>
@@ -7,6 +9,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// </summary>
     public class MessageCorrelationOptions
     {
+        [Obsolete("Will be removed in v3.0")]
         private string _transactionIdPropertyName = PropertyNames.TransactionId,
                        _operationParentIdPropertyName = PropertyNames.OperationParentId;
 
@@ -22,6 +25,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     Only used when the <see cref="Format"/> is set to <see cref="MessageCorrelationFormat.Hierarchical"/>.
         /// </remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0 as the property name is only used in the deprecated 'Hierarchical' correlation format")]
         public string TransactionIdPropertyName
         {
             get => _transactionIdPropertyName;
@@ -43,6 +47,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     Only used when the <see cref="Format"/> is set to <see cref="MessageCorrelationFormat.Hierarchical"/>.
         /// </remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0 as the property name is only used in the deprecated 'Hierarchical' correlation format")]
         public string OperationParentIdPropertyName
         {
             get => _operationParentIdPropertyName;

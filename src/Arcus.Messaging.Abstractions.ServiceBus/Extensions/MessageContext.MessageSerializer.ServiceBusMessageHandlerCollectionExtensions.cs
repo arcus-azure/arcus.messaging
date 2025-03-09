@@ -22,6 +22,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageContextFilter">The function that determines if the message handler should handle the message based on the context.</param>
         /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <see cref="IAzureServiceBusMessageHandler{TMessage}"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/> or <paramref name="messageContextFilter"/>, or <paramref name="messageBodySerializer"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<AzureServiceBusMessageContext, bool> messageContextFilter,
@@ -48,6 +49,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageContextFilter">The function that determines if the message handler should handle the message based on the context.</param>
         /// <param name="messageBodySerializerImplementationFactory">The function to create the custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <see cref="IAzureServiceBusMessageHandler{TMessage}"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/> or <paramref name="messageContextFilter"/>, or <paramref name="messageBodySerializerImplementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<AzureServiceBusMessageContext, bool> messageContextFilter,
@@ -75,6 +77,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <see cref="IAzureServiceBusMessageHandler{TMessage}"/>.</param>
         /// <param name="implementationFactory">The function that creates the message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/>, <paramref name="messageContextFilter"/>, or <paramref name="messageBodySerializer"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<AzureServiceBusMessageContext, bool> messageContextFilter,
@@ -103,6 +106,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="messageBodySerializerImplementationFactory">The function to create the custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <see cref="IAzureServiceBusMessageHandler{TMessage}"/>.</param>
         /// <param name="messageHandlerImplementationFactory">The function that creates the message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/>, <paramref name="messageContextFilter"/>, <paramref name="messageBodySerializerImplementationFactory"/>, or <paramref name="messageHandlerImplementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Use the " + nameof(WithServiceBusMessageHandler) + " overload with options to add additional information to the message handler registration")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<AzureServiceBusMessageContext, bool> messageContextFilter,

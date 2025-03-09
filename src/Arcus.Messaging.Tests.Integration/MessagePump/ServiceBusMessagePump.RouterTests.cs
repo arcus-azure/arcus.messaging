@@ -26,8 +26,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusMessageHandlingAsync(Topic, options =>
             {
                 options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
-                       .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>((Customer body) => body is null)
-                       .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>((Order body) => body.Id != null)
+                       .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageBodyFilter(body => body is null))
+                       .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageBodyFilter(body => body.Id != null))
                        .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order _) => false);
             });
         }
@@ -38,16 +38,16 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusMessageHandlingAsync(Queue, options =>
             {
                 options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
-                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(messageContextFilter: _ => false)
-                       .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(messageBodyFilter: _ => true)
+                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
+                       .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageBodyFilter(_ => true))
                        .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(
-                           messageContextFilter: context => context != null,
-                           messageBodySerializerImplementationFactory: serviceProvider =>
-                           {
-                               var logger = serviceProvider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
-                               return new OrderBatchMessageBodySerializer(logger);
-                           },
-                           messageBodyFilter: message => message.Orders.Length == 1);
+                           opt => opt.AddMessageContextFilter(context => context != null)
+                                     .AddMessageBodyFilter(message => message.Orders.Length == 1)
+                                     .AddMessageBodySerializer(serviceProvider =>
+                                     {
+                                         var logger = serviceProvider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
+                                         return new OrderBatchMessageBodySerializer(logger);
+                                     }));
             });
         }
 
@@ -68,10 +68,16 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var options = new WorkerOptions();
             options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.ContainsKey("NotExisting"), _ => false)
-                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(
-                       context => context.Properties["Topic"].ToString() == "Orders", 
-                       body => body.Id != null);
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt =>
+                   {
+                       opt.AddMessageContextFilter(context => context.Properties.ContainsKey("NotExisting"))
+                          .AddMessageBodyFilter(_ => false);
+                   })
+                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt =>
+                   {
+                       opt.AddMessageContextFilter(context => context.Properties["Topic"].ToString() == "Orders")
+                          .AddMessageBodyFilter(body => body.Id != null);
+                   });
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
             message.ApplicationProperties["Topic"] = "Orders";
@@ -90,8 +96,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var options = new WorkerOptions();
             options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
-                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Customers")
-                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Orders")
+                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt =>
+                   {
+                       opt.AddMessageContextFilter(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Customers");
+                   })
+                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt =>
+                   {
+                       opt.AddMessageContextFilter(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Orders");
+                   })
                    .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
@@ -112,11 +124,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
                        .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(
-                           messageBodySerializerImplementationFactory: serviceProvider =>
+                           opt => opt.AddMessageBodySerializer(serviceProvider =>
                            {
                                var logger = serviceProvider.GetService<ILogger<OrderBatchMessageBodySerializer>>();
                                return new OrderBatchMessageBodySerializer(logger);
-                           });
+                           }));
             });
         }
 
@@ -191,7 +203,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusMessageHandlingAsync(Queue, options =>
             {
                 options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
-                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
+                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
                        .WithFallbackMessageHandler<WriteOrderToDiskFallbackMessageHandler>();
             });
         }
@@ -202,7 +214,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusMessageHandlingAsync(Queue, options =>
             {
                 options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
-                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
+                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
                        .WithServiceBusFallbackMessageHandler<WriteOrderToDiskFallbackMessageHandler>();
             });
         }

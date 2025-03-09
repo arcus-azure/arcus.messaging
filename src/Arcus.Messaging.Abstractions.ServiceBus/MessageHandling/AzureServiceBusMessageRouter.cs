@@ -29,8 +29,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
         public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options, ILogger<AzureServiceBusMessageRouter> logger)
-            : this(serviceProvider, options, (ILogger) logger)
+            : base(serviceProvider, options, (ILogger) logger)
         {
+            ServiceBusOptions = options;
         }
 
         /// <summary>
@@ -39,6 +40,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
         /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options)
             : this(serviceProvider, options, NullLogger.Instance)
         {
@@ -50,6 +52,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger<AzureServiceBusMessageRouter> logger)
             : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), (ILogger) logger)
         {
@@ -60,6 +63,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// </summary>
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         public AzureServiceBusMessageRouter(IServiceProvider serviceProvider)
             : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), NullLogger.Instance)
         {
@@ -71,6 +75,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         protected AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger logger)
             : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), logger)
         {
@@ -83,6 +88,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
         protected AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options, ILogger logger)
             : base(serviceProvider, options, logger ?? NullLogger<AzureServiceBusMessageRouter>.Instance)
         {
@@ -106,6 +112,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
         public override async Task RouteMessageAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -315,7 +322,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process message in pump as no message handler was matched against the message and no fallback message handlers were configured");
                 }
 
+#pragma warning disable CS0618 // Type or member is obsolete: general message routing will be removed in v3.0.
                 bool isProcessedByGeneralFallback = await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
                 if (isProcessedByGeneralFallback)
                 {
                     return MessageProcessingResult.Success(message.MessageId);
