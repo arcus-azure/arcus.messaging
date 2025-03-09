@@ -8,6 +8,7 @@ namespace Arcus.Messaging.Abstractions.Telemetry
     /// <summary>
     /// Logger enrichment of the <see cref="MessageCorrelationInfo" /> model.
     /// </summary>
+    [Obsolete("Will be moved in v3.0 outside the 'Abstractions' library in a separate Serilog-specific library, see the v3.0 migration guide for more information")]
     public class MessageCorrelationInfoEnricher : ILogEventEnricher
     {
         private readonly MessageCorrelationInfo _messageCorrelationInfo;
