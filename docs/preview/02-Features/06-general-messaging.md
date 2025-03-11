@@ -130,7 +130,7 @@ public class Program
         services.AddServiceBusMessagePump(..., options => options.JobId = "abc-123")
                 .WithServiceBusMessageHandler<..., ...>();
 
-        services.AddEventHubsMessagePumpUsingManagedIdentity(..., options => options.JobId = "def-456")
+        services.AddEventHubsMessagePump(..., options => options.JobId = "def-456")
                 .WithEventHubsMessageHandler<..., ...>();
     }
 }
