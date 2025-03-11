@@ -127,7 +127,7 @@ public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddServiceBusMessagePumpUsingManagedIdentity(..., options => options.JobId = "abc-123")
+        services.AddServiceBusMessagePump(..., options => options.JobId = "abc-123")
                 .WithServiceBusMessageHandler<..., ...>();
 
         services.AddEventHubsMessagePumpUsingManagedIdentity(..., options => options.JobId = "def-456")
