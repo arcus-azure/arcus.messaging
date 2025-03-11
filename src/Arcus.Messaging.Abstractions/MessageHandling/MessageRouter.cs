@@ -169,7 +169,9 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+#pragma warning disable CS0618 // Type or member is obsolete: will be refactored when moving towards v3.0.
             using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
+#pragma warning restore CS0618 // Type or member is obsolete
             {
                 var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                 accessor?.SetCorrelationInfo(correlationInfo);
@@ -215,7 +217,9 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+#pragma warning disable CS0618 // Type or member is obsolete: will be refactored when moving towards v3.0.
             using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
+#pragma warning restore CS0618 // Type or member is obsolete
             {
                 var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                 accessor?.SetCorrelationInfo(correlationInfo);

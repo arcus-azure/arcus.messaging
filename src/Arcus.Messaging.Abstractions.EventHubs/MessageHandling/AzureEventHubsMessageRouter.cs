@@ -138,14 +138,18 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
             var isSuccessful = false;
             using (DurationMeasurement measurement = DurationMeasurement.Start())
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+#pragma warning disable CS0618 // Type or member is obsolete: EventHubs-functionality will be removed in v3.0 anyway.
             using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
+#pragma warning restore CS0618 // Type or member is obsolete
             {
                 try
                 {
                     var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                     accessor?.SetCorrelationInfo(correlationInfo);
 
+#pragma warning disable CS0618 // Type or member is obsolete: EventHubs-functionality will be removed in v3.0 anyway.
                     await RouteMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
                     isSuccessful = true;
                 }
                 finally
