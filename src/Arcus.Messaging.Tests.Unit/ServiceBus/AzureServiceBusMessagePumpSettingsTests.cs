@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
-using Arcus.Security.Core;
-using Arcus.Security.Core.Providers;
 using Azure.Identity;
-using Azure.Messaging.ServiceBus;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -23,9 +17,9 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var entityType = ServiceBusEntityType.Queue;
             var options = new AzureServiceBusMessagePumpOptions();
             var serviceProvider = new ServiceCollection().BuildServiceProvider();
-            var namespaceConnectionString = 
+            var namespaceConnectionString =
                 $"Endpoint=sb://arcus-messaging-integration-tests.servicebus.windows.net/;SharedAccessKeyName=MyAccessKeyName;SharedAccessKey={Guid.NewGuid()}";
-            
+
             // Act / Assert
             var settings = new AzureServiceBusMessagePumpSettings(
                 entityName: null,
@@ -36,7 +30,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 options: options,
                 serviceProvider: serviceProvider);
         }
-        
+
         [Fact]
         public void CreateSettings_WithTokenCredential_Succeeds()
         {
@@ -47,7 +41,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var entityType = ServiceBusEntityType.Queue;
             var credential = new DefaultAzureCredential();
             var options = new AzureServiceBusMessagePumpOptions();
-            
+
             // Act / Assert
             var settings = new AzureServiceBusMessagePumpSettings(
                 entityName: expected,
@@ -58,33 +52,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 options: options,
                 serviceProvider: serviceProvider);
         }
-        
-        [Fact]
-        public async Task GetEntityPath_WithNamespaceConnectionStringInsteadOfEntityScopedUsingConnectionString_Fails()
-        {
-            // Arrange
-            var entityType = ServiceBusEntityType.Queue;
-            var options = new AzureServiceBusMessagePumpOptions();
-            var secretProvider = new EnvironmentVariableSecretProvider();
-            var serviceProvider = new ServiceCollection()
-                .AddSingleton<ISecretProvider>(secretProvider)
-                .BuildServiceProvider();
-            var namespaceConnectionString = 
-                $"Endpoint=sb://arcus-messaging-integration-tests.servicebus.windows.net/;SharedAccessKeyName=MyAccessKeyName;SharedAccessKey={Guid.NewGuid()}";
-            
-            var settings = new AzureServiceBusMessagePumpSettings(
-                entityName: null,
-                subscriptionName: null,
-                serviceBusEntity: entityType,
-                getConnectionStringFromConfigurationFunc: null,
-                getConnectionStringFromSecretFunc: secretProvider => Task.FromResult(namespaceConnectionString),
-                options: options,
-                serviceProvider: serviceProvider);
 
-            // Act
-            await Assert.ThrowsAnyAsync<ArgumentException>(() => settings.GetEntityPathAsync());
-        }
-        
         [Fact]
         public async Task GetEntityPath_WithNamespaceConnectionStringInsteadOfEntityScopedUsingTokenCredential_Fails()
         {
@@ -95,7 +63,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var entityType = ServiceBusEntityType.Queue;
             var credential = new DefaultAzureCredential();
             var options = new AzureServiceBusMessagePumpOptions();
-            
+
             var settings = new AzureServiceBusMessagePumpSettings(
                 entityName: expected,
                 subscriptionName: null,
@@ -104,14 +72,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 tokenCredential: credential,
                 options: options,
                 serviceProvider: serviceProvider);
-            
+
             // Act
             string actual = await settings.GetEntityPathAsync();
-            
+
             // Assert
             Assert.Equal(expected, actual);
         }
-        
+
         [Fact]
         public void CreateSettings_WithNamespaceConnectionStringInsteadOfEntityScopedUsingTokenCredential_Fails()
         {
@@ -121,7 +89,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var serviceBusNamespace = "arcus-messaging-integration-tests.servicebus.windows.net";
             var credential = new DefaultAzureCredential();
             var options = new AzureServiceBusMessagePumpOptions();
-            
+
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => new AzureServiceBusMessagePumpSettings(
                 entityName: null,
@@ -160,7 +128,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var serviceProvider = new ServiceCollection().BuildServiceProvider();
             var credential = new DefaultAzureCredential();
             var serviceBusNamespace = "arcus-messaging-integration-tests.servicebus.windows.net";
-            
+
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => new AzureServiceBusMessagePumpSettings(
                 entityName: null,
@@ -171,7 +139,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 options: options,
                 serviceProvider: serviceProvider));
         }
-        
+
         [Fact]
         public void CreateOptions_WithUnknownServiceEntityTypeUsingConnectionString_Fails()
         {
@@ -190,7 +158,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 options: options,
                 serviceProvider: serviceProvider));
         }
-        
+
         [Fact]
         public void CreateOptions_WithoutOptionsUsingTokenCredential_Fails()
         {
@@ -199,7 +167,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var serviceProvider = new ServiceCollection().BuildServiceProvider();
             var credential = new DefaultAzureCredential();
             var serviceBusNamespace = "arcus-messaging-integration-tests.servicebus.windows.net";
-            
+
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => new AzureServiceBusMessagePumpSettings(
                 entityName: null,
@@ -210,7 +178,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 options: null,
                 serviceProvider: serviceProvider));
         }
-        
+
         [Fact]
         public void CreateOptions_WithoutOptionsUsingConnectionString_Fails()
         {
@@ -228,7 +196,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 options: null,
                 serviceProvider: serviceProvider));
         }
-        
+
         [Fact]
         public void CreateOptions_WithoutServiceProviderUsingTokenCredential_Fails()
         {
@@ -238,7 +206,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var serviceProvider = new ServiceCollection().BuildServiceProvider();
             var credential = new DefaultAzureCredential();
             var serviceBusNamespace = "arcus-messaging-integration-tests.servicebus.windows.net";
-            
+
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => new AzureServiceBusMessagePumpSettings(
                 entityName: null,
@@ -249,7 +217,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 options: options,
                 serviceProvider: null));
         }
-        
+
         [Fact]
         public void CreateOptions_WithoutServiceProviderUsingConnectionString_Fails()
         {

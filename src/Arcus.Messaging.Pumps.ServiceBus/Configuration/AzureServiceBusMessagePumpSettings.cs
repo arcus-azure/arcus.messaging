@@ -116,7 +116,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <exception cref="ArgumentNullException">
         /// Thrown when the <paramref name="clientImplementationFactory"/>, <paramref name="options"/> or <paramref name="serviceProvider"/> is <c>null</c>.
         /// </exception>
-        public AzureServiceBusMessagePumpSettings(
+        internal AzureServiceBusMessagePumpSettings(
             string entityName,
             string subscriptionName,
             ServiceBusEntityType serviceBusEntity,
@@ -257,7 +257,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 
         private static string SanitizeSubscriptionName(string subscriptionName, IServiceProvider provider)
         {
-            var logger = provider.GetRequiredService<ILogger<AzureServiceBusMessagePump>>();
+            var logger =
+                provider.GetService<ILogger<AzureServiceBusMessagePump>>()
+                ?? NullLogger<AzureServiceBusMessagePump>.Instance;
+
             if (subscriptionName != null && subscriptionName.Length > 50)
             {
                 logger.LogWarning("Azure Service Bus Topic subscription name was truncated to 50 characters");

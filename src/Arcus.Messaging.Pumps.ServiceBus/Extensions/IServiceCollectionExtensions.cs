@@ -1019,39 +1019,12 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump)
         {
-            return AddServiceBusTopicMessagePump(
-                services,
-                topicName,
-                subscriptionName,
-                clientImplementationFactory,
-                adminClientImplementationFactory: null,
-                configureMessagePump);
-        }
-
-        /// <summary>
-        /// Adds a message pump to consume messages from an Azure Service bus topic subscription.
-        /// </summary>
-        /// <param name="services">The collection of application services to add the message pump to.</param>
-        /// <param name="topicName">The name of the Azure Service bus topic resource.</param>
-        /// <param name="subscriptionName">The name of the Azure Service bus topic subscription to process.</param>
-        /// <param name="clientImplementationFactory">The factory function to create an operation client towards the Azure Service bus resource.</param>
-        /// <param name="adminClientImplementationFactory">The factory function to create an admin client towards the Azure Service bus resource.</param>
-        /// <param name="configureMessagePump">The optional function to manipulate the behavior of the message pump.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="topicName"/> is blank.</exception>
-        public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
-            this IServiceCollection services,
-            string topicName,
-            string subscriptionName,
-            Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
-            Func<IServiceProvider, ServiceBusAdministrationClient> adminClientImplementationFactory,
-            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump)
-        {
             var settingsFactory =
                 CreateSettingsFactory(
                     entityName: topicName,
                     subscriptionName: subscriptionName,
                     getClient: clientImplementationFactory,
-                    getAdminClient: adminClientImplementationFactory);
+                    getAdminClient: null);
 
             ServiceBusMessageHandlerCollection collection = AddServiceBusMessagePump(
                 services,

@@ -427,8 +427,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                         TopicName, subscriptionName, _ => new ServiceBusClient(HostName, credential), opt => opt.TopicSubscription = TopicSubscription.None),
 
                 TopicSubscription.Automatic =>
-                    options.AddServiceBusTopicMessagePump(
-                        TopicName, subscriptionName, _ => new ServiceBusClient(HostName, credential), _ => new ServiceBusAdministrationClient(HostName, credential), opt => opt.TopicSubscription = TopicSubscription.Automatic),
+                    options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, subscriptionName, HostName, configureMessagePump: opt => opt.TopicSubscription = TopicSubscription.Automatic),
 
                 _ => throw new ArgumentOutOfRangeException(nameof(topicSubscription), topicSubscription, "Unknown topic subscription")
             };
