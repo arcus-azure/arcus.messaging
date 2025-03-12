@@ -11,6 +11,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Serilog.Context;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
+#pragma warning disable CS0618 // Type or member is obsolete: EventHubs-related projects will be removed anyway.
+
 namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
 {
     /// <summary>
@@ -125,7 +127,9 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+#pragma warning disable CS0672 // Member overrides obsolete member: ventHubs-related projects will be removed anyway.
         public override async Task RouteMessageAsync<TMessageContext>(
+#pragma warning restore CS0672 // Member overrides obsolete member
             string message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -134,14 +138,18 @@ namespace Arcus.Messaging.Abstractions.EventHubs.MessageHandling
             var isSuccessful = false;
             using (DurationMeasurement measurement = DurationMeasurement.Start())
             using (IServiceScope serviceScope = ServiceProvider.CreateScope())
+#pragma warning disable CS0618 // Type or member is obsolete: EventHubs-functionality will be removed in v3.0 anyway.
             using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
+#pragma warning restore CS0618 // Type or member is obsolete
             {
                 try
                 {
                     var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
                     accessor?.SetCorrelationInfo(correlationInfo);
 
+#pragma warning disable CS0618 // Type or member is obsolete: EventHubs-functionality will be removed in v3.0 anyway.
                     await RouteMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
                     isSuccessful = true;
                 }
                 finally

@@ -53,16 +53,8 @@ stages:
                   --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME `
                   --template-file ./build/templates/test-resources.bicep `
                   --parameters serviceBusNamespace=$env:ARCUS_MESSAGING_SERVICEBUS_NAMESPACE `
-                  --parameters eventHubsNamespace=$env:ARCUS_MESSAGING_EVENTHUBS_NAMESPACE `
-                  --parameters storageAccountName=$env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME `
                   --parameters keyVaultName=$env:ARCUS_MESSAGING_KEYVAULT_NAME `
                   --parameters servicePrincipal_objectId=$objectId
-
-                $accountKey = (az storage account keys list --account-name $env:ARCUS_MESSAGING_STORAGEACCOUNT_NAME | ConvertFrom-Json)[0].value
-                az keyvault secret set `
-                  --name $env:ARCUS_MESSAGING_STORAGEACCOUNT_KEY_SECRETNAME `
-                  --value $accountKey `
-                  --vault-name ${{ parameters.keyVaultName }}
 
                 $serviceBusKeys = az servicebus namespace authorization-rule keys list `
                   --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME `
@@ -72,14 +64,4 @@ stages:
                 az keyvault secret set `
                   --name $env:ARCUS_MESSAGING_SERVICEBUS_CONNECTIONSTRING_SECRETNAME `
                   --value $serviceBusKeys.primaryConnectionString `
-                  --vault-name ${{ parameters.keyVaultName }}
-
-                $eventHubsKeys = az eventhubs namespace authorization-rule keys list `
-                  --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME `
-                  --namespace-name $env:ARCUS_MESSAGING_EVENTHUBS_NAMESPACE `
-                  --authorization-rule-name 'RootManageSharedAccessKey' `
-                  | ConvertFrom-Json
-                az keyvault secret set `
-                  --name $env:ARCUS_MESSAGING_EVENTHUBS_CONNECTIONSTRING_SECRETNAME `
-                  --value $eventHubsKeys.primaryConnectionString `
                   --vault-name ${{ parameters.keyVaultName }}

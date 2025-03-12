@@ -102,6 +102,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TMessageHandler">The type of the fallback message handler.</typeparam>
         /// <param name="collection">The collection to add the fallback message handler to.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithFallbackMessageHandler<TMessageHandler>(this MessageHandlerCollection collection)
             where TMessageHandler : IFallbackMessageHandler<string, MessageContext>
         {
@@ -115,6 +116,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
         /// <param name="collection">The collection to add the fallback message handler to.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithFallbackMessageHandler<TMessageHandler, TMessageContext>(this MessageHandlerCollection collection)
             where TMessageHandler : IFallbackMessageHandler<string, TMessageContext>
             where TMessageContext : MessageContext
@@ -129,6 +131,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="collection">The collection to add the fallback message handler to.</param>
         /// <param name="createImplementation">The function to create the fallback message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or the <paramref name="createImplementation"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithFallbackMessageHandler<TMessageHandler>(
             this MessageHandlerCollection collection,
             Func<IServiceProvider, TMessageHandler> createImplementation)
@@ -156,6 +159,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="collection">The collection to add the fallback message handler to.</param>
         /// <param name="createImplementation">The function to create the fallback message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or the <paramref name="createImplementation"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithFallbackMessageHandler<TMessageHandler, TMessageContext>(
             this MessageHandlerCollection collection,
             Func<IServiceProvider, TMessageHandler> createImplementation)

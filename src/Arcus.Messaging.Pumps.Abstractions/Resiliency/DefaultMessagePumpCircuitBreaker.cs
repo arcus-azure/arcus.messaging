@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -26,9 +25,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
         public DefaultMessagePumpCircuitBreaker(IServiceProvider serviceProvider, ILogger<DefaultMessagePumpCircuitBreaker> logger)
         {
-            Guard.NotNull(serviceProvider, nameof(serviceProvider));
-
-            _serviceProvider = serviceProvider;
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _logger = logger ?? NullLogger<DefaultMessagePumpCircuitBreaker>.Instance;
         }
 
@@ -40,7 +37,10 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         public virtual Task PauseMessageProcessingAsync(string jobId, Action<MessagePumpCircuitBreakerOptions> configureOptions)
         {
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId));
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank unique job ID to identify he message pump", nameof(jobId));
+            }
 
             MessagePump messagePump = GetRegisteredMessagePump(jobId);
 
@@ -69,7 +69,10 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         public MessagePumpCircuitState GetCircuitBreakerState(string jobId)
         {
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId));
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank unique job ID to identify he message pump", nameof(jobId));
+            }
 
             MessagePump messagePump = GetRegisteredMessagePump(jobId);
             return messagePump.CircuitState;
@@ -82,7 +85,10 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <exception cref="InvalidOperationException">Thrown when not a single or more than one message pump could be found by the configured job ID.</exception>
         protected MessagePump GetRegisteredMessagePump(string jobId)
         {
-            Guard.NotNullOrWhitespace(jobId, nameof(jobId));
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank unique job ID to identify he message pump", nameof(jobId));
+            }
 
             MessagePump[] messagePumps =
                 _serviceProvider.GetServices<IHostedService>()

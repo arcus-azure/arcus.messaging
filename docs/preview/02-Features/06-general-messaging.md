@@ -156,4 +156,3 @@ public class RateLimitService
 
 For more information on message pumps:
 - [Azure Service Bus message pump](./02-message-handling/01-service-bus.md)
-- [Azure EventHubs message pump](./02-message-handling/03-event-hubs.md)

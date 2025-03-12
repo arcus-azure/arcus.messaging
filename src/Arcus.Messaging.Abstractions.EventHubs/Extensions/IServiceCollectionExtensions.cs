@@ -90,7 +90,9 @@ namespace Microsoft.Extensions.DependencyInjection
 
                 return implementationFactory(serviceProvider, options);
             });
+#pragma warning disable CS0618 // Type or member is obsolete: EventHubs-related projects will be removed anyway.
             services.AddMessageRouting(serviceProvider => serviceProvider.GetRequiredService<IAzureEventHubsMessageRouter>());
+#pragma warning restore CS0618 // Type or member is obsolete
 
             return new EventHubsMessageHandlerCollection(services);
         }
