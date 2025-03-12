@@ -372,7 +372,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Func<ServiceBusMessage, TestServiceMessageConsumer, Task> assertion)
         {
             var options = new WorkerOptions();
-            ServiceBusMessageHandlerCollection collection = options.AddServiceBusQueueMessagePump(QueueName, HostName, new D);
+            ServiceBusMessageHandlerCollection collection = options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential());
 
             configurePump(collection);
 
