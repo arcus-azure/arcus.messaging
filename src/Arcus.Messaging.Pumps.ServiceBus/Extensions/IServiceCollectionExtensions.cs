@@ -312,16 +312,10 @@ namespace Microsoft.Extensions.DependencyInjection
             TokenCredential credential,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump)
         {
-            if (string.IsNullOrWhiteSpace(queueName))
-            {
-                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(queueName));
-            }
+            ArgumentNullException.ThrowIfNull(fullyQualifiedNamespace);
+            ArgumentNullException.ThrowIfNull(credential);
 
-            return AddServiceBusQueueMessagePump(
-                services,
-                queueName,
-                _ => new ServiceBusClient(fullyQualifiedNamespace, credential),
-                configureMessagePump);
+            return AddServiceBusQueueMessagePump(services, queueName, _ => new ServiceBusClient(fullyQualifiedNamespace, credential), configureMessagePump);
         }
 
         /// <summary>
@@ -338,10 +332,9 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump)
         {
-            if (string.IsNullOrWhiteSpace(queueName))
-            {
-                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(queueName));
-            }
+            ArgumentNullException.ThrowIfNull(services);
+            ArgumentNullException.ThrowIfNull(queueName);
+            ArgumentNullException.ThrowIfNull(clientImplementationFactory);
 
             var settingsFactory = CreateSettingsFactory(
                 entityName: queueName,
@@ -988,19 +981,10 @@ namespace Microsoft.Extensions.DependencyInjection
             TokenCredential credential,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump)
         {
-            var settingsFactory =
-                CreateSettingsFactory(
-                    entityName: topicName,
-                    subscriptionName: subscriptionName,
-                    serviceBusNamespace: fullyQualifiedNamespace,
-                    tokenCredential: credential);
+            ArgumentNullException.ThrowIfNull(fullyQualifiedNamespace);
+            ArgumentNullException.ThrowIfNull(credential);
 
-            ServiceBusMessageHandlerCollection collection = AddServiceBusMessagePump(
-                services,
-                settingsFactory,
-                configureTopicMessagePump: configureMessagePump);
-
-            return collection;
+            return AddServiceBusTopicMessagePump(services, topicName, subscriptionName, _ => new ServiceBusClient(fullyQualifiedNamespace, credential), configureMessagePump);
         }
 
         /// <summary>
@@ -1019,6 +1003,11 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump)
         {
+            ArgumentNullException.ThrowIfNull(services);
+            ArgumentNullException.ThrowIfNull(topicName);
+            ArgumentNullException.ThrowIfNull(subscriptionName);
+            ArgumentNullException.ThrowIfNull(clientImplementationFactory);
+
             var settingsFactory =
                 CreateSettingsFactory(
                     entityName: topicName,
