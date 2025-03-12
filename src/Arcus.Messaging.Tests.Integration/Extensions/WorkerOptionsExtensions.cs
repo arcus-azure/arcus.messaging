@@ -12,7 +12,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// </summary>
     public static class WorkerOptionsExtensions
     {
-        /// <summary>
+         /// <summary>
         /// Adds a message pump to consume messages from Azure Service Bus Topic.
         /// </summary>
         /// <remarks>
