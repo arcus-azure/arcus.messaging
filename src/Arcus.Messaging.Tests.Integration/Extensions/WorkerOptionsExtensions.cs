@@ -28,7 +28,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             Guard.NotNullOrWhitespace(connectionString, nameof(connectionString));
 
             return options.Services.AddServiceBusTopicMessagePump(
-                subscriptionName: $"test-{Guid.NewGuid()}",
+                subscriptionName: Guid.NewGuid().ToString(),
                 _ => connectionString, opt =>
                 {
                     opt.TopicSubscription = TopicSubscription.Automatic;
