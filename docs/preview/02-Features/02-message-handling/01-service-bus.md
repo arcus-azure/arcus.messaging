@@ -65,14 +65,14 @@ public class Program
     public void ConfigureServices(IServiceCollection services)
     {
         // Add Service Bus Queue message pump and use OrdersMessageHandler to process the messages
-        // - ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
-        services.AddServiceBusQueueMessagePump("ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
+        services.AddServiceBusQueueMessagePumpUsingManagedIdentity(
+            "<queue-name>", "<service-bus-fully-qualified-namespace>",)
                 .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
         // Add Service Bus Topic message pump and use OrdersMessageHandler to process the messages on the 'My-Subscription-Name' subscription
         // - Topic subscriptions over 50 characters will be truncated
-        // - ISecretProvider will be used to lookup the connection string scoped to the queue for secret ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING
-        services.AddServiceBusTopicMessagePump("My-Subscription-Name", "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING")
+        services.AddServiceBusTopicMessagePumpUsingManagedIdentity(
+            "<subscription-name>", "<topic-name>", "<service-bus-fully-qualified-namespace>")
                 .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
         // Note, that only a single call to the `.WithServiceBusMessageHandler` has to be made when the handler should be used across message pumps.
@@ -80,9 +80,7 @@ public class Program
 }
 ```
 
-In this example, we are using the Azure Service Bus message pump to process a queue and a topic and use the connection string stored in the `ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING` connection string.
-
-> 💡 We support **connection strings that are scoped on the Service Bus namespace and entity** allowing you to choose the required security model for your applications. If you are using namespace-scoped connection strings you'll have to pass your queue/topic name as well.
+> 💡 We also support **connection strings that are scoped on the Service Bus namespace and entity** allowing you to choose the required security model for your applications. If you are using namespace-scoped connection strings you'll have to pass your queue/topic name as well.
 
 > ⚠ The order in which the message handlers are registered matters when a message is processed. If the first one can't handle the message, the second will be checked, and so forth.
 
@@ -388,38 +386,12 @@ Next to that, we provide a **variety of overloads** to allow you to:
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 
-public class Startup
+public class Program
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        // Specify the name of the Service Bus Queue:
-        services.AddServiceBusQueueMessagePump(
-            "My-Service-Bus-Queue-Name",
-            "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
 
-        // Specify the name of the Service Bus Topic, and provide a name for the Topic subscription:
-        services.AddServiceBusMessageTopicMessagePump<OrdersMessageHandler>(
-            "My-Service-Bus-Topic-Name",
-            "My-Service-Bus-Topic-Subscription-Name",
-            "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
-
-        // Specify a topic subscription prefix instead of a name to separate topic message pumps.
-        services.AddServiceBusTopicMessagePumpWithPrefix(
-            "My-Service-Bus-Topic-Name"
-            "My-Service-Bus-Subscription-Prefix",
-            "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING");
-
-        // Uses managed identity to authenticate with the Service Bus Topic:
-        services.AddServiceBusTopicMessagePumpUsingManagedIdentity(
-            topicName: properties.EntityPath,
-            subscriptionName: "Receive-All", 
-            fullyQualifiedNamespace: "<your-namespace>.servicebus.windows.net"
-            // The optional client id to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
-            // https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm
-            clientId: "<your-client-id>");
-
-        services.AddServiceBusTopicMessagePump(
-            "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
+        services.AddServiceBusTopicMessagePump(..., 
             options => 
             {
                 // Indicate whether or not messages should be automatically marked as completed 
@@ -470,8 +442,7 @@ public class Startup
                 options.TopicSubscription = TopicSubscription.Automatic;
             });
 
-        services.AddServiceBusQueueMessagePump(
-            "ARCUS_SERVICEBUS_ORDERS_CONNECTIONSTRING",
+        services.AddServiceBusQueueMessagePump(...
             options => 
             {
                 // Indicate whether or not messages should be automatically marked as completed 
@@ -517,14 +488,6 @@ public class Startup
                 // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
                 options.Routing.Deserialization.AdditionalMembers = AdditionalMembersHandling.Ignore;
             });
-
-        // Uses managed identity to authenticate with the Service Bus Topic:
-        services.AddServiceBusQueueMessagePumpUsingManagedIdentity(
-            queueName: "orders",
-            serviceBusNamespace: "<your-namespace>"
-            // The optional client id to authenticate for a user assigned managed identity. More information on user assigned managed identities cam be found here:
-            // https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview#how-a-user-assigned-managed-identity-works-with-an-azure-vm
-            clientId: "<your-client-id>");
 
         // Multiple message handlers can be added to the services, based on the message type (ex. 'Order', 'Customer'...), 
         // the correct message handler will be selected.
