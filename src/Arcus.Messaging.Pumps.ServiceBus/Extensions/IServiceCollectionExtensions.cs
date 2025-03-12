@@ -312,8 +312,15 @@ namespace Microsoft.Extensions.DependencyInjection
             TokenCredential credential,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump)
         {
-            ArgumentNullException.ThrowIfNull(fullyQualifiedNamespace);
-            ArgumentNullException.ThrowIfNull(credential);
+            if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
+            {
+                throw new ArgumentException("Requires a non-blank fully-qualified namespace for the Azure Service bus message pump registration", nameof(fullyQualifiedNamespace));
+            }
+
+            if (credential is null)
+            {
+                throw new ArgumentNullException(nameof(credential));
+            }
 
             return AddServiceBusQueueMessagePump(services, queueName, _ => new ServiceBusClient(fullyQualifiedNamespace, credential), configureMessagePump);
         }
@@ -332,9 +339,15 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump)
         {
-            ArgumentNullException.ThrowIfNull(services);
-            ArgumentNullException.ThrowIfNull(queueName);
-            ArgumentNullException.ThrowIfNull(clientImplementationFactory);
+            if (string.IsNullOrWhiteSpace(queueName))
+            {
+                throw new ArgumentException("Requires a non-blank queue name for the Azure Service bus message pump registration", nameof(queueName));
+            }
+
+            if (clientImplementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(clientImplementationFactory));
+            }
 
             var settingsFactory = CreateSettingsFactory(
                 entityName: queueName,
@@ -981,8 +994,15 @@ namespace Microsoft.Extensions.DependencyInjection
             TokenCredential credential,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump)
         {
-            ArgumentNullException.ThrowIfNull(fullyQualifiedNamespace);
-            ArgumentNullException.ThrowIfNull(credential);
+            if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
+            {
+                throw new ArgumentException("Requires a non-blank fully-qualified Azure Service bus namespace for the message pump registration", nameof(fullyQualifiedNamespace));
+            }
+
+            if (credential is null)
+            {
+                throw new ArgumentNullException(nameof(credential));
+            }
 
             return AddServiceBusTopicMessagePump(services, topicName, subscriptionName, _ => new ServiceBusClient(fullyQualifiedNamespace, credential), configureMessagePump);
         }
@@ -1003,10 +1023,20 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump)
         {
-            ArgumentNullException.ThrowIfNull(services);
-            ArgumentNullException.ThrowIfNull(topicName);
-            ArgumentNullException.ThrowIfNull(subscriptionName);
-            ArgumentNullException.ThrowIfNull(clientImplementationFactory);
+            if (string.IsNullOrWhiteSpace(topicName))
+            {
+                throw new ArgumentException("Requires a non-blank topic name for the Azure Service bus message pump registration", nameof(topicName));
+            }
+
+            if (string.IsNullOrWhiteSpace(subscriptionName))
+            {
+                throw new ArgumentException("Requires a non-blank subscription name for the Azure Service bus message pump registration", nameof(subscriptionName));
+            }
+
+            if (clientImplementationFactory is null)
+            {
+                throw new ArgumentNullException(nameof(clientImplementationFactory));
+            }
 
             var settingsFactory =
                 CreateSettingsFactory(
