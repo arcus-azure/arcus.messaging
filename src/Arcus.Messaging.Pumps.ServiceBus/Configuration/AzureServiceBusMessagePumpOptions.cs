@@ -1,6 +1,8 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 
+#pragma warning disable CS0618
+
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
     /// <summary>
@@ -29,6 +31,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <remarks>
         ///     Provides capability to create and delete these subscriptions. This requires 'Manage' permissions on the Azure Service Bus Topic or namespace.
         /// </remarks>
+        [Obsolete("Will be removed in v3.0 as automatic Azure Service bus topic subscriptions will not be supported anymore")]
         public TopicSubscription? TopicSubscription { get; set; }
 
         /// <summary>

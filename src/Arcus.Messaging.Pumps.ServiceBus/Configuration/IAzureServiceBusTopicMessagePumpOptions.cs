@@ -15,8 +15,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <remarks>
         ///     Provides capability to create and delete these subscriptions. This requires 'Manage' permissions on the Azure Service Bus Topic or namespace.
         /// </remarks>
+        [Obsolete("Will be removed in v3.0 as automatic Azure Service bus topic subscriptions will not be supported anymore")]
         TopicSubscription? TopicSubscription { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the maximum concurrent calls to process messages.
         /// </summary>
@@ -40,7 +41,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the flag to indicate whether or not to emit security events during the lifetime of the message pump.
         /// </summary>
         bool EmitSecurityEvents { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
         /// </summary>

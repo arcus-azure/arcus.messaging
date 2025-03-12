@@ -436,10 +436,6 @@ public class Program
                 // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
                 // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
                 options.Routing.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
-
-                // Indicate whether or not a new Azure Service Bus Topic subscription should be created/deleted
-                // when the message pump starts/stops (default: None, so no subscription will be created or deleted).
-                options.TopicSubscription = TopicSubscription.Automatic;
             });
 
         services.AddServiceBusQueueMessagePump(...
