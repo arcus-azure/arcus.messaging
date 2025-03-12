@@ -1,7 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
-using Azure.Identity;
 using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -42,11 +41,10 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             string topicName,
             string hostName)
         {
-            return options.Services.AddServiceBusTopicMessagePump(
+            return options.Services.AddServiceBusTopicMessagePumpUsingManagedIdentity(
                 topicName,
-                subscriptionName: $"test-{Guid.NewGuid()}",
-                fullyQualifiedNamespace: hostName,
-                credential: new DefaultAzureCredential(),
+                subscriptionName: Guid.NewGuid().ToString(),
+                serviceBusNamespace: hostName,
                 configureMessagePump: opt =>
                 {
                     opt.TopicSubscription = TopicSubscription.Automatic;
