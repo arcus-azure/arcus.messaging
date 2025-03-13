@@ -12,6 +12,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
+#pragma warning disable CS0618
+
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
     /// <summary>

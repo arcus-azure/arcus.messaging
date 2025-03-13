@@ -30,6 +30,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets or sets the flag to indicate whether or not to emit security events during the lifetime of the message pump.
         /// </summary>
+        [Obsolete("Will be removed in v3.0 as the direct link to Arcus.Observability will be removed as well")]
         bool EmitSecurityEvents { get; set; }
 
         /// <summary>
