@@ -51,9 +51,9 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             return new TemporaryManagedIdentityConnection(
                 servicePrincipal.ClientId,
                 logger,
-                TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureTenantId, tenantId),
-                TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientId, servicePrincipal.ClientId),
-                TemporaryEnvironmentVariable.Create(EnvironmentVariables.AzureServicePrincipalClientSecret, servicePrincipal.ClientSecret));
+                TemporaryEnvironmentVariable.SetIfNotExists(EnvironmentVariables.AzureTenantId, tenantId, logger),
+                TemporaryEnvironmentVariable.SetIfNotExists(EnvironmentVariables.AzureServicePrincipalClientId, servicePrincipal.ClientId, logger),
+                TemporaryEnvironmentVariable.SetSecretIfNotExists(EnvironmentVariables.AzureServicePrincipalClientSecret, servicePrincipal.ClientSecret, logger));
         }
 
         /// <summary>
