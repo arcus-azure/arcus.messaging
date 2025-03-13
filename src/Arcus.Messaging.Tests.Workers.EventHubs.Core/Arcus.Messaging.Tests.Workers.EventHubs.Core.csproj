@@ -22,4 +22,9 @@
     <ProjectReference Include="..\Arcus.Messaging.Tests.Workers\Arcus.Messaging.Tests.Workers.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="MessageBodySerializers\" />
+    <Folder Include="MessageHandlers\" />
+  </ItemGroup>
+
 </Project>
