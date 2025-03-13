@@ -1,11 +1,12 @@
 ﻿using System;
 
-namespace Arcus.Messaging.Abstractions.MessageHandling 
+namespace Arcus.Messaging.Abstractions.MessageHandling
 {
     /// <summary>
     /// Exception thrown when a specific type cannot be found during reflected selection.
     /// </summary>
     [Serializable]
+    [Obsolete("Will be removed in v3.0 as no reflection is included anymore in message routing, which means no need for this custom exception")]
     public class TypeNotFoundException : Exception
     {
         /// <summary>
