@@ -136,12 +136,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
         public override async Task StartAsync(CancellationToken cancellationToken)
         {
+#pragma warning disable CS0618
             if (Settings.ServiceBusEntity == ServiceBusEntityType.Topic
                 && Settings.Options.TopicSubscription.HasValue
                 && Settings.Options.TopicSubscription.Value.HasFlag(TopicSubscription.Automatic))
             {
                 _ownsTopicSubscription = await CreateTopicSubscriptionAsync(cancellationToken);
             }
+#pragma warning restore
 
             await base.StartAsync(cancellationToken);
         }
@@ -391,6 +393,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 await _messageReceiver.CloseAsync();
             }
 
+#pragma warning disable CS0618
             if (Settings.ServiceBusEntity == ServiceBusEntityType.Topic
                 && Settings.Options.TopicSubscription.HasValue
                 && Settings.Options.TopicSubscription.Value.HasFlag(TopicSubscription.Automatic)
@@ -398,6 +401,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 await DeleteTopicSubscriptionAsync(cancellationToken);
             }
+#pragma warning restore
 
             await base.StopAsync(cancellationToken);
             _isHostShuttingDown = true;
