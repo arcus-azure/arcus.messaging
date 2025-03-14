@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Messaging.EventHubs" Version="5.7.1" />
+    <PackageReference Include="Azure.Messaging.EventHubs.Processor" Version="5.7.1" />
     <PackageReference Include="Bogus" Version="29.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
     <PackageReference Include="xunit" Version="2.3.1" />
@@ -22,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Arcus.Messaging.Abstractions.EventHubs\Arcus.Messaging.Abstractions.EventHubs.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Pumps.Abstractions\Arcus.Messaging.Pumps.Abstractions.csproj" />
   </ItemGroup>
 

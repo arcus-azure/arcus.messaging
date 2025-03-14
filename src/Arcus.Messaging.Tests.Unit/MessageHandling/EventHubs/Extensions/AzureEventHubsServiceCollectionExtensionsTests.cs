@@ -1,12 +1,7 @@
-﻿using System;
-#if NET6_0
+﻿#if NET6_0
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 #endif
-using Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs.Fixture;
-using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-
 namespace Arcus.Messaging.Tests.Unit.MessageHandling.EventHubs.Extensions
 {
 #if NET6_0
