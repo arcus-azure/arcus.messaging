@@ -32,13 +32,13 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="getConnectionStringFromSecretFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the secret store.</param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
-            var collection = AddServiceBusQueueMessagePump(
+            var collection = AddDeprecatedServiceBusQueueMessagePumpWithConnectionString(
                 services,
                 entityName: null,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
@@ -59,13 +59,13 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="getConnectionStringFromConfigurationFunc">The function to look up the connection string scoped to the Azure Service Bus Queue from the configuration.</param>
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromConfigurationFunc"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump = null)
         {
-            var collection = AddServiceBusQueueMessagePump(
+            var collection = AddDeprecatedServiceBusQueueMessagePumpWithConnectionString(
                 services,
                 entityName: null,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
@@ -89,7 +89,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="secretName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             string secretName,
@@ -100,7 +100,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank secret name", nameof(secretName));
             }
 
-            var collection = AddServiceBusQueueMessagePump(
+            var collection = AddDeprecatedServiceBusQueueMessagePumpWithConnectionString(
                 services,
                 entityName: null,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
@@ -124,7 +124,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> or <paramref name="secretName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             string queueName,
@@ -141,7 +141,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank secret name", nameof(secretName));
             }
 
-            var collection = AddServiceBusQueueMessagePump(
+            var collection = AddDeprecatedServiceBusQueueMessagePumpWithConnectionString(
                 services,
                 entityName: queueName,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
@@ -165,7 +165,7 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             string queueName,
@@ -177,7 +177,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(queueName));
             }
 
-            var collection = AddServiceBusQueueMessagePump(
+            var collection = AddDeprecatedServiceBusQueueMessagePumpWithConnectionString(
                 services,
                 entityName: queueName,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
@@ -197,7 +197,7 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromConfigurationFunc"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
             this IServiceCollection services,
             string queueName,
@@ -209,7 +209,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(queueName));
             }
 
-            var collection = AddServiceBusQueueMessagePump(
+            var collection = AddDeprecatedServiceBusQueueMessagePumpWithConnectionString(
                 services,
                 entityName: queueName,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
@@ -219,24 +219,22 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         [Obsolete("Will be removed in v3.0")]
-        private static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePump(
+        private static ServiceBusMessageHandlerCollection AddDeprecatedServiceBusQueueMessagePumpWithConnectionString(
             IServiceCollection services,
             string entityName,
-            string fullyQualifiedNamespace = null,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
-            TokenCredential tokenCredential = null,
             Action<IAzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump = null)
         {
-            var settingsFactory = CreateSettingsFactory(
-                entityName,
-                subscriptionName: null,
-                serviceBusNamespace: fullyQualifiedNamespace,
-                getConnectionStringFromConfigurationFunc,
-                getConnectionStringFromSecretFunc,
-                tokenCredential);
+            return AddServiceBusMessagePump(services, CreateSettings, configureQueueMessagePump);
 
-            return AddServiceBusMessagePump(services, settingsFactory, configureQueueMessagePump);
+            AzureServiceBusMessagePumpSettings CreateSettings(IServiceProvider serviceProvider, AzureServiceBusMessagePumpOptions options)
+            {
+#pragma warning disable CS0618 // Type or member is obsolete: will use other overload in v3.0.
+                return new AzureServiceBusMessagePumpSettings(
+                    entityName, subscriptionName: null, ServiceBusEntityType.Queue, getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, options, serviceProvider);
+#pragma warning restore CS0618 // Type or member is obsolete
+            }
         }
 
         /// <summary>
@@ -252,7 +250,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="queueName"/> or <paramref name="serviceBusNamespace"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(TokenCredential))]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(TokenCredential))]
         public static ServiceBusMessageHandlerCollection AddServiceBusQueueMessagePumpUsingManagedIdentity(
             this IServiceCollection services,
             string queueName,
@@ -265,12 +263,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 ManagedIdentityClientId = clientId
             });
 
-            return AddServiceBusQueueMessagePump(
-                services,
-                queueName,
-                serviceBusNamespace,
-                credential,
-                configureMessagePump);
+            return AddServiceBusQueueMessagePump(services, queueName, serviceBusNamespace, credential, configureMessagePump);
         }
 
         /// <summary>
@@ -322,7 +315,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(credential));
             }
 
-            return AddServiceBusQueueMessagePump(services, queueName, _ => new ServiceBusClient(fullyQualifiedNamespace, credential), configureMessagePump);
+            return AddServiceBusQueueMessagePump(services, queueName, CreateClientFactory(fullyQualifiedNamespace, credential), configureMessagePump);
         }
 
         /// <summary>
@@ -349,15 +342,22 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(clientImplementationFactory));
             }
 
-            var settingsFactory = CreateSettingsFactory(
-                entityName: queueName,
-                subscriptionName: null,
-                getClient: clientImplementationFactory);
-
             ServiceBusMessageHandlerCollection collection =
-                AddServiceBusMessagePump(services, settingsFactory, configureMessagePump);
+                AddServiceBusMessagePump(services, CreateSettings, configureMessagePump);
 
             return collection;
+
+            AzureServiceBusMessagePumpSettings CreateSettings(IServiceProvider serviceProvider, AzureServiceBusMessagePumpOptions options)
+            {
+                return new AzureServiceBusMessagePumpSettings(
+                    queueName,
+                    subscriptionName: null,
+                    ServiceBusEntityType.Queue,
+                    clientImplementationFactory,
+                    clientAdminImplementationFactory: null,
+                    options,
+                    serviceProvider);
+            }
         }
 
         /// <summary>
@@ -376,7 +376,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> or <paramref name="secretName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string subscriptionName,
@@ -388,9 +388,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank secret name", nameof(secretName));
             }
 
-            var collection = AddServiceBusTopicMessagePump(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithConnectionString(
                 services,
-                entityName: null,
+                topicName: null,
                 subscriptionName: subscriptionName,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
                 configureTopicMessagePump: configureMessagePump);
@@ -415,16 +415,16 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     Thrown when the <paramref name="services"/> or the <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string subscriptionName,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
-            var collection = AddServiceBusTopicMessagePump(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithConnectionString(
                 services,
-                entityName: null,
+                topicName: null,
                 subscriptionName: subscriptionName,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
                 configureTopicMessagePump: configureMessagePump);
@@ -446,16 +446,16 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     Thrown when the <paramref name="services"/> or the <paramref name="getConnectionStringFromConfigurationFunc"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string subscriptionName,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
-            var collection = AddServiceBusTopicMessagePump(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithConnectionString(
                 services,
-                entityName: null,
+                topicName: null,
                 subscriptionName: subscriptionName,
                 getConnectionStringFromConfigurationFunc:
                 getConnectionStringFromConfigurationFunc,
@@ -482,7 +482,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="topicName"/>, the <paramref name="subscriptionName"/>, or the <paramref name="secretName"/> is blank.
         /// </exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string topicName,
@@ -495,9 +495,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
             }
 
-            var collection = AddServiceBusTopicMessagePump(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithConnectionString(
                 services,
-                entityName: topicName,
+                topicName: topicName,
                 subscriptionName,
                 getConnectionStringFromSecretFunc: secretProvider => secretProvider.GetRawSecretAsync(secretName),
                 configureTopicMessagePump: configureMessagePump);
@@ -519,7 +519,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="topicName"/> or the <paramref name="subscriptionName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string topicName,
@@ -532,9 +532,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
             }
 
-            var collection = AddServiceBusTopicMessagePump(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithConnectionString(
                 services,
-                entityName: topicName,
+                topicName: topicName,
                 subscriptionName,
                 getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
                 configureTopicMessagePump: configureMessagePump);
@@ -554,7 +554,7 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     Thrown when the <paramref name="services"/> or <paramref name="getConnectionStringFromConfigurationFunc"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="topicName"/> or <paramref name="subscriptionName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
             this IServiceCollection services,
             string topicName,
@@ -567,9 +567,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
             }
 
-            var collection = AddServiceBusTopicMessagePump(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithConnectionString(
                 services,
-                entityName: topicName,
+                topicName: topicName,
                 subscriptionName: subscriptionName,
                 getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
                 configureTopicMessagePump: configureMessagePump);
@@ -593,7 +593,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="topicName"/>, the <paramref name="subscriptionName"/>, or the <paramref name="serviceBusNamespace"/> is blank.
         /// </exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(TokenCredential))]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(TokenCredential))]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpUsingManagedIdentity(
             this IServiceCollection services,
             string topicName,
@@ -607,9 +607,9 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
             }
 
-            var collection = AddServiceBusTopicMessagePump(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithTokenCredential(
                 services,
-                entityName: topicName,
+                topicName: topicName,
                 subscriptionName: subscriptionName,
                 serviceBusNamespace: serviceBusNamespace,
                 tokenCredential: new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId }),
@@ -636,7 +636,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionPrefix"/> or the <paramref name="secretName"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithPrefix(
             this IServiceCollection services,
             string subscriptionPrefix,
@@ -648,7 +648,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank secret name", nameof(secretName));
             }
 
-            var collection = AddServiceBusTopicMessagePumpWithPrefix(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithPrefixWithConnectionString(
                 services,
                 entityName: null,
                 subscriptionPrefix,
@@ -674,14 +674,14 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="configureMessagePump">The capability to configure additional options on how the message pump should behave.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or the <paramref name="getConnectionStringFromSecretFunc"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionPrefix"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithPrefix(
             this IServiceCollection services,
             string subscriptionPrefix,
             Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
-            var collection = AddServiceBusTopicMessagePumpWithPrefix(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithPrefixWithConnectionString(
                 services,
                 entityName: null,
                 subscriptionPrefix,
@@ -707,14 +707,14 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     Thrown when the <paramref name="services"/> or the <paramref name="getConnectionStringFromConfigurationFunc"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="subscriptionPrefix"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithPrefix(
             this IServiceCollection services,
             string subscriptionPrefix,
             Func<IConfiguration, string> getConnectionStringFromConfigurationFunc,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump = null)
         {
-            var collection = AddServiceBusTopicMessagePumpWithPrefix(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithPrefixWithConnectionString(
                 services,
                 entityName: null,
                 subscriptionPrefix: subscriptionPrefix,
@@ -763,7 +763,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank secret name", nameof(secretName));
             }
 
-            var collection = AddServiceBusTopicMessagePumpWithPrefix(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithPrefixWithConnectionString(
                 services,
                 entityName: topicName,
                 subscriptionPrefix,
@@ -802,7 +802,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
             }
 
-            var collection = AddServiceBusTopicMessagePumpWithPrefix(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithPrefixWithConnectionString(
                 services,
                 entityName: topicName,
                 subscriptionPrefix,
@@ -826,7 +826,7 @@ namespace Microsoft.Extensions.DependencyInjection
         ///     Thrown when the <paramref name="services"/> or the <paramref name="getConnectionStringFromConfigurationFunc"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="topicName"/> or the <paramref name="subscriptionPrefix"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(IServiceProvider) + " to create clients yourself")]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithPrefix(
             this IServiceCollection services,
             string topicName,
@@ -839,7 +839,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
             }
 
-            var collection = AddServiceBusTopicMessagePumpWithPrefix(
+            var collection = AddDeprecatedServiceBusTopicMessagePumpWithPrefixWithConnectionString(
                 services,
                 entityName: topicName,
                 subscriptionPrefix: subscriptionPrefix,
@@ -847,6 +847,57 @@ namespace Microsoft.Extensions.DependencyInjection
                 configureTopicMessagePump: configureMessagePump);
 
             return collection;
+        }
+
+        [Obsolete("Will not use " + nameof(ISecretProvider) + " or " + nameof(IConfiguration) + " directly anymore")]
+        private static ServiceBusMessageHandlerCollection AddDeprecatedServiceBusTopicMessagePumpWithPrefixWithConnectionString(
+            IServiceCollection services,
+            string entityName,
+            string subscriptionPrefix,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
+        {
+            string subscriptionName = CreateSubscriptionName(subscriptionPrefix);
+
+            ServiceBusMessageHandlerCollection collection = AddDeprecatedServiceBusTopicMessagePumpWithConnectionString(
+                services,
+                topicName: entityName,
+                subscriptionName: subscriptionName,
+                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
+                getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
+                configureTopicMessagePump: configureTopicMessagePump);
+
+            return collection;
+        }
+
+        [Obsolete("Will be removed in v3.0")]
+        private static ServiceBusMessageHandlerCollection AddDeprecatedServiceBusTopicMessagePumpWithConnectionString(
+            IServiceCollection services,
+            string topicName,
+            string subscriptionName,
+            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
+            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
+        {
+            ServiceBusMessageHandlerCollection collection = AddServiceBusMessagePump(services,
+                CreateSettings,
+                configureQueueMessagePump: null,
+                configureTopicMessagePump: configureTopicMessagePump);
+
+            return collection;
+
+            AzureServiceBusMessagePumpSettings CreateSettings(IServiceProvider serviceProvider, AzureServiceBusMessagePumpOptions options)
+            {
+                return new AzureServiceBusMessagePumpSettings(
+                    topicName,
+                    subscriptionName,
+                    ServiceBusEntityType.Topic,
+                    getConnectionStringFromConfigurationFunc,
+                    getConnectionStringFromSecretFunc,
+                    options,
+                    serviceProvider);
+            }
         }
 
         /// <summary>
@@ -867,7 +918,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="topicName"/>, or the <paramref name="subscriptionPrefix"/>, or the <paramref name="serviceBusNamespace"/> is blank.
         /// </exception>
-        [Obsolete("Will be removed in v3.0, use the " + nameof(AddServiceBusQueueMessagePump) + " overload instead that takes in a " + nameof(TokenCredential))]
+        [Obsolete("Will be removed in v3.0, use the " + nameof(AddDeprecatedServiceBusQueueMessagePumpWithConnectionString) + " overload instead that takes in a " + nameof(TokenCredential))]
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpUsingManagedIdentityWithPrefix(
             this IServiceCollection services,
             string topicName,
@@ -881,27 +932,21 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(topicName));
             }
 
-            var collection = AddServiceBusTopicMessagePumpWithPrefix(
+            TokenCredential tokenCredential = new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId });
+
+            ServiceBusMessageHandlerCollection collection = AddDeprecatedServiceBusTopicMessagePumpWithTokenCredential(
                 services,
-                entityName: topicName,
-                subscriptionPrefix: subscriptionPrefix,
-                serviceBusNamespace: serviceBusNamespace,
-                tokenCredential: new DefaultAzureCredential(new DefaultAzureCredentialOptions { ManagedIdentityClientId = clientId }),
-                configureTopicMessagePump: configureMessagePump);
+                topicName,
+                CreateSubscriptionName(subscriptionPrefix),
+                serviceBusNamespace,
+                tokenCredential,
+                configureMessagePump);
 
             return collection;
         }
 
-        [Obsolete("Will not use " + nameof(ISecretProvider) + " or " + nameof(IConfiguration) + " directly anymore")]
-        private static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithPrefix(
-            IServiceCollection services,
-            string entityName,
-            string subscriptionPrefix,
-            string serviceBusNamespace = null,
-            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
-            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
-            TokenCredential tokenCredential = null,
-            Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
+        [Obsolete("Will be removed in v3.0")]
+        private static string CreateSubscriptionName(string subscriptionPrefix)
         {
             if (string.IsNullOrWhiteSpace(subscriptionPrefix))
             {
@@ -909,46 +954,38 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             var messagePumpOptions = AzureServiceBusMessagePumpOptions.DefaultOptions;
-            string subscriptionName = $"{subscriptionPrefix}-{messagePumpOptions.JobId}";
-
-            ServiceBusMessageHandlerCollection collection = AddServiceBusTopicMessagePump(
-                services,
-                entityName: entityName,
-                subscriptionName: subscriptionName,
-                serviceBusNamespace: serviceBusNamespace,
-                getConnectionStringFromSecretFunc: getConnectionStringFromSecretFunc,
-                getConnectionStringFromConfigurationFunc: getConnectionStringFromConfigurationFunc,
-                tokenCredential: tokenCredential,
-                configureTopicMessagePump: configureTopicMessagePump);
-
-            return collection;
+            return $"{subscriptionPrefix}-{messagePumpOptions.JobId}";
         }
 
-        [Obsolete("Will not use " + nameof(ISecretProvider) + " or " + nameof(IConfiguration) + " directly anymore")]
-        private static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
+        [Obsolete("Will be removed in v3.0")]
+        private static ServiceBusMessageHandlerCollection AddDeprecatedServiceBusTopicMessagePumpWithTokenCredential(
             IServiceCollection services,
-            string entityName,
-            string subscriptionName = null,
-            string serviceBusNamespace = null,
-            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
-            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
-            TokenCredential tokenCredential = null,
-            Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump = null)
+            string topicName,
+            string subscriptionName,
+            string serviceBusNamespace,
+            TokenCredential tokenCredential,
+            Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump)
         {
-            var settingsFactory = CreateSettingsFactory(
-                entityName,
-                subscriptionName,
-                serviceBusNamespace,
-                getConnectionStringFromConfigurationFunc,
-                getConnectionStringFromSecretFunc,
-                tokenCredential);
-
             ServiceBusMessageHandlerCollection collection = AddServiceBusMessagePump(services,
-                settingsFactory,
+                CreateSettings,
                 configureQueueMessagePump: null,
                 configureTopicMessagePump: configureTopicMessagePump);
 
             return collection;
+
+            AzureServiceBusMessagePumpSettings CreateSettings(IServiceProvider serviceProvider, AzureServiceBusMessagePumpOptions options)
+            {
+                serviceBusNamespace = SanitizeServiceBusNamespace(serviceBusNamespace);
+
+                return new AzureServiceBusMessagePumpSettings(
+                    topicName,
+                    subscriptionName,
+                    ServiceBusEntityType.Topic,
+                    _ => new ServiceBusClient(serviceBusNamespace, tokenCredential),
+                    _ => new ServiceBusAdministrationClient(serviceBusNamespace, tokenCredential),
+                    options,
+                    serviceProvider);
+            }
         }
 
         /// <summary>
@@ -1004,7 +1041,12 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(credential));
             }
 
-            return AddServiceBusTopicMessagePump(services, topicName, subscriptionName, _ => new ServiceBusClient(fullyQualifiedNamespace, credential), configureMessagePump);
+            return AddServiceBusTopicMessagePump(services, topicName, subscriptionName, CreateClientFactory(fullyQualifiedNamespace, credential), configureMessagePump);
+        }
+
+        private static Func<IServiceProvider, ServiceBusClient> CreateClientFactory(string fullyQualifiedNamespace, TokenCredential credential)
+        {
+            return _ => new ServiceBusClient(SanitizeServiceBusNamespace(fullyQualifiedNamespace), credential);
         }
 
         /// <summary>
@@ -1038,68 +1080,24 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(clientImplementationFactory));
             }
 
-            var settingsFactory =
-                CreateSettingsFactory(
-                    entityName: topicName,
-                    subscriptionName: subscriptionName,
-                    getClient: clientImplementationFactory,
-                    getAdminClient: null);
-
             ServiceBusMessageHandlerCollection collection = AddServiceBusMessagePump(
                 services,
-                settingsFactory,
+                CreateSettings,
                 configureTopicMessagePump: configureMessagePump);
 
             return collection;
-        }
 
-        private static Func<IServiceProvider, AzureServiceBusMessagePumpOptions, AzureServiceBusMessagePumpSettings> CreateSettingsFactory(
-            string entityName,
-            string subscriptionName,
-            string serviceBusNamespace = null,
-            Func<IConfiguration, string> getConnectionStringFromConfigurationFunc = null,
-            Func<ISecretProvider, Task<string>> getConnectionStringFromSecretFunc = null,
-            TokenCredential tokenCredential = null,
-            Func<IServiceProvider, ServiceBusClient> getClient = null,
-            Func<IServiceProvider, ServiceBusAdministrationClient> getAdminClient = null)
-        {
-            ServiceBusEntityType entityType =
-                string.IsNullOrWhiteSpace(subscriptionName)
-                    ? ServiceBusEntityType.Queue
-                    : ServiceBusEntityType.Topic;
-
-            return (serviceProvider, options) =>
+            AzureServiceBusMessagePumpSettings CreateSettings(IServiceProvider serviceProvider, AzureServiceBusMessagePumpOptions options)
             {
-                if (getConnectionStringFromConfigurationFunc != null || getConnectionStringFromSecretFunc != null)
-                {
-#pragma warning disable CS0618 // Type or member is obsolete: will use other overload in v3.0.
-                    return new AzureServiceBusMessagePumpSettings(
-                        entityName, subscriptionName, entityType, getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, options, serviceProvider);
-#pragma warning restore CS0618 // Type or member is obsolete
-                }
-
-                if (tokenCredential != null && !string.IsNullOrWhiteSpace(serviceBusNamespace))
-                {
-                    serviceBusNamespace = SanitizeServiceBusNamespace(serviceBusNamespace);
-
-                    return new AzureServiceBusMessagePumpSettings(
-                        entityName, subscriptionName, entityType,
-                        _ => new ServiceBusClient(serviceBusNamespace, tokenCredential),
-                        _ => new ServiceBusAdministrationClient(serviceBusNamespace, tokenCredential),
-                        options, serviceProvider);
-                }
-
-                if (getClient != null)
-                {
-                    return new AzureServiceBusMessagePumpSettings(
-                        entityName, subscriptionName, entityType, getClient, getAdminClient, options, serviceProvider);
-                }
-
-                throw new InvalidOperationException(
-                    $"Cannot determine the a correct way of authenticating the Arcus Azure Service bus {entityType}, " +
-                    $"please use either {nameof(TokenCredential)}, {nameof(IServiceProvider)} or any of the other overloads to register the message pump, " +
-                    $"see the feature documentation for more information: https://messaging.arcus-azure.net/");
-            };
+                return new AzureServiceBusMessagePumpSettings(
+                    topicName,
+                    subscriptionName,
+                    ServiceBusEntityType.Topic,
+                    clientImplementationFactory,
+                    clientAdminImplementationFactory: null,
+                    options,
+                    serviceProvider);
+            }
         }
 
         private static string SanitizeServiceBusNamespace(string serviceBusNamespace)
