@@ -1,5 +1,5 @@
-﻿using System;
-#if NET6_0
+using System;﻿
+﻿#if NET6_0
 using Arcus.Messaging.Abstractions.EventHubs.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 #endif
