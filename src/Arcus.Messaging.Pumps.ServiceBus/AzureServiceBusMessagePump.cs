@@ -151,7 +151,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private async Task<bool> CreateTopicSubscriptionAsync(CancellationToken cancellationToken)
         {
             ServiceBusAdministrationClient serviceBusClient = await Settings.GetServiceBusAdminClientAsync();
-            string entityPath = await Settings.GetEntityPathAsync();
+            string entityPath = Settings.EntityName;
 
             try
             {
@@ -412,7 +412,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private async Task DeleteTopicSubscriptionAsync(CancellationToken cancellationToken)
         {
             ServiceBusAdministrationClient serviceBusClient = await Settings.GetServiceBusAdminClientAsync();
-            string entityPath = await Settings.GetEntityPathAsync();
+            string entityPath = Settings.EntityName;
 
             try
             {

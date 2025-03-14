@@ -150,15 +150,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets the default consumer-configurable options for Azure Service Bus Queue message pumps.
         /// </summary>
-        internal static AzureServiceBusMessagePumpOptions DefaultQueueOptions => new AzureServiceBusMessagePumpOptions()
-        {
-            TopicSubscription = null
-        };
-
-        /// <summary>
-        /// Gets the default consumer-configurable options for Azure Service Bus Topic message pumps.
-        /// </summary>
-        internal static AzureServiceBusMessagePumpOptions DefaultTopicOptions => new AzureServiceBusMessagePumpOptions()
+        internal static AzureServiceBusMessagePumpOptions DefaultOptions => new AzureServiceBusMessagePumpOptions()
         {
             TopicSubscription = ServiceBus.TopicSubscription.None
         };

@@ -11,6 +11,7 @@ using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Azure;
+using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.DependencyInjection;
@@ -371,7 +372,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Func<ServiceBusMessage, TestServiceMessageConsumer, Task> assertion)
         {
             var options = new WorkerOptions();
-            ServiceBusMessageHandlerCollection collection = options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName);
+            ServiceBusMessageHandlerCollection collection = options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential());
 
             configurePump(collection);
 
@@ -398,20 +399,38 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var options = new WorkerOptions();
             var subscriptionName = $"Subscription-{Guid.NewGuid():N}";
-            options.AddServiceBusTopicMessagePumpUsingManagedIdentity(
-                       TopicName,
-                       subscriptionName,
-                       HostName,
-                       configureMessagePump: opt => opt.TopicSubscription = topicSubscription)
-                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
+
+            AddServiceBusTopicMessagePump(options, subscriptionName, topicSubscription)
+                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             // Act
             await using var worker = await Worker.StartNewAsync(options);
 
             // Assert
-            ServiceBusAdministrationClient client = _serviceBusConfig.GetAdminClient();
-            Response<bool> subscriptionExistsResponse = await client.SubscriptionExistsAsync(TopicName, subscriptionName);
+            ServiceBusAdministrationClient adminClient = _serviceBusConfig.GetAdminClient();
+            Response<bool> subscriptionExistsResponse = await adminClient.SubscriptionExistsAsync(TopicName, subscriptionName);
             Assert.Equal(doesSubscriptionExists, subscriptionExistsResponse.Value);
+        }
+
+        private ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
+            WorkerOptions options,
+            string subscriptionName,
+            TopicSubscription topicSubscription)
+        {
+            var credential = new DefaultAzureCredential();
+
+            options.AddXunitTestLogging(_outputWriter);
+            return topicSubscription switch
+            {
+                TopicSubscription.None =>
+                    options.AddServiceBusTopicMessagePump(
+                        TopicName, subscriptionName, _ => new ServiceBusClient(HostName, credential), opt => opt.TopicSubscription = TopicSubscription.None),
+
+                TopicSubscription.Automatic =>
+                    options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, subscriptionName, HostName, configureMessagePump: opt => opt.TopicSubscription = TopicSubscription.Automatic),
+
+                _ => throw new ArgumentOutOfRangeException(nameof(topicSubscription), topicSubscription, "Unknown topic subscription")
+            };
         }
 
         [Fact]

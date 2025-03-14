@@ -65,14 +65,14 @@ public class Program
     public void ConfigureServices(IServiceCollection services)
     {
         // Add Service Bus Queue message pump and use OrdersMessageHandler to process the messages
-        services.AddServiceBusQueueMessagePumpUsingManagedIdentity(
-            "<queue-name>", "<service-bus-fully-qualified-namespace>",)
+        services.AddServiceBusQueueMessagePump(
+            "<queue-name>", "<service-bus-fully-qualified-namespace>", new ManagedIdentityCredential(...))
                 .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
         // Add Service Bus Topic message pump and use OrdersMessageHandler to process the messages on the 'My-Subscription-Name' subscription
         // - Topic subscriptions over 50 characters will be truncated
-        services.AddServiceBusTopicMessagePumpUsingManagedIdentity(
-            "<subscription-name>", "<topic-name>", "<service-bus-fully-qualified-namespace>")
+        services.AddServiceBusTopicMessagePump(
+            "<topic-name>", "<subscription-name>", "<service-bus-fully-qualified-namespace>", new ManagedIdentityCredential(...))
                 .WithServiceBusMessageHandler<OrdersMessageHandler, Order>();
 
         // Note, that only a single call to the `.WithServiceBusMessageHandler` has to be made when the handler should be used across message pumps.
