@@ -52,9 +52,10 @@ namespace Arcus.Messaging.Abstractions
         /// <param name="transactionId">The cross-operation transaction ID of the message correlation.</param>
         /// <param name="operationParentId">The parent ID of the message correlation.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="transactionId"/> or the <paramref name="operationParentId"/> is blank.</exception>
+        [Obsolete("Will be moved in v3.0 outside the 'Abstractions' library in a separate Telemetry-specific library, see the v3.0 migration guide for more information")]
         public static MessageCorrelationResult Create(
             TelemetryClient client,
-            string transactionId, 
+            string transactionId,
             string operationParentId)
         {
             if (string.IsNullOrWhiteSpace(transactionId))
