@@ -56,6 +56,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TMessageContext">The type of the context in which the message handler will process the message.</typeparam>
         /// <param name="collection">The collection of collection to use in the application.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(this MessageHandlerCollection collection)
             where TMessageHandler : class, IMessageHandler<TMessage, TMessageContext>
             where TMessage : class
@@ -75,6 +76,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="collection">The collection of collection to use in the application.</param>
         /// <param name="implementationFactory">The function that creates the message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this MessageHandlerCollection collection,
             Func<IServiceProvider, TMessageHandler> implementationFactory)

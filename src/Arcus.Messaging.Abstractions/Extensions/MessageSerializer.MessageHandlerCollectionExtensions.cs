@@ -38,6 +38,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TMessageContext">The type of the context in which the message handler will process the message.</typeparam>
         /// <param name="services">The collection of services to use in the application.</param>
         /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this MessageHandlerCollection services,
             IMessageBodySerializer messageBodySerializer)
@@ -78,6 +79,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to use in the application.</param>
         /// <param name="implementationFactory">The function that creates the message handler.</param>
         /// <param name="messageBodySerializer">The <see cref="IMessageBodySerializer"/> that custom deserializes the incoming message for the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</param>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this MessageHandlerCollection services,
             IMessageBodySerializer messageBodySerializer,
@@ -124,6 +126,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TMessageContext">The type of the context in which the message handler will process the message.</typeparam>
         /// <param name="services">The collection of services to use in the application.</param>
         /// <param name="messageBodySerializerImplementationFactory">The function to create an custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this MessageHandlerCollection services,
             Func<IServiceProvider, IMessageBodySerializer> messageBodySerializerImplementationFactory)
@@ -169,6 +172,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The collection of services to use in the application.</param>
         /// <param name="messageHandlerImplementationFactory">The function that creates the message handler.</param>
         /// <param name="messageBodySerializerImplementationFactory">The function to create an custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
         public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             this MessageHandlerCollection services,
             Func<IServiceProvider, IMessageBodySerializer> messageBodySerializerImplementationFactory,
