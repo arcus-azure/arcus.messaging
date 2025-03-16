@@ -20,6 +20,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="services">The application services to register the message pump to.</param>
         /// <param name="implementationFactory">The factory function to create the custom <typeparamref name="TMessagePump"/> instance.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or the <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 as only concrete implementations of the message pump will be allowed")]
         public static IServiceCollection AddMessagePump<TMessagePump>(
             this IServiceCollection services,
             Func<IServiceProvider, TMessagePump> implementationFactory)
