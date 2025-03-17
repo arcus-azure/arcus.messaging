@@ -486,7 +486,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
                 var client = ServiceProvider.GetRequiredService<TelemetryClient>();
+
+#pragma warning disable CS0618 // Type or member is obsolete: will be moved to a Telemetry-specific library in v3.0
                 return MessageCorrelationResult.Create(client, transactionId, operationParentId);
+#pragma warning restore
             }
 
             MessageCorrelationInfo correlationInfo =
