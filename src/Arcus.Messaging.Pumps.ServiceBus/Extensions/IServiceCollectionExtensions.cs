@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Security.Core;
@@ -9,6 +11,7 @@ using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
@@ -1131,7 +1134,10 @@ namespace Microsoft.Extensions.DependencyInjection
             });
             collection.JobId = options.JobId;
 
-            services.AddMessagePump(provider =>
+            services.TryAddSingleton<IMessagePumpLifetime, DefaultMessagePumpLifetime>();
+            services.TryAddSingleton<IMessagePumpCircuitBreaker>(provider => new DefaultMessagePumpCircuitBreaker(provider, provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>()));
+
+            services.AddHostedService(provider =>
             {
                 var config = provider.GetRequiredService<IConfiguration>();
                 var router = provider.GetService<IAzureServiceBusMessageRouter>();
