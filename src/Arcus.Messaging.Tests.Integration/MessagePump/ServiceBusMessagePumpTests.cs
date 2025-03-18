@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -16,6 +16,7 @@ using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -24,8 +25,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
-using static Microsoft.Extensions.Logging.ServiceBusEntityType;
 using static Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus.DiskMessageEventConsumer;
+using static Microsoft.Extensions.Logging.ServiceBusEntityType;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
@@ -80,8 +81,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         private async Task TestServiceBusMessageHandlingAsync(
-            WorkerOptions options, 
-            ServiceBusEntityType entityType, 
+            WorkerOptions options,
+            ServiceBusEntityType entityType,
             [CallerMemberName] string memberName = null)
         {
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
@@ -94,8 +95,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         private async Task TestServiceBusMessageHandlingAsync(
-            ServiceBusEntityType entityType, 
-            Action<WorkerOptions> configureOptions, 
+            ServiceBusEntityType entityType,
+            Action<WorkerOptions> configureOptions,
             MessageCorrelationFormat format = MessageCorrelationFormat.W3C,
             [CallerMemberName] string memberName = null)
         {
@@ -116,11 +117,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     case MessageCorrelationFormat.W3C:
                         AssertReceivedOrderEventDataForW3C(message, eventData);
                         break;
-                
+
                     case MessageCorrelationFormat.Hierarchical:
                         AssertReceivedOrderEventDataForHierarchical(message, eventData);
                         break;
-                
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(format), format, null);
                 }
@@ -266,7 +267,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
     public class ServiceBusEntityFixture : IAsyncLifetime
     {
-        private TemporaryServiceBusEntity _queue, _topic;
+        private TemporaryQueue _queue;
+        private TemporaryTopic _topic;
+        private ServiceBusClient _client;
 
         public string QueueName { get; } = $"queue-{Guid.NewGuid()}";
         public string TopicName { get; } = $"topic-{Guid.NewGuid()}";
@@ -274,8 +277,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task InitializeAsync()
         {
             var config = TestConfig.Create().GetServiceBus();
-            _topic = await TemporaryServiceBusEntity.CreateAsync(Topic, TopicName, config, NullLogger.Instance);
-            _queue = await TemporaryServiceBusEntity.CreateAsync(Queue, QueueName, config, NullLogger.Instance);
+            ServiceBusClient client = config.GetClient();
+            ServiceBusAdministrationClient adminClient = config.GetAdminClient();
+
+            _topic = await TemporaryTopic.CreateIfNotExistsAsync(adminClient, client, TopicName, NullLogger.Instance);
+            _queue = await TemporaryQueue.CreateIfNotExistsAsync(adminClient, client, QueueName, NullLogger.Instance);
         }
 
         public async Task DisposeAsync()
@@ -283,6 +289,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await using var disposables = new DisposableCollection(NullLogger.Instance);
             disposables.Add(_queue);
             disposables.Add(_topic);
+            disposables.Add(_client);
         }
     }
 }

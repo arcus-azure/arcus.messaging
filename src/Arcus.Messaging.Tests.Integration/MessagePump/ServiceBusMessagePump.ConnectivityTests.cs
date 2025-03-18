@@ -5,6 +5,7 @@ using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
+using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
 using Azure.ResourceManager.ServiceBus.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,7 +53,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             await using TemporaryServiceBusNamespace serviceBus = await CreateServiceBusNamespaceAsync();
-            await using TemporaryServiceBusEntity queue = await CreateServiceBusQueueAsync(serviceBus.Config);
+            await using TemporaryQueue queue = await CreateServiceBusQueueAsync(serviceBus.Config);
 
             ServiceBusAccessKeys keys = await serviceBus.GetAccessKeysAsync();
             await using TemporaryKeyVaultSecret secret = await CreateKeyVaultSecretAsync(keys.PrimaryConnectionString);
@@ -60,7 +61,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter)
                    .AddSecretStore(stores => AddAzureKeyVaultWithServicePrincipal(stores, _serviceBusConfig.ServicePrincipal))
-                   .AddServiceBusQueueMessagePump(queue.EntityName, secret.Name)
+                   .AddServiceBusQueueMessagePump(queue.Name, secret.Name)
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             await using var worker = await Worker.StartNewAsync(options);
@@ -69,12 +70,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             ServiceBusAccessKeys newKeys = await serviceBus.RotateAccessKeysAsync(ServiceBusAccessKeyType.PrimaryKey);
 
             // Assert
-           ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
-            var producer = new TestServiceBusMessageProducer(queue.EntityName, serviceBus.Config);
+            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
+            var producer = new TestServiceBusMessageProducer(queue.Name, serviceBus.Config);
             await producer.ProduceAsync(message);
 
             await secret.UpdateSecretAsync(newKeys.PrimaryConnectionString);
-            
+
             OrderCreatedEventData actual = await ConsumeOrderCreatedAsync(message.MessageId, TimeSpan.FromSeconds(20));
             AssertReceivedOrderEventDataForW3C(message, actual);
         }
@@ -88,13 +89,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 _logger);
         }
 
-        private async Task<TemporaryServiceBusEntity> CreateServiceBusQueueAsync(ServiceBusConfig serviceBus)
+        private async Task<TemporaryQueue> CreateServiceBusQueueAsync(ServiceBusConfig serviceBus)
         {
-            return await TemporaryServiceBusEntity.CreateAsync(
-                Queue,
-                $"queue-{Guid.NewGuid()}",
-                serviceBus,
-                _logger);
+            return await TemporaryQueue.CreateIfNotExistsAsync(serviceBus.HostName, $"queue-{Guid.NewGuid()}", _logger);
         }
 
         private async Task<TemporaryKeyVaultSecret> CreateKeyVaultSecretAsync(string secretValue)
