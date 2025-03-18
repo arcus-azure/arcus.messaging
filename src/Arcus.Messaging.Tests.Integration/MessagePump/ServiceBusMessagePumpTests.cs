@@ -277,11 +277,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task InitializeAsync()
         {
             var config = TestConfig.Create().GetServiceBus();
-            ServiceBusClient client = config.GetClient();
             ServiceBusAdministrationClient adminClient = config.GetAdminClient();
 
-            _topic = await TemporaryTopic.CreateIfNotExistsAsync(adminClient, client, TopicName, NullLogger.Instance);
-            _queue = await TemporaryQueue.CreateIfNotExistsAsync(adminClient, client, QueueName, NullLogger.Instance);
+            _client = config.GetClient();
+            _topic = await TemporaryTopic.CreateIfNotExistsAsync(adminClient, _client, TopicName, NullLogger.Instance);
+            _queue = await TemporaryQueue.CreateIfNotExistsAsync(adminClient, _client, QueueName, NullLogger.Instance);
         }
 
         public async Task DisposeAsync()
