@@ -8,6 +8,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// Represents the model that exposes the available <see cref="IMessageHandler{TMessage}"/>s, <see cref="IFallbackMessageHandler"/>s,
     /// and possible additional configurations that can be configured with the current state.
     /// </summary>
+    [Obsolete("Will be removed in favor of concrete message handler collection implementations")]
     public class MessageHandlerCollection
     {
         /// <summary>
@@ -52,7 +53,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             {
                 throw new ArgumentNullException(nameof(implementationFactory));
             }
-            
+
             Services.AddTransient(
                 serviceProvider => MessageHandler.Create(
                     implementationFactory(serviceProvider),

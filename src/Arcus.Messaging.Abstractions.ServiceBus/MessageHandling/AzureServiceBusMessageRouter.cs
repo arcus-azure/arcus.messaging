@@ -19,7 +19,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
     /// <summary>
     /// Represents an <see cref="IMessageRouter"/> that can route Azure Service Bus <see cref="ServiceBusReceivedMessage"/>s.
     /// </summary>
+#pragma warning disable CS0618 // Type or member is obsolete: general message router will be removed in v3.0 in favor of concrete implementations.
     public class AzureServiceBusMessageRouter : MessageRouter, IAzureServiceBusMessageRouter
+#pragma warning restore CS0618 // Type or member is obsolete
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.

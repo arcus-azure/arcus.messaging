@@ -16,9 +16,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// <summary>
     /// Represents how incoming messages gets routed through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.
     /// </summary>
-#pragma warning disable CS0618 // Type or member is obsolete: deprecated interface will be removed in v3.0.
+    [Obsolete("Will be removed in v3.0 in favor of concrete message router implementations")]
     public class MessageRouter : IMessageRouter
-#pragma warning restore CS0618 // Type or member is obsolete
     {
         private readonly JsonSerializerOptions _jsonOptions;
 
