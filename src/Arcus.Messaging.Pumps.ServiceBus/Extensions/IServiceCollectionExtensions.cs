@@ -14,6 +14,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CS0618 // Type or member is obsolete: lots of functionality will be removed or made internal in v3.0.
+
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -233,10 +235,8 @@ namespace Microsoft.Extensions.DependencyInjection
 
             AzureServiceBusMessagePumpSettings CreateSettings(IServiceProvider serviceProvider, AzureServiceBusMessagePumpOptions options)
             {
-#pragma warning disable CS0618 // Type or member is obsolete: will use other overload in v3.0.
                 return new AzureServiceBusMessagePumpSettings(
                     entityName, subscriptionName: null, ServiceBusEntityType.Queue, getConnectionStringFromConfigurationFunc, getConnectionStringFromSecretFunc, options, serviceProvider);
-#pragma warning restore CS0618 // Type or member is obsolete
             }
         }
 
@@ -306,7 +306,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string queueName,
             string fullyQualifiedNamespace,
             TokenCredential credential,
-            Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump)
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump)
         {
             if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
             {
@@ -333,7 +333,7 @@ namespace Microsoft.Extensions.DependencyInjection
             this IServiceCollection services,
             string queueName,
             Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
-            Action<IAzureServiceBusQueueMessagePumpOptions> configureMessagePump)
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump)
         {
             if (string.IsNullOrWhiteSpace(queueName))
             {
@@ -346,7 +346,7 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             ServiceBusMessageHandlerCollection collection =
-                AddServiceBusMessagePump(services, CreateSettings, configureMessagePump);
+                AddServiceBusMessagePump(services, CreateSettings, ConvertQueueOptions(configureMessagePump));
 
             return collection;
 
@@ -361,6 +361,12 @@ namespace Microsoft.Extensions.DependencyInjection
                     options,
                     serviceProvider);
             }
+        }
+
+        [Obsolete("Will be removed in v3.0")]
+        private static Action<IAzureServiceBusQueueMessagePumpOptions> ConvertQueueOptions(Action<AzureServiceBusMessagePumpOptions> configureOptions)
+        {
+            return deprecatedOptions => configureOptions((AzureServiceBusMessagePumpOptions) deprecatedOptions);
         }
 
         /// <summary>
@@ -1032,7 +1038,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string subscriptionName,
             string fullyQualifiedNamespace,
             TokenCredential credential,
-            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump)
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump)
         {
             if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
             {
@@ -1052,6 +1058,16 @@ namespace Microsoft.Extensions.DependencyInjection
             return _ => new ServiceBusClient(SanitizeServiceBusNamespace(fullyQualifiedNamespace), credential);
         }
 
+        private static string SanitizeServiceBusNamespace(string serviceBusNamespace)
+        {
+            if (!serviceBusNamespace.EndsWith(".servicebus.windows.net"))
+            {
+                serviceBusNamespace += ".servicebus.windows.net";
+            }
+
+            return serviceBusNamespace;
+        }
+
         /// <summary>
         /// Adds a message pump to consume messages from an Azure Service bus topic subscription.
         /// </summary>
@@ -1066,7 +1082,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string topicName,
             string subscriptionName,
             Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
-            Action<IAzureServiceBusTopicMessagePumpOptions> configureMessagePump)
+            Action<AzureServiceBusMessagePumpOptions> configureMessagePump)
         {
             if (string.IsNullOrWhiteSpace(topicName))
             {
@@ -1086,7 +1102,7 @@ namespace Microsoft.Extensions.DependencyInjection
             ServiceBusMessageHandlerCollection collection = AddServiceBusMessagePump(
                 services,
                 CreateSettings,
-                configureTopicMessagePump: configureMessagePump);
+                configureTopicMessagePump: ConvertTopicOptions(configureMessagePump));
 
             return collection;
 
@@ -1103,14 +1119,10 @@ namespace Microsoft.Extensions.DependencyInjection
             }
         }
 
-        private static string SanitizeServiceBusNamespace(string serviceBusNamespace)
+        [Obsolete("Will be removed in v3.0")]
+        private static Action<IAzureServiceBusTopicMessagePumpOptions> ConvertTopicOptions(Action<AzureServiceBusMessagePumpOptions> configureOptions)
         {
-            if (!serviceBusNamespace.EndsWith(".servicebus.windows.net"))
-            {
-                serviceBusNamespace += ".servicebus.windows.net";
-            }
-
-            return serviceBusNamespace;
+            return options => configureOptions((AzureServiceBusMessagePumpOptions) options);
         }
 
         private static ServiceBusMessageHandlerCollection AddServiceBusMessagePump(
@@ -1150,6 +1162,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return collection;
         }
 
+        [Obsolete("Will be removed in v3.0")]
         private static AzureServiceBusMessagePumpOptions DetermineMessagePumpOptions(
             Action<IAzureServiceBusQueueMessagePumpOptions> configureQueueMessagePump,
             Action<IAzureServiceBusTopicMessagePumpOptions> configureTopicMessagePump)
