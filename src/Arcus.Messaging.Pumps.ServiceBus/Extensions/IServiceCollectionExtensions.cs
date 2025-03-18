@@ -366,7 +366,7 @@ namespace Microsoft.Extensions.DependencyInjection
         [Obsolete("Will be removed in v3.0")]
         private static Action<IAzureServiceBusQueueMessagePumpOptions> ConvertQueueOptions(Action<AzureServiceBusMessagePumpOptions> configureOptions)
         {
-            return deprecatedOptions => configureOptions((AzureServiceBusMessagePumpOptions) deprecatedOptions);
+            return deprecatedOptions => configureOptions?.Invoke((AzureServiceBusMessagePumpOptions) deprecatedOptions);
         }
 
         /// <summary>
@@ -1122,7 +1122,7 @@ namespace Microsoft.Extensions.DependencyInjection
         [Obsolete("Will be removed in v3.0")]
         private static Action<IAzureServiceBusTopicMessagePumpOptions> ConvertTopicOptions(Action<AzureServiceBusMessagePumpOptions> configureOptions)
         {
-            return deprecatedOptions => configureOptions((AzureServiceBusMessagePumpOptions) deprecatedOptions);
+            return deprecatedOptions => configureOptions?.Invoke((AzureServiceBusMessagePumpOptions) deprecatedOptions);
         }
 
         private static ServiceBusMessageHandlerCollection AddServiceBusMessagePump(
