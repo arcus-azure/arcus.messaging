@@ -249,7 +249,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
             try
             {
+#pragma warning disable CS0618 // Type or member is obsolete: will be refactored when moving towards v3.0.
                 var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
+#pragma warning restore CS0618 // Type or member is obsolete
                 accessor?.SetCorrelationInfo(correlationInfo);
 
                 MessageProcessingResult routingResult = await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
