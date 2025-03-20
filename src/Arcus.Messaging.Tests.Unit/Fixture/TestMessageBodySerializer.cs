@@ -1,6 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using GuardNet;
 using Xunit;
 
 namespace Arcus.Messaging.Tests.Unit.Fixture
@@ -32,7 +31,7 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
         /// </summary>
         public TestMessageBodySerializer(string expectedBody, object message)
         {
-            Guard.NotNull(message, nameof(message), "Requires a test message to be used as result of the message deserialization");
+            ArgumentNullException.ThrowIfNull(message);
 
             _expectedExpectedBody = expectedBody;
             _message = message;

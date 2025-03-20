@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
-using GuardNet;
 
 // ReSharper disable once CheckNamespace
 namespace System

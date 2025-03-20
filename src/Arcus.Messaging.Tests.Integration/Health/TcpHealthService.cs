@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using GuardNet;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -33,7 +32,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="healthTcpPort"/> is not a valid TCP port number.</exception>
         public TcpHealthService(int healthTcpPort, ILogger logger)
         {
-            Guard.NotLessThan(healthTcpPort, 0, nameof(healthTcpPort), "Requires a TCP health port number that's above zero");
+            ArgumentOutOfRangeException.ThrowIfNegative(healthTcpPort);
             _healthTcpPort = healthTcpPort;
             _logger = logger ?? NullLogger.Instance;
         }
