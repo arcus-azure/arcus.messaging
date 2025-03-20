@@ -1,3 +1,4 @@
+﻿using System;
 ﻿using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Xunit;
