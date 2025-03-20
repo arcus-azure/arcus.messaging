@@ -497,9 +497,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 message.GetCorrelationInfo(
                     Settings.Options.Routing.Correlation?.TransactionIdPropertyName ?? PropertyNames.TransactionId,
                     Settings.Options.Routing.Correlation?.OperationParentIdPropertyName ?? PropertyNames.OperationParentId);
-#pragma warning restore CS0618 // Type or member is obsolete
 
             return MessageCorrelationResult.Create(correlationInfo);
+#pragma warning restore CS0618 // Type or member is obsolete
+
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
