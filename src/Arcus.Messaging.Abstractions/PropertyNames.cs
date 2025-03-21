@@ -29,6 +29,7 @@ namespace Arcus.Messaging.Abstractions
         /// <summary>
         /// Gets the context property to get the content type of the message.
         /// </summary>
+        [Obsolete("Will be removed in v3.0 as the property name is only used in deprecated 'Hierarchical' correlation message construction")]
         public const string ContentType = "Content-Type";
     }
 }
