@@ -391,15 +391,12 @@ public class Program
     public void ConfigureServices(IServiceCollection services)
     {
 
-        services.AddServiceBusTopicMessagePump(..., 
+        services.AddServiceBus...MessagePump(..., 
             options => 
             {
                 // Indicate whether or not messages should be automatically marked as completed 
                 // if no exceptions occurred and processing has finished (default: true).
                 options.AutoComplete = true;
-
-                // Indicate whether or not the message pump should emit security events (default: false).
-                options.EmitSecurityEvents = true;
 
                 // The amount of concurrent calls to process messages 
                 // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
@@ -414,75 +411,10 @@ public class Program
                 // The unique identifier for this background job to distinguish 
                 // this job instance in a multi-instance deployment (default: guid).
                 options.JobId = Guid.NewGuid().ToString();
-
-                // The name of the operation used when tracking the request telemetry.
-                // (default: Process)
-                options.Routing.Correlation.OperationName = "Order";
-
-                // The name of the Azure Service Bus message property that has the transaction ID.
-                // ⚠ Only used when the correlation format is configured as Hierarchical.
-                // (default: Transaction-Id).
-                options.Routing.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
-
-                // The name of the Azure Service Bus message property that has the upstream service ID.
-                // ⚠ Only used when the correlation format is configured as Hierarchical.
-                // (default: Operation-Parent-Id).
-                options.Routing.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
-
-                // The property name to enrich the log event with the correlation information cycle ID.
-                // (default: CycleId)
-                options.Routing.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
 
                 // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
                 // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
                 options.Routing.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
-            });
-
-        services.AddServiceBusQueueMessagePump(...
-            options => 
-            {
-                // Indicate whether or not messages should be automatically marked as completed 
-                // if no exceptions occurred and processing has finished (default: true).
-                options.AutoComplete = true;
-
-                // Indicate whether or not the message pump should emit security events (default: false).
-                options.EmitSecurityEvents = true;
-
-                // The amount of concurrent calls to process messages 
-                // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
-                options.MaxConcurrentCalls = 5;
-
-                // Specifies the amount of messages that will be eagerly requested during processing.
-                // Setting the PrefetchCount to a value higher then the MaxConcurrentCalls value helps maximizing 
-                // throughput by allowing the message pump to receive from a local cache rather then waiting on a 
-                // service request.
-                options.PrefetchCount = 10;
-
-                // The unique identifier for this background job to distinguish 
-                // this job instance in a multi-instance deployment (default: guid).
-                options.JobId = Guid.NewGuid().ToString();
-
-                // The name of the operation used when tracking the request telemetry.
-                // (default: Process)
-                options.Routing.Correlation.OperationName = "Order";
-
-                // The name of the Azure Service Bus message property that has the transaction ID.
-                // ⚠ Only used when the correlation format is configured as Hierarchical.
-                // (default: Transaction-Id).
-                options.Routing.Correlation.TransactionIdPropertyName = "X-Transaction-ID";
-
-                // The name of the Azure Service Bus message property that has the upstream service ID.
-                // ⚠ Only used when the correlation format is configured as Hierarchical.
-                // (default: Operation-Parent-Id).
-                options.Routing.Correlation.OperationParentIdPropertyName = "X-Operation-Parent-ID";
-
-                // The property name to enrich the log event with the correlation information cycle ID.
-                // (default: CycleId)
-                options.Routing.CorrelationEnricher.CycleIdPropertyName = "X-CycleId";
-
-                // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
-                // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
-                options.Routing.Deserialization.AdditionalMembers = AdditionalMembersHandling.Ignore;
             });
 
         // Multiple message handlers can be added to the services, based on the message type (ex. 'Order', 'Customer'...), 

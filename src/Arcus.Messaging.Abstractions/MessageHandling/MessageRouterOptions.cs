@@ -1,4 +1,5 @@
-﻿using Arcus.Messaging.Abstractions.Telemetry;
+﻿using System;
+using Arcus.Messaging.Abstractions.Telemetry;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
@@ -15,16 +16,19 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets the consumer configurable options model to change the behavior of the tracked telemetry.
         /// </summary>
+        [Obsolete("Will be removed in v3.0 as the correlation is handled outside the core message routing")]
         public MessageTelemetryOptions Telemetry { get; } = new();
 
         /// <summary>
         /// Gets the options to control the correlation information upon the receiving of messages in the message router.
         /// </summary>
+        [Obsolete("Will be removed in v3.0 as the correlation is handled outside the core message routing")]
         public MessageCorrelationOptions Correlation { get; } = new();
 
         /// <summary>
         /// Gets the options to control the Serilog <see cref="MessageCorrelationInfoEnricher"/> when the incoming message is routed via the message router.
         /// </summary>
+        [Obsolete("Will be removed in v3.0 as the correlation is handled outside the core message routing")]
         public MessageCorrelationEnricherOptions CorrelationEnricher { get; } = new();
     }
 }

@@ -6,6 +6,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// <summary>
     /// Represents a sub-set of consumer-configurable options available for Azure Service Bus Queue message pumps.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 in favor of using the " + nameof(AzureServiceBusMessagePumpOptions) + " directly as there is no difference anymore between queue and topic options")]
     public interface IAzureServiceBusQueueMessagePumpOptions
     {
         /// <summary>

@@ -19,6 +19,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// <summary>
     /// Represents the required settings to authenticate and start an <see cref="AzureServiceBusMessagePump"/>.
     /// </summary>
+    [Obsolete("Will be made internal in v3.0")]
     public class AzureServiceBusMessagePumpSettings
     {
         private readonly IServiceProvider _serviceProvider;
@@ -339,8 +340,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             EntityName = entityPath;
 
             return string.IsNullOrWhiteSpace(SubscriptionName)
-                ? client.CreateReceiver(EntityName)
-                : client.CreateReceiver(EntityName, SubscriptionName);
+                ? client.CreateReceiver(EntityName, new ServiceBusReceiverOptions { PrefetchCount = Options.PrefetchCount })
+                : client.CreateReceiver(EntityName, SubscriptionName, new ServiceBusReceiverOptions { PrefetchCount = Options.PrefetchCount });
         }
 
         private static async Task<string> GetConnectionStringAsync(
