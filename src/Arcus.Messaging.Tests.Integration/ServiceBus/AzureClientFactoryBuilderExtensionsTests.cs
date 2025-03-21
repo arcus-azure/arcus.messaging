@@ -24,7 +24,7 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
         private readonly ILogger _logger;
 
         private TemporaryManagedIdentityConnection _connection;
-        private TemporaryServiceBusEntity _queue;
+        private TemporaryQueue _queue;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureClientFactoryBuilderExtensionsTests" /> class.
@@ -41,13 +41,13 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
             // Arrange
             var services = new ServiceCollection();
             var connectionStringSecretName = "MyConnectionString";
-            string connectionString = _config.GetServiceBus().NamespaceConnectionString + ";EntityPath=" + _queue.EntityName;
+            string connectionString = _config.GetServiceBus().NamespaceConnectionString + ";EntityPath=" + _queue.Name;
             var connectionStringProperties = ServiceBusConnectionStringProperties.Parse(connectionString);
             services.AddSecretStore(stores => stores.AddInMemory(connectionStringSecretName, connectionString));
-            
+
             // Act
             services.AddAzureClients(clients => clients.AddServiceBusClient(connectionStringSecretName));
-            
+
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
             var factory = provider.GetRequiredService<IAzureClientFactory<ServiceBusClient>>();
@@ -86,7 +86,7 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
                         {
                             assertion(message);
                             await receiver.CompleteMessageAsync(message);
-                            
+
                             return;
                         }
                         catch (Exception exception)
@@ -103,7 +103,7 @@ namespace Arcus.Messaging.Tests.Integration.ServiceBus
         public async Task InitializeAsync()
         {
             _connection = TemporaryManagedIdentityConnection.Create(_config, _logger);
-            _queue = await TemporaryServiceBusEntity.CreateAsync(ServiceBusEntityType.Queue, $"queue-{Guid.NewGuid()}", _config.GetServiceBus(), _logger);
+            _queue = await TemporaryQueue.CreateIfNotExistsAsync(_config.GetServiceBus().HostName, $"queue-{Guid.NewGuid()}", _logger);
         }
 
         public async Task DisposeAsync()
