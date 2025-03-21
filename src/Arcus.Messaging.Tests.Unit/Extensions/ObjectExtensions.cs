@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Text;
 using Azure.Core.Amqp;
 using Bogus;
-using GuardNet;
 using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
@@ -30,8 +29,8 @@ namespace Azure.Messaging.ServiceBus
             string operationId = null,
             IDictionary<string, object> applicationProperties = null)
         {
-            Guard.NotNull(messageBody, nameof(messageBody), "Requires a message body to wrap in an received Azure Service Bus message");
-            
+            ArgumentNullException.ThrowIfNull(messageBody);
+
             string serializedMessageBody = JsonConvert.SerializeObject(messageBody);
             byte[] rawMessage = Encoding.UTF8.GetBytes(serializedMessageBody);
 

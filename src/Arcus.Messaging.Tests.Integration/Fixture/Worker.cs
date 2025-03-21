@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using GuardNet;
 using Microsoft.Extensions.Hosting;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
@@ -34,8 +33,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="options"/> is <c>null</c>.</exception>
         public static async Task<Worker> StartNewAsync(WorkerOptions options, [CallerMemberName] string memberName = null)
         {
-            Guard.NotNull(options, nameof(options), "Requires a options instance that influence the test worker implementation");
-            
+            ArgumentNullException.ThrowIfNull(options);
+
             Console.WriteLine("Start '{0}' integration test", memberName);
 
             IHostBuilder hostBuilder = Host.CreateDefaultBuilder();

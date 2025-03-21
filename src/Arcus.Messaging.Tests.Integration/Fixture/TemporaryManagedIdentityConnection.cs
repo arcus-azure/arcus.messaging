@@ -1,6 +1,5 @@
 ﻿using System;
 using Arcus.Testing;
-using GuardNet;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -20,8 +19,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             ILogger logger,
             params TemporaryEnvironmentVariable[] environmentVariables)
         {
-            Guard.NotNull(environmentVariables, nameof(environmentVariables));
-            Guard.NotAny(environmentVariables, nameof(environmentVariables));
+            ArgumentNullException.ThrowIfNull(environmentVariables);
 
             _logger = logger ?? NullLogger.Instance;
             _environmentVariables = environmentVariables;
@@ -41,7 +39,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/> is <c>null</c>.</exception>
         internal static TemporaryManagedIdentityConnection Create(TestConfig configuration, ILogger logger)
         {
-            Guard.NotNull(configuration, nameof(configuration));
+            ArgumentNullException.ThrowIfNull(configuration);
             logger ??= NullLogger.Instance;
 
             string tenantId = configuration.GetTenantId();

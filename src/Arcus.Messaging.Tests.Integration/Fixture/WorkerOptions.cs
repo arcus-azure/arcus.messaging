@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using GuardNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,7 +37,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="additionalHostOption"/> is <c>null</c>.</exception>
         public WorkerOptions Configure(Action<IHostBuilder> additionalHostOption)
         {
-            Guard.NotNull(additionalHostOption, nameof(additionalHostOption), "Requires an custom action that will add the additional hosting option");
+            ArgumentNullException.ThrowIfNull(additionalHostOption);
             _additionalHostOptions.Add(additionalHostOption);
 
             return this;
@@ -51,7 +50,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="logger"/> is <c>null</c>.</exception>
         public WorkerOptions AddXunitTestLogging(ITestOutputHelper logger)
         {
-            Guard.NotNull(logger, nameof(logger), "Requires a logger instance to write diagnostic trace messages to the test output");
+            ArgumentNullException.ThrowIfNull(logger);
 
             _outputWriter = logger;
             return this;
@@ -64,8 +63,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configure"/> is <c>null</c>.</exception>
         public WorkerOptions ConfigureSerilog(Action<LoggerConfiguration> configure)
         {
-            Guard.NotNull(configure, nameof(configure));
-
+            ArgumentNullException.ThrowIfNull(configure);
             _additionalSerilogConfigOptions.Add(configure);
 
             return this;
@@ -78,7 +76,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="hostBuilder"/> is <c>null</c>.</exception>
         internal void ApplyOptions(IHostBuilder hostBuilder)
         {
-            Guard.NotNull(hostBuilder, nameof(hostBuilder), "Requires a host builder instance to apply the worker options to");
+            ArgumentNullException.ThrowIfNull(hostBuilder);
 
             LoggerConfiguration config =
                 new LoggerConfiguration()
