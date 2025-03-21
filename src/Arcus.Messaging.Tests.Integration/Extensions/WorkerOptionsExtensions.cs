@@ -1,8 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
-using Azure.Messaging.ServiceBus;
-using GuardNet;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
@@ -25,8 +23,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// <exception cref="ArgumentException">Thrown when the <paramref name="connectionString"/> is blank.</exception>
         public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(this WorkerOptions options, string connectionString)
         {
-            Guard.NotNull(options, nameof(options));
-            Guard.NotNullOrWhitespace(connectionString, nameof(connectionString));
+            ArgumentNullException.ThrowIfNull(options);
+            ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
             return options.Services.AddServiceBusTopicMessagePump(
                 subscriptionName: Guid.NewGuid().ToString(),

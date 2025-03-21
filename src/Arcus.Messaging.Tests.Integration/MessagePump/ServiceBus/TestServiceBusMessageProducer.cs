@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
-using GuardNet;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
 {
@@ -38,8 +37,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         /// </summary>
         public static TestServiceBusMessageProducer CreateFor(string entityName, TestConfig configuration)
         {
-            Guard.NotNull(configuration, nameof(configuration), "Requires a test configuration to retrieve the Azure Service Bus entity-scoped connection string");
-
+            ArgumentNullException.ThrowIfNull(configuration);
             return new TestServiceBusMessageProducer(entityName, configuration.GetServiceBus());
         }
 
@@ -50,7 +48,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messages"/> is <c>null</c>.</exception>
         public async Task ProduceAsync(params ServiceBusMessage[] messages)
         {
-            Guard.NotNull(messages, nameof(messages), "Requires an Azure Service Bus message to send");
+            ArgumentNullException.ThrowIfNull(messages);
 
             await using var client = _connectionString is null
                 ? new ServiceBusClient(_config.HostName, _config.ServicePrincipal.GetCredential())
