@@ -142,7 +142,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/>
+        /// and optionally through <see cref="IAzureServiceBusFallbackMessageHandler"/>
         /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
@@ -158,6 +158,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+        [Obsolete("Will be removed in v3.0 as the message pump will be the sole point of contact for message processing instead of this overload that was used in message pump-free scenarios like Azure Functions, use the other overload instead with the " + nameof(ServiceBusReceiver))]
         public async Task<MessageProcessingResult> RouteMessageAsync(
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
@@ -174,7 +175,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// and optionally through a registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/>
+        /// and optionally through a <see cref="IAzureServiceBusFallbackMessageHandler"/>
         /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
@@ -201,7 +202,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// and optionally through a registered <see cref="IFallbackMessageHandler"/> or <see cref="IAzureServiceBusFallbackMessageHandler"/>
+        /// and optionally through a registered <see cref="IAzureServiceBusFallbackMessageHandler"/>
         /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
