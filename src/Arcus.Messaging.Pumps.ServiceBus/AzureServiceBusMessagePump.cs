@@ -483,7 +483,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
 
             using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
-            AzureServiceBusMessageContext messageContext = message.GetMessageContext(JobId, Settings.ServiceBusEntity);
+            AzureServiceBusMessageContext messageContext =
+                ServiceBusMessageContextBuilder.CreateFor(message)
+                    .WithReceiver(_messageReceiver, Settings.ServiceBusEntity)
+                    .WithMessagePump(JobId)
+                    .Build();
 
             MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
 
