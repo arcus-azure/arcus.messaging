@@ -1127,11 +1127,13 @@ namespace Microsoft.Extensions.DependencyInjection
             AzureServiceBusMessagePumpOptions options =
                 DetermineMessagePumpOptions(configureQueueMessagePump, configureTopicMessagePump);
 
+#pragma warning disable CS0618 // Type or member is obsolete: message router will be initiated directly in v3.0.
             ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting(provider =>
             {
                 var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
                 return new AzureServiceBusMessageRouter(provider, options.Routing, logger);
             });
+#pragma warning restore CS0618 // Type or member is obsolete
             collection.JobId = options.JobId;
 
             services.TryAddSingleton<IMessagePumpLifetime, DefaultMessagePumpLifetime>();
