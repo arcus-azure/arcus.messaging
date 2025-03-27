@@ -17,17 +17,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
                 $"order created event does not seem to be delivered in time as the file '{messageId}.json' cannot be found on disk", timeout);
         }
 
-        public static async Task<SensorReadEventData> ConsumeSensorReadAsync(string messageId)
-        {
-            return await ConsumeEventAsync<SensorReadEventData>(messageId,
-                $"sensor read event does not seem to be delivered in time as the file '{messageId}.json' cannot be found on disk");
-        }
-
         private static async Task<TResult> ConsumeEventAsync<TResult>(string messageId, string errorMessage, TimeSpan? timeout = null)
         {
             var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
 
-            FileInfo file = 
+            FileInfo file =
                 await Poll.Target(() => Assert.Single(dir.GetFiles($"{messageId}.json", SearchOption.AllDirectories)))
                           .Until(files => files.Length > 0)
                           .Every(TimeSpan.FromMilliseconds(100))
