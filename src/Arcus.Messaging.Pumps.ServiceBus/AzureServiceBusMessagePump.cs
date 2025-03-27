@@ -85,7 +85,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Gets the settings configuring the message pump.
         /// </summary>
+        [Obsolete("Will be made internal in v3.0, use the " + nameof(Options) + " instead")]
         public AzureServiceBusMessagePumpSettings Settings { get; }
+
+        /// <summary>
+        /// Gets the user-configurable options of the message pump.
+        /// </summary>
+        public AzureServiceBusMessagePumpOptions Options => Settings.Options;
 
         /// <summary>
         ///     Service Bus namespace that contains the entity
@@ -102,6 +108,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// </summary>
         /// <param name="reconfigure">The function to reconfigure the Azure Service Bus options.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0")]
         public void ReconfigureOptions(Action<AzureServiceBusMessagePumpOptions> reconfigure)
         {
             if (reconfigure is null)
@@ -118,6 +125,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="reconfigure">The function to reconfigure the Azure Service Bus Queue options.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
         /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Queues.</exception>
+        [Obsolete("Will be removed in v3.0")]
         public void ReconfigureQueueOptions(Action<IAzureServiceBusQueueMessagePumpOptions> reconfigure)
         {
             if (reconfigure is null)
@@ -140,6 +148,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="reconfigure">The function to reconfigure the Azure Service Bus Topic options.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
         /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Topics.</exception>
+        [Obsolete("Will be removed in v3.0")]
         public void ReconfigureTopicOptions(Action<IAzureServiceBusTopicMessagePumpOptions> reconfigure)
         {
             if (reconfigure is null)
@@ -162,14 +171,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
         public override async Task StartAsync(CancellationToken cancellationToken)
         {
-#pragma warning disable CS0618
             if (Settings.ServiceBusEntity == ServiceBusEntityType.Topic
                 && Settings.Options.TopicSubscription.HasValue
                 && Settings.Options.TopicSubscription.Value.HasFlag(TopicSubscription.Automatic))
             {
                 _ownsTopicSubscription = await CreateTopicSubscriptionAsync(cancellationToken);
             }
-#pragma warning restore
 
             await base.StartAsync(cancellationToken);
         }
@@ -420,7 +427,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 await _messageReceiver.CloseAsync();
             }
 
-#pragma warning disable CS0618
             if (Settings.ServiceBusEntity == ServiceBusEntityType.Topic
                 && Settings.Options.TopicSubscription.HasValue
                 && Settings.Options.TopicSubscription.Value.HasFlag(TopicSubscription.Automatic)
@@ -428,7 +434,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 await DeleteTopicSubscriptionAsync(cancellationToken);
             }
-#pragma warning restore
 
             await base.StopAsync(cancellationToken);
             _isHostShuttingDown = true;

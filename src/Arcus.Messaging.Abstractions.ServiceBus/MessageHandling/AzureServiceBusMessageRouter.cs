@@ -254,12 +254,16 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
                 MessageProcessingResult routingResult = await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
 
+#pragma warning disable CS0618 // Type or member is obsolete: specific telemetry calls will be removed in v3.0.
                 Logger.LogServiceBusRequest(serviceBusNamespace, entityName, Options.Telemetry.OperationName, routingResult.IsSuccessful, measurement, messageContext.EntityType);
+#pragma warning restore CS0618 // Type or member is obsolete
                 return routingResult;
             }
             catch
             {
+#pragma warning disable CS0618 // Type or member is obsolete: specific telemery calls will be removed in v3.0.
                 Logger.LogServiceBusRequest(serviceBusNamespace, entityName, Options.Telemetry.OperationName, false, measurement, messageContext.EntityType);
+#pragma warning restore CS0618 // Type or member is obsolete
                 throw;
             }
         }
