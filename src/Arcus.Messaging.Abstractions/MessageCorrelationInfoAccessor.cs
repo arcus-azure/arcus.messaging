@@ -7,6 +7,7 @@ namespace Arcus.Messaging.Abstractions
     /// Represents an <see cref="ICorrelationInfoAccessor{TCorrelationInfo}"/> implementation that's using the marker <see cref="IMessageCorrelationInfoAccessor"/> interface
     /// for accessing the messaging <see cref="MessageCorrelationInfo"/>.
     /// </summary>
+    [Obsolete("Will be moved in v3.0 outside the 'Abstractions' library in a separate Serilog-specific library, see the v3.0 migration guide for more information")]
     public class MessageCorrelationInfoAccessor : IMessageCorrelationInfoAccessor
     {
         private readonly ICorrelationInfoAccessor<MessageCorrelationInfo> _implementation;
