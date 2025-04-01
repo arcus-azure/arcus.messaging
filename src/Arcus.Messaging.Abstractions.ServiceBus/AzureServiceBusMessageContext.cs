@@ -122,9 +122,20 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             ServiceBusReceiver receiver,
             ServiceBusReceivedMessage message)
         {
-            ArgumentNullException.ThrowIfNull(jobId);
-            ArgumentNullException.ThrowIfNull(receiver);
-            ArgumentNullException.ThrowIfNull(message);
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                throw new ArgumentException("Requires a non-blank job ID to identity an Azure Service bus message pump", nameof(jobId));
+            }
+
+            if (receiver is null)
+            {
+                throw new ArgumentNullException(nameof(receiver));
+            }
+
+            if (message is null)
+            {
+                throw new ArgumentNullException(nameof(message));
+            }
 
             return new AzureServiceBusMessageContext(jobId, entityType, receiver, message);
         }
