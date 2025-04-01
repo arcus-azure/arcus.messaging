@@ -10,6 +10,7 @@ namespace Arcus.Messaging.Abstractions
     /// Represents the correlation result of a received Azure Service Bus message.
     /// This result will act as the scope of the request telemetry.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 in favor of " + nameof(MessageOperationResult))]
     public sealed class MessageCorrelationResult : IDisposable
     {
         private readonly TelemetryClient _telemetryClient;
