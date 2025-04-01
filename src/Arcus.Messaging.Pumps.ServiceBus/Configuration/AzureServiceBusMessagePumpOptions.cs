@@ -1,6 +1,6 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
 
 #pragma warning disable CS0618
 
@@ -151,7 +151,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets the consumer configurable options model to change the behavior of the tracked Azure Service bus request telemetry.
         /// </summary>
-        public AzureServiceBusMessageTelemetryOptions Telemetry { get; } = new AzureServiceBusMessageTelemetryOptions();
+        public MessageTelemetryOptions Telemetry { get; } = new MessageTelemetryOptions();
 
         /// <summary>
         /// Gets the default consumer-configurable options for Azure Service Bus Queue message pumps.

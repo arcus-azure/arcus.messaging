@@ -9,7 +9,6 @@ using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.Fixture.Logging;
 using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
-using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Arcus.Testing;
@@ -39,13 +38,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
 
             string operationName = Guid.NewGuid().ToString();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => 
+            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt =>
             {
                 opt.AutoComplete = true;
                 opt.Routing.Telemetry.OperationName = operationName;
 
             }).WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
-            
+
             var spySink = new InMemoryApplicationInsightsTelemetryConverter();
             var spyChannel = new InMemoryTelemetryChannel();
             WithTelemetryChannel(options, spyChannel);
@@ -70,9 +69,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Fact]
         public async Task ServiceBusMessagePump_WithW3CCorrelationFormatForNewParent_AutomaticallyTracksMicrosoftDependencies()
         {
-             // Arrange
-             var options = new WorkerOptions();
-            
+            // Arrange
+            var options = new WorkerOptions();
+
             string operationName = Guid.NewGuid().ToString();
             options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt =>
             {
@@ -80,7 +79,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 opt.AutoComplete = true;
 
             }).WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>();
-            
+
             var spySink = new InMemoryApplicationInsightsTelemetryConverter();
             var spyChannel = new InMemoryTelemetryChannel();
             WithTelemetryConverter(options, spySink);
@@ -112,10 +111,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         private static async Task<RequestTelemetry> GetTelemetryRequestAsync(InMemoryApplicationInsightsTelemetryConverter spySink, string operationName, Func<RequestTelemetry, bool> filter = null)
         {
-            return await Poll.Target(() => AssertX.GetRequestFrom(spySink.Telemetries, r => 
+            return await Poll.Target(() => AssertX.GetRequestFrom(spySink.Telemetries, r =>
             {
-                return r.Name == operationName 
-                       && r.Properties[EntityType] == Queue.ToString() 
+                return r.Name == operationName
+                       && r.Properties[EntityType] == Queue.ToString()
                        && (filter is null || filter(r));
             })).FailWith($"cannot find request telemetry in spied-upon Serilog sink with operation name: {operationName}");
         }
@@ -124,7 +123,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             return await Poll.Target(() => AssertX.GetDependencyFrom(spyChannel.Telemetries, d =>
             {
-                return d.Type == dependencyType 
+                return d.Type == dependencyType
                        && (filter is null || filter(d));
             })).FailWith($"cannot find dependency telemetry in spied-upon Application Insights channel with dependency type: {dependencyType}");
         }
@@ -133,7 +132,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             return await Poll.Target(() => AssertX.GetDependencyFrom(spySink.Telemetries, d =>
             {
-                return d.Type == dependencyType 
+                return d.Type == dependencyType
                        && (filter is null || filter(d));
             })).FailWith($"cannot find dependency telemetry in spied-upon Application Insights channel with dependency type: {dependencyType}");
         }
@@ -151,7 +150,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
 
                    }).WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
-            
+
             string operationId = $"operation-{Guid.NewGuid()}", transactionId = $"transaction-{Guid.NewGuid()}";
             Order order = OrderGenerator.Generate();
             ServiceBusMessage orderMessage =

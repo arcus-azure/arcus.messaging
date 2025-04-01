@@ -1142,6 +1142,12 @@ namespace Microsoft.Extensions.DependencyInjection
             ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting(provider =>
             {
                 var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
+
+                if (options.Telemetry.OperationName != AzureServiceBusMessagePumpOptions.DefaultOptions.Telemetry.OperationName)
+                {
+                    options.Routing.Telemetry.OperationName = options.Telemetry.OperationName;
+                }
+
                 return new AzureServiceBusMessageRouter(provider, options.Routing, logger);
             });
             collection.JobId = options.JobId;
@@ -1174,3 +1180,4 @@ namespace Microsoft.Extensions.DependencyInjection
         }
     }
 }
+1
