@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Arcus.Messaging.Abstractions
+namespace Arcus.Messaging.Abstractions.Telemetry
 {
     /// <summary>
     /// Represents the result of a request tracking operation.
