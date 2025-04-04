@@ -17,7 +17,7 @@ Messaging systems can become quite complex. Different message types, properties.
 Instead of duplicating the work, and keeping your solution stable/tested; Arcus Messaging provides a simple/secure way of setting up message routing/handling for all your projects!
 
 # How to use Arcus Messaging?
-See our dedicated [getting started]() page to take your first steps with Arcus Messaging. Good luck!
+See our dedicated [getting started](./02-getting-started.md) page to take your first steps with Arcus Messaging. Good luck!
 
 # License
 This is licensed under The MIT License (MIT). Which means that you can use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the web application. But you always need to state that Codit is the original author of this web application.
