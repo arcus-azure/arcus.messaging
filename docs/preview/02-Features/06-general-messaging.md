@@ -54,4 +54,4 @@ public class RateLimitService
 ⚡ Besides the `PauseProcessingMessagesAsync` method, there also exists `Stop...`/`Start...` variants so that you can control the time dynamically when the pump is allowed to run again.
 
 For more information on message pumps:
-- [Azure Service Bus message pump](./02-message-handling/01-service-bus.md)
+- [Azure Service Bus message pump](./01-Azure/01-service-bus.md)
