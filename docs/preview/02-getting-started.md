@@ -1,3 +1,7 @@
+---
+sidebar_label: Getting started
+---
+
 # Getting started with Arcus Messaging
 **Welcome to Arcus Messaging!** 🎉
 
