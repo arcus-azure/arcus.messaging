@@ -70,4 +70,4 @@ Host.CreateDefaultBuilder()
 
 The way *'message handlers'* are registered determines when the received message will be routed to them.
 
-> 🔗 See the [message handler registration options documentation]() for more information on providing additional routing filters to your message handlers.
+> 🔗 See the [Azure Service bus messaging feature documentation](./02-Features/01-Azure/01-service-bus.md) for more information on providing additional routing filters to your message handlers.
