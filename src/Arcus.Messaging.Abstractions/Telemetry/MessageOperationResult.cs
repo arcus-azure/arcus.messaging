@@ -6,7 +6,7 @@ namespace Arcus.Messaging.Abstractions.Telemetry
     /// <summary>
     /// Represents the result of a request tracking operation.
     /// </summary>
-    public class MessageOperationResult : IDisposable
+    public abstract class MessageOperationResult : IDisposable
     {
         private readonly DateTimeOffset _startTime;
         private readonly Stopwatch _watch;
@@ -60,8 +60,6 @@ namespace Arcus.Messaging.Abstractions.Telemetry
         /// <param name="isSuccessful">The boolean flag to indicate whether the operation was successful.</param>
         /// <param name="startTime">The date when the operation started.</param>
         /// <param name="duration">The time it took for the operation to run.</param>
-        protected virtual void StopOperation(bool isSuccessful, DateTimeOffset startTime, TimeSpan duration)
-        {
-        }
+        protected abstract void StopOperation(bool isSuccessful, DateTimeOffset startTime, TimeSpan duration);
     }
 }
