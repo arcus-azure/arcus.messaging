@@ -15,6 +15,7 @@ namespace Azure.Messaging.ServiceBus
         /// </summary>
         /// <param name="message">The received Azure Service Bus message to extract the system properties from.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0, please use the factory method instead: " + nameof(AzureServiceBusMessageContext) + "." + nameof(AzureServiceBusMessageContext.Create) + " to get the Arcus-created system properties")]
         public static AzureServiceBusSystemProperties GetSystemProperties(this ServiceBusReceivedMessage message)
         {
             if (message is null)
@@ -32,6 +33,7 @@ namespace Azure.Messaging.ServiceBus
         /// <param name="jobId">The unique ID to identify the current messaging job, pump or router that is handling the received <paramref name="message"/>.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use the factory method instead: " + nameof(AzureServiceBusMessageContext) + "." + nameof(AzureServiceBusMessageContext.Create))]
         public static AzureServiceBusMessageContext GetMessageContext(this ServiceBusReceivedMessage message, string jobId)
         {
             if (message is null)
@@ -50,6 +52,7 @@ namespace Azure.Messaging.ServiceBus
         /// <param name="entityType">The type of the Azure Service Bus entity on which a message was received.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use the factory method instead: " + nameof(AzureServiceBusMessageContext) + "." + nameof(AzureServiceBusMessageContext.Create))]
         public static AzureServiceBusMessageContext GetMessageContext(this ServiceBusReceivedMessage message, string jobId, ServiceBusEntityType entityType)
         {
             if (message is null)
