@@ -7,6 +7,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// <summary>
     /// Represents the message correlation format of the received message.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 as W3C will be the only supported correlation format")]
     public enum MessageCorrelationFormat
     {
         /// <summary>
