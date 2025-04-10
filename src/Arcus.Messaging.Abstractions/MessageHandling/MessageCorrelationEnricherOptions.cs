@@ -7,6 +7,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// <summary>
     /// Represents the consumer configurable options model to change the behavior of the Serilog <see cref="MessageCorrelationInfoEnricher"/>.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 as W3C will be the only supported correlation format")]
     public class MessageCorrelationEnricherOptions : CorrelationInfoEnricherOptions
     {
         private string _cycleIdPropertyName = "CycleId";

@@ -7,6 +7,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// <summary>
     /// Represents the user-configurable options to control the correlation information tracking during the receiving of the messages in the message router.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 as W3C will be the only supported correlation format")]
     public class MessageCorrelationOptions
     {
         [Obsolete("Will be removed in v3.0")]
