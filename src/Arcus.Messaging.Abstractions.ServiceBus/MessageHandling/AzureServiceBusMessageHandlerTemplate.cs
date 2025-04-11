@@ -8,6 +8,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
     /// <summary>
     /// Represents the default template when handling Azure Service Bus messages and controlling how the message is being handled by Azure Service Bus.
     /// </summary>
+    [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(AzureServiceBusMessageContext) + " instead")]
     public abstract class AzureServiceBusMessageHandlerTemplate
     {
         /// <summary>

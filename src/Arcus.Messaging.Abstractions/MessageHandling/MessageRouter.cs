@@ -263,6 +263,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
         }
 
+        [Obsolete("Will be removed in v3.0, as the entire fallback message handler structure becomes unnecessary")]
         private async Task<bool> TryProcessMessageAsync<TMessageContext>(
             IServiceProvider serviceProvider,
             string message,
@@ -423,6 +424,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             return isProcessedByGeneralContext;
         }
 
+        [Obsolete("Will be removed in v3.0, as the entire fallback message handler structure becomes unnecessary")]
         private async Task<bool> TryFallbackProcessMessageByContextAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -478,6 +480,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         /// <param name="messageContext">The message context in which the message is received and where the fallback message handler should take up.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageContext"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0, as the entire fallback message handler structure becomes unnecessary")]
         protected FallbackMessageHandler<TMessage, TMessageContext>[] GetAvailableFallbackMessageHandlersByContext<TMessage, TMessageContext>(
             TMessageContext messageContext)
             where TMessage : class

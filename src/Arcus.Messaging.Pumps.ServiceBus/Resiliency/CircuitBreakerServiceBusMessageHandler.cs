@@ -14,7 +14,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
     /// Represents a template for a message handler that interacts with an unstable dependency system that requires a circuit breaker to prevent overloading the system.
     /// </summary>
     /// <typeparam name="TMessage">The type of the message that this handler can process.</typeparam>
-    public abstract class CircuitBreakerServiceBusMessageHandler<TMessage> : AzureServiceBusMessageHandler<TMessage>
+    public abstract class CircuitBreakerServiceBusMessageHandler<TMessage> : IAzureServiceBusMessageHandler<TMessage>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="CircuitBreakerServiceBusMessageHandler{TMessage}" /> class.
@@ -24,9 +24,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="circuitBreaker"/> or <paramref name="logger"/> is <c>null</c>.</exception>
         protected CircuitBreakerServiceBusMessageHandler(
             IMessagePumpCircuitBreaker circuitBreaker,
-            ILogger<CircuitBreakerServiceBusMessageHandler<TMessage>> logger) 
-            : base(logger)
+            ILogger<CircuitBreakerServiceBusMessageHandler<TMessage>> logger)
         {
+            Logger = logger;
             CircuitBreaker = circuitBreaker;
         }
 
@@ -34,6 +34,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
         /// Gets the circuit breaker that controls the activation of the message pump.
         /// </summary>
         protected IMessagePumpCircuitBreaker CircuitBreaker { get; }
+
+        /// <summary>
+        /// Gets the current instance to write diagnostic messages during the circuit breaker-enhanced message handler.
+        /// </summary>
+        protected ILogger Logger { get; }
 
         /// <summary>
         /// Process a new message that was received.
@@ -45,7 +50,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or the <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
-        public override async Task ProcessMessageAsync(
+        public async Task ProcessMessageAsync(
             TMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
