@@ -9,7 +9,7 @@ This page is dedicated to be used as a walkthrough on how to set up Arcus Messag
 
 **Used terms:**
 * *message handler:* a custom implementation of an Arcus Messaging-provided interface that processes a deserialized Azure Service bus message.
-* *message pump:* an Arcus Messaging-provided registered service that receives Azure Service bus messages for you, and "pump's" them through your *message handlers*.
+* *message pump:* an Arcus Messaging-provided registered service that receives Azure Service bus messages for you, and "pumps" them through your *message handlers*.
 
 ## The basics
 > 👉 Arcus Messaging is currently only supported for [Azure Service bus](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-overview) solutions.
