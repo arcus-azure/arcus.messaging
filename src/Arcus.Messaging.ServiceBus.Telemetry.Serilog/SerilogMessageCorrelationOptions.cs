@@ -11,7 +11,7 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.Serilog
         /// <summary>
         /// Gets the options to control the Serilog <see cref="SerilogMessageCorrelationInfoEnricher"/> when the incoming message is routed via the message router.
         /// </summary>
-        public SerilogMessageCorrelationEnricherOptions Enricher { get; } = new();
+        public SerilogMessageCorrelationEnricherOptions Enricher { get; } = new SerilogMessageCorrelationEnricherOptions();
     }
 
     /// <summary>

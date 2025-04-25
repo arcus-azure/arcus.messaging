@@ -1158,6 +1158,14 @@ namespace Microsoft.Extensions.DependencyInjection
                 return new AzureServiceBusMessagePump(settings, provider, router, logger);
             });
 
+            collection.WithServiceBusSerilogRequestTracking(opt =>
+            {
+                opt.Enricher.CycleIdPropertyName = options.Routing.CorrelationEnricher.CycleIdPropertyName;
+                opt.Enricher.OperationIdPropertyName = options.Routing.CorrelationEnricher.OperationIdPropertyName;
+                opt.Enricher.TransactionIdPropertyName = options.Routing.CorrelationEnricher.TransactionIdPropertyName;
+                opt.Enricher.OperationParentIdPropertyName = options.Routing.CorrelationEnricher.OperationParentIdPropertyName;
+            });
+
             return collection;
         }
 
