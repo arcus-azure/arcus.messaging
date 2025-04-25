@@ -3,7 +3,7 @@ sidebar_label: Service bus
 ---
 
 # Azure Service Bus messaging
-The `Arcus.Messaging.Pumps.ServiceBus` library provides a way to process Azure Service bus messages on queues/topic subscriptions via custom routed *message handlers*, instead of interacting with the [`ServiceBusReceiver`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceiver) yourself. 
+The `Arcus.Messaging.Pumps.ServiceBus` library provides a way to process Azure Service Bus messages on queues/topic subscriptions via custom routed *message handlers*, instead of interacting with the [`ServiceBusReceiver`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceiver) yourself. 
 
 > 🔗 See the [getting started page](../../02-getting-started.md) to understand the 'message handler' and 'message pump' concepts.
 
