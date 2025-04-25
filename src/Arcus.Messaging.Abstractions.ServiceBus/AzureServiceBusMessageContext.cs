@@ -160,6 +160,18 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         }
 
         /// <summary>
+        /// Dead letters the Azure Service Bus message on Azure with a reason why the message needs to be dead lettered.
+        /// </summary>
+        /// <param name="deadLetterReason">The reason why the message should be dead lettered.</param>
+        /// <param name="deadLetterErrorDescription">The optional extra description of the dead letter error.</param>
+        /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized correctly.</exception>
+        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+        {
+            await DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties: null, cancellationToken);
+        }
+
+        /// <summary>
         /// Dead letters the Azure Service Bus message on Azure while providing <paramref name="newMessageProperties"/> for properties that has to be modified in the process.
         /// </summary>
         /// <param name="deadLetterReason">The reason why the message should be dead lettered.</param>
@@ -172,20 +184,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             EnsureServiceBusFields();
 
             await _receiver.DeadLetterMessageAsync(_message, newMessageProperties, deadLetterReason, deadLetterErrorDescription, cancellationToken);
-        }
-
-        /// <summary>
-        /// Dead letters the Azure Service Bus message on Azure with a reason why the message needs to be dead lettered.
-        /// </summary>
-        /// <param name="deadLetterReason">The reason why the message should be dead lettered.</param>
-        /// <param name="deadLetterErrorDescription">The optional extra description of the dead letter error.</param>
-        /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
-        /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized correctly.</exception>
-        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
-        {
-            EnsureServiceBusFields();
-
-            await _receiver.DeadLetterMessageAsync(_message, deadLetterReason, deadLetterErrorDescription, cancellationToken);
         }
 
         /// <summary>
