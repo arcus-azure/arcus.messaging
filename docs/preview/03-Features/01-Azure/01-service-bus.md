@@ -167,42 +167,6 @@ services.AddServiceBus[Topic/Queue]MessagePump(...)
         });
 ```
 
-### Message handler fallback customization
-When a received Azure Service bus message cannot be routed to any of the registered *message handlers*, then the message will be [dead-lettered](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dead-letter-queues) automatically.
-
-Arcus Messaging provides a 'hook' when such a scenario occurs, called: 'fallback message handlers'. These special kind of *message handlers* are only used in scenarios where the 'general' handlers can't be used.
-
-> 💡 This is a great way to do custom dead-lettering.
-
-To implement such a 'fallback' *message handler*, you can use the `AzureServiceBusFallbackMessageHandler` abstract class. This gives you access to `DeadLetterMessageAsync` and other Service bus-specific methods.
-
-```csharp
-using  Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-
-public class CustomDeadLetterFallbackMessageHandler : AzureServiceBusFallbackMessageHandler
-{
-    public async Task ProcessMessageAsync(
-        ServiceBusReceivedMessage message,
-        AzureServiceBusMessageContext context,
-        MessageCorrelationInfo correlation,
-        CancellationToken cancellation)
-    {
-        await base.DeadLetterMessageAsync(message, "my custom dead-letter reason");
-    }
-}
-```
-
-Afterwards, these 'fallback' *message handlers* can be registered on the message pump:
-
-```csharp
-services.AddServiceBus[Queue/Topic]MessagePump(...)
-        .WithServiceBusMessageHandler<OrderMessageHandler, Order>()
-        .WithServiceBusFallbackMessageHandler<CustomDeadLetterFallbackMessageHandler>();
-```
-
-> **⚠️ Considerations**
-> * Only a single fallback message handler can be used on a message pump. 
-
 ### Pause message processing with a circuit breaker
 When your message handler interacts with an external dependency, that dependency may become unavailable. In that case you want to temporarily stop processing messages.
 
