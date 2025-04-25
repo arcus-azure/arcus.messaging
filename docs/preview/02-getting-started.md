@@ -14,7 +14,9 @@ This page is dedicated to be used as a walkthrough on how to set up Arcus Messag
 ## The basics
 > 👉 Arcus Messaging is currently only supported for [Azure Service bus](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-overview) solutions.
 
-Arcus Messaging helps with receiving messages from Azure Service bus queues/topic subscriptions. Instead of directly interacting with the [`ServiceBusReceiver`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceiver), it allows you to implement one or more *'message handler'* interfaces. Arcus Messaging will use these custom implementations and determine based on several criteria to which  *'message handler'* it should route the message.
+Arcus Messaging helps with receiving messages from a message broker. This walkthrough uses Azure Service bus as an example.
+
+Instead of directly interacting with the [`ServiceBusReceiver`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceiver), it allows you to implement one or more *'message handler'* interfaces. Arcus Messaging will use these custom implementations and determine based on several criteria to which  *'message handler'* it should route the message.
 
 By using *'message handlers'*, you don't have to worry about routing, deserialization, or even complete/dead-letter/abandon messages.
 
