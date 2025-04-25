@@ -9,7 +9,7 @@ sidebar_label: Welcome
 Welcome to the Arcus Messaging site! 🎉
 
 # What is Arcus Messaging?
-Arcus Messaging is an umbrella term for a set of NuGet packages `Arcus.Messaging.*` that helps with abstracting away boilerplate code when integrating with messaging systems like Azure Service bus. It allows you to focus on implementing business logic instead of spending ime with message picking, connections, deserialization, and the like.
+Arcus Messaging is an umbrella term for a set of NuGet packages `Arcus.Messaging.*` that helps with abstracting away boilerplate code when integrating with messaging systems like Azure Service Bus. It allows you to focus on implementing business logic instead of spending time with message picking, connections, deserialization, and the like.
 
 # Why should I use Arcus Messaging?
 Messaging systems can become quite complex. Different message types, properties... means different message routing. This tedious boilerplate infrastructure work is often common across messaging projects.
