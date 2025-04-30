@@ -8,13 +8,13 @@ sidebar_label: Getting started
 This page is dedicated to be used as a walkthrough on how to set up Arcus Messaging in a new or existing project. Arcus Messaging is an umbrella term for a set of NuGet packages that kickstart your messaging solution.
 
 **Used terms:**
-* *message handler:* a custom implementation of an Arcus Messaging-provided interface that processes a deserialized Azure Service bus message.
-* *message pump:* an Arcus Messaging-provided registered service that receives Azure Service bus messages for you, and "pumps" them through your *message handlers*.
+* *message handler:* a custom implementation of an Arcus Messaging-provided interface that processes a deserialized Azure Service Bus message.
+* *message pump:* an Arcus Messaging-provided registered service that receives Azure Service Bus messages for you, and "pumps" them through your *message handlers*.
 
 ## The basics
 > 👉 Arcus Messaging is currently only supported for [Azure Service Bus](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-overview) solutions.
 
-Arcus Messaging helps with receiving messages from a message broker. This walkthrough uses Azure Service bus as an example.
+Arcus Messaging helps with receiving messages from a message broker. This walkthrough uses Azure Service Bus as an example.
 
 Instead of directly interacting with the [`ServiceBusReceiver`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceiver), it allows you to implement one or more *'message handler'* interfaces. Arcus Messaging will use these custom implementations and determine based on several criteria to which  *'message handler'* it should route the message.
 
@@ -58,7 +58,7 @@ public class MyOrderMessageHandler : IAzureServiceBusMessageHandler<MyOrder>
 ## Register your message handlers
 A messaging solution usually has more than one type of message it receives. Differentiating between types, properties, can be a hassle to set up.
 
-*'Message handlers'* are registered on a *'message pump'* in your application. This 'pump' receives the Azure Service bus messages for you and routes them to the right handler.
+*'Message handlers'* are registered on a *'message pump'* in your application. This 'pump' receives the Azure Service Bus messages for you and routes them to the right handler.
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -76,4 +76,4 @@ Host.CreateDefaultBuilder()
 
 The way *'message handlers'* are registered determines when the received message will be routed to them.
 
-> 🔗 See the [Azure Service bus messaging feature documentation](./03-Features/01-Azure/01-service-bus.md) for more information on providing additional routing filters to your message handlers.
+> 🔗 See the [Azure Service Bus messaging feature documentation](./03-Features/01-Azure/01-service-bus.md) for more information on providing additional routing filters to your message handlers.

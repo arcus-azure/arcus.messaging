@@ -1,5 +1,5 @@
 ﻿---
-sidebar_label: Service bus
+sidebar_label: Service Bus
 ---
 
 # Azure Service Bus messaging
@@ -15,7 +15,7 @@ PS> Install-Package -Name Arcus.Messaging.Pumps.ServiceBus
 ```
 
 ## Implementing a message handler
-To receive the Azure Service bus message in a deserialized form, you can implement one or more *message handlers*, each with the expected DTO (data-transfer object) that the [`ServiceBusReceivedMessage.Body`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceivedmessage.body) will be deserialized towards (default via JSON).
+To receive the Azure Service Bus message in a deserialized form, you can implement one or more *message handlers*, each with the expected DTO (data-transfer object) that the [`ServiceBusReceivedMessage.Body`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceivedmessage.body) will be deserialized towards (default via JSON).
 
 Here is an example of such a message handler that expects messages of type `Order`:
 
@@ -51,10 +51,10 @@ public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
 ```
 
 ## Registering your message handlers
-All your custom *message handlers* need to be registered on a *message pump*. This 'pump' is an Arcus Messaging-provided service that receives the Azure Service bus messages for you, and "pump's" them to the right *message handler*.
+All your custom *message handlers* need to be registered on a *message pump*. This 'pump' is an Arcus Messaging-provided service that receives the Azure Service Bus messages for you, and "pump's" them to the right *message handler*.
 
 ### Register the Arcus message pump
-There exists two type of Azure Service bus *message pumps*: for queues and for topic subscriptions. During the registration of the pump in the application services, the type of authentication mechanism can be configured.
+There exists two type of Azure Service Bus *message pumps*: for queues and for topic subscriptions. During the registration of the pump in the application services, the type of authentication mechanism can be configured.
 
 > 🎖️ Use the [`ManagedIdentityCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.managedidentitycredential) where possible.
 
@@ -111,7 +111,7 @@ Host.CreateDefaultBuilder()
 Due to the wide range of situations within messaging solutions, Arcus Messaging supports highly customizable message pump/handler registrations.
 
 ### Message pump customization
-The following options are available when registering the Azure Service bus message pump.
+The following options are available when registering the Azure Service Bus message pump.
 
 ```csharp
 services.AddServiceBus[Topic/Queue]MessagePump(..., options => 
@@ -140,7 +140,7 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
 ```
 
 ### Message handler routing customization
-The following routing options are available when registering an Azure Service bus message handler on a message pump.
+The following routing options are available when registering an Azure Service Bus message handler on a message pump.
 
 > 💡 Setting one or more of the routing options helps the message pump to better select the right *message handler* for the received message.
 
