@@ -167,6 +167,30 @@ services.AddServiceBus[Topic/Queue]MessagePump(...)
         });
 ```
 
+### Custom message settlement
+When messages can't be matched to any of your custom registered message handlers, Arcus will dead-letter the message. When one of your message handlers fails to process a message, it will get abandoned and maybe only after a third try be dead-lettered.
+
+This settlement of received Azure Service Bus messages can also be customized by calling one of the Service Bus operations yourself via the message context.
+
+```csharp
+public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
+{
+    public async Task Task ProcessMessageAsync(
+        Order message,
+        AzureServiceBusMessageContext messageContext,
+        MessageCorrelationInfo correlation,
+        CancellationToken cancellation)
+    {
+        await messageContext.DeadLetterMessageAsync("Reason: Unsupported", "Message type is not supported");
+    }
+}
+```
+
+The following operations are supported:
+* **Dead-letter**
+* **Abandon**
+* **Complete**
+
 ### Pause message processing with a circuit breaker
 When your message handler interacts with an external dependency, that dependency may become unavailable. In that case you want to temporarily stop processing messages.
 
