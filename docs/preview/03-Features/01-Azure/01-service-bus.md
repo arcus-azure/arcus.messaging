@@ -168,7 +168,7 @@ services.AddServiceBus[Topic/Queue]MessagePump(...)
 ```
 
 ### Custom message settlement
-When messages can't be matched to any of your custom registered message handlers, Arcus will dead-letter the message. When one of your message handlers fails to process a message, it will get abandoned and maybe only after a third try be dead-lettered.
+When messages can't be matched to any of your custom registered message handlers, Arcus will dead-letter the message. When one of your message handlers fails to process a message, it will get abandoned and only after the maximum number of redeliveries has been reached, the message will be dead-lettered.
 
 This settlement of received Azure Service Bus messages can also be customized by calling one of the Service Bus operations yourself via the message context.
 
