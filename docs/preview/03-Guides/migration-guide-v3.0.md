@@ -6,6 +6,11 @@ Starting from v3.0, there are some major breaking changes related to the [lightw
 * 🗑️ Transient `Newtonsoft.Json` dependency is replaced by built-in `System.Text.Json`
 * 🗑️ Transient `GuardNET` dependency is replaced by built-in argument checking.
 * 🗑️ Removed support for deprecated **Hierarchical** correlation format in favor of the new **W3C** format.
+* 🗑️ 'Message pump lifetime' is removed, in favor of circuit-breaker functionality, which affects following types:
+  * `IMessagePumpLifetime`
+  * `DefaultMessagePumpLifetime`
+* 🗑️ 'Restart message pump' functionality is removed, which affects following types:
+  * `IRestartableMessagePump`
 * 🗑️ Built-in 'general messaging' functionality is removed affects following types/extensions:
   * `IMessageRouter`
   * `MessageRouter`
@@ -28,6 +33,7 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
 * Removed fallback message handler functionality in favor of using [custom message settlement](#-new-service-bus-message-settlement). This means that the following types/extensions are removed:
   * `AzureServiceBusFallbackMessageHandler<>`
   * `ServiceBusMessageHandlerCollection.WithServiceBusFallbackMessageHandler(...)`
+* Removed `IRestartableMessagePump` implementation for `AzureServiceBusMessagePump`
 * Removed transient `Arcus.Security.*` dependency in favor of [custom message pump registration](#-new-service-bus-message-pump-registration).
   * Removed `DefaultAzureServiceBusManagementAuthentication`/`IAzureServiceBusManagementAuthentication` that allowed to authenticate the management client via Arcus.Security.
 * Removed `AzureServiceBusClient` that allowed rotation of connection strings.
