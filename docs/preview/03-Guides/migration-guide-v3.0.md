@@ -1,10 +1,10 @@
 # Migrate from v2.x to v3.0
 Starting from v3.0, there are some major breaking changes related to the [lightweight exercise](https://github.com/arcus-azure/arcus.messaging/discussions/470) that the Messaging library gone through. This guide will make it easier for you to migrate towards this version from an older v2.x version.
 
-## New Service bus message pump registration
-Previously, the registration of the Azure Service bus message pump involved navigating through the many available extensions, making it rather tedious to find the right authentication mechanism.
+## New Service Bus message pump registration
+Previously, the registration of the Azure Service Bus message pump involved navigating through the many available extensions, making it rather tedious to find the right authentication mechanism.
 
-Starting from v3.0, the registrations of the Azure Service bus message pump is simplified with two simple approaches:
+Starting from v3.0, the registrations of the Azure Service Bus message pump is simplified with two simple approaches:
 1. Register message pump with custom `TokenCredential`.
 2. Register message pump with custom implementation factory, that creates a `ServiceBusClient`.
 
@@ -29,7 +29,7 @@ services.AddSecretStore(...);
 +})
 ```
 
-## New Service bus message handler registration
+## New Service Bus message handler registration
 Previously, the registration of custom `IAzureServiceBusMessageHandler<>` implementations involved navigating through the many available extensions, making it rather tedious to find the right overload.
 
 Starting from v3.0, the registration of custom message handlers is simplified with an options model, where all message routing additions can be added.
