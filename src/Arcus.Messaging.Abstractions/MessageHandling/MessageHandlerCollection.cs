@@ -52,7 +52,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             {
                 throw new ArgumentNullException(nameof(implementationFactory));
             }
-            
+
             Services.AddTransient(
                 serviceProvider => MessageHandler.Create(
                     implementationFactory(serviceProvider),
@@ -71,6 +71,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <typeparam name="TMessageContext">The type of the context in which the message is being processed.</typeparam>
         /// <param name="implementationFactory">The function to create the user-defined fallback message handler instance.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0, as the entire fallback message handler structure becomes unnecessary")]
         public void AddFallbackMessageHandler<TMessageHandler, TMessage, TMessageContext>(
             Func<IServiceProvider, TMessageHandler> implementationFactory)
             where TMessageHandler : IFallbackMessageHandler<TMessage, TMessageContext>
