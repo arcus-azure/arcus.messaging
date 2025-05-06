@@ -51,7 +51,7 @@ public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
 ```
 
 ## Registering your message handlers
-All your custom *message handlers* need to be registered on a *message pump*. This 'pump' is an Arcus Messaging-provided service that receives the Azure Service Bus messages for you, and "pump's" them to the right *message handler*.
+All your custom *message handlers* need to be registered on a *message pump*. This "pump" is an Arcus Messaging-provided service that receives the Azure Service Bus messages for you, and "pumps" them to the right *message handler*.
 
 ### Register the Arcus message pump
 There exists two type of Azure Service Bus *message pumps*: for queues and for topic subscriptions. During the registration of the pump in the application services, the type of authentication mechanism can be configured.
