@@ -1,6 +1,6 @@
 # Arcus - Messaging
 [![Build Status](https://dev.azure.com/codit/Arcus/_apis/build/status/Commit%20builds/CI%20-%20Arcus.Messaging?branchName=main)](https://dev.azure.com/codit/Arcus/_build/latest?definitionId=785&branchName=main)
-[![NuGet Badge](https://buildstats.info/nuget/Arcus.Messaging.Health?includePreReleases=true)](https://www.nuget.org/packages/Arcus.Messaging.Health/)
+[![NuGet Version](https://img.shields.io/nuget/v/Arcus.Messaging.Pumps.ServiceBus)](https://www.nuget.org/packages/Arcus.Messaging.Pumps.ServiceBus/)
 
 Messaging development in a breeze.
 

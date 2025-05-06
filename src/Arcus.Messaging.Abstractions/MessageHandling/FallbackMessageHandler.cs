@@ -11,7 +11,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// </summary>
     /// <typeparam name="TMessage">The type of the message that this fallback message handler can handle.</typeparam>
     /// <typeparam name="TMessageContext">The type of the context in which the message is being processed.</typeparam>
-    public class FallbackMessageHandler<TMessage, TMessageContext> 
+    [Obsolete("Will be removed in v3.0, as the entire fallback message handler structure becomes unnecessary")]
+    public class FallbackMessageHandler<TMessage, TMessageContext>
         where TMessage : class
         where TMessageContext : MessageContext
     {
@@ -110,7 +111,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 catch (Exception exception)
                 {
                     _logger.LogError(exception, "Fallback message handler '{MessageHandlerType}' failed to handle '{MessageType}' message due to an exception: {Message}", MessageHandlerType.Name, typeof(TMessage).Name, exception.Message);
-                    return false;   
+                    return false;
                 }
             }
 

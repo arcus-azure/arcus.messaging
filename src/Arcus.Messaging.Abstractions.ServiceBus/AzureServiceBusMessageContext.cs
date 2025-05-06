@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 
@@ -11,6 +13,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
     /// </summary>
     public class AzureServiceBusMessageContext : MessageContext
     {
+        private readonly ServiceBusReceiver _receiver;
+        private readonly ServiceBusReceivedMessage _message;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessageContext"/> class.
         /// </summary>
@@ -67,6 +72,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             ServiceBusReceivedMessage message)
             : base(message.MessageId, jobId, message.ApplicationProperties.ToDictionary(item => item.Key, item => item.Value))
         {
+            _receiver = receiver;
+            _message = message;
+
             FullyQualifiedNamespace = receiver.FullyQualifiedNamespace;
             EntityPath = receiver.EntityPath;
             EntityType = entityType;
@@ -138,6 +146,71 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             }
 
             return new AzureServiceBusMessageContext(jobId, entityType, receiver, message);
+        }
+
+        /// <summary>
+        /// Completes the Azure Service Bus message on Azure. This will delete the message from the service.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
+        public async Task CompleteMessageAsync(CancellationToken cancellationToken)
+        {
+            EnsureServiceBusFields();
+
+            await _receiver.CompleteMessageAsync(_message, cancellationToken);
+        }
+
+        /// <summary>
+        /// Dead letters the Azure Service Bus message on Azure with a reason why the message needs to be dead lettered.
+        /// </summary>
+        /// <param name="deadLetterReason">The reason why the message should be dead lettered.</param>
+        /// <param name="deadLetterErrorDescription">The optional extra description of the dead letter error.</param>
+        /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized correctly.</exception>
+        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+        {
+            await DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties: null, cancellationToken);
+        }
+
+        /// <summary>
+        /// Dead letters the Azure Service Bus message on Azure while providing <paramref name="newMessageProperties"/> for properties that has to be modified in the process.
+        /// </summary>
+        /// <param name="deadLetterReason">The reason why the message should be dead lettered.</param>
+        /// <param name="deadLetterErrorDescription">The optional extra description of the dead letter error.</param>
+        /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
+        /// <param name="newMessageProperties">The properties to modify on the message during the dead lettering of the message.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
+        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+        {
+            EnsureServiceBusFields();
+
+            await _receiver.DeadLetterMessageAsync(_message, newMessageProperties, deadLetterReason, deadLetterErrorDescription, cancellationToken);
+        }
+
+        /// <summary>
+        /// <para>
+        ///     Abandon the Azure Service Bus message on Azure while providing <paramref name="newMessageProperties"/> for properties that has to be modified in the process.
+        /// </para>
+        /// <para>
+        ///     This will make the message available again for immediate processing as the lock of the message will be released.
+        /// </para>
+        /// </summary>
+        /// <param name="newMessageProperties">The properties to modify on the message during the abandoning of the message.</param>
+        /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the message context was not initialized correctly.</exception>
+        public async Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+        {
+            EnsureServiceBusFields();
+
+            await _receiver.AbandonMessageAsync(_message, newMessageProperties, cancellationToken);
+        }
+
+        private void EnsureServiceBusFields()
+        {
+            if (_receiver is null || _message is null)
+            {
+                throw new InvalidOperationException(
+                    "Cannot run Azure Service bus operations on this message context, as it wasn't initialized with a Service bus receiver and message");
+            }
         }
     }
 }

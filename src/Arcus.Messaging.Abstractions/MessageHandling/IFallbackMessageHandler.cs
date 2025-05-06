@@ -9,6 +9,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// </summary>
     /// <typeparam name="TMessage">The type of the message that this fallback message handler can handle.</typeparam>
     /// <typeparam name="TMessageContext">The type of the context in which the message is being processed.</typeparam>
+    [Obsolete("Will be removed in v3.0, as the entire fallback message handler structure becomes unnecessary")]
     public interface IFallbackMessageHandler<in TMessage, in TMessageContext>
         where TMessage : class
         where TMessageContext : MessageContext
