@@ -129,6 +129,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// how many times should the message pump run into an <see cref="UnauthorizedAccessException"/> before restarting.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than zero.</exception>
+        [Obsolete("Will be removed in v3.0 as the Azure Service Bus authentication has been moved outside of the message pump's responsibility")]
         public int MaximumUnauthorizedExceptionsBeforeRestart
         {
             get => _maximumUnauthorizedExceptionsBeforeRestart;
