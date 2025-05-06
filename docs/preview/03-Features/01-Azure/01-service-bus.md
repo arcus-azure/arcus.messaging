@@ -88,7 +88,7 @@ Host.CreateDefaultBuilder()
 ```
 
 ### Register your message handlers on message pump
-Your custom *message handlers* can be registered on a *message pump* registration. Both the type of the handler and type of of messages it can process, is required.
+Your custom *message handlers* can be registered on a *message pump* registration. Both the type of the handler and the type of messages it can process, is required.
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
