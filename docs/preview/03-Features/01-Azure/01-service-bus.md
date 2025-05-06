@@ -104,7 +104,7 @@ Host.CreateDefaultBuilder()
 
 > **⚠️ Considerations:**
 > * The order in which the *message handlers* are registered matters when a message is routed.
-> * Only the first matching *message handler* will be used to route the message, even when multiple match.
+> * Only the first matching *message handler* will be used to process the message, even when multiple match.
 > * Multiple *message handlers* with the same (message) type can registered, but they need to distinguish themselves with [routing options](#message-handler-routing-customization).
 
 ## Customization
