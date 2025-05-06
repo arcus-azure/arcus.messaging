@@ -172,6 +172,8 @@ When messages can't be matched to any of your custom registered message handlers
 
 This settlement of received Azure Service Bus messages can also be customized by calling one of the Service Bus operations yourself via the message context.
 
+> 🎖️ It is a good practice as application developer to dead-letter the message yourself when a non-transient/fatal error occurs.
+
 ```csharp
 public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
 {
