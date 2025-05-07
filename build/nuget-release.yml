@@ -20,7 +20,7 @@ resources:
 
 variables:
   - group: 'Build Configuration'
-  - group: 'NuGet.org'
+  - group: 'NuGet'
   - template: ./variables/build.yml
   - template: ./variables/test.yml
   - name: 'Package.Version'
