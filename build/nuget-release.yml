@@ -129,9 +129,6 @@ stages:
                 None.
                 ### Removal
                 None.
-          - task: NuGetAuthenticate@1
-            inputs:
-              nuGetServiceConnections: 'NuGet.org'
           - task: DotNetCoreCLI@2
             displayName: 'Push to NuGet.org'
             inputs:
