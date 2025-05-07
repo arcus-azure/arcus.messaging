@@ -20,6 +20,7 @@ resources:
 
 variables:
   - group: 'Build Configuration'
+  - group: 'NuGet.org'
   - template: ./variables/build.yml
   - template: ./variables/test.yml
   - name: 'Package.Version'
@@ -136,4 +137,4 @@ stages:
             inputs:
               command: 'custom'
               custom: 'nuget'
-              arguments: 'push src/**/*.nupkg --source https://api.nuget.org/v3/index.json'
+              arguments: 'push src/**/*.nupkg --source $(NuGet.SourceUrl) --api-key $(NuGet.ApiKey)'
