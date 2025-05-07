@@ -128,4 +128,12 @@ stages:
                 None.
                 ### Removal
                 None.
-          - template: nuget/publish-official-package.yml@templates
+          - task: NuGetAuthenticate@1
+            inputs:
+              nuGetServiceConnections: 'NuGet.org'
+          - task: DotNetCoreCLI@2
+            displayName: 'Push to NuGet.org'
+            inputs:
+              command: 'custom'
+              custom: 'nuget'
+              arguments: 'push src/**/*.nupkg --source https://api.nuget.org/v3/index.json
