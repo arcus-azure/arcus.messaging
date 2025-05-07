@@ -136,4 +136,4 @@ stages:
             inputs:
               command: 'custom'
               custom: 'nuget'
-              arguments: 'push src/**/*.nupkg --source https://api.nuget.org/v3/index.json
+              arguments: 'push src/**/*.nupkg --source https://api.nuget.org/v3/index.json'
