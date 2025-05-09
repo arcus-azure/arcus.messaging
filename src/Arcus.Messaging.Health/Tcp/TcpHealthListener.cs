@@ -34,6 +34,28 @@ namespace Arcus.Messaging.Health.Tcp
             Converters = { new JsonStringEnumConverter(allowIntegerValues: false) }
         };
 
+        internal TcpHealthListener(
+            int tcpPort,
+            HealthCheckService healthService,
+            TcpHealthListenerOptions options,
+            ILogger<TcpHealthListener> logger)
+        {
+            if (tcpPort <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(tcpPort), "Requires a TCP port that is greater than zero");
+            }
+
+            if (healthService is null)
+            {
+                throw new ArgumentNullException(nameof(healthService), "Requires a health service to retrieve the health report");
+            }
+
+            _healthService = healthService;
+            _listener = new CustomTcpListener(IPAddress.Any, tcpPort);
+            _tcpListenerOptions = options ?? new TcpHealthListenerOptions();
+            _logger = logger ?? NullLogger<TcpHealthListener>.Instance;
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
         /// </summary>
@@ -42,6 +64,7 @@ namespace Arcus.Messaging.Health.Tcp
         /// <param name="healthService">The service to retrieve the current health of the application.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/>, <paramref name="tcpListenerOptions"/>, or <paramref name="healthService"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> does not have a filled-out value.</exception>
+        [Obsolete("Will be removed in v3.0, in favor of using the TCP port directly")]
         public TcpHealthListener(
             IConfiguration configuration,
             TcpHealthListenerOptions tcpListenerOptions,
@@ -59,20 +82,17 @@ namespace Arcus.Messaging.Health.Tcp
         /// <param name="logger">The logging implementation to write diagnostic messages during the running of the TCP listener.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/>, <paramref name="tcpListenerOptions"/>, <paramref name="healthService"/>, or <paramref name="logger"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> does not have a filled-out value.</exception>
+        [Obsolete("Will be removed in v3.0, in favor of using the TCP port directly")]
         public TcpHealthListener(
             IConfiguration configuration,
             TcpHealthListenerOptions tcpListenerOptions,
             HealthCheckService healthService,
             ILogger<TcpHealthListener> logger)
+            : this(GetTcpHealthPort(configuration, tcpListenerOptions?.TcpPortConfigurationKey), healthService, tcpListenerOptions, logger)
         {
-            _tcpListenerOptions = tcpListenerOptions ?? throw new ArgumentNullException(nameof(tcpListenerOptions));
-            _healthService = healthService ?? throw new ArgumentNullException(nameof(healthService));
-            _logger = logger ?? NullLogger<TcpHealthListener>.Instance;
-
-            Port = GetTcpHealthPort(configuration, _tcpListenerOptions.TcpPortConfigurationKey);
-            _listener = new CustomTcpListener(IPAddress.Any, Port);
         }
 
+        [Obsolete("Will be removed in v3.0, in favor of using the TCP port directly")]
         private static int GetTcpHealthPort(IConfiguration configuration, string tcpHealthPortKey)
         {
             string tcpPortString = configuration[tcpHealthPortKey];
