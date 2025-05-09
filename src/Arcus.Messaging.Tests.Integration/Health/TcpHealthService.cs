@@ -5,12 +5,15 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
+using Arcus.Testing;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Xunit;
+using Xunit.Sdk;
 
 namespace Arcus.Messaging.Tests.Integration.Health
 {
@@ -40,35 +43,50 @@ namespace Arcus.Messaging.Tests.Integration.Health
         /// <summary>
         /// Gets the <see cref="HealthReport"/> from the exposed TCP health probe.
         /// </summary>
-        public async Task<HealthReport> GetHealthReportAsync()
+        public async Task<HealthReport> ShouldReceiveHealthReportAsync(EncodedHealthReportSerializer serializer = null)
         {
-            using (var client = new TcpClient())
+            return await Poll.Target<HealthReport, SocketException>(() => GetHealthReportFromTcpProbeAsync(serializer?.Encoding))
+                             .Until(report => report != null)
+                             .Every(TimeSpan.FromSeconds(2))
+                             .Timeout(TimeSpan.FromSeconds(30));
+        }
+
+        public async Task ShouldRejectHealthReportRequestAsync()
+        {
+            await Poll.Target<SocketException, ThrowsException>(async () =>
             {
-                _logger.LogTrace("Connecting to the TCP {Address}:{Port}...", LocalAddress, _healthTcpPort);
-                await client.ConnectAsync(IPAddress.Parse(LocalAddress), _healthTcpPort);
-                _logger.LogTrace("Connected to the TCP {Address}:{Port}", LocalAddress, _healthTcpPort);
+                return await Assert.ThrowsAsync<SocketException>(() => GetHealthReportFromTcpProbeAsync());
 
-                _logger.LogTrace("Retrieving health report...");
-                using (NetworkStream clientStream = client.GetStream())
-                using (var reader = new StreamReader(clientStream))
-                using (var jsonReader = new JsonTextReader(reader))
-                {
-                    JObject json = JObject.Load(jsonReader);
+            }).Every(TimeSpan.FromSeconds(2))
+              .Timeout(TimeSpan.FromSeconds(30));
+        }
 
-                    if (json.TryGetValue("entries", out JToken entries)
-                        && json.TryGetValue("status", out JToken status)
-                        && json.TryGetValue("totalDuration", out JToken totalDuration))
-                    {
-                        HealthReport report = ParseHealthReport(entries, status, totalDuration);
+        private async Task<HealthReport> GetHealthReportFromTcpProbeAsync(Encoding encoding = null)
+        {
+            using var client = new TcpClient();
+            _logger.LogTrace("Connecting to the TCP {Address}:{Port}...", LocalAddress, _healthTcpPort);
+            await client.ConnectAsync(IPAddress.Parse(LocalAddress), _healthTcpPort);
+            _logger.LogTrace("Connected to the TCP {Address}:{Port}", LocalAddress, _healthTcpPort);
 
-                        _logger.LogTrace("Health report retrieved");
-                        return report;
-                    }
+            _logger.LogTrace("Retrieving health report...");
+            using NetworkStream clientStream = client.GetStream();
+            using var reader = new StreamReader(clientStream, encoding ?? Encoding.UTF8);
+            string txt = await reader.ReadToEndAsync();
 
-                    _logger.LogError("Could not find necessary camelCase health report properties from: {Json}", json);
-                    return null;
-                }
+            JObject json = JObject.Parse(txt);
+
+            if (json.TryGetValue("entries", out JToken entries)
+                && json.TryGetValue("status", out JToken status)
+                && json.TryGetValue("totalDuration", out JToken totalDuration))
+            {
+                HealthReport report = ParseHealthReport(entries, status, totalDuration);
+
+                _logger.LogTrace("Health report retrieved");
+                return report;
             }
+
+            _logger.LogError("Could not find necessary camelCase health report properties from: {Json}", json);
+            return null;
         }
 
         private static HealthReport ParseHealthReport(JToken entries, JToken status, JToken totalDuration)
@@ -93,7 +111,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
         {
             JToken token = healthEntryJson.First;
 
-            string name = healthEntryJson.Path.Replace("entries.", "");
+            string name = healthEntryJson.Path["entries[".Length..].Trim(']', '\'');
             var healthStatus = token["status"].ToObject<HealthStatus>();
             var description = token["description"]?.ToObject<string>();
             var duration = token["duration"].ToObject<TimeSpan>();
