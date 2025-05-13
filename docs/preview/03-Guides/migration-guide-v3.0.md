@@ -75,7 +75,11 @@ services.AddSecretStore(...);
 +})
 ```
 
+<<<<<<< HEAD
 ### ✨ New Service Bus message handler registration
+=======
+## New Service Bus message handler registration
+>>>>>>> main
 Previously, the registration of custom `IAzureServiceBusMessageHandler<>` implementations involved navigating through the many available extensions, making it rather tedious to find the right overload.
 
 Starting from v3.0, the registration of custom message handlers is simplified with an options model, where all message routing additions can be added.

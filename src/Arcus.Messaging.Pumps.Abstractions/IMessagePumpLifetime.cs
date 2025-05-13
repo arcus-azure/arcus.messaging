@@ -7,6 +7,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
     /// <summary>
     /// Represents the handler to control the lifetime of a certain message pump.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 since the circuit breaker functionality handles start/pause automatically now")]
     public interface IMessagePumpLifetime
     {
         /// <summary>

@@ -1,7 +1,9 @@
 ﻿using System;
 using Arcus.Messaging.Health.Publishing;
 using Arcus.Messaging.Health.Tcp;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -30,6 +32,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns>Collection of services to use in the application</returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpConfigurationKey"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0, please use the " + nameof(IHealthCheckBuilderExtensions.AddTcpHealthProbe) + " instead")]
         public static IServiceCollection AddTcpHealthProbes(
             this IServiceCollection services,
             string tcpConfigurationKey,
@@ -53,7 +56,7 @@ namespace Microsoft.Extensions.DependencyInjection
             var listenerOptions = new TcpHealthListenerOptions { TcpPortConfigurationKey = tcpConfigurationKey };
             configureTcpListenerOptions?.Invoke(listenerOptions);
             services.AddSingleton(listenerOptions);
-            
+
             if (listenerOptions.RejectTcpConnectionWhenUnhealthy)
             {
                 services.Configure<HealthCheckPublisherOptions>(options =>
@@ -63,8 +66,14 @@ namespace Microsoft.Extensions.DependencyInjection
 
                 services.AddSingleton<IHealthCheckPublisher, TcpHealthCheckPublisher>();
             }
-            
-            services.AddSingleton<TcpHealthListener>();
+
+            services.AddSingleton(serviceProvider =>
+            {
+                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+                var healthService = serviceProvider.GetRequiredService<HealthCheckService>();
+                var logger = serviceProvider.GetService<ILogger<TcpHealthListener>>();
+                return new TcpHealthListener(configuration, listenerOptions, healthService, logger);
+            });
             services.AddHostedService(serviceProvider => serviceProvider.GetRequiredService<TcpHealthListener>());
 
             return services;

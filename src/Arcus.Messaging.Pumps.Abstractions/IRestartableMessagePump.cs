@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 
@@ -7,6 +8,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
     /// <summary>
     /// Represents an <see cref="MessagePump"/> that can be restarted programmatically.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 since the circuit breaker functionality handles start/pause automatically now")]
     public interface IRestartableMessagePump : IHostedService
     {
         /// <summary>
