@@ -1,91 +1,52 @@
----
-title: "TCP Health probe"
-layout: default
----
-
 # TCP Health probe
+The `Arcus.Messaging.Health` library provides a TCP health probe endpoint registration  that allows a runtime to periodically check the liveness/readiness of the host based on the [.NET Core health checks](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks).
 
-We provide a TCP health probe endpoint that allows a runtime to periodically check the liveness/readiness of the host based on the [.NET Core health checks](https://docs.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks).
+This helps in contexts where the health of the application needs to be checked over non-HTTP communication.
 
 ## Installation
-
 This features requires to install our NuGet package:
 
-```shell
+```powershell
 PM > Install-Package Arcus.Messaging.Health
 ```
 
 ## Usage
-
-To include the TCP endpoint, add the following line of code in the `Startup.ConfigureServices` method:
+To include the TCP endpoint, add the `.AddTcpHealthProbe(<tcp-port>)` to the [Health checks registration](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks#register-health-check-services):
 
 ```csharp
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-
-public class Startup
+public static class Program
 {
-    public void ConfigureServices(IServiceCollection services)
+    public static void Main(string[] args)
     {
-        // Add TCP health probe without extra health checks.
-        services.AddTcpHealthProbes("MyConfigurationKeyToTcpHealthPort");
+        var builder = Host.CreateDefaultBuilder();
 
-        // Or, add your extra health checks in a configuration delegate.
-        services.AddTcpHealthProbes(
-            "MyConfigurationKeyToTcpHealthPort",
-            configureHealthChecks: healthBuilder => 
-            {
-                healthBuilder.AddCheck("Example", () => HealthCheckResult.Healthy("Example is OK!"), tags: new[] { "example" })
-            });
+        builder.Services.AddHealthChecks()
+                        .AddCheck("healthy", () => HealthCheckResult.Healthy())
+                        .AddTcpHealthProbe(tcpPort: 5050);
+
+        var host = builder.Build();
+        host.Run();
     }
 }
 ```
 
-## Configuration
-
-The TCP probe allows several additional configuration options.
+### Customization
+The following options are available to manipulate the behavior of the TCP health probe:
 
 ```csharp
-using Microsoft.Extensions.DependencyInjection;
-
-public class Startup
-{
-    public void ConfigureServices(IServiceCollection services)
-    {
-        // Add TCP health probe with or without extra health checks.
-        services.AddTcpHealthProbes(
-            "MyConfigurationKeyToTcpHealthPort",
-            configureTcpListenerOptions: options =>
-            {
-                // Configure the configuration key on which the health report is exposed.
-                options.TcpPortConfigurationKey = "MyConfigurationKey";
-
-                // Configure how the health report should be serialized.
-                options.HealthReportSerializer = new MyHealthReportSerializer();
-
-                // Configure how the health report status should affect the TCP probe's availability.
-                // When set to `true`, unhealthy health reports will result in rejecting of TCP client connection attempts.
-                // When set to `false` (default), TCP client connection attempts will be accepted but the returned health report will have a unhealthy health status.
-                options.RejectTcpConnectionWhenUnhealthy = true;
-            },
-            configureHealthCheckPublisherOptions: options =>
-            {
-                // Configures additional options regarding how fast or slow changes in the health report should affect the TCP probe's availability.
-                // When the RejectTcpConnectionWhenUnhealthy is set to `true`.
-
-                // The initial delay after the application starts with monitoring the health report changes.
-                options.Delay = TimeSpan.Zero;
-
-                // The interval in which the health report is monitored for changes.
-                options.Period = TimeSpan.FromSeconds(5);
-
-                // See https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.diagnostics.healthchecks.healthcheckpublisheroptions?view=dotnet-plat-ext-5.0 for more information.
-            });
-    }
-}
-
 using Arcus.Messaging.Health;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
+
+services.AddHealthChecks()
+        .AddTcpHealthProbe(..., options =>
+        {
+            // Let the TCP probe know that when the health report is 'unhealthy',
+            // it should reject the TCP connection instead of responding successfully with the complete report.
+            // Default: false
+            options.RejectTcpConnectionWhenUnhealthy = true;
+
+            // Override the default JSON health report serializer with your own.
+            options.Serializer = new MyHealthReportSerializer();
+        });
 
 public class MyHealthReportSerializer : IHealthReportSerializer
 {
@@ -95,5 +56,3 @@ public class MyHealthReportSerializer : IHealthReportSerializer
 	}
 }
 ```
-
-[&larr; back](/)

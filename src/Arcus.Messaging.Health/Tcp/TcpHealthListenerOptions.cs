@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace Arcus.Messaging.Health.Tcp
@@ -18,6 +19,7 @@ namespace Arcus.Messaging.Health.Tcp
         /// <summary>
         /// Gets or sets the TCP health port on which the health report is exposed.
         /// </summary>
+        [Obsolete("Will be removed in v3.0, please use the overload " + nameof(IHealthCheckBuilderExtensions.AddTcpHealthProbe) + " to configure the TCP port used for health checks")]
         public string TcpPortConfigurationKey
         {
             get => _tcpHealthPort;
