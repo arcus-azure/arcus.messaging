@@ -145,3 +145,22 @@ To still benefit from the original W3C message correlation tracking with **Arcus
 * 🎉 The original (< v3.0) message correlation is now restored.
 
 We expect other kinds of message correlation registrations in the future. Switching between them would be a matter of choosing the correct `.WithServiceBus...RequestTracking()`.
+
+## 📦 Arcus.Messaging.Health
+### 🎯 Direct use of TCP port instead of indirect `IConfiguration` key
+When registering the health report TCP probe in previous versions, the TCP port needed to be available in the application's configuration. This created an unnecessary hard-link between health reporting and configuration registration.
+
+Starting from v3, the TCP port can be passed directly when registering the TCP health probe.
+
+```diff
+var builder = Host.CreateDefaultBuilder();
+
+- builder.Services.AddTcpHealthProbes("<tcp-health-port-key>", 
+-       configureHealthChecks: health =>
+-       {
+-               health.AddCheck("healthy", () => HealthCheckResult.Healthy());
+-       });
++ builder.Services.AddHealthChecks()
++                 .AddCheck("healthy", () => HealthCheckResult.Healthy())
++                 .AddTcpHealthProbe(tcpPort: 5050);
+```
