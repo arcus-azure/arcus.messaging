@@ -118,7 +118,7 @@ public class OrderServiceBusMessageHandler
         MessageCorrelationInfo messageCorrelation,
         CancellationToken cancellation)
     {
--        await DeadLetterMessageAsync("Reason: Unsupported", "Message type is not supported");
+-       await DeadLetterMessageAsync("Reason: Unsupported", "Message type is not supported");
 +       await messageContext.DeadLetterMessageAsync("Reason: Unsupported", "Message type is not supported");
     }
 }
