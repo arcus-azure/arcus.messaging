@@ -140,7 +140,7 @@ To still benefit from the original W3C message correlation tracking with **Arcus
 * 🔎 Navigate to the setup code that registers the Azure Service Bus message pump and its message handlers.
 * 🔨 Register Serilog as the message correlation system by adding this line:
   ```diff
-  services.AddServiceBusMessagePump(...)
+  services.AddServiceBusTopicMessagePump(...)
   +       .WithServiceBusSerilogRequestTracking()           
           .WithServiceBusMessageHandler<...>()
           .WithServiceBusMessageHandler<...>();
