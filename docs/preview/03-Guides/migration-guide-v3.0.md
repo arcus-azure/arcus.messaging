@@ -35,9 +35,12 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
   * `ServiceBusMessageHandlerCollection.WithServiceBusFallbackMessageHandler(...)`
 * Removed `IRestartableMessagePump` implementation for `AzureServiceBusMessagePump`
 * Removed transient `Arcus.Security.*` dependency in favor of [custom message pump registration](#-new-service-bus-message-pump-registration).
-  * Removed `DefaultAzureServiceBusManagementAuthentication`/`IAzureServiceBusManagementAuthentication` that allowed to authenticate the management client via Arcus.Security.
+  * Removed `DefaultAzureServiceBusManagementAuthentication`/`IAzureServiceBusManagementAuthentication`: allowed to authenticate the management client via Arcus.Security.
 * Removed `AzureServiceBusClient` that allowed rotation of connection strings.
-* Removed transient `Arcus.Observability.*` dependency in favor of [custom message correlation scopes](#-new-service-bus-message-correlation).
+* Removed transient `Arcus.Observability.*` dependency in favor of [custom message correlation scopes](#-new-service-bus-message-correlation). This means that the following types are affected:
+  * Removed `(I)MessageCorrelationInfoAccessor`: message correlation is already available via message handlers.
+  * Removed `MessageCorrelationResult`: in favor of the new `MessageOperationResult`.
+  * `MessageCorrelationInfo` is separated from parent `CorrelationInfo` (originates from Arcus.Observability)
 * Removed **Arcus.Messaging.ServiceBus.Core** package and transient dependency for **Arcus.Messaging.Pumps.ServiceBus**. This means that the following types/extensions are removed:
   * `ServiceBusMessageBuilder`
   * `ServiceBusSenderMessageCorrelationOptions`
