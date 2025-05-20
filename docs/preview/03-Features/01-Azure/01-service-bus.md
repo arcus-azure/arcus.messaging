@@ -96,9 +96,11 @@ using Microsoft.Extensions.DependencyInjection;
 Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
+        // highlight-start
         services.AddServiceBusTopicMessagePump(...)
                 .WithServiceBusMessageHandler<OrderMessageHandler, Order>()
                 .WithServiceBusMessageHandler<OrderV2MessageHandler, OrderV2>();
+        // highlight-end
     });
 ```
 
@@ -183,6 +185,7 @@ public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
         MessageCorrelationInfo correlation,
         CancellationToken cancellation)
     {
+        // highlight-next-line
         await messageContext.DeadLetterMessageAsync("Reason: Unsupported", "Message type is not supported");
     }
 }
@@ -201,6 +204,7 @@ To interact with the message processing system within your *message handler*, yo
 ```csharp
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 
+// highlight-next-line
 public class OrderMessageHandler : CircuitBreakerServiceBusMessageHandler<Order>
 {
     private readonly IMessagePumpCircuitBreaker _circuitBreaker;
@@ -219,12 +223,14 @@ public class OrderMessageHandler : CircuitBreakerServiceBusMessageHandler<Order>
         MessagePumpCircuitBreakerOptions options,
         CancellationToken cancellation)
     {
+        // highlight-start
         // Determine whether your dependent system is healthy...
         if (!IsMyDependentSystemHealthy())
         {
             // Let the message processing fail with a custom exception.
             throw new MyDependencyUnnavailableException("My dependency system is temporarily unavailable, please halt message processing for now");
         }
+        // highlight-end
     }
 }
 ```
