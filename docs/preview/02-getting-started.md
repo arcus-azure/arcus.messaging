@@ -66,9 +66,11 @@ using Microsoft.Extensions.DependencyInjection;
 Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
+        // highlight-start
         services.AddServiceBusQueueMessagePump("<queue-name>", "<namespace>", new ManagedIdentityCredential())
                 .WithServiceBusMessageHandler<MyOrderMessageHandler, MyOrder>()
                 .WithServiceBusMessageHandler<MyOrderV2MessageHandler, MyOrderV2>();
+        // highlight-end
     })
     .Build()
     .Run();
