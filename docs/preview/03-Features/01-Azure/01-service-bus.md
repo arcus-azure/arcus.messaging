@@ -56,7 +56,9 @@ All your custom *message handlers* need to be registered on a *message pump*. Th
 ### Register the Arcus message pump
 There exists two types of Azure Service Bus *message pumps*: for queues and for topic subscriptions. During the registration of the pump in the application services, the type of authentication mechanism can be configured.
 
-> 🎖️ Use the [`ManagedIdentityCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.managedidentitycredential) where possible.
+:::tip
+Use the [`ManagedIdentityCredential`](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.managedidentitycredential) where possible.
+:::
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
@@ -104,10 +106,11 @@ Host.CreateDefaultBuilder()
     });
 ```
 
-> **⚠️ Considerations:**
-> * The order in which the *message handlers* are registered matters when a message is routed.
-> * Only the first matching *message handler* will be used to process the message, even when multiple match.
-> * Multiple *message handlers* with the same (message) type can registered, but they need to distinguish themselves with [routing options](#message-handler-routing-customization).
+:::warning[Considerations]
+* The order in which the *message handlers* are registered matters when a message is routed.
+* Only the first matching *message handler* will be used to process the message, even when multiple match.
+* Multiple *message handlers* with the same (message) type can registered, but they need to distinguish themselves with [routing options](#message-handler-routing-customization).
+:::
 
 ## Customization
 Due to the wide range of situations within messaging solutions, Arcus Messaging supports highly customizable message pump/handler registrations.
@@ -144,7 +147,9 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
 ### Message handler routing customization
 The following routing options are available when registering an Azure Service Bus message handler on a message pump.
 
-> 💡 Setting one or more of the routing options helps the message pump to better select the right *message handler* for the received message.
+:::tip
+Setting one or more of the routing options helps the message pump to better select the right *message handler* for the received message.
+:::
 
 ```csharp
 services.AddServiceBus[Topic/Queue]MessagePump(...)
@@ -174,7 +179,9 @@ When messages can't be matched to any of your custom registered message handlers
 
 This settlement of received Azure Service Bus messages can also be customized by calling one of the Service Bus operations yourself via the message context.
 
-> 🎖️ It is a good practice as application developer to dead-letter the message yourself when a non-transient/fatal error occurs.
+:::tip
+It is a good practice as application developer to dead-letter the message yourself when a non-transient/fatal error occurs.
+:::
 
 ```csharp
 public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
@@ -235,11 +242,13 @@ public class OrderMessageHandler : CircuitBreakerServiceBusMessageHandler<Order>
 }
 ```
 
-> The circuit-breaker functionality will follow this pattern when the handler lets the message processing fail:
-> * Message processing pause for a **recovery period** of time (circuit=OPEN).
-> * Message processing tries a single message (circuit=HALF-OPEN).
->   * Message handler still throws exception? => message processing pauses for an **interval** and tries again (circuit=OPEN).
->   * Message handler stops throwing exception? => message processing resumes in full (circuit=CLOSED).
+:::info
+The circuit-breaker functionality will follow this pattern when the handler lets the message processing fail:
+* Message processing pause for a **recovery period** of time (circuit=OPEN).
+* Message processing tries a single message (circuit=HALF-OPEN).
+  * Message handler still throws exception? => message processing pauses for an **interval** and tries again (circuit=OPEN).
+  * Message handler stops throwing exception? => message processing resumes in full (circuit=CLOSED).
+:::
 
 Both the recovery period after the circuit is open and the interval between messages when the circuit is half-open is configurable with the `MessagePumpCircuitBreakerOptions`.
 

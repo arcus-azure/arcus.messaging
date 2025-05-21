@@ -12,7 +12,9 @@ This page is dedicated to be used as a walkthrough on how to set up Arcus Messag
 * *message pump:* an Arcus Messaging-provided registered service that receives Azure Service Bus messages for you, and "pumps" them through your *message handlers*.
 
 ## The basics
-> 👉 Arcus Messaging is currently only supported for [Azure Service Bus](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-overview) solutions.
+:::note
+Arcus Messaging is currently only supported for [Azure Service Bus](https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-messaging-overview) solutions.
+:::
 
 Arcus Messaging helps with receiving messages from a message broker. This walkthrough uses Azure Service Bus as an example.
 
