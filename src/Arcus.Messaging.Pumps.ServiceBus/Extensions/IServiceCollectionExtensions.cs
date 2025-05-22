@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
@@ -1146,7 +1145,6 @@ namespace Microsoft.Extensions.DependencyInjection
             });
             collection.JobId = options.JobId;
 
-            services.TryAddSingleton<IMessagePumpLifetime, DefaultMessagePumpLifetime>();
             services.TryAddSingleton<IMessagePumpCircuitBreaker>(provider => new DefaultMessagePumpCircuitBreaker(provider, provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>()));
 
             services.AddHostedService(provider =>
