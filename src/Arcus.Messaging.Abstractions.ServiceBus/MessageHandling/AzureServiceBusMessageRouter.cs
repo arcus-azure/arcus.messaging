@@ -179,8 +179,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
-        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>;
-        ///     used within <see cref="AzureServiceBusMessageHandler{TMessage}"/>s or <see cref="AzureServiceBusFallbackMessageHandler"/>s.
+        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>.
         /// </param>
         /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
@@ -208,8 +207,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
-        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>;
-        ///     used within <see cref="AzureServiceBusMessageHandler{TMessage}"/>s or <see cref="AzureServiceBusFallbackMessageHandler"/>s.
+        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>.
         /// </param>
         /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
@@ -415,8 +413,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         }
 
         /// <summary>
-        /// Sets the Azure Service Bus properties on registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// that implements the <see cref="AzureServiceBusMessageHandler{TMessage}"/> for calling specific Service Bus operations during the message processing.
+        /// Sets the Azure Service Bus properties on registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.
         /// </summary>
         /// <param name="messageHandler">The message handler on which the Service Bus properties should be set.</param>
         /// <param name="eventArgs">The event args of the incoming Service Bus message.</param>

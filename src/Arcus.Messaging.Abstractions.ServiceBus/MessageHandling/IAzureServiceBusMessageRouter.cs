@@ -44,8 +44,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
-        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>;
-        ///     used within <see cref="AzureServiceBusMessageHandler{TMessage}"/>s or <see cref="AzureServiceBusFallbackMessageHandler"/>s.
+        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>.
         /// </param>
         /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
