@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
 using Arcus.Messaging.Abstractions.ServiceBus;
-using Azure.Core.Amqp;
 using Azure.Messaging.ServiceBus;
 using Bogus;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs
 {
@@ -13,30 +12,22 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs
     /// </summary>
     public static class AzureServiceBusMessageContextFactory
     {
-        private static readonly Faker BogusGenerator = new Faker();
-        
+        private static readonly Faker Bogus = new Faker();
+
         /// <summary>
         /// Generates a valid <see cref="AzureServiceBusMessageContext"/> instance.
         /// </summary>
         public static AzureServiceBusMessageContext Generate()
         {
-            var amqp = new AmqpAnnotatedMessage(new AmqpMessageBody(new ReadOnlyMemory<byte>[0]));
-            amqp.Header.DeliveryCount = BogusGenerator.Random.UInt();
-            
-            var message = (ServiceBusReceivedMessage) Activator.CreateInstance(typeof(ServiceBusReceivedMessage),
-                BindingFlags.NonPublic | BindingFlags.Instance,
-                args: new object[] { amqp },
-                binder: null,
-                culture: null,
-                activationAttributes: null);
-            
-            AzureServiceBusSystemProperties systemProperties = message.GetSystemProperties();
-            
-            var context = new AzureServiceBusMessageContext(
-                $"message-id-{Guid.NewGuid()}", 
+            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(
+                messageId: $"message-id-{Guid.NewGuid()}",
+                deliveryCount: Bogus.Random.Int());
+
+            var context = AzureServiceBusMessageContext.Create(
                 $"job-id-{Guid.NewGuid()}",
-                systemProperties, 
-                new Dictionary<string, object>());
+                Bogus.PickRandom<ServiceBusEntityType>(),
+                Mock.Of<ServiceBusReceiver>(),
+                message);
 
             return context;
         }
