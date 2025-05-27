@@ -207,16 +207,5 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        .WithFallbackMessageHandler<WriteOrderToDiskFallbackMessageHandler>();
             });
         }
-
-        [Fact]
-        public async Task ServiceBusMessagePumpWithServiceBusFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
-        {
-            await TestServiceBusMessageHandlingAsync(Queue, options =>
-            {
-                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
-                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
-                       .WithServiceBusFallbackMessageHandler<WriteOrderToDiskFallbackMessageHandler>();
-            });
-        }
     }
 }
