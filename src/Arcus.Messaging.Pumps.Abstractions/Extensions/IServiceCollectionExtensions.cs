@@ -36,7 +36,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(implementationFactory));
             }
 
-            services.TryAddSingleton<IMessagePumpLifetime, DefaultMessagePumpLifetime>();
             services.TryAddSingleton<IMessagePumpCircuitBreaker>(
                 provider => new DefaultMessagePumpCircuitBreaker(provider, provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>()));
 
