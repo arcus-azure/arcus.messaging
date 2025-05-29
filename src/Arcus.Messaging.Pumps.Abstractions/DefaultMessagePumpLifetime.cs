@@ -12,6 +12,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
     /// <summary>
     /// Represents the default <see cref="IMessagePumpLifetime"/> implementation to control the lifetime of registered message pumps.
     /// </summary>
+    [Obsolete("Will be removed in v3.0 since the circuit breaker functionality handles start/pause automatically now")]
     public class DefaultMessagePumpLifetime : IMessagePumpLifetime
     {
         private readonly IServiceProvider _serviceProvider;
@@ -42,7 +43,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
             }
 
             MessagePump messagePump = GetMessagePump(jobId);
-            
+
             _logger.LogTrace("Starting message pump '{JobId}' via message pump lifetime...", jobId);
             await messagePump.StartProcessingMessagesAsync(cancellationToken);
             _logger.LogTrace("Started message pump '{JobId}' via message pump lifetime", jobId);

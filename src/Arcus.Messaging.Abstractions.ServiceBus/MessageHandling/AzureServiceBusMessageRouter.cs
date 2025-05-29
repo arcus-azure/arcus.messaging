@@ -195,7 +195,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
+#pragma warning disable CS0618 // Type or member is obsolete: fallback handlers will be removed in v3.0.
             return await RouteMessageWithPotentialFallbackAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         /// <summary>
@@ -215,6 +217,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+        [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(AzureServiceBusMessageContext) + " instead of defining fallback message handlers")]
         protected async Task<MessageProcessingResult> RouteMessageWithPotentialFallbackAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
@@ -275,7 +278,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     if (result.IsSuccess)
                     {
                         var args = new ProcessMessageEventArgs(message, messageReceiver, cancellationToken);
+#pragma warning disable CS0618 // Type or member is obsolete: Azure Service bus-specific message handler templates will be removed in v3.0.
                         SetServiceBusPropertiesForSpecificOperations(messageHandler, args, messageContext);
+#pragma warning restore CS0618 // Type or member is obsolete
 
                         bool isProcessed = await messageHandler.ProcessMessageAsync(result.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
 
@@ -287,11 +292,13 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     }
                 }
 
+#pragma warning disable CS0618 // Type or member is obsolete: fallback message handlers will be removed in v3.0.
                 ServiceBusFallbackMessageHandler[] serviceBusFallbackHandlers =
                     GetAvailableFallbackMessageHandlersByContext<ServiceBusReceivedMessage, AzureServiceBusMessageContext>(messageContext);
 
                 FallbackMessageHandler<string, MessageContext>[] generalFallbackHandlers =
                     GetAvailableFallbackMessageHandlersByContext<string, MessageContext>(messageContext);
+#pragma warning restore CS0618 // Type or member is obsolete
 
                 bool fallbackAvailable = serviceBusFallbackHandlers.Length > 0 || generalFallbackHandlers.Length > 0;
 
@@ -315,7 +322,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     return MessageProcessingResult.Success(message.MessageId);
                 }
 
+#pragma warning disable CS0618 // Type or member is obsolete: fallback message handling will be removed in v3.0.
                 return await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             }
             catch (Exception exception)
@@ -391,6 +400,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="eventArgs">The event args of the incoming Service Bus message.</param>
         /// <param name="messageContext">The context in which the received Service Bus message is processed.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageHandler"/> or <paramref name="messageContext"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(AzureServiceBusMessageContext) + " instead")]
         protected void SetServiceBusPropertiesForSpecificOperations(
             MessageHandler messageHandler,
             ProcessMessageEventArgs eventArgs,
@@ -435,6 +445,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
+        [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(AzureServiceBusMessageContext) + " instead of defining fallback message handlers")]
         protected async Task<MessageProcessingResult> TryServiceBusFallbackMessageAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,

@@ -394,6 +394,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Restart core functionality of the message pump.
         /// </summary>
+        [Obsolete("Will be removed in v3.0 since the circuit breaker functionality handles start/pause automatically now")]
         public async Task RestartAsync()
         {
             Interlocked.Exchange(ref _unauthorizedExceptionCount, 0);
@@ -407,6 +408,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Restart core functionality of the message pump.
         /// </summary>
+        [Obsolete("Will be removed in v3.0 since the circuit breaker functionality handles start/pause automatically now")]
         public async Task RestartAsync(CancellationToken cancellationToken)
         {
             Interlocked.Exchange(ref _unauthorizedExceptionCount, 0);
