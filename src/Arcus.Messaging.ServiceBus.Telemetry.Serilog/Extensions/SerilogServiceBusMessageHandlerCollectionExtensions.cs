@@ -1,12 +1,12 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
 using Arcus.Messaging.ServiceBus.Telemetry.Serilog;
 using Microsoft.ApplicationInsights;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
-namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
+namespace Microsoft.Extensions.DependencyInjection
 {
     /// <summary>
     /// Extensions on the <see cref="ServiceBusMessageHandlerCollection"/> to use Serilog to track Azure Service bus request telemetry to Azure Application Insights.
