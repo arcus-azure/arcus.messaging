@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
@@ -490,7 +489,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
             }
 
-            IServiceBusMessageCorrelationScope correlationScope = DetermineMessageCorrelation(message);
+            var correlationScope = ServiceProvider.GetRequiredService<IServiceBusMessageCorrelationScope>();
             var messageContext = AzureServiceBusMessageContext.Create(JobId, Settings.ServiceBusEntity, _messageReceiver, message);
 
             using MessageOperationResult correlationResult = correlationScope.StartOperation(messageContext, Options.Telemetry);
@@ -517,76 +516,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
 
             return routingResult;
-        }
-
-        private IServiceBusMessageCorrelationScope DetermineMessageCorrelation(ServiceBusReceivedMessage message)
-        {
-            if (Settings.Options.Routing.Correlation.Format is MessageCorrelationFormat.W3C)
-            {
-                IServiceBusMessageCorrelationScope correlationScope = ServiceProvider.GetRequiredService<IServiceBusMessageCorrelationScope>();
-                return correlationScope;
-            }
-
-            return new DeprecatedHierarchicalServiceBusCorrelationScope(message, Settings.Options.Routing.Correlation, Logger);
-        }
-
-        [Obsolete("Will be removed in v3.0 as the Hierarchical correlation format is deprecated")]
-        private sealed class DeprecatedHierarchicalServiceBusCorrelationScope : IServiceBusMessageCorrelationScope
-        {
-            private readonly ServiceBusReceivedMessage _message;
-            private readonly MessageCorrelationOptions _hierarchicalOptions;
-            private readonly ILogger _logger;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="DeprecatedHierarchicalServiceBusCorrelationScope"/> class.
-            /// </summary>
-            public DeprecatedHierarchicalServiceBusCorrelationScope(
-                ServiceBusReceivedMessage message,
-                MessageCorrelationOptions hierarchicalOptions,
-                ILogger logger)
-            {
-                _message = message;
-                _hierarchicalOptions = hierarchicalOptions;
-                _logger = logger;
-            }
-
-            public MessageOperationResult StartOperation(AzureServiceBusMessageContext messageContext, MessageTelemetryOptions options)
-            {
-                MessageCorrelationInfo correlationInfo =
-#pragma warning disable CS0618 // Type or member is obsolete: will be removed in v3.0, once the 'Hierarchical' correlation format is removed.
-                    _message.GetCorrelationInfo(
-                        _hierarchicalOptions?.TransactionIdPropertyName ?? PropertyNames.TransactionId,
-                        _hierarchicalOptions?.OperationParentIdPropertyName ?? PropertyNames.OperationParentId);
-
-                return new DeprecatedHierarchicalMessageOperationResult(correlationInfo, (isSuccessful, startTime, duration) =>
-                {
-                    _logger.LogServiceBusRequest(
-                        messageContext.FullyQualifiedNamespace,
-                        messageContext.EntityPath,
-                        options.OperationName,
-                        isSuccessful,
-                        duration,
-                        startTime,
-                        messageContext.EntityType);
-                });
-            }
-
-            private sealed class DeprecatedHierarchicalMessageOperationResult : MessageOperationResult
-            {
-                private readonly Action<bool, DateTimeOffset, TimeSpan> _stopOperation;
-
-                internal DeprecatedHierarchicalMessageOperationResult(
-                    MessageCorrelationInfo correlation,
-                    Action<bool, DateTimeOffset, TimeSpan> stopOperation) : base(correlation)
-                {
-                    _stopOperation = stopOperation;
-                }
-
-                protected override void StopOperation(bool isSuccessful, DateTimeOffset startTime, TimeSpan duration)
-                {
-                    _stopOperation(isSuccessful, startTime, duration);
-                }
-            }
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
