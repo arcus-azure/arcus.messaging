@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
@@ -489,7 +490,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
             }
 
-            var correlationScope = ServiceProvider.GetRequiredService<IServiceBusMessageCorrelationScope>();
+            var correlationScope = ServiceProvider.GetService<IServiceBusMessageCorrelationScope>() ?? new NullW3CMessageCorrelationScope(message);
             var messageContext = AzureServiceBusMessageContext.Create(JobId, Settings.ServiceBusEntity, _messageReceiver, message);
 
             using MessageOperationResult correlationResult = correlationScope.StartOperation(messageContext, Options.Telemetry);
@@ -516,6 +517,35 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
 
             return routingResult;
+        }
+
+        private sealed class NullW3CMessageCorrelationScope : IServiceBusMessageCorrelationScope
+        {
+            private readonly ServiceBusReceivedMessage _message;
+
+            internal NullW3CMessageCorrelationScope(ServiceBusReceivedMessage message)
+            {
+                _message = message;
+            }
+
+            public MessageOperationResult StartOperation(AzureServiceBusMessageContext messageContext, MessageTelemetryOptions options)
+            {
+                (string transactionId, string operationParentId) = _message.ApplicationProperties.GetTraceParent();
+                var correlation = new MessageCorrelationInfo(_message.CorrelationId, transactionId, operationParentId);
+
+                return new DefaultW3CMessageOperationResult(correlation);
+            }
+
+            private sealed class DefaultW3CMessageOperationResult : MessageOperationResult
+            {
+                internal DefaultW3CMessageOperationResult(MessageCorrelationInfo correlation) : base(correlation)
+                {
+                }
+
+                protected override void StopOperation(bool isSuccessful, DateTimeOffset startTime, TimeSpan duration)
+                {
+                }
+            }
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
