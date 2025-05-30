@@ -7,11 +7,12 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
+using Arcus.Messaging.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
-using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -489,10 +490,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
             }
 
-            using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
+            var correlationScope = ServiceProvider.GetService<IServiceBusMessageCorrelationScope>() ?? new NullW3CMessageCorrelationScope(message);
             var messageContext = AzureServiceBusMessageContext.Create(JobId, Settings.ServiceBusEntity, _messageReceiver, message);
 
-            MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
+            using MessageOperationResult correlationResult = correlationScope.StartOperation(messageContext, Options.Telemetry);
+
+            MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.Correlation, cancellationToken);
+            correlationResult.IsSuccessful = routingResult.IsSuccessful;
 
             if (routingResult.IsSuccessful && Settings.Options.AutoComplete)
             {
@@ -515,27 +519,33 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             return routingResult;
         }
 
-        private MessageCorrelationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message)
+        private sealed class NullW3CMessageCorrelationScope : IServiceBusMessageCorrelationScope
         {
-            if (Settings.Options.Routing.Correlation.Format is MessageCorrelationFormat.W3C)
-            {
-                (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
-                var client = ServiceProvider.GetRequiredService<TelemetryClient>();
+            private readonly ServiceBusReceivedMessage _message;
 
-#pragma warning disable CS0618 // Type or member is obsolete: will be moved to a Telemetry-specific library in v3.0
-                return MessageCorrelationResult.Create(client, transactionId, operationParentId);
-#pragma warning restore
+            internal NullW3CMessageCorrelationScope(ServiceBusReceivedMessage message)
+            {
+                _message = message;
             }
 
-            MessageCorrelationInfo correlationInfo =
-#pragma warning disable CS0618 // Type or member is obsolete: will be removed in v3.0, once the 'Hierarchical' correlation format is removed.
-                message.GetCorrelationInfo(
-                    Settings.Options.Routing.Correlation?.TransactionIdPropertyName ?? PropertyNames.TransactionId,
-                    Settings.Options.Routing.Correlation?.OperationParentIdPropertyName ?? PropertyNames.OperationParentId);
+            public MessageOperationResult StartOperation(AzureServiceBusMessageContext messageContext, MessageTelemetryOptions options)
+            {
+                (string transactionId, string operationParentId) = _message.ApplicationProperties.GetTraceParent();
+                var correlation = new MessageCorrelationInfo(_message.CorrelationId ?? Guid.NewGuid().ToString(), transactionId, operationParentId);
 
-            return MessageCorrelationResult.Create(correlationInfo);
-#pragma warning restore CS0618 // Type or member is obsolete
+                return new DefaultW3CMessageOperationResult(correlation);
+            }
 
+            private sealed class DefaultW3CMessageOperationResult : MessageOperationResult
+            {
+                internal DefaultW3CMessageOperationResult(MessageCorrelationInfo correlation) : base(correlation)
+                {
+                }
+
+                protected override void StopOperation(bool isSuccessful, DateTimeOffset startTime, TimeSpan duration)
+                {
+                }
+            }
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
