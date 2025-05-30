@@ -239,22 +239,5 @@ namespace Arcus.Messaging.Pumps.Abstractions
                                   .Select(handler => handler.Handler)
                                   .ToArray();
         }
-
-        /// <summary>
-        /// Register information about the client connected to the messaging service
-        /// </summary>
-        /// <param name="clientId">Id of the client being used to connect to the messaging service</param>
-        /// <param name="entityPath">Entity path that is being processed</param>
-        [Obsolete("Will be removed in v3.0 as it is not used in the messaging system")]
-        protected void RegisterClientInformation(string clientId, string entityPath)
-        {
-            if (string.IsNullOrWhiteSpace(clientId))
-            {
-                throw new ArgumentException("Requires a non-blank client ID", nameof(clientId));
-            }
-
-            ClientId = clientId;
-            EntityPath = entityPath;
-        }
     }
 }
