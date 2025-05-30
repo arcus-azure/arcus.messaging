@@ -531,7 +531,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             public MessageOperationResult StartOperation(AzureServiceBusMessageContext messageContext, MessageTelemetryOptions options)
             {
                 (string transactionId, string operationParentId) = _message.ApplicationProperties.GetTraceParent();
-                var correlation = new MessageCorrelationInfo(_message.CorrelationId, transactionId, operationParentId);
+                var correlation = new MessageCorrelationInfo(_message.CorrelationId ?? Guid.NewGuid().ToString(), transactionId, operationParentId);
 
                 return new DefaultW3CMessageOperationResult(correlation);
             }
