@@ -261,7 +261,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
 
             Namespace = _messageReceiver.FullyQualifiedNamespace;
-            RegisterClientInformation(JobId, _messageReceiver.EntityPath);
 
             _receiveMessagesCancellation = new CancellationTokenSource();
             while (CircuitState.IsClosed
