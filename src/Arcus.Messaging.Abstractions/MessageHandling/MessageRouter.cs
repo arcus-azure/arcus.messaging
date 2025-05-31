@@ -185,53 +185,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s
         /// and optionally through an registered <see cref="IFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
-        /// <param name="message">The message that was received.</param>
-        /// <param name="messageContext">The context providing more information concerning the processing.</param>
-        /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
-        /// <param name="cancellationToken">The token to cancel the message processing.</param>
-        /// <exception cref="ArgumentNullException">
-        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
-        public virtual async Task RouteMessageAsync<TMessageContext>(
-            string message,
-            TMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
-            where TMessageContext : MessageContext
-        {
-            if (message is null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-
-            if (messageContext is null)
-            {
-                throw new ArgumentNullException(nameof(messageContext));
-            }
-
-            if (correlationInfo is null)
-            {
-                throw new ArgumentNullException(nameof(correlationInfo));
-            }
-
-            using (IServiceScope serviceScope = ServiceProvider.CreateScope())
-#pragma warning disable CS0618 // Type or member is obsolete: will be refactored when moving towards v3.0.
-            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
-#pragma warning restore CS0618 // Type or member is obsolete
-            {
-                var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
-                accessor?.SetCorrelationInfo(correlationInfo);
-
-                await RouteMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
-            }
-        }
-
-        /// <summary>
-        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
-        /// </summary>
         /// <param name="serviceProvider">The available services from which the message handlers should be retrieved.</param>
         /// <param name="message">The message that was received.</param>
         /// <param name="messageContext">The context providing more information concerning the processing.</param>
