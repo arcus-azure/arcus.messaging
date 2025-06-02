@@ -9,7 +9,6 @@ using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
-using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Azure;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
@@ -32,17 +31,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageContextFilter(context => context.Properties["Topic"].ToString() == "Customers"))
                        .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>()
                        .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
-            });
-        }
-
-        [Fact]
-        public async Task ServiceBusQueueMessagePumpWithServiceBusDeadLetterOnFallback_PublishServiceBusMessage_MessageSuccessfullyDeadLettered()
-        {
-            await TestServiceBusQueueDeadLetteredMessageAsync(options =>
-            {
-                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = false)
-                       .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>(opt => opt.AddMessageContextFilter(_ => true))
-                       .WithServiceBusFallbackMessageHandler<DeadLetterAzureServiceBusFallbackMessageHandler>();
             });
         }
 
@@ -72,17 +60,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             });
         }
 
-        [Fact]
-        public async Task ServiceBusQueueMessagePumpWithServiceBusAbandonOnFallback_PublishServiceBusMessage_MessageSuccessfullyAbandoned()
-        {
-            await TestServiceBusQueueAbandonMessageAsync(options =>
-            {
-                options.AddServiceBusQueueMessagePump(QueueName, HostName)
-                       .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
-                       .WithServiceBusFallbackMessageHandler<AbandonAzureServiceBusFallbackMessageHandler>();
-            });
-        }
-
         private async Task TestServiceBusQueueAbandonMessageAsync(Action<WorkerOptions> configureOptions)
         {
             // Arrange
@@ -97,26 +74,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 // Assert
                 TestServiceMessageConsumer consumer = CreateQueueConsumer();
                 await consumer.AssertAbandonMessageAsync(message.MessageId);
-            });
-        }
-
-        [Fact]
-        public async Task ServiceBusQueueMessagePumpWithCustomCompleteOnFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
-        {
-            // Arrange
-            var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = false)
-                   .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>()
-                   .WithServiceBusFallbackMessageHandler<CompleteAzureServiceBusFallbackMessageHandler>();
-
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
-
-            // Act
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
-            {
-                // Assert
-                TestServiceMessageConsumer consumer = CreateQueueConsumer();
-                await consumer.AssertCompletedMessageAsync(message.MessageId);
             });
         }
 
@@ -237,21 +194,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Fact]
-        public async Task ServiceBusMessagePump_WithServiceBusDeadLetterOnFallback_ThenMessageShouldBeDeadLettered()
-        {
-            await TestServiceBusMessageHandlingAsync(
-                pump =>
-                {
-                    pump.WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>(opt => opt.AddMessageContextFilter(_ => true))
-                        .WithServiceBusFallbackMessageHandler<DeadLetterAzureServiceBusFallbackMessageHandler>();
-                },
-                async (message, consumer) =>
-                {
-                    await consumer.AssertDeadLetterMessageAsync(message.MessageId);
-                });
-        }
-
-        [Fact]
         public async Task ServiceBusMessagePump_WithServiceBusAbandonInProcessing_ThenMessageShouldBeAbandoned()
         {
             await TestServiceBusMessageHandlingAsync(
@@ -259,20 +201,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 {
                     pump.WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
                         .WithServiceBusMessageHandler<AbandonAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => true));
-                },
-                async (message, consumer) =>
-                {
-                    await consumer.AssertAbandonMessageAsync(message.MessageId);
-                });
-        }
-
-        [Fact]
-        public async Task ServiceBusMessagePump_WithServiceBusAbandonOnFallback_ThenMessageSuccessShouldBeAbandoned()
-        {
-            await TestServiceBusMessageHandlingAsync(pump =>
-                {
-                    pump.WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
-                        .WithServiceBusFallbackMessageHandler<AbandonAzureServiceBusFallbackMessageHandler>();
                 },
                 async (message, consumer) =>
                 {
@@ -332,37 +260,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 },
                 async (message, consumer) =>
                 {
-                    await consumer.AssertDeadLetterMessageAsync(message.MessageId);
-                });
-        }
-
-        [Fact]
-        public async Task ServiceBusMessagePump_WhenFallbackMessageHandlerSelectedSucceedsProcessing_ThenMessageShouldBeCompleted()
-        {
-            await TestServiceBusMessageHandlingAsync(
-                pump =>
-                {
-                    pump.WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
-                        .WithServiceBusFallbackMessageHandler<PassThruAzureServiceBusFallbackMessageHandler>();
-                },
-                async (message, consumer) =>
-                {
-                    await consumer.AssertCompletedMessageAsync(message.MessageId);
-                });
-        }
-
-        [Fact]
-        public async Task ServiceBusMessagePump_WhenFallbackMessageHandlerSelectedButFailsToProcess_ThenMessageShouldBeAbandonedUntilDeadLettered()
-        {
-            await TestServiceBusMessageHandlingAsync(
-                pump =>
-                {
-                    pump.WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
-                        .WithServiceBusFallbackMessageHandler<SabotageAzureServiceBusFallbackMessageHandler>();
-                },
-                async (message, consumer) =>
-                {
-                    await consumer.AssertAbandonMessageAsync(message.MessageId);
                     await consumer.AssertDeadLetterMessageAsync(message.MessageId);
                 });
         }

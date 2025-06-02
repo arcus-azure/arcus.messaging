@@ -2,13 +2,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Security.Core;
-using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -31,14 +28,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddLogging();
 
             // Act
-            ServiceBusMessageHandlerCollection result = 
+            ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePump(
                     "topic name", "subscription name", "secret name", options =>
                     {
                         options.AutoComplete = true;
                         options.TopicSubscription = TopicSubscription.Automatic;
                     });
-            
+
             // Assert
             Assert.NotNull(result);
             ServiceProvider provider = result.Services.BuildServiceProvider();
@@ -62,10 +59,10 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             string jobId = Guid.NewGuid().ToString();
 
             // Act
-            ServiceBusMessageHandlerCollection result = 
+            ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePump(
                     "topic name", "subscription name", "secret name", options => options.JobId = jobId);
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
@@ -86,7 +83,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddLogging();
 
             // Act
-            ServiceBusMessageHandlerCollection result = 
+            ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePump(
                     "topic name", "subscription name", "secret name", configureMessagePump: options =>
                     {
@@ -114,17 +111,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePump("subscription name", (IConfiguration config) => null);
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public void AddServiceBusTopicMessagePump_WithSubscriptionNameSecretProvider_RegistersDedicatedCorrelation()
         {
@@ -133,17 +130,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePump("subscription name", (ISecretProvider secretProvider) => null);
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public void AddServiceBusTopicMessagePump_WithSubscriptionNameSecretName_RegistersDedicatedCorrelation()
         {
@@ -152,11 +149,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePump("subscription name", "secret name");
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
@@ -171,17 +168,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePump("topic name", "subscription name", (IConfiguration config) => null);
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public void AddServiceBusTopicMessagePump_WithTopicNameSubscriptionNameSecretProvider_RegistersDedicatedCorrelation()
         {
@@ -190,17 +187,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePump("topic name", "subscription name", (ISecretProvider secretProvider) => null);
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public void AddServiceBusTopicMessagePump_WithTopicNameSubscriptionNameSecretName_RegistersDedicatedCorrelation()
         {
@@ -209,11 +206,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePump("topic name", "subscription name", "secret name");
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
@@ -304,17 +301,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePumpWithPrefix("topic name", "subscription prefix", (ISecretProvider secretProvider) => null);
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public void AddServiceBusTopicMessagePumpWithPrefix_WithTopicNameSubscriptionNameSecretName_RegistersDedicatedCorrelation()
         {
@@ -323,17 +320,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePumpWithPrefix("topic name", "subscription prefix", "secret name");
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public void AddServiceBusTopicMessagePumpUsingManagedIdentity_WithTopicNameSubscriptionNameSecretName_RegistersDedicatedCorrelation()
         {
@@ -342,17 +339,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePumpUsingManagedIdentity("topic name", "subscription name", "service bus namespace");
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public void AddServiceBusTopicMessagePumpUsingManagedIdentityWithPrefix_WithTopicNameSubscriptionNameSecretName_RegistersDedicatedCorrelation()
         {
@@ -361,17 +358,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusTopicMessagePumpUsingManagedIdentityWithPrefix("topic name", "subscription prefix", "service bus namespace");
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public async Task AddServiceBusQueueMessagePump_IndirectSecretProviderWithQueueName_WiresUpCorrectly()
         {
@@ -434,7 +431,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 spySecretProvider.Verify(spy => spy.GetRawSecretAsync("secret name"), Times.Once);
             }
         }
-        
+
         [Fact]
         public void AddServiceBusQueueMessagePump_WithSecretProvider_RegistersDedicatedCorrelation()
         {
@@ -443,11 +440,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusQueueMessagePump((ISecretProvider secretProvider) => null);
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
@@ -467,14 +464,14 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusQueueMessagePump("queue-name", "secret-name", options => options.JobId = jobId);
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.IsType<AzureServiceBusMessagePump>(provider.GetRequiredService<IHostedService>());
             Assert.Equal(jobId, result.JobId);
         }
-        
+
         [Fact]
         public void AddServiceBusQueueMessagePump_WithConfiguration_RegistersDedicatedCorrelation()
         {
@@ -483,17 +480,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusQueueMessagePump((IConfiguration config) => null);
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public void AddServiceBusQueueMessagePump_WithQueueNameSecretName_RegistersDedicatedCorrelation()
         {
@@ -502,17 +499,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusQueueMessagePump("queue name", "secret name");
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public void AddServiceBusQueueMessagePump_WithQueueNameSecretProvider_RegistersDedicatedCorrelation()
         {
@@ -521,17 +518,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusQueueMessagePump("queue name", (ISecretProvider secretProvider) => null);
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public void AddServiceBusQueueMessagePump_WithQueueNameConfiguration_RegistersDedicatedCorrelation()
         {
@@ -540,17 +537,17 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusQueueMessagePump("queue name", (IConfiguration config) => null);
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
             Assert.NotNull(provider.GetService<IMessageCorrelationInfoAccessor>());
         }
-        
+
         [Fact]
         public void AddServiceBusQueueMessagePumpUsingManagedIdentity_WithQueueNameConfiguration_RegistersDedicatedCorrelation()
         {
@@ -559,11 +556,11 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             services.AddSingleton(Mock.Of<ISecretProvider>());
             services.AddSingleton(Mock.Of<IConfiguration>());
             services.AddLogging();
-            
+
             // Act
             ServiceBusMessageHandlerCollection result =
                 services.AddServiceBusQueueMessagePumpUsingManagedIdentity("queue name", "service bus namespace");
-            
+
             // Assert
             Assert.NotNull(result);
             IServiceProvider provider = result.Services.BuildServiceProvider();
@@ -641,7 +638,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
                 () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler(), 
+                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler(),
                     messageContextFilter: null));
         }
 
@@ -667,7 +664,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
                 () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler(), 
+                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler(),
                     messageBodyFilter: null));
         }
 
@@ -694,7 +691,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
                 () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    implementationFactory: servivceProvider => new TestServiceBusMessageHandler(), 
+                    implementationFactory: servivceProvider => new TestServiceBusMessageHandler(),
                     messageContextFilter: null,
                     messageBodyFilter: body => true));
         }
@@ -708,67 +705,9 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(
                 () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler(), 
+                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler(),
                     messageContextFilter: context => true,
                     messageBodyFilter: null));
-        }
-
-        [Fact]
-        public void WithServiceBusFallbackMessageHandler_WithValidType_RegistersInterface()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act
-            collection.WithServiceBusFallbackMessageHandler<PassThruServiceBusFallbackMessageHandler>();
-
-            // Assert
-            IServiceProvider provider = collection.Services.BuildServiceProvider();
-            var messageHandler = provider.GetRequiredService<FallbackMessageHandler<ServiceBusReceivedMessage, AzureServiceBusMessageContext>>();
-
-            Assert.IsType<PassThruServiceBusFallbackMessageHandler>(messageHandler.MessageHandlerInstance);
-        }
-
-        [Fact]
-        public void WithServiceBusFallbackMessageHandler_WithValidImplementationFunction_RegistersInterface()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-            var expected = new PassThruServiceBusFallbackMessageHandler();
-
-            // Act
-            collection.WithServiceBusFallbackMessageHandler(serviceProvider => expected);
-
-            // Assert
-            IServiceProvider provider = collection.Services.BuildServiceProvider();
-            var actual = provider.GetRequiredService<FallbackMessageHandler<ServiceBusReceivedMessage, AzureServiceBusMessageContext>>();
-
-            Assert.Same(expected, actual.MessageHandlerInstance);
-        }
-
-        [Fact]
-        public void WithServiceBusFallbackMessageHandlerType_WithoutServices_Throws()
-        {
-            Assert.ThrowsAny<ArgumentException>(
-                () => ((ServiceBusMessageHandlerCollection) null).WithServiceBusFallbackMessageHandler<PassThruServiceBusFallbackMessageHandler>());
-        }
-
-        [Fact]
-        public void WithServiceBusFallbackMessageHandlerImplementationFunction_WithoutServices_Throws()
-        {
-            Assert.ThrowsAny<ArgumentException>(
-                () => ((ServiceBusMessageHandlerCollection) null).WithServiceBusFallbackMessageHandler(serviceProvider => new PassThruServiceBusFallbackMessageHandler()));
-        }
-
-        [Fact]
-        public void WithServiceBusFallbackMessageHandlerImplementationFunction_WithoutImplementationFunction_Throws()
-        {
-            // Arrange
-            var services = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => services.WithServiceBusFallbackMessageHandler(createImplementation: (Func<IServiceProvider, PassThruServiceBusFallbackMessageHandler>)null));
         }
     }
 }
