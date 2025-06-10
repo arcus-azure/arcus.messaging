@@ -163,6 +163,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             foreach (Encoding encoding in SupportedEncodings)
             {
+                _logger.LogTrace("Use encoding '{Encoding}'", encoding.EncodingName);
                 ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(encoding: encoding);
 
                 // Act
@@ -185,6 +186,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             foreach (Encoding encoding in SupportedEncodings)
             {
+                _logger.LogTrace("Use encoding '{Encoding}'", encoding.EncodingName);
                 ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(encoding: encoding);
 
                 // Act
