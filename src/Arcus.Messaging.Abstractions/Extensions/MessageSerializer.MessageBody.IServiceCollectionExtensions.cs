@@ -12,48 +12,6 @@ namespace Microsoft.Extensions.DependencyInjection
     public static partial class MessageHandlerCollectionExtensions
     {
         /// <summary>
-        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an Azure Service Bus.
-        /// resources.
-        /// </summary>
-        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
-        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
-        /// <param name="services">The collection of services to use in the application.</param>
-        /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
-        /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
-        public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
-            this MessageHandlerCollection services,
-            IMessageBodySerializer messageBodySerializer,
-            Func<TMessage, bool> messageBodyFilter)
-            where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
-            where TMessage : class
-        {
-            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageBodySerializer, messageBodyFilter);
-        }
-
-        /// <summary>
-        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an Azure Service Bus.
-        /// resources.
-        /// </summary>
-        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
-        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
-        /// <param name="services">The collection of services to use in the application.</param>
-        /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
-        /// <param name="messageBodySerializerImplementationFactory">The function to create an custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="messageBodyFilter"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
-        public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
-            this MessageHandlerCollection services,
-            Func<IServiceProvider, IMessageBodySerializer> messageBodySerializerImplementationFactory,
-            Func<TMessage, bool> messageBodyFilter)
-            where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
-            where TMessage : class
-        {
-            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageBodySerializerImplementationFactory, messageBodyFilter);
-        }
-
-        /// <summary>
         /// Adds a <see cref="IMessageHandler{TMessage, TMessageContext}" /> implementation to process the messages from an Azure Service Bus.
         /// resources.
         /// </summary>
@@ -99,54 +57,6 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return WithMessageHandler<TMessageHandler, TMessage, TMessageContext>(
                 services, messageBodySerializerImplementationFactory, messageBodyFilter, serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
-        }
-
-        /// <summary>
-        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an Azure Service Bus.
-        /// resources.
-        /// </summary>
-        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
-        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
-        /// <param name="services">The collection of services to use in the application.</param>
-        /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
-        /// <param name="implementationFactory">The function that creates the service.</param>
-        /// <param name="messageBodySerializer">The custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/>, <paramref name="messageBodyFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
-        public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
-            this MessageHandlerCollection services,
-            IMessageBodySerializer messageBodySerializer,
-            Func<TMessage, bool> messageBodyFilter,
-            Func<IServiceProvider, TMessageHandler> implementationFactory)
-            where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
-            where TMessage : class
-        {
-            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
-                services, messageBodySerializer, messageBodyFilter, implementationFactory);
-        }
-
-        /// <summary>
-        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an Azure Service Bus.
-        /// resources.
-        /// </summary>
-        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
-        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
-        /// <param name="services">The collection of services to use in the application.</param>
-        /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
-        /// <param name="messageHandlerImplementationFactory">The function that creates the service.</param>
-        /// <param name="messageBodySerializerImplementationFactory">The function to create an custom <see cref="IMessageBodySerializer"/> to deserialize the incoming message for the <typeparamref name="TMessageHandler"/>.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/>, <paramref name="messageBodyFilter"/>, or <paramref name="messageHandlerImplementationFactory"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
-        public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
-            this MessageHandlerCollection services,
-            Func<IServiceProvider, IMessageBodySerializer> messageBodySerializerImplementationFactory,
-            Func<TMessage, bool> messageBodyFilter,
-            Func<IServiceProvider, TMessageHandler> messageHandlerImplementationFactory)
-            where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
-            where TMessage : class
-        {
-            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(
-                services, messageBodySerializerImplementationFactory, messageBodyFilter, messageHandlerImplementationFactory);
         }
 
         /// <summary>
