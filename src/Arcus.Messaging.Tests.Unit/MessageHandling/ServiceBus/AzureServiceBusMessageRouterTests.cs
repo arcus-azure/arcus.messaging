@@ -14,10 +14,8 @@ using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
-using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
@@ -78,39 +76,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             // Assert
             Assert.True(sabotageHandler.IsProcessed, "sabotage message handler should be tried");
-        }
-
-        [Fact]
-        public async Task RouteMessage_WithGeneralRouting_GoesThroughRegisteredMessageHandler()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            var spyLogger = new InMemoryLogger();
-            services.AddLogging(logging => logging.AddProvider(new CustomLoggerProvider(spyLogger)));
-
-            var collection = new ServiceBusMessageHandlerCollection(services);
-            var ignoredHandler = new TestServiceBusMessageHandler();
-            var spyHandler = new StubServiceBusMessageHandler<Order>();
-            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(serviceProvider => spyHandler)
-                      .WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(serviceProvider => ignoredHandler);
-
-            // Act
-            services.AddServiceBusMessageRouting();
-
-            // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
-            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
-            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
-            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
-
-            Order order = OrderGenerator.Generate();
-            string json = JsonConvert.SerializeObject(order);
-
-            await router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None);
-
-            Assert.True(spyHandler.IsProcessed);
-            Assert.False(ignoredHandler.IsProcessed);
-            Assert.Contains(spyLogger.Entries, entry => entry.Level == LogLevel.Warning && entry.Message.Contains("Azure Service Bus from Process completed"));
         }
 
         [Fact]

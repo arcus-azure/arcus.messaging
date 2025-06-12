@@ -101,46 +101,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         protected AzureServiceBusMessageRouterOptions ServiceBusOptions { get; }
 
         /// <summary>
-        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
-        /// </summary>
-        /// <param name="message">The message that was received.</param>
-        /// <param name="messageContext">The context providing more information concerning the processing.</param>
-        /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
-        /// <param name="cancellationToken">The token to cancel the message processing.</param>
-        /// <exception cref="ArgumentNullException">
-        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
-        public override async Task RouteMessageAsync<TMessageContext>(
-            string message,
-            TMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
-        {
-            var isSuccessful = false;
-            using (DurationMeasurement measurement = DurationMeasurement.Start())
-            {
-                try
-                {
-                    await base.RouteMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                    isSuccessful = true;
-                }
-                finally
-                {
-                    Logger.LogServiceBusRequest(
-                        serviceBusNamespace: "<not-available>",
-                        entityName: "<not-available>",
-                        Options.Telemetry.OperationName,
-                        isSuccessful,
-                        measurement,
-                        ServiceBusEntityType.Unknown);
-                }
-            }
-        }
-
-        /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
         /// and optionally through <see cref="IAzureServiceBusFallbackMessageHandler"/>
         /// if none of the message handlers were able to process the <paramref name="message"/>.
