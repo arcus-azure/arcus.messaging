@@ -12,43 +12,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
     public class MessageExtensionsTests
     {
         [Fact]
-        public void GetUserProperty_WithExistingUserProperty_ReturnsCastType()
-        {
-            // Arrange
-            const string key = "uri-key";
-            ServiceBusReceivedMessage message = CreateMessage(key, new Uri("http://localhost"));
-
-            // Act
-            var uri = message.GetApplicationProperty<Uri>(key);
-
-            // Assert
-            Assert.NotNull(uri);
-        }
-
-        [Fact]
-        public void GetUserProperty_WithNonExistingKey_ThrowsKeyNotFound()
-        {
-            // Arrange
-            ServiceBusReceivedMessage serviceBusMessage = CreateMessage();
-
-            // Act / Assert
-            Assert.Throws<KeyNotFoundException>(
-                () => serviceBusMessage.GetApplicationProperty<Uri>("non-existing-key"));
-        }
-
-        [Fact]
-        public void GetUserProperty_WithWrongUserPropertyValue_ThrowsInvalidCast()
-        {
-            // Arrange
-            const string key = "uri-key";
-            ServiceBusReceivedMessage serviceBusMessage = CreateMessage(key, TimeSpan.Zero);
-
-            // Act / Assert
-            Assert.Throws<InvalidCastException>(
-                () => serviceBusMessage.GetApplicationProperty<Uri>(key));
-        }
-
-        [Fact]
         public void GetMessageCorrelationInfo_WithDefaultCorrelation_ReturnsCorrelationInfo()
         {
             // Arrange
@@ -173,34 +136,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             Assert.NotEmpty(correlationInfo.CycleId);
             Assert.Equal(expectedOperationId, correlationInfo.OperationId);
             Assert.NotEmpty(correlationInfo.TransactionId);
-        }
-
-        [Fact]
-        public void GetTransactionId_WithoutTransactionIdAsUserProperty_ReturnsEmptyString()
-        {
-            // Arrange
-            ServiceBusReceivedMessage message = CreateMessage(transactionIdKey: null, transactionIdValue: null);
-
-            // Act
-            string transactionId = message.GetTransactionId();
-
-            // Assert
-            Assert.Null(transactionId);
-        }
-
-        [Fact]
-        public void GetTransactionId_WithTransactionIdAsUserProperty_ReturnsCorrectTransactionId()
-        {
-            // Arrange
-            var expectedTransactionId = $"transaction-{Guid.NewGuid()}";
-            ServiceBusReceivedMessage message = CreateMessage(PropertyNames.TransactionId, expectedTransactionId);
-
-            // Act
-            string transactionId = message.GetTransactionId();
-
-            // Assert
-            Assert.NotNull(transactionId);
-            Assert.Equal(expectedTransactionId, transactionId);
         }
 
         [Fact]
