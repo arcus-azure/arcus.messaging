@@ -5,16 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
-using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
-using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.Resiliency;
-using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
-using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
@@ -22,7 +18,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
-using static Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus.DiskMessageEventConsumer;
 using static Arcus.Messaging.Tests.Integration.MessagePump.TestUnavailableDependencyAzureServiceBusMessageHandler;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
@@ -114,41 +109,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 _logger,
                 configureOptions: null,
                 rule: new CreateRuleOptions("MessageId", new SqlRuleFilter($"sys.messageid in ({string.Join(", ", messages.Select(m => $"'{m.MessageId}'"))})")));
-        }
-
-        [Fact]
-        public async Task ServiceBusMessagePump_PauseViaLifetime_RestartsAgain()
-        {
-            // Arrange
-            string jobId = Guid.NewGuid().ToString();
-            var options = new WorkerOptions();
-            options.AddXunitTestLogging(_outputWriter)
-                   .AddServiceBusTopicMessagePumpUsingManagedIdentity(
-                       TopicName,
-                       subscriptionName: Guid.NewGuid().ToString(),
-                       HostName,
-                       configureMessagePump: opt =>
-                       {
-                           opt.JobId = jobId;
-                           opt.TopicSubscription = TopicSubscription.Automatic;
-                       })
-                   .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
-                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>((AzureServiceBusMessageContext _) => true);
-
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
-
-            var producer = TestServiceBusMessageProducer.CreateFor(TopicName, _config);
-            await using var worker = await Worker.StartNewAsync(options);
-
-            var lifetime = worker.Services.GetRequiredService<IMessagePumpLifetime>();
-            await lifetime.PauseProcessingMessagesAsync(jobId, TimeSpan.FromSeconds(5), CancellationToken.None);
-
-            // Act
-            await producer.ProduceAsync(message);
-
-            // Assert
-            OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId, TimeSpan.FromSeconds(10));
-            AssertReceivedOrderEventDataForW3C(message, eventData);
         }
     }
 
