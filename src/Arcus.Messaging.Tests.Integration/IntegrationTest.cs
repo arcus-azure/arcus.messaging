@@ -7,21 +7,15 @@ namespace Arcus.Messaging.Tests.Integration
     /// <summary>
     /// Represents default environment values required in describing integration tests.
     /// </summary>
-    public class IntegrationTest
+    public abstract class IntegrationTest
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationTest"/> class.
         /// </summary>
-        public IntegrationTest(ITestOutputHelper testOutput)
+        protected IntegrationTest(ITestOutputHelper testOutput)
         {
             Logger = new XunitTestLogger(testOutput);
-
-            Configuration = 
-                new ConfigurationBuilder()
-                    .AddJsonFile(path: "appsettings.json")
-                    .AddJsonFile(path: "appsettings.local.json", optional: true)
-                    .AddEnvironmentVariables()
-                    .Build();
+            Configuration = TestConfig.Create();
         }
 
         /// <summary>

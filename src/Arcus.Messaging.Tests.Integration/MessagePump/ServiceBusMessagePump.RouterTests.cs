@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
@@ -145,56 +144,59 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             });
         }
 
-        public static IEnumerable<object[]> Encodings
-        {
-            get
-            {
-                yield return new object[] { Encoding.UTF8 };
-                yield return new object[] { Encoding.UTF32 };
-                yield return new object[] { Encoding.ASCII };
-                yield return new object[] { Encoding.Unicode };
-                yield return new object[] { Encoding.BigEndianUnicode };
-            }
-        }
+        private static Encoding[] SupportedEncodings =>
+        [
+            Encoding.UTF8,
+            Encoding.UTF32,
+            Encoding.ASCII,
+            Encoding.Unicode,
+            Encoding.BigEndianUnicode
+        ];
 
-        [Theory]
-        [MemberData(nameof(Encodings))]
-        public async Task ServiceBusQueueMessagePump_PublishesEncodedServiceBusMessage_MessageSuccessfullyProcessed(Encoding encoding)
+        [Fact]
+        public async Task ServiceBusQueueMessagePump_PublishesEncodedServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
             var options = new WorkerOptions();
             options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(encoding: encoding);
-
-            // Act
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
+            foreach (Encoding encoding in SupportedEncodings)
             {
-                // Assert
-                OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId);
-                AssertReceivedOrderEventDataForW3C(message, eventData);
-            });
+                _logger.LogTrace("Use encoding '{Encoding}'", encoding.EncodingName);
+                ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(encoding: encoding);
+
+                // Act
+                await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
+                {
+                    // Assert
+                    OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId);
+                    AssertReceivedOrderEventDataForW3C(message, eventData);
+                });
+            }
         }
 
-        [Theory]
-        [MemberData(nameof(Encodings))]
-        public async Task ServiceBusTopicMessagePump_PublishesEncodedServiceBusMessage_MessageSuccessfullyProcessed(Encoding encoding)
+        [Fact]
+        public async Task ServiceBusTopicMessagePump_PublishesEncodedServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
             var options = new WorkerOptions();
             options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(encoding: encoding);
-
-            // Act
-            await TestServiceBusMessageHandlingAsync(options, Topic, message, async () =>
+            foreach (Encoding encoding in SupportedEncodings)
             {
-                // Assert
-                OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId);
-                AssertReceivedOrderEventDataForW3C(message, eventData);
-            });
+                _logger.LogTrace("Use encoding '{Encoding}'", encoding.EncodingName);
+                ServiceBusMessage message = CreateOrderServiceBusMessageForW3C(encoding: encoding);
+
+                // Act
+                await TestServiceBusMessageHandlingAsync(options, Topic, message, async () =>
+                {
+                    // Assert
+                    OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId);
+                    AssertReceivedOrderEventDataForW3C(message, eventData);
+                }); 
+            }
         }
 
         [Fact]
