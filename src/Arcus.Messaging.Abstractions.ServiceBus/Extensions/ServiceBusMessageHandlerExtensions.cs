@@ -1,8 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
@@ -100,48 +98,6 @@ namespace Microsoft.Extensions.DependencyInjection
                     options.MessageContextFilter,
                     options.MessageBodySerializerImplementationFactory?.Invoke(serviceProvider)));
 
-            return handlers;
-        }
-
-        /// <summary>
-        /// Adds an <see cref="IAzureServiceBusFallbackMessageHandler"/> implementation which the message pump can use to fall back to when no message handler is found to process the message.
-        /// </summary>
-        /// <typeparam name="TMessageHandler">The type of the fallback message handler.</typeparam>
-        /// <param name="handlers">The handlers to add the fallback message handler to.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(AzureServiceBusMessageContext) + " instead of defining fallback message handlers")]
-        public static ServiceBusMessageHandlerCollection WithServiceBusFallbackMessageHandler<TMessageHandler>(
-            this ServiceBusMessageHandlerCollection handlers)
-            where TMessageHandler : IAzureServiceBusFallbackMessageHandler
-        {
-            if (handlers is null)
-            {
-                throw new ArgumentNullException(nameof(handlers));
-            }
-
-            handlers.WithServiceBusFallbackMessageHandler(serviceProvider => ActivatorUtilities.CreateInstance<TMessageHandler>(serviceProvider));
-            return handlers;
-        }
-
-        /// <summary>
-        /// Adds an <see cref="IAzureServiceBusFallbackMessageHandler"/> implementation which the message pump can use to fall back to when no message handler is found to process the message.
-        /// </summary>
-        /// <typeparam name="TMessageHandler">The type of the fallback message handler.</typeparam>
-        /// <param name="handlers">The handlers to add the fallback message handler to.</param>
-        /// <param name="createImplementation">The function to create the fallback message handler.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/> or the <paramref name="createImplementation"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(AzureServiceBusMessageContext) + " instead of defining fallback message handlers")]
-        public static ServiceBusMessageHandlerCollection WithServiceBusFallbackMessageHandler<TMessageHandler>(
-            this ServiceBusMessageHandlerCollection handlers,
-            Func<IServiceProvider, TMessageHandler> createImplementation)
-            where TMessageHandler : IAzureServiceBusFallbackMessageHandler
-        {
-            if (handlers is null)
-            {
-                throw new ArgumentNullException(nameof(handlers));
-            }
-
-            handlers.AddFallbackMessageHandler<TMessageHandler, ServiceBusReceivedMessage, AzureServiceBusMessageContext>(createImplementation);
             return handlers;
         }
     }

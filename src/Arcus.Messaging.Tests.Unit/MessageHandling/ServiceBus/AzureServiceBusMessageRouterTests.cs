@@ -54,38 +54,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task RouteMessage_WithMultipleFallbackHandlers_UsesCorrectHandlerByJobId()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            ServiceBusMessageHandlerCollection collection1 = services.AddServiceBusMessageRouting().WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>();
-            collection1.JobId = Guid.NewGuid().ToString();
-
-            ServiceBusMessageHandlerCollection collection2 = services.AddServiceBusMessageRouting().WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>();
-            collection2.JobId = Guid.NewGuid().ToString();
-
-            var handler1 = new PassThruServiceBusFallbackMessageHandler();
-            var handler2 = new PassThruServiceBusFallbackMessageHandler();
-            collection2.WithServiceBusFallbackMessageHandler(provider => handler2);
-            collection1.WithServiceBusFallbackMessageHandler(provider => handler1);
-
-            IServiceProvider provider = services.BuildServiceProvider();
-            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
-
-            var order = OrderGenerator.Generate();
-            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
-            AzureServiceBusMessageContext context = message.GetMessageContext(collection1.JobId);
-            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
-
-            // Act
-            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
-
-            // Assert
-            Assert.True(handler1.IsProcessed);
-            Assert.False(handler2.IsProcessed);
-        }
-
-        [Fact]
         public async Task RouteMessage_WithoutFallbackWithFailingButMatchingMessageHandler_PassThruMessage()
         {
             // Arrange
