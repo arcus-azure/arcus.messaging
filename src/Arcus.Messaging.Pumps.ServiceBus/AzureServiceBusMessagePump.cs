@@ -23,13 +23,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// <summary>
     ///     Message pump for processing messages on an Azure Service Bus entity
     /// </summary>
-    public class AzureServiceBusMessagePump : MessagePump, IRestartableMessagePump
+    public class AzureServiceBusMessagePump : MessagePump
     {
         private readonly IAzureServiceBusMessageRouter _messageRouter;
         private readonly IDisposable _loggingScope;
 
         private bool _ownsTopicSubscription, _isHostShuttingDown;
-        private int _unauthorizedExceptionCount;
         private ServiceBusReceiver _messageReceiver;
         private CancellationTokenSource _receiveMessagesCancellation;
 
@@ -368,53 +367,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
-            try
-            {
-                await HandleReceiveExceptionAsync(exception);
-            }
-            finally
-            {
-                if (exception is UnauthorizedAccessException)
-                {
-                    if (Interlocked.Increment(ref _unauthorizedExceptionCount) >= Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart)
-                    {
-                        Logger.LogTrace("Unable to connect anymore to Azure Service Bus, trying to re-authenticate...");
-                        await RestartAsync(cancellationToken);
-                    }
-                    else
-                    {
-                        Logger.LogWarning("Unable to connect anymore to Azure Service Bus ({CurrentCount}/{MaxCount})", _unauthorizedExceptionCount, Settings.Options.MaximumUnauthorizedExceptionsBeforeRestart);
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Restart core functionality of the message pump.
-        /// </summary>
-        [Obsolete("Will be removed in v3.0 since the circuit breaker functionality handles start/pause automatically now")]
-        public async Task RestartAsync()
-        {
-            Interlocked.Exchange(ref _unauthorizedExceptionCount, 0);
-
-            Logger.LogTrace("Restarting Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' ...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
-            await StopProcessingMessagesAsync(CancellationToken.None);
-            await StartProcessingMessagesAsync(CancellationToken.None);
-            Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' restarted!", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
-        }
-
-        /// <summary>
-        /// Restart core functionality of the message pump.
-        /// </summary>
-        [Obsolete("Will be removed in v3.0 since the circuit breaker functionality handles start/pause automatically now")]
-        public async Task RestartAsync(CancellationToken cancellationToken)
-        {
-            Interlocked.Exchange(ref _unauthorizedExceptionCount, 0);
-
-            Logger.LogTrace("Restarting Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' ...", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
-            await StopProcessingMessagesAsync(cancellationToken);
-            await StartProcessingMessagesAsync(cancellationToken);
-            Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' restarted!", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
+            await HandleReceiveExceptionAsync(exception);
         }
 
         /// <summary>
