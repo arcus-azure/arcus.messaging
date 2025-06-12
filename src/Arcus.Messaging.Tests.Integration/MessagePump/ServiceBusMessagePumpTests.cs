@@ -162,7 +162,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     worker.Services.GetServices<IHostedService>()
                                    .Where(h => h is AzureServiceBusMessagePump)
                                    .Cast<AzureServiceBusMessagePump>()
-                                   .Select(m => m.Settings.ServiceBusEntity)
+                                   .Select(m => m.EntityType)
                                    .ToArray());
 
             return registeredEntityType;

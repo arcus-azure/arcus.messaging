@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Arcus.Security.Core;
 using Arcus.Security.Core.Caching;
-using Azure.Core;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.Configuration;
@@ -19,92 +18,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// <summary>
     /// Represents the required settings to authenticate and start an <see cref="AzureServiceBusMessagePump"/>.
     /// </summary>
-    [Obsolete("Will be made internal in v3.0")]
-    public class AzureServiceBusMessagePumpSettings
+    internal class AzureServiceBusMessagePumpSettings
     {
         private readonly IServiceProvider _serviceProvider;
 
         private readonly Func<IServiceProvider, Task<(ServiceBusClient client, string entityPath)>> _clientImplementationFactory;
         private readonly Func<IServiceProvider, Task<(ServiceBusAdministrationClient client, string entityPath)>> _adminClientImplementationFactory;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpSettings"/> class.
-        /// </summary>
-        /// <param name="entityName">The name of the entity to process.</param>
-        /// <param name="subscriptionName">The name of the subscription to process.</param>
-        /// <param name="serviceBusEntity">The entity type of the Azure Service Bus.</param>
-        /// <param name="serviceBusNamespace">
-        ///     The Service Bus namespace to connect to. This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
-        /// </param>
-        /// <param name="tokenCredential">The client credentials to authenticate with the Azure Service Bus.</param>
-        /// <param name="options">The options that influence the behavior of the <see cref="AzureServiceBusMessagePump"/>.</param>
-        /// <param name="serviceProvider">The collection of services to use during the lifetime of the <see cref="AzureServiceBusMessagePump"/>.</param>
-        /// <exception cref="ArgumentNullException">
-        ///     Thrown when the <paramref name="options"/>, <paramref name="serviceProvider"/>, or <paramref name="tokenCredential"/> is <c>null</c>.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="serviceBusNamespace"/> is blank or the <paramref name="serviceBusEntity"/> is outside the bounds of the enumeration.
-        /// </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the <paramref name="serviceBusEntity"/> represents the unsupported value <see cref="ServiceBusEntityType.Unknown"/>.
-        /// </exception>
-        [Obsolete("Will be removed in v3.0 in favor of another constructor that takes in the client factory functions")]
-        public AzureServiceBusMessagePumpSettings(
-            string entityName,
-            string subscriptionName,
-            ServiceBusEntityType serviceBusEntity,
-            string serviceBusNamespace,
-            TokenCredential tokenCredential,
-            AzureServiceBusMessagePumpOptions options,
-            IServiceProvider serviceProvider)
-        {
-            if (string.IsNullOrWhiteSpace(entityName))
-            {
-                throw new ArgumentException("Requires a non-blank Azure Service bus entity name", nameof(entityName));
-            }
-
-            if (serviceBusEntity is ServiceBusEntityType.Topic && string.IsNullOrWhiteSpace(subscriptionName))
-            {
-                throw new ArgumentException("Requires a non-blank Azure Service bus topic subscription name", nameof(subscriptionName));
-            }
-
-            if (!Enum.IsDefined(typeof(ServiceBusEntityType), serviceBusEntity) || serviceBusEntity is ServiceBusEntityType.Unknown)
-            {
-                throw new ArgumentException(
-                    $"Azure Service Bus entity type should either be '{ServiceBusEntityType.Queue}' or '{ServiceBusEntityType.Topic}'", nameof(serviceBusEntity));
-            }
-
-            if (string.IsNullOrWhiteSpace(serviceBusNamespace))
-            {
-                throw new ArgumentException("Requires a non-blank fully qualified Azure Service Bus namespace when using the token credentials", nameof(serviceBusNamespace));
-            }
-
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-
-            EntityName = entityName;
-            SubscriptionName = SanitizeSubscriptionName(subscriptionName, serviceProvider);
-            ServiceBusEntity = serviceBusEntity;
-            Options = options ?? throw new ArgumentNullException(nameof(options));
-
-            if (!serviceBusNamespace.EndsWith(".servicebus.windows.net"))
-            {
-                serviceBusNamespace += ".servicebus.windows.net";
-            }
-
-            FullyQualifiedNamespace = serviceBusNamespace;
-
-            _clientImplementationFactory = _ =>
-            {
-                var client = new ServiceBusClient(serviceBusNamespace, tokenCredential);
-                return Task.FromResult((client, entityName));
-            };
-
-            _adminClientImplementationFactory = _ =>
-            {
-                var adminClient = new ServiceBusAdministrationClient(serviceBusNamespace, tokenCredential);
-                return Task.FromResult((adminClient, entityName));
-            };
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpSettings"/> class.
@@ -291,12 +210,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         public ServiceBusEntityType ServiceBusEntity { get; }
 
         /// <summary>
-        /// Gets the fully qualified namespace where the Azure Service Bus entity is located.
-        /// </summary>
-        [Obsolete("Will be made 'private' in v3.0")]
-        public string FullyQualifiedNamespace { get; }
-
-        /// <summary>
         /// Gets the additional options that influence the behavior of the message pump.
         /// </summary>
         public AzureServiceBusMessagePumpOptions Options { get; }
@@ -319,16 +232,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             EntityName = entityPath;
 
             return client;
-        }
-
-        /// <summary>
-        /// Determines the path based on the provided settings where the Azure Service Bus entity is located.
-        /// </summary>
-        /// <exception cref="ArgumentException">Thrown when no entity path could be determined via the configured settings.</exception>
-        [Obsolete("Use the " + nameof(EntityName) + " directly")]
-        public Task<string> GetEntityPathAsync()
-        {
-            return Task.FromResult(EntityName);
         }
 
         /// <summary>

@@ -37,37 +37,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump"/> class.
         /// </summary>
         /// <param name="settings">Settings to configure the message pump</param>
-        /// <param name="applicationConfiguration">Configuration of the application</param>
         /// <param name="serviceProvider">Collection of services that are configured</param>
         /// <param name="messageRouter">The router to route incoming Azure Service Bus messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.</param>
         /// <param name="logger">Logger to write telemetry to</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="settings"/>, <paramref name="settings"/>, <paramref name="serviceProvider"/>, <paramref name="messageRouter"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as the application configuration is not needed anymore by the message pump")]
-        public AzureServiceBusMessagePump(
-            AzureServiceBusMessagePumpSettings settings,
-            IConfiguration applicationConfiguration,
-            IServiceProvider serviceProvider,
-            IAzureServiceBusMessageRouter messageRouter,
-            ILogger<AzureServiceBusMessagePump> logger)
-            : base(applicationConfiguration, serviceProvider, logger)
-        {
-            Settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            JobId = Settings.Options.JobId;
-            SubscriptionName = Settings.SubscriptionName;
-
-            _messageRouter = messageRouter ?? throw new ArgumentNullException(nameof(messageRouter));
-            _loggingScope = logger?.BeginScope("Job: {JobId}", JobId);
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump"/> class.
-        /// </summary>
-        /// <param name="settings">Settings to configure the message pump</param>
-        /// <param name="serviceProvider">Collection of services that are configured</param>
-        /// <param name="messageRouter">The router to route incoming Azure Service Bus messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.</param>
-        /// <param name="logger">Logger to write telemetry to</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="settings"/>, <paramref name="settings"/>, <paramref name="serviceProvider"/>, <paramref name="messageRouter"/> is <c>null</c>.</exception>
-        public AzureServiceBusMessagePump(
+        internal AzureServiceBusMessagePump(
             AzureServiceBusMessagePumpSettings settings,
             IServiceProvider serviceProvider,
             IAzureServiceBusMessageRouter messageRouter,
@@ -85,8 +59,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         ///     Gets the settings configuring the message pump.
         /// </summary>
-        [Obsolete("Will be made internal in v3.0, use the " + nameof(Options) + " instead")]
-        public AzureServiceBusMessagePumpSettings Settings { get; }
+        internal AzureServiceBusMessagePumpSettings Settings { get; }
+
+        /// <summary>
+        /// Gets the type of the Azure Service Bus entity for which this message pump is configured.
+        /// </summary>
+        public ServiceBusEntityType EntityType => Settings.ServiceBusEntity;
 
         /// <summary>
         /// Gets the user-configurable options of the message pump.
