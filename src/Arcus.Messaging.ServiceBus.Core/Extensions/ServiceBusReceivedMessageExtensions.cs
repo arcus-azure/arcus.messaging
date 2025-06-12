@@ -13,44 +13,6 @@ namespace Azure.Messaging.ServiceBus
     public static class ServiceBusReceivedMessageExtensions
     {
         /// <summary>
-        ///     Gets the application property with a given <paramref name="key"/> for a given <paramref name="message"/>.
-        /// </summary>
-        /// <typeparam name="TProperty">The type of the value of the property.</typeparam>
-        /// <param name="message">The message to get the application property from.</param>
-        /// <param name="key">The key in the dictionary to look up the application property.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="key"/> is blank.</exception>
-        /// <exception cref="KeyNotFoundException">Thrown when there's no application property for the provided <paramref name="key"/>.</exception>
-        /// <exception cref="InvalidCastException">Thrown when the application property's value cannot be cast to the provided <typeparamref name="TProperty"/> type.</exception>
-        [Obsolete("Will be removed in v3.0 as the extension is not providing enough added-value")]
-        public static TProperty GetApplicationProperty<TProperty>(this ServiceBusReceivedMessage message, string key)
-        {
-            if (message is null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                throw new ArgumentException("Requires an application property key to retrieve the application property from the received Azure Service Bus message", nameof(key));
-            }
-
-            if (message.ApplicationProperties.TryGetValue(key, out object value))
-            {
-                if (value is TProperty typed)
-                {
-                    return typed;
-                }
-
-                throw new InvalidCastException(
-                    $"The found application property with the key: '{key}' in the Service Bus message was not of the expected type: '{typeof(TProperty).Name}'");
-            }
-
-            throw new KeyNotFoundException(
-                $"No application property with the key: '{key}' was found in the Service Bus message");
-        }
-
-        /// <summary>
         ///     Gets the correlation information for a given <paramref name="message"/>.
         /// </summary>
         /// <remarks>
@@ -165,24 +127,6 @@ namespace Azure.Messaging.ServiceBus
             }
 
             return messageCorrelationId;
-        }
-
-        /// <summary>
-        ///     Gets the transaction ID that is linked to this <paramref name="message"/>	
-        /// </summary>
-        /// <remarks>
-        ///     This uses the hierarchical correlation system. To use the W3C correlation system,
-        ///     use <see cref="IDictionaryExtensions.GetTraceParent(IReadOnlyDictionary{string,object})"/> and <see cref="MessageCorrelationResult"/>.
-        /// </remarks>
-        /// <param name="message">The received message.</param>
-        /// <returns>
-        ///     The correlation transaction ID for message if an application property could be found with the key <see cref="PropertyNames.TransactionId"/>; <c>null</c> otherwise.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="message"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as the extension on the Azure Service bus message is only used for the deprecated 'Hierarchical' correlation format")]
-        public static string GetTransactionId(this ServiceBusReceivedMessage message)
-        {
-            return GetTransactionId(message, PropertyNames.TransactionId);
         }
 
         /// <summary>
