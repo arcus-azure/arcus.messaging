@@ -1,6 +1,3 @@
-# We are using 2 types of testing infrastructure:
-# 1. Service Bus to test the message pump itself which emits Event Grid events
-# 2. Testing infrastructure to loop the Event Grid events back in our tests (depends on Service Bus)
 name: $(date:yyyyMMdd)$(rev:.r)
 
 trigger:
@@ -75,40 +72,16 @@ stages:
     dependsOn: Build
     condition: succeeded()
     jobs:
-      - job: UnitTests
-        displayName: 'Run unit tests'
-        pool:
-          vmImage: '$(Vm.Image)'
-        steps:
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download build artifacts'
-            inputs:
-              artifact: 'Build'
-              path: '$(Build.SourcesDirectory)'
-          - task: UseDotNet@2
-            displayName: 'Import .NET Core SDK ($(DotNet.Sdk.PreviousVersion))'
-            inputs:
-              packageType: 'sdk'
-              version: '$(DotNet.Sdk.PreviousVersion)'
-              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
-          - template: test/run-unit-tests.yml@templates
-            parameters:
-              dotnetSdkVersion: '$(DotNet.Sdk.Version)'
-              projectName: '$(Project).Tests.Unit'
+      - template: templates/unit-tests.yml
 
   - stage: IntegrationTests
     displayName: Integration Tests
     dependsOn: Build
     condition: succeeded()
     jobs:
-      - job: RunIntegrationTests
-        displayName: 'Run integration tests'
-        pool:
-          vmImage: '$(Vm.Image)'
-        steps:
-          - template: templates/integration-tests.yml
-            parameters:
-              azureServiceConnection: ${{ parameters.azureServiceConnection }}
+      - template: templates/integration-tests.yml
+        parameters:
+          azureServiceConnection: '${{ parameters.azureServiceConnection }}'
 
   - stage: ReleaseToMyGet
     displayName: 'Release to MyGet'
