@@ -53,27 +53,6 @@ namespace Microsoft.Extensions.DependencyInjection
         }
 
         /// <summary>
-        /// Adds a <see cref="IMessageHandler{TMessage}" /> implementation to process the messages from an Azure Service Bus.
-        /// resources.
-        /// </summary>
-        /// <typeparam name="TMessageHandler">The type of the implementation.</typeparam>
-        /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
-        /// <param name="services">The collection of services to use in the application.</param>
-        /// <param name="messageBodyFilter">The filter to restrict the message processing based on the incoming message body.</param>
-        /// <param name="implementationFactory">The function that creates the service.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/>, <paramref name="messageBodyFilter"/>, or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message handling will be supported from now on")]
-        public static MessageHandlerCollection WithMessageHandler<TMessageHandler, TMessage>(
-            this MessageHandlerCollection services,
-            Func<TMessage, bool> messageBodyFilter,
-            Func<IServiceProvider, TMessageHandler> implementationFactory)
-            where TMessageHandler : class, IMessageHandler<TMessage, MessageContext>
-            where TMessage : class
-        {
-            return WithMessageHandler<TMessageHandler, TMessage, MessageContext>(services, messageBodyFilter, implementationFactory);
-        }
-
-        /// <summary>
         /// Adds a <see cref="IMessageHandler{TMessage, TMessageContext}" /> implementation to process the messages from an Azure Service Bus.
         /// resources.
         /// </summary>

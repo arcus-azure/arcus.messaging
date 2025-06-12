@@ -83,55 +83,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.Extensions
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public void WithMessageHandlerDefaultContext_WithMessageBodyFilterWithImplementationFactory_UsesFilter(bool matches)
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-            var expectedHandler = new DefaultTestMessageHandler();
-            var message = new TestMessage();
-            
-            // Act
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(messageBodyFilter: body =>
-            {
-                Assert.Same(message, body);
-                return matches;
-            }, implementationFactory: serviceProvider => expectedHandler);
-
-            // Assert
-            IServiceProvider provider = services.Services.BuildServiceProvider();
-            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
-            MessageHandler handler = Assert.Single(handlers);
-            Assert.NotNull(handler);
-            Assert.NotSame(expectedHandler, handler);
-            bool actual = handler.CanProcessMessageBasedOnMessage(message);
-            Assert.Equal(matches, actual);
-        }
-
-        [Fact]
-        public void WithMessageHandlerDefaultContext_WithoutMessageBodyFilterWithImplementationFactory_Fails()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-            
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(
-                messageBodyFilter: null, implementationFactory: serviceProvider => new DefaultTestMessageHandler()));
-        }
-
-        [Fact]
-        public void WithMessageHandlerDefaultContext_WithMessageBodyFilterWithoutImplementationFactory_Fails()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-            
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(
-                messageBodyFilter: body => true, implementationFactory: null));
-        }
-
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
         public void WithMessageHandlerCustomContext_WithMessageBodyFilterWithImplementationFactory_UsesFilter(bool matches)
         {
             // Arrange

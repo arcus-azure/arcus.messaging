@@ -13,40 +13,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.Extensions
     public partial class MessageHandlerCollectionExtensionsTests
     {
         [Fact]
-        public async Task WithMessageHandlerWithDefaultContext_WithMessageBodySerializer_UsesSerializer()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-            var expectedBody = $"test-message-body-{Guid.NewGuid()}";
-            var expectedMessage = new TestMessage();
-            var serializer = new TestMessageBodySerializer(expectedBody, expectedMessage);
-
-            // Act
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(messageBodySerializer: serializer);
-
-            // Assert
-            IServiceProvider provider = services.Services.BuildServiceProvider();
-            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
-            Assert.NotNull(handlers);
-            MessageHandler handler = Assert.Single(handlers);
-            Assert.NotNull(handler);
-            MessageResult result = await handler.TryCustomDeserializeMessageAsync(expectedBody);
-            Assert.NotNull(result);
-            Assert.Same(expectedMessage, result.DeserializedMessage);
-        }
-
-        [Fact]
-        public void WithMessageHandlerWithDefaultContext_WithoutMessageBodySerializer_Fails()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(messageBodySerializer: null));
-        }
-
-        [Fact]
         public async Task WithMessageHandlerWithCustomContext_WithMessageBodySerializer_UsesSerializer()
         {
             // Arrange
