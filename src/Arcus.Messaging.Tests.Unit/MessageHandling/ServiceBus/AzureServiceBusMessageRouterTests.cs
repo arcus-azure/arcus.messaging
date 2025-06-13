@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +15,7 @@ using Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
@@ -45,7 +45,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             var order = OrderGenerator.Generate();
             var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
-            AzureServiceBusMessageContext context = message.GetMessageContext(jobId);
+            var context = AzureServiceBusMessageContext.Create(jobId, ServiceBusEntityType.Unknown, Mock.Of<ServiceBusReceiver>(), message);
             MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
 
             await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
@@ -391,11 +391,12 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             foreach (ServiceBusReceivedMessage message in messages)
             {
                 await router.RouteMessageAsync(message,
-                    new AzureServiceBusMessageContext(
-                        $"id-{Guid.NewGuid()}",
+                    AzureServiceBusMessageContext.Create(
                         $"job-{Guid.NewGuid()}",
-                        AzureServiceBusSystemProperties.CreateFrom(message),
-                        new ReadOnlyDictionary<string, object>(new Dictionary<string, object>())),
+                        ServiceBusEntityType.Unknown,
+                        Mock.Of<ServiceBusReceiver>(),
+                        ServiceBusModelFactory.ServiceBusReceivedMessage(
+                            messageId: $"id-{Guid.NewGuid()}")),
                     new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}"),
                     CancellationToken.None);
             }
