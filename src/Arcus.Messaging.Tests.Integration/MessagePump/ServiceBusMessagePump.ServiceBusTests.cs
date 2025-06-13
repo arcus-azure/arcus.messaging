@@ -9,6 +9,7 @@ using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
+using Arcus.Testing;
 using Azure;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
@@ -156,9 +157,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task ServiceBusTopicMessagePumpWithMultipleMessages_PublishesServiceBusMessages_AllMessagesSuccessfullyHandled()
         {
             // Arrange
+            await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
+
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter);
-            options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
+            options.AddServiceBusTopicMessagePump(TopicName, HostName, topicSubscription.Name, new DefaultAzureCredential())
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             ServiceBusMessage[] messages =
@@ -290,7 +293,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         [Theory]
         [InlineData(TopicSubscription.None, false)]
-        [InlineData(TopicSubscription.Automatic, true)]
         public async Task ServiceBusTopicMessagePump_WithNoneTopicSubscription_DoesNotCreateTopicSubscription(TopicSubscription topicSubscription, bool doesSubscriptionExists)
         {
             // Arrange
@@ -323,30 +325,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     options.AddServiceBusTopicMessagePump(
                         TopicName, subscriptionName, _ => new ServiceBusClient(HostName, credential), opt => opt.TopicSubscription = TopicSubscription.None),
 
-                TopicSubscription.Automatic =>
-                    options.AddServiceBusTopicMessagePump(TopicName, subscriptionName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.TopicSubscription = TopicSubscription.Automatic),
-
                 _ => throw new ArgumentOutOfRangeException(nameof(topicSubscription), topicSubscription, "Unknown topic subscription")
             };
-        }
-
-        [Fact]
-        public async Task ServiceBusTopicMessagePumpWithSubscriptionNameOver50_PublishServiceBusMessage_MessageSuccessfullyProcessed()
-        {
-            await TestServiceBusMessageHandlingAsync(Topic, options =>
-            {
-                options.AddServiceBusTopicMessagePump(
-                           TopicName,
-                           subscriptionName: "Test-Receive-All-Topic-Only-with-an-azure-servicebus-topic-subscription-name-over-50-characters",
-                           HostName,
-                           new DefaultAzureCredential(),
-                           configureMessagePump: opt =>
-                           {
-                               opt.AutoComplete = true;
-                               opt.TopicSubscription = TopicSubscription.Automatic;
-                           })
-                       .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
-            });
         }
     }
 }

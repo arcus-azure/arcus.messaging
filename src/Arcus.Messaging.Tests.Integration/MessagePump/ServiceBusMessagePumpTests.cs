@@ -63,17 +63,17 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private string TopicName { get; }
         private string HostName => _serviceBusConfig.HostName;
         private string NamespaceConnectionString => _serviceBusConfig.NamespaceConnectionString;
-        private string QueueConnectionString => $"{_serviceBusConfig.NamespaceConnectionString};EntityPath={QueueName}";
-        private string TopicConnectionString => $"{_serviceBusConfig.NamespaceConnectionString};EntityPath={TopicName}";
 
         [Fact(Skip = ".NET application cannot start multiple blocking background tasks, see https://github.com/dotnet/runtime/issues/36063")]
         public async Task ServiceBusMessagePumpWithQueueAndTopic_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
+            await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
+
             var options = new WorkerOptions();
             options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
-            options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
+            options.AddServiceBusTopicMessagePump(TopicName, HostName, topicSubscription.Name, new DefaultAzureCredential())
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             // Act / Assert

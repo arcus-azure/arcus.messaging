@@ -178,32 +178,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Fact]
-        public async Task ServiceBusTopicMessagePump_WithCustomTransactionIdProperty_RetrievesCorrelationCorrectlyDuringMessageProcessing()
-        {
-            // Arrange
-            var customTransactionIdPropertyName = "MyTransactionId";
-            var options = new WorkerOptions();
-            options.AddServiceBusTopicMessagePump(TopicName, $"MySubscription-{Guid.NewGuid():N}", HostName, new DefaultAzureCredential(),
-                configureMessagePump: opt =>
-                {
-                    opt.AutoComplete = true;
-                    opt.TopicSubscription = TopicSubscription.Automatic;
-                    opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
-                    opt.Routing.Correlation.TransactionIdPropertyName = customTransactionIdPropertyName;
-
-                }).WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
-
-            ServiceBusMessage message = CreateOrderServiceBusMessageForHierarchical(customTransactionIdPropertyName);
-
-            // Act / Assert
-            await TestServiceBusMessageHandlingAsync(options, ServiceBusEntityType.Topic, message, async () =>
-            {
-                OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId);
-                AssertReceivedOrderEventDataForHierarchical(message, eventData, transactionIdPropertyName: customTransactionIdPropertyName);
-            });
-        }
-
-        [Fact]
         public async Task ServiceBusQueueMessagePump_WithCustomOperationParentIdProperty_RetrievesCorrelationCorrectlyDuringMessageProcessing()
         {
             // Arrange

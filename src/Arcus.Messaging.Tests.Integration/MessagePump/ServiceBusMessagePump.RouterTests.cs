@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
@@ -8,6 +9,7 @@ using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
+using Arcus.Testing;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,9 +25,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Fact]
         public async Task ServiceBusTopicMessagePumpWithBodyFiltering_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
         {
+            await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
+
             await TestServiceBusMessageHandlingAsync(Topic, options =>
             {
-                options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
+                options.AddServiceBusTopicMessagePump(TopicName, HostName, topicSubscription.Name, new DefaultAzureCredential())
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageBodyFilter(body => body is null))
                        .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageBodyFilter(body => body.Id != null))
                        .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order _) => false);
@@ -94,8 +98,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task ServiceBusTopicMessagePumpWithContextFiltering_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
+            await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
+
             var options = new WorkerOptions();
-            options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
+            options.AddServiceBusTopicMessagePump(TopicName, HostName, topicSubscription.Name, new DefaultAzureCredential())
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt =>
                    {
                        opt.AddMessageContextFilter(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Customers");
@@ -181,8 +187,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task ServiceBusTopicMessagePump_PublishesEncodedServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
+            await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
+
             var options = new WorkerOptions();
-            options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
+            options.AddServiceBusTopicMessagePump(TopicName, HostName, topicSubscription.Name, new DefaultAzureCredential())
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             foreach (Encoding encoding in SupportedEncodings)
