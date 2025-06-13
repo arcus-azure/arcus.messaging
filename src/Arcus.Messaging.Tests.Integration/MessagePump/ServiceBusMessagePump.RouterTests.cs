@@ -29,7 +29,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             await TestServiceBusMessageHandlingAsync(Topic, options =>
             {
-                options.AddServiceBusTopicMessagePump(TopicName, HostName, topicSubscription.Name, new DefaultAzureCredential())
+                options.AddServiceBusTopicMessagePump(TopicName, topicSubscription.Name, HostName, new DefaultAzureCredential())
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageBodyFilter(body => body is null))
                        .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageBodyFilter(body => body.Id != null))
                        .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order _) => false);
@@ -101,7 +101,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
 
             var options = new WorkerOptions();
-            options.AddServiceBusTopicMessagePump(TopicName, HostName, topicSubscription.Name, new DefaultAzureCredential())
+            options.AddServiceBusTopicMessagePump(TopicName, topicSubscription.Name, HostName, new DefaultAzureCredential())
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt =>
                    {
                        opt.AddMessageContextFilter(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Customers");
@@ -190,7 +190,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
 
             var options = new WorkerOptions();
-            options.AddServiceBusTopicMessagePump(TopicName, HostName, topicSubscription.Name, new DefaultAzureCredential())
+            options.AddServiceBusTopicMessagePump(TopicName, topicSubscription.Name, HostName, new DefaultAzureCredential())
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             foreach (Encoding encoding in SupportedEncodings)

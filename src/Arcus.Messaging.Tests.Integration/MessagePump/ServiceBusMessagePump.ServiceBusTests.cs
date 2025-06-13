@@ -161,7 +161,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter);
-            options.AddServiceBusTopicMessagePump(TopicName, HostName, topicSubscription.Name, new DefaultAzureCredential())
+            options.AddServiceBusTopicMessagePump(TopicName, topicSubscription.Name, HostName, new DefaultAzureCredential())
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             ServiceBusMessage[] messages =
