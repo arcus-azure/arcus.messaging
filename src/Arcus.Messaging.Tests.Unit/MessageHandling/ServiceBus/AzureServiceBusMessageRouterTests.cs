@@ -15,6 +15,7 @@ using Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
