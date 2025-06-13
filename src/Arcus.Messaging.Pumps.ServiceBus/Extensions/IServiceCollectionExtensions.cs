@@ -56,15 +56,8 @@ namespace Microsoft.Extensions.DependencyInjection
             TokenCredential credential,
             Action<AzureServiceBusMessagePumpOptions> configureMessagePump)
         {
-            if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
-            {
-                throw new ArgumentException("Requires a non-blank fully-qualified namespace for the Azure Service bus message pump registration", nameof(fullyQualifiedNamespace));
-            }
-
-            if (credential is null)
-            {
-                throw new ArgumentNullException(nameof(credential));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(fullyQualifiedNamespace);
+            ArgumentNullException.ThrowIfNull(credential);
 
             return AddServiceBusQueueMessagePump(services, queueName, CreateClientFactory(fullyQualifiedNamespace, credential), configureMessagePump);
         }
@@ -83,15 +76,8 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
             Action<AzureServiceBusMessagePumpOptions> configureMessagePump)
         {
-            if (string.IsNullOrWhiteSpace(queueName))
-            {
-                throw new ArgumentException("Requires a non-blank queue name for the Azure Service bus message pump registration", nameof(queueName));
-            }
-
-            if (clientImplementationFactory is null)
-            {
-                throw new ArgumentNullException(nameof(clientImplementationFactory));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
+            ArgumentNullException.ThrowIfNull(clientImplementationFactory);
 
             ServiceBusMessageHandlerCollection collection =
                 AddServiceBusMessagePump(services, CreateSettings, configureMessagePump);
@@ -154,15 +140,8 @@ namespace Microsoft.Extensions.DependencyInjection
             TokenCredential credential,
             Action<AzureServiceBusMessagePumpOptions> configureMessagePump)
         {
-            if (string.IsNullOrWhiteSpace(fullyQualifiedNamespace))
-            {
-                throw new ArgumentException("Requires a non-blank fully-qualified Azure Service bus namespace for the message pump registration", nameof(fullyQualifiedNamespace));
-            }
-
-            if (credential is null)
-            {
-                throw new ArgumentNullException(nameof(credential));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(fullyQualifiedNamespace);
+            ArgumentNullException.ThrowIfNull(credential);
 
             return AddServiceBusTopicMessagePump(services, topicName, subscriptionName, CreateClientFactory(fullyQualifiedNamespace, credential), configureMessagePump);
         }
@@ -183,20 +162,9 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
             Action<AzureServiceBusMessagePumpOptions> configureMessagePump)
         {
-            if (string.IsNullOrWhiteSpace(topicName))
-            {
-                throw new ArgumentException("Requires a non-blank topic name for the Azure Service bus message pump registration", nameof(topicName));
-            }
-
-            if (string.IsNullOrWhiteSpace(subscriptionName))
-            {
-                throw new ArgumentException("Requires a non-blank subscription name for the Azure Service bus message pump registration", nameof(subscriptionName));
-            }
-
-            if (clientImplementationFactory is null)
-            {
-                throw new ArgumentNullException(nameof(clientImplementationFactory));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(topicName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(subscriptionName);
+            ArgumentNullException.ThrowIfNull(clientImplementationFactory);
 
             ServiceBusMessageHandlerCollection collection = AddServiceBusMessagePump(
                 services,
@@ -238,10 +206,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, AzureServiceBusMessagePumpOptions, AzureServiceBusMessagePumpSettings> createSettings,
             Action<AzureServiceBusMessagePumpOptions> configureOptions = null)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentNullException.ThrowIfNull(services);
 
             var options = AzureServiceBusMessagePumpOptions.DefaultOptions;
             configureOptions?.Invoke(options);
