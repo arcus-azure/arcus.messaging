@@ -1,5 +1,7 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Observability.Correlation;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
@@ -101,6 +103,13 @@ namespace Microsoft.Extensions.DependencyInjection
 
                 return implementationFactory(serviceProvider, options);
             });
+
+            services.AddCorrelation<MessageCorrelationInfo>()
+                    .AddScoped<IMessageCorrelationInfoAccessor>(serviceProvider =>
+                    {
+                        return new MessageCorrelationInfoAccessor(
+                            serviceProvider.GetRequiredService<ICorrelationInfoAccessor<MessageCorrelationInfo>>());
+                    });
 
             return new ServiceBusMessageHandlerCollection(services);
         }
