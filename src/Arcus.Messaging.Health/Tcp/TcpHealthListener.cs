@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -54,54 +53,6 @@ namespace Arcus.Messaging.Health.Tcp
             _listener = new CustomTcpListener(IPAddress.Any, tcpPort);
             _tcpListenerOptions = options ?? new TcpHealthListenerOptions();
             _logger = logger ?? NullLogger<TcpHealthListener>.Instance;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
-        /// </summary>
-        /// <param name="configuration">The key-value application configuration properties.</param>
-        /// <param name="tcpListenerOptions">The additional options to configure the TCP listener.</param>
-        /// <param name="healthService">The service to retrieve the current health of the application.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/>, <paramref name="tcpListenerOptions"/>, or <paramref name="healthService"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> does not have a filled-out value.</exception>
-        [Obsolete("Will be removed in v3.0, in favor of using the TCP port directly")]
-        public TcpHealthListener(
-            IConfiguration configuration,
-            TcpHealthListenerOptions tcpListenerOptions,
-            HealthCheckService healthService)
-            : this(configuration, tcpListenerOptions, healthService, NullLogger<TcpHealthListener>.Instance)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TcpHealthListener"/> class.
-        /// </summary>
-        /// <param name="configuration">The key-value application configuration properties.</param>
-        /// <param name="tcpListenerOptions">The additional options to configure the TCP listener.</param>
-        /// <param name="healthService">The service to retrieve the current health of the application.</param>
-        /// <param name="logger">The logging implementation to write diagnostic messages during the running of the TCP listener.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/>, <paramref name="tcpListenerOptions"/>, <paramref name="healthService"/>, or <paramref name="logger"/> is <c>null</c>.</exception>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="tcpListenerOptions"/> does not have a filled-out value.</exception>
-        [Obsolete("Will be removed in v3.0, in favor of using the TCP port directly")]
-        public TcpHealthListener(
-            IConfiguration configuration,
-            TcpHealthListenerOptions tcpListenerOptions,
-            HealthCheckService healthService,
-            ILogger<TcpHealthListener> logger)
-            : this(GetTcpHealthPort(configuration, tcpListenerOptions?.TcpPortConfigurationKey), healthService, tcpListenerOptions, logger)
-        {
-        }
-
-        [Obsolete("Will be removed in v3.0, in favor of using the TCP port directly")]
-        private static int GetTcpHealthPort(IConfiguration configuration, string tcpHealthPortKey)
-        {
-            string tcpPortString = configuration[tcpHealthPortKey];
-            if (!int.TryParse(tcpPortString, out int tcpPort))
-            {
-                throw new ArithmeticException($"Requires a configuration implementation with a '{tcpHealthPortKey}' key containing a TCP port number");
-            }
-
-            return tcpPort;
         }
 
         /// <summary>
@@ -154,11 +105,7 @@ namespace Arcus.Messaging.Health.Tcp
             try
             {
                 _logger.LogTrace("Accepting TCP client on port {Port}...", Port);
-#if !NETSTANDARD2_1 && !NETCOREAPP
                 using (TcpClient client = await _listener.AcceptTcpClientAsync(cancellationToken))
-#else 
-                using (TcpClient client = await _listener.AcceptTcpClientAsync())
-#endif
                 {
                     _logger.LogTrace("TCP client accepted on port {Port}!", Port);
                     using (NetworkStream clientStream = client.GetStream())

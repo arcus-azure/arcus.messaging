@@ -13,10 +13,8 @@ using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
-using Arcus.Testing;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
@@ -53,38 +51,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
         }
 
         [Fact]
-        public async Task RouteMessage_WithMultipleFallbackHandlers_UsesCorrectHandlerByJobId()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            ServiceBusMessageHandlerCollection collection1 = services.AddServiceBusMessageRouting().WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>();
-            collection1.JobId = Guid.NewGuid().ToString();
-
-            ServiceBusMessageHandlerCollection collection2 = services.AddServiceBusMessageRouting().WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>();
-            collection2.JobId = Guid.NewGuid().ToString();
-
-            var handler1 = new PassThruServiceBusFallbackMessageHandler();
-            var handler2 = new PassThruServiceBusFallbackMessageHandler();
-            collection2.WithServiceBusFallbackMessageHandler(provider => handler2);
-            collection1.WithServiceBusFallbackMessageHandler(provider => handler1);
-
-            IServiceProvider provider = services.BuildServiceProvider();
-            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
-
-            var order = OrderGenerator.Generate();
-            var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
-            var context = AzureServiceBusMessageContext.Create(collection1.JobId, ServiceBusEntityType.Unknown, Mock.Of<ServiceBusReceiver>(), message);
-            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
-
-            // Act
-            await router.RouteMessageAsync(message, context, correlationInfo, CancellationToken.None);
-
-            // Assert
-            Assert.True(handler1.IsProcessed);
-            Assert.False(handler2.IsProcessed);
-        }
-
-        [Fact]
         public async Task RouteMessage_WithoutFallbackWithFailingButMatchingMessageHandler_PassThruMessage()
         {
             // Arrange
@@ -109,39 +75,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             // Assert
             Assert.True(sabotageHandler.IsProcessed, "sabotage message handler should be tried");
-        }
-
-        [Fact]
-        public async Task RouteMessage_WithGeneralRouting_GoesThroughRegisteredMessageHandler()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            var spyLogger = new InMemoryLogger();
-            services.AddLogging(logging => logging.AddProvider(new CustomLoggerProvider(spyLogger)));
-
-            var collection = new ServiceBusMessageHandlerCollection(services);
-            var ignoredHandler = new TestServiceBusMessageHandler();
-            var spyHandler = new StubServiceBusMessageHandler<Order>();
-            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(serviceProvider => spyHandler)
-                      .WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(serviceProvider => ignoredHandler);
-
-            // Act
-            services.AddServiceBusMessageRouting();
-
-            // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
-            var router = provider.GetRequiredService<IAzureServiceBusMessageRouter>();
-            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
-            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
-
-            Order order = OrderGenerator.Generate();
-            string json = JsonConvert.SerializeObject(order);
-
-            await router.RouteMessageAsync(json, context, correlationInfo, CancellationToken.None);
-
-            Assert.True(spyHandler.IsProcessed);
-            Assert.False(ignoredHandler.IsProcessed);
-            Assert.Contains(spyLogger.Entries, entry => entry.Level == LogLevel.Warning && entry.Message.Contains("Azure Service Bus from Process completed"));
         }
 
         [Fact]
@@ -273,7 +206,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var expectedMessage = new TestMessage { TestProperty = "Some value" };
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, OrderGenerator.Generate());
-            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodySerializer: serializer, implementationFactory: serviceProvider => spyHandler)
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: _ => spyHandler, options => options.AddMessageBodySerializer(serializer))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: serviceProvider => ignoredHandler);
 
             // Act
@@ -304,7 +237,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var expectedMessage = new TestMessage { TestProperty = "Some value" };
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, new SubOrder());
-            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodySerializer: serializer, implementationFactory: serviceProvider => spyHandler)
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: _ => spyHandler, options => options.AddMessageBodySerializer(serializer))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: serviceProvider => ignoredHandler);
 
             // Act

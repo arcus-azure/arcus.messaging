@@ -7,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Configuration;
+using Serilog.Core;
+using Serilog.Events;
 using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
@@ -85,7 +87,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
 
             if (_outputWriter != null)
             {
-                config.WriteTo.XunitTestLogging(_outputWriter);
+                config.WriteTo.Sink(new XunitTestLogSink(_outputWriter));
             }
 
             foreach (Action<LoggerConfiguration> configure in _additionalSerilogConfigOptions)
@@ -108,6 +110,21 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             foreach (Action<IHostBuilder> additionalHostOption in _additionalHostOptions)
             {
                 additionalHostOption(hostBuilder);
+            }
+        }
+
+        private sealed class XunitTestLogSink : ILogEventSink
+        {
+            private readonly ITestOutputHelper _outputWriter;
+
+            internal XunitTestLogSink(ITestOutputHelper outputWriter)
+            {
+                _outputWriter = outputWriter;
+            }
+
+            public void Emit(LogEvent logEvent)
+            {
+                _outputWriter.WriteLine(logEvent.RenderMessage());
             }
         }
 

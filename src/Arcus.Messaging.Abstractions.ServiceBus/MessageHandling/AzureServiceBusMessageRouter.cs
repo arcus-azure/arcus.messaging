@@ -101,46 +101,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         protected AzureServiceBusMessageRouterOptions ServiceBusOptions { get; }
 
         /// <summary>
-        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
-        /// </summary>
-        /// <param name="message">The message that was received.</param>
-        /// <param name="messageContext">The context providing more information concerning the processing.</param>
-        /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
-        /// <param name="cancellationToken">The token to cancel the message processing.</param>
-        /// <exception cref="ArgumentNullException">
-        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
-        public override async Task RouteMessageAsync<TMessageContext>(
-            string message,
-            TMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
-        {
-            var isSuccessful = false;
-            using (DurationMeasurement measurement = DurationMeasurement.Start())
-            {
-                try
-                {
-                    await base.RouteMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                    isSuccessful = true;
-                }
-                finally
-                {
-                    Logger.LogServiceBusRequest(
-                        serviceBusNamespace: "<not-available>",
-                        entityName: "<not-available>",
-                        Options.Telemetry.OperationName,
-                        isSuccessful,
-                        measurement,
-                        ServiceBusEntityType.Unknown);
-                }
-            }
-        }
-
-        /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
         /// and optionally through <see cref="IAzureServiceBusFallbackMessageHandler"/>
         /// if none of the message handlers were able to process the <paramref name="message"/>.
@@ -179,8 +139,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
-        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>;
-        ///     used within <see cref="AzureServiceBusMessageHandler{TMessage}"/>s or <see cref="AzureServiceBusFallbackMessageHandler"/>s.
+        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>.
         /// </param>
         /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
@@ -208,8 +167,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// if none of the message handlers were able to process the <paramref name="message"/>.
         /// </summary>
         /// <param name="messageReceiver">
-        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>;
-        ///     used within <see cref="AzureServiceBusMessageHandler{TMessage}"/>s or <see cref="AzureServiceBusFallbackMessageHandler"/>s.
+        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>.
         /// </param>
         /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
@@ -415,8 +373,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         }
 
         /// <summary>
-        /// Sets the Azure Service Bus properties on registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// that implements the <see cref="AzureServiceBusMessageHandler{TMessage}"/> for calling specific Service Bus operations during the message processing.
+        /// Sets the Azure Service Bus properties on registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.
         /// </summary>
         /// <param name="messageHandler">The message handler on which the Service Bus properties should be set.</param>
         /// <param name="eventArgs">The event args of the incoming Service Bus message.</param>

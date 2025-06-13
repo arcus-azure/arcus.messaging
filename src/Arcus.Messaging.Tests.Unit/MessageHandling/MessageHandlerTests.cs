@@ -11,7 +11,6 @@ using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 #pragma warning disable 618
@@ -360,69 +359,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
 
             // Assert
             Assert.Equal(4, messageHandlers.Count());
-        }
-
-        [Fact]
-        public async Task CustomMessageHandler_WithContextFilter_UsesFilterDuringSelection()
-        {
-            // Arrange
-            var messageId = Guid.NewGuid().ToString();
-            var message = new TestMessage { TestProperty = Guid.NewGuid().ToString() };
-            string messageJson = JsonConvert.SerializeObject(message);
-            var context = new TestMessageContext(messageId, new Dictionary<string, object>());
-            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
-            var spyHandler1 = new TestMessageHandler();
-            var spyHandler2 = new TestMessageHandler();
-
-            var collection = new MessageHandlerCollection(new ServiceCollection());
-            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
-                messageContextFilter: ctx => ctx.MessageId == "some other ID",
-                implementationFactory: provider => spyHandler2);
-            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
-                messageContextFilter: ctx => ctx.MessageId == messageId,
-                implementationFactory: provider => spyHandler1);
-            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>();
-            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>();
-
-            IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
-            var router = new TestMessageRouter(serviceProvider, _logger);
-
-            // Act
-            await router.RouteMessageAsync(messageJson, context, correlationInfo, CancellationToken.None);
-
-            // Assert
-            Assert.True(spyHandler1.IsProcessed);
-            Assert.False(spyHandler2.IsProcessed);
-        }
-
-        [Fact]
-        public async Task CustomMessageHandler_WithContextFilter_UsesMessageTypeDuringSelection()
-        {
-            // Arrange
-            var spyHandler = new StubTestMessageHandler<Purchase, MessageContext>();
-
-            var collection = new MessageHandlerCollection(new ServiceCollection());
-            collection.WithMessageHandler<StubTestMessageHandler<Order, MessageContext>, Order>();
-            collection.WithMessageHandler<StubTestMessageHandler<Purchase, TestMessageContext>, Purchase, TestMessageContext>();
-            collection.WithMessageHandler<StubTestMessageHandler<Purchase, MessageContext>, Purchase>(provider => spyHandler);
-
-            IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
-            var router = new TestMessageRouter(serviceProvider, _logger);
-
-            var purchase = new Purchase
-            {
-                CustomerName = _bogusGenerator.Name.FullName(),
-                Price = _bogusGenerator.Commerce.Price()
-            };
-            string purchaseJson = JsonConvert.SerializeObject(purchase);
-            var context = new MessageContext("message-id", new Dictionary<string, object>());
-            var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
-
-            // Act
-            await router.RouteMessageAsync(purchaseJson, context, correlationInfo, CancellationToken.None);
-
-            // Assert
-            Assert.True(spyHandler.IsProcessed);
         }
 
         [Fact]

@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
-    public class WriteOrderToDiskAzureServiceBusMessageHandler : AzureServiceBusMessageHandler<Order>
+    public class WriteOrderToDiskAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<Order>
     {
         private readonly IMessageCorrelationInfoAccessor _correlationAccessor;
         private readonly ILogger<WriteOrderToDiskAzureServiceBusMessageHandler> _logger;
@@ -22,14 +22,13 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         /// </summary>
         public WriteOrderToDiskAzureServiceBusMessageHandler(
             IMessageCorrelationInfoAccessor correlationAccessor,
-            ILogger<WriteOrderToDiskAzureServiceBusMessageHandler> logger) 
-            : base(logger)
+            ILogger<WriteOrderToDiskAzureServiceBusMessageHandler> logger)
         {
             _correlationAccessor = correlationAccessor;
             _logger = logger;
         }
 
-        public override async Task ProcessMessageAsync(
+        public async Task ProcessMessageAsync(
             Order message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
