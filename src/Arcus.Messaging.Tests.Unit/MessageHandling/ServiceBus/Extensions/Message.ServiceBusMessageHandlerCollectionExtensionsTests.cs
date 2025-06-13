@@ -23,11 +23,11 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
 
             // Act
             collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                messageBodyFilter: body =>
+                opt => opt.AddMessageBodyFilter(body =>
                 {
                     Assert.Same(expectedMessage, body);
                     return matchesBody;
-                });
+                }));
 
             // Assert
             IServiceProvider provider = collection.Services.BuildServiceProvider();
@@ -37,18 +37,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
             Assert.NotNull(handler);
             Assert.NotSame(expectedHandler, handler);
             Assert.Equal(matchesBody, handler.CanProcessMessageBasedOnMessage(expectedMessage));
-        }
-
-        [Fact]
-        public void WithServiceBusMessageHandler_WithMessageBodyFilter_Fails()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    messageBodyFilter: null));
         }
 
         [Theory]
@@ -63,12 +51,12 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
 
             // Act
             collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                messageBodyFilter: body =>
+                implementationFactory: serviceProvider => expectedHandler,
+                opt => opt.AddMessageBodyFilter(body =>
                 {
                     Assert.Same(expectedMessage, body);
                     return matchesBody;
-                },
-                implementationFactory: serviceProvider => expectedHandler);
+                }));
 
             // Assert
             IServiceProvider provider = collection.Services.BuildServiceProvider();
@@ -78,32 +66,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
             Assert.NotNull(handler);
             Assert.Same(expectedHandler, handler.GetMessageHandlerInstance());
             Assert.Equal(matchesBody, handler.CanProcessMessageBasedOnMessage(expectedMessage));
-        }
-
-        [Fact]
-        public void WithServiceBusMessageHandler_WithoutMessageBodyFilterWithImplementationFactory_Fails()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    messageBodyFilter: null,
-                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler()));
-        }
-
-        [Fact]
-        public void WithServiceBusMessageHandler_WithMessageBodyFilterWithoutImplementationFactory_Fails()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    messageBodyFilter: body => true,
-                    implementationFactory: null));
         }
     }
 }

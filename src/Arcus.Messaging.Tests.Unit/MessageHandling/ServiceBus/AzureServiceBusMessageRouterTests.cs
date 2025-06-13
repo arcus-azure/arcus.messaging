@@ -146,9 +146,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var ignoredHandler = new StubServiceBusMessageHandler<Order>();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
-                          messageBodyFilter: body => true, implementationFactory: serviceProvider => spyHandler)
+                          implementationFactory: serviceProvider => spyHandler, opt => opt.AddMessageBodyFilter(body => true))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
-                          messageBodyFilter: body => false, implementationFactory: serviceProvider => ignoredHandler);
+                          implementationFactory: serviceProvider => ignoredHandler, opt => opt.AddMessageBodyFilter(body => false));
 
             // Act
             services.AddServiceBusMessageRouting();
@@ -176,7 +176,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var ignoredHandler = new StubServiceBusMessageHandler<Order>();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: serviceProvider => spyHandler)
-                      .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(messageBodyFilter: body => true, implementationFactory: serviceProvider => ignoredHandler);
+                      .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: serviceProvider => ignoredHandler, opt => opt.AddMessageBodyFilter(body => true));
 
             // Act
             services.AddServiceBusMessageRouting();
@@ -279,8 +279,8 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                           messageBodySerializer: new TestMessageBodySerializer(expectedBody, new Customer()),
                           implementationFactory: serviceProvider => ignoredHandler3)
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(
-                          messageBodyFilter: body => body is null,
-                          implementationFactory: serviceProvider => ignoredHandler2)
+                          implementationFactory: serviceProvider => ignoredHandler2,
+                          opt => opt.AddMessageBodyFilter(body => body is null))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                           messageBodySerializer: serializer,
                           messageBodyFilter: body => body.Customer != null,
@@ -365,7 +365,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var spyOrderV1MessageHandler = new OrderV1AzureServiceBusMessageHandler();
             var spyOrderV2MessageHandler = new OrderV2AzureServiceBusMessageHandler();
 
-            collection.WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(messageBodyFilter: order => order.ArticleNumber == "NotExisting")
+            collection.WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(opt => opt.AddMessageBodyFilter(order => order.ArticleNumber == "NotExisting"))
                       .WithServiceBusMessageHandler<OrderV2AzureServiceBusMessageHandler, OrderV2>(implementationFactory: provider => spyOrderV2MessageHandler)
                       .WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>()
                       .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(messageContextFilter: context => context.MessageId == "NotExisting")
