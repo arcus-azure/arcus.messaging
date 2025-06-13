@@ -447,24 +447,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private MessageCorrelationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message)
         {
-            if (Settings.Options.Routing.Correlation.Format is MessageCorrelationFormat.W3C)
-            {
-                (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
-                var client = ServiceProvider.GetRequiredService<TelemetryClient>();
+            (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
+            var client = ServiceProvider.GetRequiredService<TelemetryClient>();
 
-#pragma warning disable CS0618 // Type or member is obsolete: will be moved to a Telemetry-specific library in v3.0
-                return MessageCorrelationResult.Create(client, transactionId, operationParentId);
-#pragma warning restore
-            }
-
-            MessageCorrelationInfo correlationInfo =
-#pragma warning disable CS0618 // Type or member is obsolete: will be removed in v3.0, once the 'Hierarchical' correlation format is removed.
-                message.GetCorrelationInfo(
-                    Settings.Options.Routing.Correlation?.TransactionIdPropertyName ?? PropertyNames.TransactionId,
-                    Settings.Options.Routing.Correlation?.OperationParentIdPropertyName ?? PropertyNames.OperationParentId);
-
-            return MessageCorrelationResult.Create(correlationInfo);
-#pragma warning restore CS0618 // Type or member is obsolete
+            return MessageCorrelationResult.Create(client, transactionId, operationParentId);
 
         }
 

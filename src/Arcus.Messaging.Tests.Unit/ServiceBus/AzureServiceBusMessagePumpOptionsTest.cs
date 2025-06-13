@@ -85,57 +85,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
 
         [Theory]
         [ClassData(typeof(Blanks))]
-        public void TransactionIdPropertyName_ValueIsBlank_Throws(string transactionIdPropertyName)
-        {
-            // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => options.Routing.Correlation.TransactionIdPropertyName = transactionIdPropertyName);
-        }
-
-        [Fact]
-        public void TransactionIdPropertyName_ValueNotBlank_Succeeds()
-        {
-            // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
-            const string expected = "Transaction-ID";
-
-            // Act
-            options.Routing.Correlation.TransactionIdPropertyName = expected;
-
-            // Assert
-            Assert.Equal(expected, options.Routing.Correlation.TransactionIdPropertyName);
-        }
-
-        [Theory]
-        [ClassData(typeof(Blanks))]
-        public void OperationParentIdPropertyName_ValueIsBlank_Throws(string operationParentIdPropertyName)
-        {
-            // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() =>
-                options.Routing.Correlation.OperationParentIdPropertyName = operationParentIdPropertyName);
-        }
-
-        [Fact]
-        public void OperationParentIdPropertyName_ValueNotBlank_Succeeds()
-        {
-            // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
-            var operationParentId = $"operation-parent-{Guid.NewGuid()}";
-
-            // Act
-            options.Routing.Correlation.OperationParentIdPropertyName = operationParentId;
-
-            // Assert
-            Assert.Equal(operationParentId, options.Routing.Correlation.OperationParentIdPropertyName);
-        }
-
-        [Theory]
-        [ClassData(typeof(Blanks))]
         public void OperationName_ValueIsBlank_Throws(string operationName)
         {
             // Arrange

@@ -103,7 +103,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             ServiceBusMessage message = format switch
             {
                 MessageCorrelationFormat.W3C => CreateOrderServiceBusMessageForW3C(),
-                MessageCorrelationFormat.Hierarchical => CreateOrderServiceBusMessageForHierarchical(),
             };
 
             var options = new WorkerOptions();
@@ -116,10 +115,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 {
                     case MessageCorrelationFormat.W3C:
                         AssertReceivedOrderEventDataForW3C(message, eventData);
-                        break;
-
-                    case MessageCorrelationFormat.Hierarchical:
-                        AssertReceivedOrderEventDataForHierarchical(message, eventData);
                         break;
 
                     default:
@@ -168,27 +163,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             return registeredEntityType;
         }
 
-        private static ServiceBusMessage CreateOrderServiceBusMessageForHierarchical(
-            string transactionIdPropertyName = PropertyNames.TransactionId,
-            string operationParentIdPropertyName = PropertyNames.OperationParentId,
-            Encoding encoding = null)
-        {
-            var operationId = $"operation-{Guid.NewGuid()}";
-            var transactionId = $"transaction-{Guid.NewGuid()}";
-            var operationParentId = $"operation-parent-{Guid.NewGuid()}";
-
-            Order order = OrderGenerator.Generate();
-            ServiceBusMessage message =
-                ServiceBusMessageBuilder.CreateForBody(order, encoding ?? Encoding.UTF8)
-                                        .WithOperationId(operationId)
-                                        .WithTransactionId(transactionId, transactionIdPropertyName)
-                                        .WithOperationParentId(operationParentId, operationParentIdPropertyName)
-                                        .Build();
-
-            message.MessageId = order.Id;
-            return message;
-        }
-
         private static ServiceBusMessage CreateOrderServiceBusMessageForW3C(Encoding encoding = null)
         {
             encoding ??= Encoding.UTF8;
@@ -209,31 +183,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             };
 
             return message.WithDiagnosticId(traceParent);
-        }
-
-        private static void AssertReceivedOrderEventDataForHierarchical(
-            ServiceBusMessage message,
-            OrderCreatedEventData receivedEventData,
-            string transactionIdPropertyName = PropertyNames.TransactionId,
-            string operationParentIdPropertyName = PropertyNames.OperationParentId,
-            Encoding encoding = null)
-        {
-            encoding ??= Encoding.UTF8;
-            string json = encoding.GetString(message.Body);
-
-            var order = JsonConvert.DeserializeObject<Order>(json);
-            string operationId = message.CorrelationId;
-            var transactionId = message.ApplicationProperties[transactionIdPropertyName].ToString();
-            var operationParentId = message.ApplicationProperties[operationParentIdPropertyName].ToString();
-
-            Assert.NotNull(receivedEventData);
-            Assert.NotNull(receivedEventData.CorrelationInfo);
-            Assert.Equal(order.Id, receivedEventData.Id);
-            Assert.Equal(order.Amount, receivedEventData.Amount);
-            Assert.Equal(order.ArticleNumber, receivedEventData.ArticleNumber);
-            Assert.Equal(transactionId, receivedEventData.CorrelationInfo.TransactionId);
-            Assert.Equal(operationId, receivedEventData.CorrelationInfo.OperationId);
-            Assert.Equal(operationParentId, receivedEventData.CorrelationInfo.OperationParentId);
         }
 
         private static void AssertReceivedOrderEventDataForW3C(
