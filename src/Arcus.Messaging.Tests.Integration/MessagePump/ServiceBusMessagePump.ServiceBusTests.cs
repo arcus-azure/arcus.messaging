@@ -55,7 +55,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusQueueAbandonMessageAsync(options =>
             {
                 options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName)
-                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
+                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
                        .WithServiceBusMessageHandler<AbandonAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => true));
             });
         }
