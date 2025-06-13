@@ -14,39 +14,6 @@ namespace Microsoft.Extensions.DependencyInjection
     public static class IServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds a <see cref="MessageRouter"/> implementation to route the incoming messages through registered <see cref="IMessageHandler{TMessage}"/> instances.
-        /// </summary>
-        /// <param name="services">The collection of services to add the router to.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
-        public static MessageHandlerCollection AddMessageRouting(this IServiceCollection services)
-        {
-            MessageHandlerCollection collection = AddMessageRouting(services, configureOptions: null);
-            return collection;
-        }
-
-        /// <summary>
-        /// Adds a <see cref="MessageRouter"/> implementation to route the incoming messages through registered <see cref="IMessageHandler{TMessage}"/> instances.
-        /// </summary>
-        /// <param name="services">The collection of services to add the router to.</param>
-        /// <param name="configureOptions">The consumer-configurable options to change the behavior of the router.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
-        public static MessageHandlerCollection AddMessageRouting(this IServiceCollection services, Action<MessageRouterOptions> configureOptions)
-        {
-            MessageHandlerCollection collection = AddMessageRouting(services, serviceProvider =>
-            {
-                var options = new MessageRouterOptions();
-                configureOptions?.Invoke(options);
-                var logger = serviceProvider.GetService<ILogger<MessageRouter>>();
-
-                return new MessageRouter(serviceProvider, options, logger);
-            });
-
-            return collection;
-        }
-
-        /// <summary>
         /// Adds a <see cref="MessageRouter"/> implementation to route the incoming messages through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.
         /// </summary>
         /// <typeparam name="TMessageRouter">The type of the <see cref="IMessageRouter"/> implementation.</typeparam>
