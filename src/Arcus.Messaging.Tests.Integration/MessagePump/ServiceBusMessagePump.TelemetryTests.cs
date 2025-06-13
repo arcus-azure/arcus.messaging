@@ -13,6 +13,7 @@ using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Arcus.Testing;
+using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
@@ -39,7 +40,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
 
             string operationName = Guid.NewGuid().ToString();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => 
+            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => 
             {
                 opt.AutoComplete = true;
                 opt.Routing.Telemetry.OperationName = operationName;
@@ -74,7 +75,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
              var options = new WorkerOptions();
             
             string operationName = Guid.NewGuid().ToString();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt =>
+            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt =>
             {
                 opt.Routing.Telemetry.OperationName = operationName;
                 opt.AutoComplete = true;
@@ -145,7 +146,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var spySink = new InMemoryLogSink();
             var options = new WorkerOptions();
             options.ConfigureSerilog(config => config.WriteTo.Sink(spySink))
-                   .AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt =>
+                   .AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt =>
                    {
                        opt.AutoComplete = true;
                        opt.Routing.Correlation.Format = MessageCorrelationFormat.Hierarchical;
@@ -182,7 +183,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var customTransactionIdPropertyName = "MyTransactionId";
             var options = new WorkerOptions();
-            options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, $"MySubscription-{Guid.NewGuid():N}", HostName,
+            options.AddServiceBusTopicMessagePump(TopicName, $"MySubscription-{Guid.NewGuid():N}", HostName, new DefaultAzureCredential(),
                 configureMessagePump: opt =>
                 {
                     opt.AutoComplete = true;
@@ -208,7 +209,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             var customOperationParentIdPropertyName = "MyOperationParentId";
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName,
+            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(),
                 configureMessagePump: opt =>
                 {
                     opt.AutoComplete = true;

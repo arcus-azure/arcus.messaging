@@ -27,7 +27,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await TestServiceBusQueueDeadLetteredMessageAsync(options =>
             {
-                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = false)
+                options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = false)
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageContextFilter(context => context.Properties["Topic"].ToString() == "Customers"))
                        .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>()
                        .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
@@ -54,7 +54,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await TestServiceBusQueueAbandonMessageAsync(options =>
             {
-                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName)
+                options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential())
                        .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
                        .WithServiceBusMessageHandler<AbandonAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => true));
             });
@@ -82,7 +82,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = false)
+            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = false)
                    .WithServiceBusMessageHandler<CompleteAzureServiceBusMessageHandler, Order>();
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
@@ -101,7 +101,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true);
+            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true);
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
 
@@ -119,7 +119,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
+            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
@@ -138,7 +138,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
+            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
@@ -324,7 +324,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                         TopicName, subscriptionName, _ => new ServiceBusClient(HostName, credential), opt => opt.TopicSubscription = TopicSubscription.None),
 
                 TopicSubscription.Automatic =>
-                    options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, subscriptionName, HostName, configureMessagePump: opt => opt.TopicSubscription = TopicSubscription.Automatic),
+                    options.AddServiceBusTopicMessagePump(TopicName, subscriptionName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.TopicSubscription = TopicSubscription.Automatic),
 
                 _ => throw new ArgumentOutOfRangeException(nameof(topicSubscription), topicSubscription, "Unknown topic subscription")
             };
@@ -335,10 +335,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await TestServiceBusMessageHandlingAsync(Topic, options =>
             {
-                options.AddServiceBusTopicMessagePumpUsingManagedIdentity(
+                options.AddServiceBusTopicMessagePump(
                            TopicName,
                            subscriptionName: "Test-Receive-All-Topic-Only-with-an-azure-servicebus-topic-subscription-name-over-50-characters",
                            HostName,
+                           new DefaultAzureCredential(),
                            configureMessagePump: opt =>
                            {
                                opt.AutoComplete = true;

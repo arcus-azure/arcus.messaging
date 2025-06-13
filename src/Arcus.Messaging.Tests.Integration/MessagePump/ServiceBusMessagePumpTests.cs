@@ -15,6 +15,7 @@ using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Testing;
+using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Bogus;
@@ -70,7 +71,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
+            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
             options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
