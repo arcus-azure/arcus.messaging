@@ -39,8 +39,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .AddSingleton(messageSink)
                    .AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName)
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>(
-                       messageContextFilter: ctx => ctx.MessageId == messageBeforeBreak.MessageId
-                                                    || ctx.MessageId == messageAfterBreak.MessageId)
+                       opt => opt.AddMessageContextFilter(
+                           ctx => ctx.MessageId == messageBeforeBreak.MessageId 
+                                  || ctx.MessageId == messageAfterBreak.MessageId))
                    .WithCircuitBreakerStateChangedEventHandler(_ => mockEventHandler1)
                    .WithCircuitBreakerStateChangedEventHandler(_ => mockEventHandler2);
 

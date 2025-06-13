@@ -116,9 +116,11 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var ignoredHandler = new StubServiceBusMessageHandler<Order>();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
-                          messageContextFilter: ctx => true, implementationFactory: serviceProvider => spyHandler)
+                          implementationFactory: serviceProvider => spyHandler, 
+                          opt => opt.AddMessageContextFilter(ctx => true))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
-                          messageContextFilter: ctx => false, implementationFactory: serviceProvider => ignoredHandler);
+                          implementationFactory: serviceProvider => ignoredHandler, 
+                          opt => opt.AddMessageContextFilter(ctx => false));
 
             // Act
             services.AddServiceBusMessageRouting();
@@ -368,7 +370,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             collection.WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(messageBodyFilter: order => order.ArticleNumber == "NotExisting")
                       .WithServiceBusMessageHandler<OrderV2AzureServiceBusMessageHandler, OrderV2>(implementationFactory: provider => spyOrderV2MessageHandler)
                       .WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>()
-                      .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(messageContextFilter: context => context.MessageId == "NotExisting")
+                      .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(opt => opt.AddMessageContextFilter(context => context.MessageId == "NotExisting"))
                       .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>(provider => spyOrderV1MessageHandler)
                       .WithServiceBusMessageHandler<OrderV1AzureServiceBusMessageHandler, Order>();
 
