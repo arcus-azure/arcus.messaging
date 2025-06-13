@@ -5,11 +5,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Serilog.Context;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
@@ -21,66 +19,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 #pragma warning restore CS0618 // Type or member is obsolete
     {
         private readonly JsonSerializerOptions _jsonOptions;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
-        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
-        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
-        public MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger<MessageRouter> logger)
-            : this(serviceProvider, options, (ILogger) logger)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
-        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
-        public MessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options)
-            : this(serviceProvider, options, NullLogger.Instance)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
-        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
-        public MessageRouter(IServiceProvider serviceProvider, ILogger<MessageRouter> logger)
-            : this(serviceProvider, new MessageRouterOptions(), (ILogger) logger)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
-        public MessageRouter(IServiceProvider serviceProvider)
-            : this(serviceProvider, new MessageRouterOptions(), NullLogger.Instance)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances.</param>
-        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
-        protected MessageRouter(IServiceProvider serviceProvider, ILogger logger)
-            : this(serviceProvider, new MessageRouterOptions(), logger)
-        {
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
@@ -130,130 +68,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         protected ILogger Logger { get; }
 
-        /// <summary>
-        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
-        /// </summary>
-        /// <param name="message">The message that was received.</param>
-        /// <param name="messageContext">The context providing more information concerning the processing.</param>
-        /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
-        /// <param name="cancellationToken">The token to cancel the message processing.</param>
-        /// <exception cref="ArgumentNullException">
-        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        /// <returns>
-        ///     [true] if the router was able to process the message through one of the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s; [false] otherwise.
-        /// </returns>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
-        protected async Task<bool> RouteMessageWithoutFallbackAsync<TMessageContext>(
-            string message,
-            TMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
-            where TMessageContext : MessageContext
-        {
-            if (message is null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-
-            if (messageContext is null)
-            {
-                throw new ArgumentNullException(nameof(messageContext));
-            }
-
-            if (correlationInfo is null)
-            {
-                throw new ArgumentNullException(nameof(correlationInfo));
-            }
-
-            using (IServiceScope serviceScope = ServiceProvider.CreateScope())
-#pragma warning disable CS0618 // Type or member is obsolete: will be refactored when moving towards v3.0.
-            using (LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher)))
-#pragma warning restore CS0618 // Type or member is obsolete
-            {
-                var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
-                accessor?.SetCorrelationInfo(correlationInfo);
-
-                bool isProcessed = await TryProcessMessageAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
-                return isProcessed;
-            }
-        }
-
-        /// <summary>
-        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>s
-        /// and optionally through an registered <see cref="IFallbackMessageHandler"/> if none of the message handlers were able to process the <paramref name="message"/>.
-        /// </summary>
-        /// <param name="serviceProvider">The available services from which the message handlers should be retrieved.</param>
-        /// <param name="message">The message that was received.</param>
-        /// <param name="messageContext">The context providing more information concerning the processing.</param>
-        /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
-        /// <param name="cancellationToken">The token to cancel the message processing.</param>
-        /// <exception cref="ArgumentNullException">
-        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of message routing will be supported from now on")]
-        protected async Task RouteMessageAsync<TMessageContext>(
-            IServiceProvider serviceProvider,
-            string message,
-            TMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
-            where TMessageContext : MessageContext
-        {
-            bool isProcessed = await TryProcessMessageAsync(serviceProvider, message, messageContext, correlationInfo, cancellationToken);
-            if (isProcessed)
-            {
-                return;
-            }
-
-            bool isFallbackProcessed = await TryFallbackProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-            if (!isFallbackProcessed)
-            {
-                Logger.LogDebug("Message router cannot correctly process the message in the '{MessageContextType}' because none of the registered '{MessageHandlerType}' implementations in the dependency container matches the incoming message type and context. Make sure you call the correct '.With...' extension on the '{ServiceCollectionType}' during the registration of the message pump/router to register a message handler", typeof(TMessageContext).Name, typeof(IMessageHandler<,>).Name, nameof(IServiceCollection));
-            }
-        }
-
-        [Obsolete("Will be removed in v3.0, as the entire fallback message handler structure becomes unnecessary")]
-        private async Task<bool> TryProcessMessageAsync<TMessageContext>(
-            IServiceProvider serviceProvider,
-            string message,
-            TMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
-            where TMessageContext : MessageContext
-        {
-            MessageHandler[] handlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
-            FallbackMessageHandler<string, TMessageContext>[] fallbackHandlers =
-                GetAvailableFallbackMessageHandlersByContext<string, TMessageContext>(messageContext);
-
-            if (handlers.Length <= 0 && fallbackHandlers.Length <= 0)
-            {
-                throw new InvalidOperationException(
-                    $"Message pump cannot correctly process the message in the '{typeof(TMessageContext).Name}' "
-                    + "because no 'IMessageHandler<,>' implementations were registered in the dependency injection container. "
-                    + $"Make sure you call the correct '.With...' extension on the {nameof(IServiceCollection)} during the registration of the message pump or message router to register a message handler");
-            }
-
-            foreach (MessageHandler handler in handlers)
-            {
-                MessageResult result = await DeserializeMessageForHandlerAsync(message, messageContext, handler);
-                if (result.IsSuccess)
-                {
-                    bool isProcessed = await handler.ProcessMessageAsync(result.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
-                    if (!isProcessed)
-                    {
-                        continue;
-                    }
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
 
         /// <summary>
         /// Gets all the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances in the application.
