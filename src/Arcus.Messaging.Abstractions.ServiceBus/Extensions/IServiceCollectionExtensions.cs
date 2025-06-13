@@ -1,5 +1,7 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Observability.Correlation;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
@@ -101,9 +103,14 @@ namespace Microsoft.Extensions.DependencyInjection
 
                 return implementationFactory(serviceProvider, options);
             });
-#pragma warning disable CS0618 // Type or member is obsolete: message router will be registered directly in v3.0.
-            services.AddMessageRouting(serviceProvider => serviceProvider.GetRequiredService<IAzureServiceBusMessageRouter>());
-#pragma warning restore CS0618 // Type or member is obsolete
+
+            services.AddApplicationInsightsTelemetryWorkerService();
+            services.AddCorrelation<MessageCorrelationInfo>()
+                    .AddScoped<IMessageCorrelationInfoAccessor>(serviceProvider =>
+                    {
+                        return new MessageCorrelationInfoAccessor(
+                            serviceProvider.GetRequiredService<ICorrelationInfoAccessor<MessageCorrelationInfo>>());
+                    });
 
             return new ServiceBusMessageHandlerCollection(services);
         }

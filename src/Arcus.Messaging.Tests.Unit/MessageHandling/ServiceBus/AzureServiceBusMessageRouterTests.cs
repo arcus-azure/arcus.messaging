@@ -322,7 +322,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             // Assert
             IServiceProvider provider = services.BuildServiceProvider();
             Assert.IsType<TestAzureServiceBusMessageRouter>(provider.GetRequiredService<IAzureServiceBusMessageRouter>());
-            Assert.IsType<TestAzureServiceBusMessageRouter>(provider.GetRequiredService<IMessageRouter>());
         }
 
         [Theory]
