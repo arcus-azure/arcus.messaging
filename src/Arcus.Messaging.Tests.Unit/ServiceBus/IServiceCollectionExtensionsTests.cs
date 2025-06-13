@@ -568,17 +568,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         }
 
         [Fact]
-        public void WithServiceBusMessageHandler_WithoutContextFilter_Throws()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(messageBodyFilter: null));
-        }
-
-        [Fact]
         public void WithServiceBusMessageHandler_WithBodyFilterWithoutContextFilter_Throws()
         {
             // Arrange
@@ -640,32 +629,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
                 () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
                     implementationFactory: serviceProvider => new TestServiceBusMessageHandler(),
                     messageContextFilter: null));
-        }
-
-        [Fact]
-        public void WithServiceBusMessageHandler_WithoutImplementationFactoryWithBodyFilter_Throws()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    implementationFactory: null,
-                    messageBodyFilter: body => true));
-        }
-
-        [Fact]
-        public void WithServiceBusMessageHandler_WithImplementationFactoryWithoutBodyFilter_Throws()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler(),
-                    messageBodyFilter: null));
         }
 
         [Fact]
