@@ -13,41 +13,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.Extensions
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public void WithMessageHandlerDefaultContext_WithMessageBodyFilter_UsesFilter(bool matches)
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-            var message = new TestMessage();
-            
-            // Act
-            services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(messageBodyFilter: body =>
-            {
-                Assert.Same(message, body);
-                return matches;
-            });
-
-            // Assert
-            IServiceProvider provider = services.Services.BuildServiceProvider();
-            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
-            MessageHandler handler = Assert.Single(handlers);
-            Assert.NotNull(handler);
-            bool actual = handler.CanProcessMessageBasedOnMessage(message);
-            Assert.Equal(matches, actual);
-        }
-
-        [Fact]
-        public void WithMessageHandlerDefaultContext_WithoutMessageBodyFilter_Fails()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-            
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(messageBodyFilter: null));
-        }
-
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
         public void WithMessageHandlerCustomContext_WithMessageBodyFilter_UsesFilter(bool matches)
         {
             // Arrange
