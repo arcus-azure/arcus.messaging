@@ -29,8 +29,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = false)
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageContextFilter(context => context.Properties["Topic"].ToString() == "Customers"))
-                       .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>()
-                       .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
+                       .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>();
             });
         }
 
@@ -184,8 +183,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusMessageHandlingAsync(pump =>
             {
                 pump.WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageContextFilter(context => context.Properties["Topic"].ToString() == "Customers"))
-                    .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>()
-                    .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
+                    .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>();
             },
             async (message, consumer) =>
             {
