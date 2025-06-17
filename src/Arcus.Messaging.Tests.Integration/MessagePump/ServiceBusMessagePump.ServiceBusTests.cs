@@ -30,8 +30,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = false)
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageContextFilter(context => context.Properties["Topic"].ToString() == "Customers"))
-                       .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>()
-                       .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
+                       .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>();
             });
         }
 
@@ -56,7 +55,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusQueueAbandonMessageAsync(options =>
             {
                 options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential())
-                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>((AzureServiceBusMessageContext _) => false)
+                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
                        .WithServiceBusMessageHandler<AbandonAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => true));
             });
         }
@@ -187,8 +186,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusMessageHandlingAsync(pump =>
             {
                 pump.WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageContextFilter(context => context.Properties["Topic"].ToString() == "Customers"))
-                    .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>()
-                    .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
+                    .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>();
             },
             async (message, consumer) =>
             {

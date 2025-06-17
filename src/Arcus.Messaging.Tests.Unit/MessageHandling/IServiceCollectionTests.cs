@@ -13,70 +13,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
     public class IServiceCollectionTests
     {
         [Fact]
-        public void WithMessageHandlerTMessageHandlerTMessage_WithoutMessageBodyFilter_Fails()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(messageBodyFilter: null));
-        }
-
-        [Fact]
-        public void WithMessageHandlerTMessageHandlerTMessage_WithoutMessageContextFilter_Fails()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(messageContextFilter: null));
-        }
-
-        [Fact]
-        public void WithMessageHandlerTMessageHandlerTMessage_WithMessageContextFilterWithoutMessageBodyFilter_Fails()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(context => true, messageBodyFilter: null));
-        }
-
-        [Fact]
-        public void WithMessageHandlerTMessageHandlerTMessage_WithoutMessageContextFilterWithMessageBodyFilter_Fails()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(messageContextFilter: null, messageBodyFilter: body => true));
-        }
-
-        [Fact]
-        public void WithMessageHandlerTMessageHandlerTMessage_WithImplementationFactoryWithMessageContextFilterWithoutMessageBodyFilter_Fails()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(
-                    context => true, messageBodyFilter: null, implementationFactory: serviceProvider => new DefaultTestMessageHandler()));
-        }
-
-        [Fact]
-        public void WithMessageHandlerTMessageHandlerTMessage_WithImplementationFactoryWithoutMessageContextFilterWithMessageBodyFilter_Fails()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => services.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(
-                    messageContextFilter: null, messageBodyFilter: body => true, implementationFactory: serviceProvider => new DefaultTestMessageHandler()));
-        }
-
-        [Fact]
         public void WithMessageHandlerTMessageHandlerTMessageTMessageContext_WithoutMessageBodyFilter_Fails()
         {
             // Arrange
@@ -84,16 +20,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(messageBodyFilter: null));
-        }
-
-        [Fact]
-        public void WithMessageHandlerTMessageHandlerTMessageTMessageContext_WithoutMessageContextFilter_Fails()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(() => services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(messageContextFilter: null));
         }
 
         [Fact]

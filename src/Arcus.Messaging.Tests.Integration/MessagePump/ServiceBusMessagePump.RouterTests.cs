@@ -109,8 +109,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt =>
                    {
                        opt.AddMessageContextFilter(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Orders");
-                   })
-                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
+                   });
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
             message.ApplicationProperties["Topic"] = "Orders";
