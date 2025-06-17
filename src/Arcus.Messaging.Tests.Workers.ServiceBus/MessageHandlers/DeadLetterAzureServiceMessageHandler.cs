@@ -13,7 +13,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         private readonly ILogger<DeadLetterAzureServiceMessageHandler> _logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessageHandlerTemplate"/> class.
+        /// Initializes a new instance of the <see cref="DeadLetterAzureServiceMessageHandler"/> class.
         /// </summary>
         public DeadLetterAzureServiceMessageHandler(ILogger<DeadLetterAzureServiceMessageHandler> logger)
         {
