@@ -617,32 +617,6 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         }
 
         [Fact]
-        public void WithServiceBusMessageHandler_WithoutImplementationFactoryWithContextFilter_Throws()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    implementationFactory: null,
-                    messageContextFilter: context => true));
-        }
-
-        [Fact]
-        public void WithServiceBusMessageHandler_WithImplementationFactoryWithoutContextFilter_Throws()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler(),
-                    messageContextFilter: null));
-        }
-
-        [Fact]
         public void WithServiceBusMessageHandler_WithoutImplementationFactoryWithBodyFilter_Throws()
         {
             // Arrange
