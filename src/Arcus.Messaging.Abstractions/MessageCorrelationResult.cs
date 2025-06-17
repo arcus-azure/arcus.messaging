@@ -38,17 +38,6 @@ namespace Arcus.Messaging.Abstractions
         public MessageCorrelationInfo CorrelationInfo { get; }
 
         /// <summary>
-        /// Creates an <see cref="MessageCorrelationResult"/> based on the <see cref="MessageCorrelationFormat.Hierarchical"/>.
-        /// </summary>
-        /// <param name="correlationInfo">The correlation information based on custom application properties.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="correlationInfo"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as the Hierarchical correlation format is deprecated")]
-        public static MessageCorrelationResult Create(MessageCorrelationInfo correlationInfo)
-        {
-            return new MessageCorrelationResult(correlationInfo ?? throw new ArgumentNullException(nameof(correlationInfo)));
-        }
-
-        /// <summary>
         /// Creates an <see cref="MessageCorrelationResult"/> based on the <see cref="MessageCorrelationFormat.W3C"/>.
         /// </summary>
         /// <param name="client">The telemetry client used for this message correlation.</param>
