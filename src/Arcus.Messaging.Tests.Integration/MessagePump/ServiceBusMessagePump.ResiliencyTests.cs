@@ -12,6 +12,7 @@ using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Testing;
+using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,7 +38,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var options = new WorkerOptions();
             options.AddXunitTestLogging(_outputWriter)
                    .AddSingleton(messageSink)
-                   .AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName)
+                   .AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential())
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>(
                        opt => opt.AddMessageContextFilter(
                            ctx => ctx.MessageId == messageBeforeBreak.MessageId 
@@ -77,7 +78,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.AddXunitTestLogging(_outputWriter)
                    .ConfigureSerilog(logging => logging.MinimumLevel.Verbose())
                    .AddSingleton(messageSink)
-                   .AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, subscription.Name, HostName)
+                   .AddServiceBusTopicMessagePump(TopicName, subscription.Name, HostName, new DefaultAzureCredential())
                    .WithServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler, Order>()
                    .WithCircuitBreakerStateChangedEventHandler(_ => mockEventHandler1)
                    .WithCircuitBreakerStateChangedEventHandler(_ => mockEventHandler2);
