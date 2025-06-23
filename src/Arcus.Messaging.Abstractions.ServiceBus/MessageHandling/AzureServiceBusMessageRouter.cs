@@ -212,7 +212,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 MessageHandler[] messageHandlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
                 if (messageHandlers.Length <= 0)
                 {
-                    await DeadLetterMessageNoHandlerRegisteredAsync(messageReceiver, message, messageContext);
+                    await DeadLetterMessageNoHandlerRegisteredAsync(messageContext);
                     return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process message in the message pump as no message handler is registered in the dependency container");
                 }
 
@@ -224,8 +224,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     MessageResult result = await DeserializeMessageForHandlerAsync(messageBody, messageContext, messageHandler);
                     if (result.IsSuccess)
                     {
-                        var args = new ProcessMessageEventArgs(message, messageReceiver, cancellationToken);
 #pragma warning disable CS0618 // Type or member is obsolete: Azure Service bus-specific message handler templates will be removed in v3.0.
+                        var args = new ProcessMessageEventArgs(message, messageReceiver, cancellationToken);
                         SetServiceBusPropertiesForSpecificOperations(messageHandler, args, messageContext);
 #pragma warning restore CS0618 // Type or member is obsolete
 
@@ -251,13 +251,13 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
                 if (hasGoneThroughMessageHandler && !fallbackAvailable)
                 {
-                    await AbandonMessageMatchedHandlerFailedAsync(messageReceiver, message, messageContext);
+                    await AbandonMessageMatchedHandlerFailedAsync(messageContext);
                     return MessageProcessingResult.Failure(message.MessageId, MatchedHandlerFailed, "Failed to process Azure Service Bus message in pump as the matched handler did not successfully processed the message and no fallback message handlers were configured");
                 }
 
                 if (!hasGoneThroughMessageHandler && !fallbackAvailable)
                 {
-                    await DeadLetterMessageNoHandlerMatchedAsync(messageReceiver, message, messageContext);
+                    await DeadLetterMessageNoHandlerMatchedAsync(messageContext);
                     return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process message in pump as no message handler was matched against the message and no fallback message handlers were configured");
                 }
 
@@ -277,10 +277,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             catch (Exception exception)
             {
                 Logger.LogCritical(exception, "Unable to process message with ID '{MessageId}'", message.MessageId);
-                if (messageReceiver != null)
-                {
-                    await messageReceiver.AbandonMessageAsync(message);
-                }
+
+                await messageContext.AbandonMessageAsync(null, CancellationToken.None);
 
                 return MessageProcessingResult.Failure(message.MessageId, ProcessingInterrupted, "Failed to process message in pump as there was an unexpected critical problem during processing, please see the logs for more information", exception);
             }
@@ -312,31 +310,22 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             }
         }
 
-        private async Task DeadLetterMessageNoHandlerRegisteredAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        private async Task DeadLetterMessageNoHandlerRegisteredAsync(AzureServiceBusMessageContext messageContext)
         {
-            if (messageReceiver != null)
-            {
-                Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handlers were registered in the application services, dead-lettering message!", message.MessageId, messageContext.JobId);
-                await messageReceiver.DeadLetterMessageAsync(message, "No message handlers were registered in the application services");
-            }
+            Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handlers were registered in the application services, dead-lettering message!", messageContext.MessageId, messageContext.JobId);
+            await messageContext.DeadLetterMessageAsync("No message handlers were registered in the application services", null, CancellationToken.None);
         }
 
-        private async Task DeadLetterMessageNoHandlerMatchedAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        private async Task DeadLetterMessageNoHandlerMatchedAsync(AzureServiceBusMessageContext messageContext)
         {
-            if (messageReceiver != null)
-            {
-                Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
-                await messageReceiver.DeadLetterMessageAsync(message, "No message handler was matched against the message and no fallback handlers were configured");
-            }
+            Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", messageContext.MessageId, messageContext.JobId);
+            await messageContext.DeadLetterMessageAsync("No message handler was matched against the message and no fallback handlers were configured", null, CancellationToken.None);
         }
 
-        private async Task AbandonMessageMatchedHandlerFailedAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        private async Task AbandonMessageMatchedHandlerFailedAsync(AzureServiceBusMessageContext messageContext)
         {
-            if (messageReceiver != null)
-            {
-                Logger.LogDebug("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully process the message and no fallback message handlers configured, abandoning message!", message.MessageId, messageContext.JobId);
-                await messageReceiver.AbandonMessageAsync(message);
-            }
+            Logger.LogDebug("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully process the message and no fallback message handlers configured, abandoning message!", messageContext.MessageId, messageContext.JobId);
+            await messageContext.AbandonMessageAsync(null, CancellationToken.None);
         }
 
         /// <summary>
