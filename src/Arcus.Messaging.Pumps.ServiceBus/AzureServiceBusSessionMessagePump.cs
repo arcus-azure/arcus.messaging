@@ -85,6 +85,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
                 Namespace = _serviceBusSessionProcessor.FullyQualifiedNamespace;
                 _serviceBusSessionProcessor.ProcessMessageAsync += ProcessMessageAsync;
+
+                await _serviceBusSessionProcessor.StartProcessingAsync(stoppingToken);
             }
             catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
             {
