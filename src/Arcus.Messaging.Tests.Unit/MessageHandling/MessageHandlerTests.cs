@@ -5,22 +5,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
+using Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs;
 using Arcus.Testing;
-using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
-#pragma warning disable 618
 
 namespace Arcus.Messaging.Tests.Unit.MessageHandling
 {
     [Trait("Category", "Unit")]
     public class MessageHandlerTests
     {
-        private readonly Faker _bogusGenerator = new Faker();
         private readonly ILogger _logger;
 
         /// <summary>
@@ -36,8 +34,8 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         {
             // Arrange
             var jobId = Guid.NewGuid().ToString();
-            var collection = new MessageHandlerCollection(new ServiceCollection()) { JobId = jobId };
-            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection()) { JobId = jobId };
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>();
             IServiceProvider provider = collection.Services.BuildServiceProvider();
 
             // Act
@@ -48,16 +46,16 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             MessageHandler handler = Assert.Single(messageHandlers);
             Assert.NotNull(handler);
 
-            Assert.True(handler.CanProcessMessageBasedOnContext(new MessageContext("message-id", jobId, new Dictionary<string, object>())));
-            Assert.False(handler.CanProcessMessageBasedOnContext(new MessageContext("message-id", "other-job-id", new Dictionary<string, object>())));
+            Assert.True(handler.CanProcessMessageBasedOnContext(AzureServiceBusMessageContextFactory.Generate(jobId)), "message handler should be able to process message based on context when using the same job ID");
+            Assert.False(handler.CanProcessMessageBasedOnContext(AzureServiceBusMessageContextFactory.Generate("other-job-id")), "message handler should not be able to process message based on context when using a different job ID");
         }
 
         [Fact]
         public async Task CustomMessageHandlerConstructor_WithDefaultContext_SubtractsRegistration()
         {
             // Arrange
-            var collection = new MessageHandlerCollection(new ServiceCollection());
-            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>();
             IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
@@ -68,7 +66,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var message = new TestMessage();
-            var context = TestMessageContext.Generate();
+            var context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             await messageHandler.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
         }
@@ -77,9 +75,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public async Task CustomMessageHandlerFactory_WithDefaultContext_SubtractsRegistration()
         {
             // Arrange
-            var collection = new MessageHandlerCollection(new ServiceCollection());
-            var spyHandler = new DefaultTestMessageHandler();
-            collection.WithMessageHandler<DefaultTestMessageHandler, TestMessage>(provider => spyHandler);
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
+            var spyHandler = new TestServiceBusMessageHandler();
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(_ => spyHandler);
             IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
@@ -90,7 +88,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var message = new TestMessage();
-            var context = new MessageContext("message-id", new Dictionary<string, object>());
+            var context = AzureServiceBusMessageContextFactory.Generate(collection.JobId);
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             await messageHandler.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
             Assert.True(spyHandler.IsProcessed);
@@ -100,8 +98,8 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public async Task CustomMessageHandlerConstructor_WithCustomContext_SubtractsRegistration()
         {
             // Arrange
-            var collection = new MessageHandlerCollection(new ServiceCollection());
-            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>();
             IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
@@ -112,38 +110,19 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var message = new TestMessage();
-            var context = TestMessageContext.Generate();
+            var context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             await messageHandler.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
-        }
-
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void CustomMessageHandlerConstructor_WithMessageBodyFilter_SubtractsRegistration(bool matches)
-        {
-            // Arrange
-            var collection = new MessageHandlerCollection(new ServiceCollection());
-            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>((TestMessage message) => matches);
-            ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
-
-            // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
-
-            // Assert
-            MessageHandler messageHandler = Assert.Single(messageHandlers);
-            Assert.NotNull(messageHandler);
-            Assert.Equal(matches, messageHandler.CanProcessMessageBasedOnMessage(new TestMessage()));
         }
 
         [Fact]
         public async Task CustomMessageHandlerFactory_WithCustomContext_SubtractsRegistration()
         {
             // Arrange
-            var spyHandler = new TestMessageHandler();
+            var spyHandler = new TestServiceBusMessageHandler();
 
-            var collection = new MessageHandlerCollection(new ServiceCollection());
-            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(provider => spyHandler);
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(_ => spyHandler);
             IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
@@ -154,34 +133,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             Assert.NotNull(messageHandler);
 
             var message = new TestMessage();
-            var context = TestMessageContext.Generate();
+            var context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             await messageHandler.ProcessMessageAsync(message, context, correlationInfo, CancellationToken.None);
             Assert.True(spyHandler.IsProcessed);
-        }
-
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void CustomMessageHandlerFactory_WithContextFilter_SubtractsRegistration(bool matchesContext)
-        {
-            // Arrange
-            var collection = new MessageHandlerCollection(new ServiceCollection());
-            var spyHandler = new TestMessageHandler();
-            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
-                (TestMessageContext messageContext) => matchesContext,
-                provider => spyHandler);
-            ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
-
-            // Act
-            IEnumerable<MessageHandler> messageHandlers = MessageHandler.SubtractFrom(serviceProvider, _logger);
-
-            // Assert
-            MessageHandler messageHandler = Assert.Single(messageHandlers);
-            Assert.NotNull(messageHandler);
-
-            var context = TestMessageContext.Generate();
-            Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
         }
 
         [Theory]
@@ -192,12 +147,12 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void CustomMessageHandlerFactory_WithMessageBodyAndContextFilter_SubtractsRegistration(bool matchesBody, bool matchesContext)
         {
             // Arrange
-            var collection = new MessageHandlerCollection(new ServiceCollection());
-            var spyHandler = new TestMessageHandler();
-            collection.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(
-                (TestMessageContext messageContext) => matchesContext,
-                (TestMessage messageBody) => matchesBody,
-                provider => spyHandler);
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
+            var spyHandler = new TestServiceBusMessageHandler();
+            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
+                _ => spyHandler,
+                options => options.AddMessageContextFilter(_ => matchesContext)
+                                  .AddMessageBodyFilter(_ => matchesBody));
             ServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
             // Act
@@ -207,7 +162,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             MessageHandler messageHandler = Assert.Single(messageHandlers);
             Assert.NotNull(messageHandler);
 
-            var context = TestMessageContext.Generate();
+            var context = AzureServiceBusMessageContextFactory.Generate(collection.JobId);
             Assert.Equal(matchesContext, messageHandler.CanProcessMessageBasedOnContext(messageContext: context));
             Assert.Equal(matchesBody, messageHandler.CanProcessMessageBasedOnMessage(new TestMessage()));
         }
@@ -216,11 +171,11 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         public void SubtractsMessageHandlers_SelectsAllRegistrations()
         {
             // Arrange
-            var collection = new MessageHandlerCollection(new ServiceCollection());
-            collection.WithMessageHandler<StubTestMessageHandler<string, MessageContext>, string>();
-            collection.WithMessageHandler<StubTestMessageHandler<Exception, MessageContext>, Exception>();
-            collection.WithMessageHandler<StubTestMessageHandler<TestMessage, MessageContext>, TestMessage>(provider => new StubTestMessageHandler<TestMessage, MessageContext>());
-            collection.WithMessageHandler<StubTestMessageHandler<TestMessage, MessageContext>, TestMessage>();
+            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<string>, string>();
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Exception>, Exception>();
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(_ => new StubServiceBusMessageHandler<TestMessage>());
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>();
 
             IServiceProvider serviceProvider = collection.Services.BuildServiceProvider();
 
@@ -229,25 +184,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
 
             // Assert
             Assert.Equal(4, messageHandlers.Count());
-        }
-
-        [Fact]
-        public void WithMultipleMessageHandlers_WithSameMessageType_RegistersBoth()
-        {
-            // Arrange
-            var services = new MessageHandlerCollection(new ServiceCollection());
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(message => message.TestProperty == "Some value");
-
-            // Act
-            services.WithMessageHandler<TestMessageHandler, TestMessage, TestMessageContext>(message => message.TestProperty == "Some other value");
-
-            // Assert
-            IServiceProvider provider = services.Services.BuildServiceProvider();
-            IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(provider, NullLogger.Instance);
-            Assert.Collection(
-                handlers,
-                handler => Assert.True(handler.CanProcessMessageBasedOnMessage(new TestMessage { TestProperty = "Some value" })),
-                handler => Assert.True(handler.CanProcessMessageBasedOnMessage(new TestMessage { TestProperty = "Some other value" })));
         }
     }
 }
