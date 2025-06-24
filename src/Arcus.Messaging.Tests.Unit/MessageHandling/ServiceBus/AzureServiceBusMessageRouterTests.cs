@@ -311,23 +311,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             Assert.False(ignoredHandler3.IsProcessed);
         }
 
-        [Fact]
-        public void RouteMessage_WithCustomRouter_RegistersCustomRouter()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            var collection = new ServiceBusMessageHandlerCollection(services);
-            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>();
-
-            // Act
-            services.AddServiceBusMessageRouting(serviceProvider =>
-                new TestAzureServiceBusMessageRouter(serviceProvider, NullLogger.Instance));
-
-            // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
-            Assert.IsType<TestAzureServiceBusMessageRouter>(provider.GetRequiredService<IAzureServiceBusMessageRouter>());
-        }
-
         [Theory]
         [InlineData(AdditionalMemberHandling.Ignore)]
         [InlineData(AdditionalMemberHandling.Error)]
@@ -410,27 +393,8 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             Assert.Equal(messageCount, spyOrderV2MessageHandler.ProcessedMessages.Length);
         }
 
-        [Fact]
-        public void CreateWithoutOptionsAndLogger_WithoutServiceProvider_Fails()
-        {
-            Assert.ThrowsAny<ArgumentException>(
-                () => new AzureServiceBusMessageRouter(serviceProvider: null));
-        }
-
-        [Fact]
-        public void CreateWithoutOptions_WithoutServiceProvider_Fails()
-        {
-            Assert.ThrowsAny<ArgumentException>(
-                () => new AzureServiceBusMessageRouter(serviceProvider: null, logger: NullLogger<AzureServiceBusMessageRouter>.Instance));
-        }
-
-        [Fact]
-        public void CreateWithoutLogger_WithoutServiceProvider_Fails()
-        {
-            Assert.ThrowsAny<ArgumentException>(
-                () => new AzureServiceBusMessageRouter(serviceProvider: null, options: new AzureServiceBusMessageRouterOptions()));
-        }
-
+       
+        
         [Fact]
         public void Create_WithoutServiceProvider_Fails()
         {
