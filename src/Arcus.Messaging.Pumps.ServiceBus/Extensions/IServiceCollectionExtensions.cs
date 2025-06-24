@@ -91,7 +91,6 @@ namespace Microsoft.Extensions.DependencyInjection
                     subscriptionName: null,
                     ServiceBusEntityType.Queue,
                     clientImplementationFactory,
-                    clientAdminImplementationFactory: null,
                     options,
                     serviceProvider);
             }
@@ -180,7 +179,6 @@ namespace Microsoft.Extensions.DependencyInjection
                     subscriptionName,
                     ServiceBusEntityType.Topic,
                     clientImplementationFactory,
-                    clientAdminImplementationFactory: null,
                     options,
                     serviceProvider);
             }
