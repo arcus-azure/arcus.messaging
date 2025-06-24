@@ -278,18 +278,18 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var serializer = new TestMessageBodySerializer(expectedBody, OrderGenerator.Generate());
 
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
-                          messageContextFilter: ctx => ctx != null,
-                          messageBodyFilter: body => body != null,
-                          messageBodySerializer: new TestMessageBodySerializer(expectedBody, new Customer()),
-                          implementationFactory: _ => ignoredHandler3)
+                          implementationFactory: _ => ignoredHandler3,
+                          options => options.AddMessageContextFilter(ctx => ctx != null)
+                                            .AddMessageBodyFilter(body => body != null)
+                                            .AddMessageBodySerializer(new TestMessageBodySerializer(expectedBody, new Customer())))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(
                           implementationFactory: _ => ignoredHandler2,
                           opt => opt.AddMessageBodyFilter(body => body is null))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
-                          messageBodySerializer: serializer,
-                          messageBodyFilter: body => body.Customer != null,
-                          messageContextFilter: ctx => ctx.MessageId.StartsWith("message-id"),
-                          implementationFactory: _ => spyHandler)
+                          implementationFactory: _ => spyHandler,
+                          options => options.AddMessageBodySerializer(serializer)
+                                            .AddMessageBodyFilter(body => body.Customer != null)
+                                            .AddMessageContextFilter(ctx => ctx.MessageId.StartsWith("message-id")))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>()
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(
                           implementationFactory: _ => ignoredHandler1);
