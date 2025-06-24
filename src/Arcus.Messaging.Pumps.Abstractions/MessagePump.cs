@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-
-#pragma warning disable CS0618 // Type or member is obsolete: lots of deprecated functionality will be removed in v3.0.
 
 namespace Arcus.Messaging.Pumps.Abstractions
 {
@@ -22,36 +18,12 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <summary>
         /// Initializes a new instance of the <see cref="MessagePump"/> class.
         /// </summary>
-        /// <param name="configuration">The configuration of the application.</param>
-        /// <param name="serviceProvider">The collection of services that are configured.</param>
-        /// <param name="logger">The logger to write telemetry to.</param>
-        /// <exception cref="ArgumentNullException">
-        ///     Thrown when the <paramref name="configuration"/>, the <paramref name="serviceProvider"/>, or <paramref name="logger"/> is <c>null</c>.
-        /// </exception>
-        [Obsolete("Will be removed in v3.0 as the application configuration is not needed anymore by the message pump")]
-        protected MessagePump(IConfiguration configuration, IServiceProvider serviceProvider, ILogger logger)
-            : this(serviceProvider, logger)
-        {
-            if (configuration is null)
-            {
-                throw new ArgumentNullException(nameof(configuration));
-            }
-
-            Configuration = configuration;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MessagePump"/> class.
-        /// </summary>
         /// <param name="serviceProvider">The collection of services that are configured.</param>
         /// <param name="logger">The logger to write telemetry to.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
         protected MessagePump(IServiceProvider serviceProvider, ILogger logger)
         {
-            if (serviceProvider is null)
-            {
-                throw new ArgumentNullException(nameof(serviceProvider));
-            }
+            ArgumentNullException.ThrowIfNull(serviceProvider);
 
             ServiceProvider = serviceProvider;
             Logger = logger ?? NullLogger.Instance;
@@ -73,33 +45,9 @@ namespace Arcus.Messaging.Pumps.Abstractions
         public MessagePumpCircuitState CircuitState { get; private set; } = MessagePumpCircuitState.Closed;
 
         /// <summary>
-        /// Gets hte ID of the client being used to connect to the messaging service.
-        /// </summary>
-        [Obsolete("Will be removed in v3.0 in favor of using the " + nameof(JobId) + " to identifying a message pump")]
-        protected string ClientId { get; private set; }
-
-        /// <summary>
-        /// Gets entity path that is being processed.
-        /// </summary>
-        [Obsolete("Will be moved down to the Azure Service bus message pump in v3.0, as it is related to Azure Service bus")]
-        public string EntityPath { get; private set; }
-
-        /// <summary>
-        /// Gets the configuration of the application.
-        /// </summary>
-        [Obsolete("Will be removed in v3.0 as it is not used in the messaging system with the removal of using the application configuration directly to retrieve connection strings")]
-        protected IConfiguration Configuration { get; }
-
-        /// <summary>
         /// Gets the collection of application services that are configured.
         /// </summary>
         protected IServiceProvider ServiceProvider { get; }
-
-        /// <summary>
-        /// Gets the default encoding used during the message processing through the message pump.
-        /// </summary>
-        [Obsolete("Will be removed in v3.0 as it is not used by the messaging system")]
-        protected Encoding DefaultEncoding { get; } = Encoding.UTF8;
 
         /// <summary>
         /// Gets the logger to write telemetry to.
@@ -112,7 +60,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <param name="receiveException">Exception that occurred</param>
         protected virtual Task HandleReceiveExceptionAsync(Exception receiveException)
         {
-            Logger.LogCritical(receiveException, "Unable to process message from {EntityPath} with client {ClientId}: {Message}", EntityPath, ClientId, receiveException.Message);
+            Logger.LogCritical(receiveException, "Message pump '{JobId}' was unable to process message: {Message}", JobId, receiveException.Message);
             return Task.CompletedTask;
         }
 
