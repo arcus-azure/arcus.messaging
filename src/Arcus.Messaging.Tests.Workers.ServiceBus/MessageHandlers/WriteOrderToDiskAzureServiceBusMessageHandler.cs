@@ -8,23 +8,19 @@ using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Xunit;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
     public class WriteOrderToDiskAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<Order>
     {
-        private readonly IMessageCorrelationInfoAccessor _correlationAccessor;
         private readonly ILogger<WriteOrderToDiskAzureServiceBusMessageHandler> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WriteOrderToDiskAzureServiceBusMessageHandler" /> class.
         /// </summary>
         public WriteOrderToDiskAzureServiceBusMessageHandler(
-            IMessageCorrelationInfoAccessor correlationAccessor,
             ILogger<WriteOrderToDiskAzureServiceBusMessageHandler> logger)
         {
-            _correlationAccessor = correlationAccessor;
             _logger = logger;
         }
 
@@ -34,8 +30,6 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            EnsureSameCorrelation(correlationInfo);
-
             _logger.LogTrace("Write order v1 message to disk: {MessageId}", message.Id);
 
             string fileName = message.Id + ".json";
@@ -51,16 +45,6 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
                     correlationInfo));
 
             await File.WriteAllTextAsync(filePath, json, cancellationToken);
-        }
-
-        private void EnsureSameCorrelation(MessageCorrelationInfo correlationInfo)
-        {
-            MessageCorrelationInfo registeredCorrelation = _correlationAccessor.GetCorrelationInfo();
-            Assert.NotNull(registeredCorrelation);
-            Assert.Equal(registeredCorrelation.OperationId, correlationInfo.OperationId);
-            Assert.Equal(registeredCorrelation.TransactionId, correlationInfo.TransactionId);
-            Assert.Equal(registeredCorrelation.OperationParentId, correlationInfo.OperationParentId);
-            Assert.Equal(registeredCorrelation.CycleId, correlationInfo.CycleId);
         }
     }
 }

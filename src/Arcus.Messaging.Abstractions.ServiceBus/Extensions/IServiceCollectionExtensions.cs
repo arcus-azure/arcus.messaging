@@ -105,12 +105,6 @@ namespace Microsoft.Extensions.DependencyInjection
             });
 
             services.AddApplicationInsightsTelemetryWorkerService();
-            services.AddCorrelation<MessageCorrelationInfo>()
-                    .AddScoped<IMessageCorrelationInfoAccessor>(serviceProvider =>
-                    {
-                        return new MessageCorrelationInfoAccessor(
-                            serviceProvider.GetRequiredService<ICorrelationInfoAccessor<MessageCorrelationInfo>>());
-                    });
 
             return new ServiceBusMessageHandlerCollection(services);
         }

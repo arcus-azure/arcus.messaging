@@ -16,10 +16,9 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         /// Initializes a new instance of the <see cref="OrderBatchMessageHandler"/> class.
         /// </summary>
         public OrderBatchMessageHandler(
-            IMessageCorrelationInfoAccessor correlationAccessor,
             ILogger<WriteOrderToDiskAzureServiceBusMessageHandler> logger)
         {
-            _messageHandler = new WriteOrderToDiskAzureServiceBusMessageHandler(correlationAccessor, logger);
+            _messageHandler = new WriteOrderToDiskAzureServiceBusMessageHandler(logger);
         }
 
         /// <summary>
