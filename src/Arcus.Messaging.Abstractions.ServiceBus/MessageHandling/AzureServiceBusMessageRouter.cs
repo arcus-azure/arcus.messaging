@@ -16,7 +16,7 @@ using static Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingError
 namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
     /// <summary>
-    /// Represents an <see cref="IMessageRouter"/> that can route Azure Service Bus <see cref="ServiceBusReceivedMessage"/>s.
+    /// Represents an <see cref="IAzureServiceBusMessageRouter"/> that can route Azure Service Bus <see cref="ServiceBusReceivedMessage"/>s.
     /// </summary>
     public class AzureServiceBusMessageRouter : MessageRouter, IAzureServiceBusMessageRouter
     {
