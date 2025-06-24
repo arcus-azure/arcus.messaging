@@ -31,8 +31,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 options.AddServiceBusTopicMessagePump(TopicName, topicSubscription.Name, HostName, new DefaultAzureCredential())
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageBodyFilter(body => body is null))
-                       .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageBodyFilter(body => body.Id != null))
-                       .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order _) => false);
+                       .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageBodyFilter(body => body.Id != null));
             });
         }
 
