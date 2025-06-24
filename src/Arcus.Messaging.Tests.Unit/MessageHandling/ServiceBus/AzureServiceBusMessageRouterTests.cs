@@ -46,7 +46,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var order = OrderGenerator.Generate();
             var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
             var context = AzureServiceBusMessageContext.Create(jobId, ServiceBusEntityType.Unknown, Mock.Of<ServiceBusReceiver>(), message);
-            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+            var correlationInfo = new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}");
 
             MessageProcessingResult result = await router.RouteMessageAsync(Mock.Of<ServiceBusReceiver>(), message, context, correlationInfo, CancellationToken.None);
             Assert.True(result.IsSuccessful, result.ErrorMessage);
@@ -70,7 +70,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var order = OrderGenerator.Generate();
             var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
             var context = AzureServiceBusMessageContextFactory.Generate();
-            var correlationInfo = message.GetCorrelationInfo();
+            var correlationInfo = new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}");
 
             // Act / Assert
             MessageProcessingResult result = await router.RouteMessageAsync(receiver.Object, message, context, correlationInfo, CancellationToken.None);
