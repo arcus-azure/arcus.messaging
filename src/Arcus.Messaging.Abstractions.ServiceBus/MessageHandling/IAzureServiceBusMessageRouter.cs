@@ -14,9 +14,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 #pragma warning restore CS0618 // Type or member is obsolete
     {
         /// <summary>
-        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// and optionally through a registered <see cref="IAzureServiceBusFallbackMessageHandler"/>
-        /// if none of the message handlers were able to process the <paramref name="message"/>.
+        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.
         /// </summary>
         /// <param name="messageReceiver">
         ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>.
