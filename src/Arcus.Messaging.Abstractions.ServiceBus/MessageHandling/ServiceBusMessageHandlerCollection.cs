@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
     /// <summary>
-    /// Represents the model that exposes the available <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s, <see cref="IAzureServiceBusFallbackMessageHandler"/>s,
+    /// Represents the model that exposes the available <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
     /// and possible additional configurations that can be configured with the current state of the Azure Service Bus instance.
     /// </summary>
     public class ServiceBusMessageHandlerCollection : MessageHandlerCollection
