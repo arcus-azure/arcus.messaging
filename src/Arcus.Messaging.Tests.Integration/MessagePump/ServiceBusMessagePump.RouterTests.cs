@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
@@ -8,6 +9,8 @@ using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
+using Arcus.Testing;
+using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -22,9 +25,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         [Fact]
         public async Task ServiceBusTopicMessagePumpWithBodyFiltering_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
         {
+            await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
+
             await TestServiceBusMessageHandlingAsync(Topic, options =>
             {
-                options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
+                options.AddServiceBusTopicMessagePump(TopicName, topicSubscription.Name, HostName, new DefaultAzureCredential())
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageBodyFilter(body => body is null))
                        .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageBodyFilter(body => body.Id != null))
                        .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order _) => false);
@@ -36,7 +41,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await TestServiceBusMessageHandlingAsync(Queue, options =>
             {
-                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
+                options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
                        .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageBodyFilter(_ => true))
                        .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(
@@ -55,7 +60,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await TestServiceBusMessageHandlingAsync(Queue, options =>
             {
-                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
+                options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
                        .WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>()
                        .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
             });
@@ -66,7 +71,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
+            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt =>
                    {
                        opt.AddMessageContextFilter(context => context.Properties.ContainsKey("NotExisting"))
@@ -93,8 +98,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task ServiceBusTopicMessagePumpWithContextFiltering_RoutesServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
+            await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
+
             var options = new WorkerOptions();
-            options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
+            options.AddServiceBusTopicMessagePump(TopicName, topicSubscription.Name, HostName, new DefaultAzureCredential())
                    .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt =>
                    {
                        opt.AddMessageContextFilter(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Customers");
@@ -102,8 +109,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt =>
                    {
                        opt.AddMessageContextFilter(context => context.Properties.TryGetValue("Topic", out object value) && value.ToString() == "Orders");
-                   })
-                   .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((AzureServiceBusMessageContext _) => false);
+                   });
 
             ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
             message.ApplicationProperties["Topic"] = "Orders";
@@ -121,7 +127,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await TestServiceBusMessageHandlingAsync(Queue, options =>
             {
-                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
+                options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
                        .WithServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(
                            opt => opt.AddMessageBodySerializer(serviceProvider =>
                            {
@@ -136,7 +142,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await TestServiceBusMessageHandlingAsync(Queue, options =>
             {
-                options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt =>
+                options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt =>
                 {
                     opt.Routing.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
 
@@ -158,7 +164,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             // Arrange
             var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePumpUsingManagedIdentity(QueueName, HostName, configureMessagePump: opt => opt.AutoComplete = true)
+            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             foreach (Encoding encoding in SupportedEncodings)
@@ -180,8 +186,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task ServiceBusTopicMessagePump_PublishesEncodedServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
+            await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
+
             var options = new WorkerOptions();
-            options.AddServiceBusTopicMessagePumpUsingManagedIdentity(TopicName, HostName)
+            options.AddServiceBusTopicMessagePump(TopicName, topicSubscription.Name, HostName, new DefaultAzureCredential())
                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
 
             foreach (Encoding encoding in SupportedEncodings)
