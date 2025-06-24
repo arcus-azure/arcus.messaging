@@ -87,7 +87,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             WithTelemetryConverter(options, spySink);
             WithTelemetryChannel(options, spyChannel);
 
-            var message = ServiceBusMessageBuilder.CreateForBody(OrderGenerator.Generate()).Build();
+            var message = new ServiceBusMessage(BinaryData.FromObjectAsJson(OrderGenerator.Generate()));
 
             // Act / Assert
             await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
