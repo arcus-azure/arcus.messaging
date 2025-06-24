@@ -206,16 +206,5 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 }); 
             }
         }
-
-        [Fact]
-        public async Task ServiceBusMessagePumpWithFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
-        {
-            await TestServiceBusMessageHandlingAsync(Queue, options =>
-            {
-                options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
-                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
-                       .WithFallbackMessageHandler<WriteOrderToDiskFallbackMessageHandler>();
-            });
-        }
     }
 }
