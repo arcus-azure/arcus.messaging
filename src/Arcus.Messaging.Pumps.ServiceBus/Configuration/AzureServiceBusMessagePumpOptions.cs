@@ -96,10 +96,5 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 #pragma warning disable CS0618 // Type or member is obsolete
         public MessageTelemetryOptions Telemetry => Routing.Telemetry;
 #pragma warning restore CS0618 // Type or member is obsolete
-
-        /// <summary>
-        /// Gets the default consumer-configurable options for Azure Service Bus Queue message pumps.
-        /// </summary>
-        internal static AzureServiceBusMessagePumpOptions DefaultOptions => new();
     }
 }
