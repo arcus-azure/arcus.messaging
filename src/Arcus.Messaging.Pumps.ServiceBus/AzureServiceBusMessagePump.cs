@@ -10,9 +10,7 @@ using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Azure.Messaging.ServiceBus;
-using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.ApplicationInsights;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -28,7 +26,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private readonly IAzureServiceBusMessageRouter _messageRouter;
         private readonly IDisposable _loggingScope;
 
-        private bool _ownsTopicSubscription, _isHostShuttingDown;
+        private bool _isHostShuttingDown;
         private ServiceBusReceiver _messageReceiver;
         private CancellationTokenSource _receiveMessagesCancellation;
 
@@ -79,121 +77,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// Gets the name of the topic subscription; combined from the <see cref="AzureServiceBusMessagePumpSettings.SubscriptionName"/> and the <see cref="MessagePump.JobId"/>.
         /// </summary>
         protected string SubscriptionName { get; }
-
-        /// <summary>
-        /// Reconfigure the Azure Service Bus options on this message pump.
-        /// </summary>
-        /// <param name="reconfigure">The function to reconfigure the Azure Service Bus options.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0")]
-        public void ReconfigureOptions(Action<AzureServiceBusMessagePumpOptions> reconfigure)
-        {
-            if (reconfigure is null)
-            {
-                throw new ArgumentNullException(nameof(reconfigure));
-            }
-
-            reconfigure.Invoke(Settings.Options);
-        }
-
-        /// <summary>
-        /// Reconfigure the Azure Service Bus Queue options on this message pump.
-        /// </summary>
-        /// <param name="reconfigure">The function to reconfigure the Azure Service Bus Queue options.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
-        /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Queues.</exception>
-        [Obsolete("Will be removed in v3.0")]
-        public void ReconfigureQueueOptions(Action<IAzureServiceBusQueueMessagePumpOptions> reconfigure)
-        {
-            if (reconfigure is null)
-            {
-                throw new ArgumentNullException(nameof(reconfigure));
-            }
-
-            if (Settings.ServiceBusEntity is ServiceBusEntityType.Topic)
-            {
-                throw new NotSupportedException(
-                    "Requires the message pump to be configured for Azure Service Bus Queue to reconfigure these options, use the Topic overload instead");
-            }
-
-            reconfigure(Settings.Options);
-        }
-
-        /// <summary>
-        /// Reconfigure the Azure Service Bus Topic options on this message pump.
-        /// </summary>
-        /// <param name="reconfigure">The function to reconfigure the Azure Service Bus Topic options.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="reconfigure"/> is <c>null</c>.</exception>
-        /// <exception cref="NotSupportedException">Thrown when the message pump is not configured for Topics.</exception>
-        [Obsolete("Will be removed in v3.0")]
-        public void ReconfigureTopicOptions(Action<IAzureServiceBusTopicMessagePumpOptions> reconfigure)
-        {
-            if (reconfigure is null)
-            {
-                throw new ArgumentNullException(nameof(reconfigure));
-            }
-
-            if (Settings.ServiceBusEntity is ServiceBusEntityType.Queue)
-            {
-                throw new NotSupportedException(
-                    "Requires a message pump to be configured for Azure Service Bus Topic to reconfigure these options, use the Queue overload instead");
-            }
-
-            reconfigure(Settings.Options);
-        }
-
-        /// <summary>
-        /// Triggered when the application host is ready to start the service.
-        /// </summary>
-        /// <param name="cancellationToken">Indicates that the start process has been aborted.</param>
-        public override async Task StartAsync(CancellationToken cancellationToken)
-        {
-            if (Settings.ServiceBusEntity == ServiceBusEntityType.Topic
-                && Settings.Options.TopicSubscription.HasValue
-                && Settings.Options.TopicSubscription.Value.HasFlag(TopicSubscription.Automatic))
-            {
-                _ownsTopicSubscription = await CreateTopicSubscriptionAsync(cancellationToken);
-            }
-
-            await base.StartAsync(cancellationToken);
-        }
-
-        private async Task<bool> CreateTopicSubscriptionAsync(CancellationToken cancellationToken)
-        {
-            ServiceBusAdministrationClient serviceBusClient = await Settings.GetServiceBusAdminClientAsync();
-            string entityPath = Settings.EntityName;
-
-            try
-            {
-                bool subscriptionExists = await serviceBusClient.SubscriptionExistsAsync(entityPath, SubscriptionName, cancellationToken);
-                if (subscriptionExists)
-                {
-                    Logger.LogTrace("Topic subscription with name '{SubscriptionName}' already exists on Service Bus resource", SubscriptionName);
-                    return false;
-                }
-                else
-                {
-                    Logger.LogTrace("Creating subscription '{SubscriptionName}' on topic '{TopicPath}'...", SubscriptionName, entityPath);
-
-                    var subscriptionDescription = new CreateSubscriptionOptions(entityPath, SubscriptionName)
-                    {
-                        UserMetadata = $"Subscription created by Arcus job: '{JobId}' to process Service Bus messages."
-                    };
-                    var ruleDescription = new CreateRuleOptions("Accept-All", new TrueRuleFilter());
-                    await serviceBusClient.CreateSubscriptionAsync(subscriptionDescription, ruleDescription, cancellationToken)
-                                          .ConfigureAwait(continueOnCapturedContext: false);
-
-                    Logger.LogTrace("Subscription '{SubscriptionName}' created on topic '{TopicPath}'", SubscriptionName, entityPath);
-
-                    return true;
-                }
-            }
-            catch (Exception exception) when (exception is not TaskCanceledException && exception is not OperationCanceledException)
-            {
-                Logger.LogWarning(exception, "Failed to create topic subscription with name '{SubscriptionName}' on Service Bus resource", SubscriptionName);
-                return false;
-            }
-        }
 
         /// <inheritdoc />
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -359,44 +242,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 await _messageReceiver.CloseAsync();
             }
 
-            if (Settings.ServiceBusEntity == ServiceBusEntityType.Topic
-                && Settings.Options.TopicSubscription.HasValue
-                && Settings.Options.TopicSubscription.Value.HasFlag(TopicSubscription.Automatic)
-                && _ownsTopicSubscription)
-            {
-                await DeleteTopicSubscriptionAsync(cancellationToken);
-            }
-
             await base.StopAsync(cancellationToken);
             _isHostShuttingDown = true;
             _loggingScope?.Dispose();
             _receiveMessagesCancellation?.Dispose();
-        }
-
-        private async Task DeleteTopicSubscriptionAsync(CancellationToken cancellationToken)
-        {
-            ServiceBusAdministrationClient serviceBusClient = await Settings.GetServiceBusAdminClientAsync();
-            string entityPath = Settings.EntityName;
-
-            try
-            {
-                bool subscriptionExists =
-                    await serviceBusClient.SubscriptionExistsAsync(entityPath, SubscriptionName, cancellationToken);
-                if (subscriptionExists)
-                {
-                    Logger.LogTrace("Deleting subscription '{SubscriptionName}' on topic '{Path}'...", SubscriptionName, entityPath);
-                    await serviceBusClient.DeleteSubscriptionAsync(entityPath, SubscriptionName, cancellationToken);
-                    Logger.LogTrace("Subscription '{SubscriptionName}' deleted on topic '{Path}'", SubscriptionName, entityPath);
-                }
-                else
-                {
-                    Logger.LogTrace("Cannot delete topic subscription with name '{SubscriptionName}' because no subscription exists on Service Bus resource", SubscriptionName);
-                }
-            }
-            catch (Exception exception) when (exception is not TaskCanceledException && exception is not OperationCanceledException)
-            {
-                Logger.LogWarning(exception, "Failed to delete topic subscription with name '{SubscriptionName}' on Service Bus resource", SubscriptionName);
-            }
         }
 
         private async Task<MessageProcessingResult> ProcessMessageAsync(ServiceBusReceivedMessage message, CancellationToken cancellationToken)

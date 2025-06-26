@@ -288,43 +288,5 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var consumer = TestServiceMessageConsumer.CreateForQueue(QueueName, _serviceBusConfig, _logger);
             return consumer;
         }
-
-        [Theory]
-        [InlineData(TopicSubscription.None, false)]
-        public async Task ServiceBusTopicMessagePump_WithNoneTopicSubscription_DoesNotCreateTopicSubscription(TopicSubscription topicSubscription, bool doesSubscriptionExists)
-        {
-            // Arrange
-            var options = new WorkerOptions();
-            var subscriptionName = $"Subscription-{Guid.NewGuid():N}";
-
-            AddServiceBusTopicMessagePump(options, subscriptionName, topicSubscription)
-                    .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
-
-            // Act
-            await using var worker = await Worker.StartNewAsync(options);
-
-            // Assert
-            ServiceBusAdministrationClient adminClient = _serviceBusConfig.GetAdminClient();
-            Response<bool> subscriptionExistsResponse = await adminClient.SubscriptionExistsAsync(TopicName, subscriptionName);
-            Assert.Equal(doesSubscriptionExists, subscriptionExistsResponse.Value);
-        }
-
-        private ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePump(
-            WorkerOptions options,
-            string subscriptionName,
-            TopicSubscription topicSubscription)
-        {
-            var credential = new DefaultAzureCredential();
-
-            options.AddXunitTestLogging(_outputWriter);
-            return topicSubscription switch
-            {
-                TopicSubscription.None =>
-                    options.AddServiceBusTopicMessagePump(
-                        TopicName, subscriptionName, _ => new ServiceBusClient(HostName, credential), opt => opt.TopicSubscription = TopicSubscription.None),
-
-                _ => throw new ArgumentOutOfRangeException(nameof(topicSubscription), topicSubscription, "Unknown topic subscription")
-            };
-        }
     }
 }

@@ -91,7 +91,6 @@ namespace Microsoft.Extensions.DependencyInjection
                     subscriptionName: null,
                     ServiceBusEntityType.Queue,
                     clientImplementationFactory,
-                    clientAdminImplementationFactory: null,
                     options,
                     serviceProvider);
             }
@@ -180,7 +179,6 @@ namespace Microsoft.Extensions.DependencyInjection
                     subscriptionName,
                     ServiceBusEntityType.Topic,
                     clientImplementationFactory,
-                    clientAdminImplementationFactory: null,
                     options,
                     serviceProvider);
             }
@@ -208,7 +206,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             ArgumentNullException.ThrowIfNull(services);
 
-            var options = AzureServiceBusMessagePumpOptions.DefaultOptions;
+            var options = new AzureServiceBusMessagePumpOptions();
             configureOptions?.Invoke(options);
 
 #pragma warning disable CS0618 // Type or member is obsolete
