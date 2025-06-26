@@ -1,8 +1,5 @@
 ﻿using System;
-using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -13,35 +10,6 @@ namespace Microsoft.Extensions.DependencyInjection
     // ReSharper disable once InconsistentNaming
     public static class IServiceCollectionExtensions
     {
-        /// <summary>
-        /// Adds an <see cref="MessagePump"/> registration to the application services.
-        /// </summary>
-        /// <typeparam name="TMessagePump">The custom message pump type.</typeparam>
-        /// <param name="services">The application services to register the message pump to.</param>
-        /// <param name="implementationFactory">The factory function to create the custom <typeparamref name="TMessagePump"/> instance.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or the <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as only concrete implementations of the message pump will be allowed")]
-        public static IServiceCollection AddMessagePump<TMessagePump>(
-            this IServiceCollection services,
-            Func<IServiceProvider, TMessagePump> implementationFactory)
-            where TMessagePump : MessagePump
-        {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
-
-            if (implementationFactory is null)
-            {
-                throw new ArgumentNullException(nameof(implementationFactory));
-            }
-
-            services.TryAddSingleton<IMessagePumpCircuitBreaker>(
-                provider => new DefaultMessagePumpCircuitBreaker(provider, provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>()));
-
-            return services.AddHostedService(implementationFactory);
-        }
-
         /// <summary>
         /// Adds an <see cref="ICircuitBreakerEventHandler"/> implementation for a specific message pump to the application services.
         /// </summary>
