@@ -1,6 +1,6 @@
 ﻿using Arcus.Testing;
 using Microsoft.Extensions.Configuration;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace Arcus.Messaging.Tests.Integration
 {

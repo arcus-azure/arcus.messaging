@@ -11,7 +11,6 @@ using Bogus.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Arcus.Messaging.Tests.Integration.Health
 {

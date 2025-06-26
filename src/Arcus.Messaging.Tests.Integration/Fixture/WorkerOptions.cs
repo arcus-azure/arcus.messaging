@@ -9,7 +9,7 @@ using Serilog;
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
