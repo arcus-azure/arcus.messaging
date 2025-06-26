@@ -211,14 +211,13 @@ namespace Microsoft.Extensions.DependencyInjection
             var options = AzureServiceBusMessagePumpOptions.DefaultOptions;
             configureOptions?.Invoke(options);
 
-#pragma warning disable CS0618 // Type or member is obsolete
-            ServiceBusMessageHandlerCollection collection = services.AddServiceBusMessageRouting(provider =>
+            services.TryAddSingleton<IAzureServiceBusMessageRouter>(provider =>
             {
                 var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
                 return new AzureServiceBusMessageRouter(provider, options.Routing, logger);
             });
-#pragma warning restore CS0618 // Type or member is obsolete
-            collection.JobId = options.JobId;
+
+            services.AddApplicationInsightsTelemetryWorkerService();
 
             services.TryAddSingleton<IMessagePumpCircuitBreaker>(provider => new DefaultMessagePumpCircuitBreaker(provider, provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>()));
 
@@ -231,7 +230,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 return new AzureServiceBusMessagePump(settings, provider, router, logger);
             });
 
-            return collection;
+            return new ServiceBusMessageHandlerCollection(services) { JobId = options.JobId };
         }
     }
 }
