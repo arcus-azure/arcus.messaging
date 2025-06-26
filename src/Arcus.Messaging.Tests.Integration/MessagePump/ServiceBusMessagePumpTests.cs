@@ -183,7 +183,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 }
             };
 
-            return message.WithDiagnosticId(traceParent);
+            message.ApplicationProperties["Diagnostic-Id"] = traceParent.DiagnosticId;
+            return message;
         }
 
         private static void AssertReceivedOrderEventDataForW3C(
