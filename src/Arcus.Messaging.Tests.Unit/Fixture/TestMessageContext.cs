@@ -9,7 +9,7 @@ using Bogus;
 namespace Arcus.Messaging.Tests.Unit.Fixture
 {
     /// <summary>
-    /// Test <see cref="MessageContext"/> implementation as indication to handle specific contexts in the <see cref="IMessageHandler{TMessage}"/>.
+    /// Test <see cref="MessageContext"/> implementation as indication to handle specific contexts in the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.
     /// </summary>
     [DebuggerStepThrough]
     public class TestMessageContext : MessageContext

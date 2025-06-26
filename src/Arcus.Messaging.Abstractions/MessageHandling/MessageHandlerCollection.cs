@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
     /// <summary>
-    /// Represents the model that exposes the available <see cref="IMessageHandler{TMessage}"/>s, <see cref="IFallbackMessageHandler"/>s,
+    /// Represents the model that exposes the available <see cref="IMessageHandler{TMessage,TMessageContext}"/>s
     /// and possible additional configurations that can be configured with the current state.
     /// </summary>
     public class MessageHandlerCollection
@@ -61,33 +61,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                     messageBodyFilter,
                     messageContextFilter,
                     implementationFactoryMessageBodySerializer?.Invoke(serviceProvider)));
-        }
-
-        /// <summary>
-        /// Adds a general <see cref="FallbackMessageHandler{TMessage,TMessageContext}"/> instance to the registered application services.
-        /// </summary>
-        /// <typeparam name="TMessageHandler">The type of the user-defined fallback message handler.</typeparam>
-        /// <typeparam name="TMessage">The type of the message that this fallback message handler can handle.</typeparam>
-        /// <typeparam name="TMessageContext">The type of the context in which the message is being processed.</typeparam>
-        /// <param name="implementationFactory">The function to create the user-defined fallback message handler instance.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0, as the entire fallback message handler structure becomes unnecessary")]
-        public void AddFallbackMessageHandler<TMessageHandler, TMessage, TMessageContext>(
-            Func<IServiceProvider, TMessageHandler> implementationFactory)
-            where TMessageHandler : IFallbackMessageHandler<TMessage, TMessageContext>
-            where TMessage : class
-            where TMessageContext : MessageContext
-        {
-            if (implementationFactory is null)
-            {
-                throw new ArgumentNullException(nameof(implementationFactory));
-            }
-
-            Services.AddSingleton(
-                serviceProvider => FallbackMessageHandler<TMessage, TMessageContext>.Create(
-                    implementationFactory(serviceProvider),
-                    JobId,
-                    serviceProvider.GetService<ILogger<IFallbackMessageHandler<TMessage, TMessageContext>>>()));
         }
     }
 }
