@@ -39,17 +39,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             _logger = new XunitTestLogger<AzureServiceBusMessageRouter>(outputWriter);
         }
 
-        private AzureServiceBusMessageRouter CreateMessageRouter(ServiceBusMessageHandlerCollection collection, Action<AzureServiceBusMessageRouterOptions> configureOptions = null)
-        {
-            var options = new AzureServiceBusMessageRouterOptions();
-            configureOptions?.Invoke(options);
-
-            return new AzureServiceBusMessageRouter(
-                collection.Services.BuildServiceProvider(),
-                options,
-                _logger);
-        }
-
         [Fact]
         public async Task RouteMessage_WithDifferentMessageContext_SucceedsWithSameJobId()
         {
@@ -395,8 +384,18 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             Assert.Equal(messageCount, spyOrderV2MessageHandler.ProcessedMessages.Length);
         }
 
-       
-        
+
+        private AzureServiceBusMessageRouter CreateMessageRouter(ServiceBusMessageHandlerCollection collection, Action<AzureServiceBusMessageRouterOptions> configureOptions = null)
+        {
+            var options = new AzureServiceBusMessageRouterOptions();
+            configureOptions?.Invoke(options);
+
+            return new AzureServiceBusMessageRouter(
+                collection.Services.BuildServiceProvider(),
+                options,
+                _logger);
+        }
+
         [Fact]
         public void Create_WithoutServiceProvider_Fails()
         {
