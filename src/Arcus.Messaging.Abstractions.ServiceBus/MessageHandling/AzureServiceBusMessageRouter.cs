@@ -157,6 +157,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                         hasGoneThroughMessageHandler = true;
                         if (isProcessed)
                         {
+                            await PotentiallyAutoCompleteMessageAsync(messageReceiver, message, messageContext);
                             return MessageProcessingResult.Success(message.MessageId);
                         }
                     }
@@ -206,6 +207,26 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 }
 
                 return fallbackEncoding;
+            }
+        }
+
+        private async Task PotentiallyAutoCompleteMessageAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        {
+            if (ServiceBusOptions.AutoComplete)
+            {
+                try
+                {
+                    Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus in message pump '{JobId}'", message.MessageId, messageContext.JobId);
+                    await messageReceiver.CompleteMessageAsync(message);
+                }
+                catch (ServiceBusException exception) when (
+                    exception.Message.Contains("lock")
+                    && exception.Message.Contains("expired")
+                    && exception.Message.Contains("already")
+                    && exception.Message.Contains("removed"))
+                {
+                    Logger.LogTrace(exception, "Message '{MessageId}' on Azure Service Bus in message pump '{JobId}' does not need to be auto-completed, because it was already settled", message.MessageId, messageContext.JobId);
+                }
             }
         }
 

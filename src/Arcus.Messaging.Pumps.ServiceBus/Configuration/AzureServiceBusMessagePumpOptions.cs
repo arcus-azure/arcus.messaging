@@ -79,7 +79,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the indication whether or not messages should be automatically marked as completed if no exceptions occurred and processing has finished.
         /// </summary>
         /// <remarks>When turned off, clients have to explicitly mark the messages as completed.</remarks>
-        public bool AutoComplete { get; set; } = true;
+        [Obsolete("Will be removed in v4.0, please use " + nameof(Routing.AutoComplete) + " instead")]
+        public bool AutoComplete
+        {
+            get => Routing.AutoComplete;
+            set => Routing.AutoComplete = value;
+        }
 
         /// <summary>
         /// Gets or sets the flag to indicate whether or not to emit security events during the lifetime of the message pump.
