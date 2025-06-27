@@ -16,7 +16,14 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         private readonly ServiceBusReceiver _receiver;
         private readonly ServiceBusReceivedMessage _message;
 
-        private AzureServiceBusMessageContext(
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageContext"/> class.
+        /// </summary>
+        /// <param name="jobId"></param>
+        /// <param name="entityType"></param>
+        /// <param name="receiver"></param>
+        /// <param name="message"></param>
+        protected AzureServiceBusMessageContext(
             string jobId,
             ServiceBusEntityType entityType,
             ServiceBusReceiver receiver,
@@ -103,7 +110,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// Completes the Azure Service Bus message on Azure. This will delete the message from the service.
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        public async Task CompleteMessageAsync(CancellationToken cancellationToken)
+        public virtual async Task CompleteMessageAsync(CancellationToken cancellationToken)
         {
             EnsureServiceBusFields();
 
@@ -117,7 +124,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="deadLetterErrorDescription">The optional extra description of the dead letter error.</param>
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized correctly.</exception>
-        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+        public virtual async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
         {
             await DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties: null, cancellationToken);
         }
@@ -130,7 +137,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <param name="newMessageProperties">The properties to modify on the message during the dead lettering of the message.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+        public virtual async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
         {
             EnsureServiceBusFields();
 
@@ -148,7 +155,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="newMessageProperties">The properties to modify on the message during the abandoning of the message.</param>
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message context was not initialized correctly.</exception>
-        public async Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+        public virtual async Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
         {
             EnsureServiceBusFields();
 
