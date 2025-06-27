@@ -80,6 +80,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
                 Namespace = _serviceBusSessionProcessor.FullyQualifiedNamespace;
                 _serviceBusSessionProcessor.ProcessMessageAsync += ProcessMessageAsync;
+                _serviceBusSessionProcessor.ProcessErrorAsync += ProcessErrorAsync;
 
                 await _serviceBusSessionProcessor.StartProcessingAsync(stoppingToken);
             }
@@ -160,6 +161,18 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     Logger.LogTrace("Message '{MessageId}' on Azure Service Bus {EntityType} message pump '{JobId}' does not need to be auto-completed, because it was already settled", messageContext.MessageId, Settings.ServiceBusEntity, JobId);
                 }
             }
+        }
+
+        private Task ProcessErrorAsync(ProcessErrorEventArgs arg)
+        {
+            if (arg.Exception is null)
+            {
+                Logger.LogWarning("Thrown exception on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", Settings.ServiceBusEntity, JobId);
+                return Task.CompletedTask;
+            }
+
+            Logger.LogCritical(arg.Exception, "Message pump '{JobId}' was unable to process message: {Message}", JobId, arg.Exception.Message);
+            return Task.CompletedTask;
         }
 
         private MessageCorrelationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message)
