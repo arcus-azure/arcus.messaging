@@ -31,8 +31,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             {
                 options.AddServiceBusTopicMessagePump(TopicName, topicSubscription.Name, HostName, new DefaultAzureCredential())
                        .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageBodyFilter(body => body is null))
-                       .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageBodyFilter(body => body.Id != null))
-                       .WithMessageHandler<PassThruOrderMessageHandler, Order, AzureServiceBusMessageContext>((Order _) => false);
+                       .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageBodyFilter(body => body.Id != null));
             });
         }
 
@@ -205,17 +204,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                     AssertReceivedOrderEventDataForW3C(message, eventData);
                 }); 
             }
-        }
-
-        [Fact]
-        public async Task ServiceBusMessagePumpWithFallback_PublishServiceBusMessage_MessageSuccessfullyProcessed()
-        {
-            await TestServiceBusMessageHandlingAsync(Queue, options =>
-            {
-                options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
-                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
-                       .WithFallbackMessageHandler<WriteOrderToDiskFallbackMessageHandler>();
-            });
         }
     }
 }

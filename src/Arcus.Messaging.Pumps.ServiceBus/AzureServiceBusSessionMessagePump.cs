@@ -53,11 +53,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         internal AzureServiceBusSessionMessagePumpSettings Settings { get; }
 
         /// <summary>
-        /// Gets the type of the Azure Service Bus entity for which this message pump is configured.
-        /// </summary>
-        public ServiceBusEntityType EntityType => Settings.ServiceBusEntity;
-
-        /// <summary>
         /// Gets the user-configurable options of the message pump.
         /// </summary>
         public AzureServiceBusSessionMessagePumpOptions Options => Settings.Options;
@@ -91,11 +86,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
             {
 #pragma warning disable CS0618 // Type or member is obsolete: the entity type will be moved down to this message pump in v3.0.
-                Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' was cancelled", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
+                Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' was cancelled", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace);
             }
             catch (Exception exception)
             {
-                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", Settings.ServiceBusEntity, JobId, EntityPath, Namespace);
+                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace);
             }
             finally
             {

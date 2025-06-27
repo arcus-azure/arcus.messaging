@@ -46,7 +46,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var order = OrderGenerator.Generate();
             var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
             var context = AzureServiceBusMessageContext.Create(jobId, ServiceBusEntityType.Unknown, Mock.Of<ServiceBusReceiver>(), message);
-            MessageCorrelationInfo correlationInfo = message.GetCorrelationInfo();
+            var correlationInfo = new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}");
 
             MessageProcessingResult result = await router.RouteMessageAsync(Mock.Of<ServiceBusReceiver>(), message, context, correlationInfo, CancellationToken.None);
             Assert.True(result.IsSuccessful, result.ErrorMessage);
@@ -70,7 +70,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var order = OrderGenerator.Generate();
             var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
             var context = AzureServiceBusMessageContextFactory.Generate();
-            var correlationInfo = message.GetCorrelationInfo();
+            var correlationInfo = new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}");
 
             // Act / Assert
             MessageProcessingResult result = await router.RouteMessageAsync(receiver.Object, message, context, correlationInfo, CancellationToken.None);
@@ -278,18 +278,18 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var serializer = new TestMessageBodySerializer(expectedBody, OrderGenerator.Generate());
 
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
-                          messageContextFilter: ctx => ctx != null,
-                          messageBodyFilter: body => body != null,
-                          messageBodySerializer: new TestMessageBodySerializer(expectedBody, new Customer()),
-                          implementationFactory: _ => ignoredHandler3)
+                          implementationFactory: _ => ignoredHandler3,
+                          options => options.AddMessageContextFilter(ctx => ctx != null)
+                                            .AddMessageBodyFilter(body => body != null)
+                                            .AddMessageBodySerializer(new TestMessageBodySerializer(expectedBody, new Customer())))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(
                           implementationFactory: _ => ignoredHandler2,
                           opt => opt.AddMessageBodyFilter(body => body is null))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
-                          messageBodySerializer: serializer,
-                          messageBodyFilter: body => body.Customer != null,
-                          messageContextFilter: ctx => ctx.MessageId.StartsWith("message-id"),
-                          implementationFactory: _ => spyHandler)
+                          implementationFactory: _ => spyHandler,
+                          options => options.AddMessageBodySerializer(serializer)
+                                            .AddMessageBodyFilter(body => body.Customer != null)
+                                            .AddMessageContextFilter(ctx => ctx.MessageId.StartsWith("message-id")))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>()
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(
                           implementationFactory: _ => ignoredHandler1);
@@ -309,23 +309,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             Assert.False(ignoredHandler1.IsProcessed);
             Assert.False(ignoredHandler2.IsProcessed);
             Assert.False(ignoredHandler3.IsProcessed);
-        }
-
-        [Fact]
-        public void RouteMessage_WithCustomRouter_RegistersCustomRouter()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            var collection = new ServiceBusMessageHandlerCollection(services);
-            collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>();
-
-            // Act
-            services.AddServiceBusMessageRouting(serviceProvider =>
-                new TestAzureServiceBusMessageRouter(serviceProvider, NullLogger.Instance));
-
-            // Assert
-            IServiceProvider provider = services.BuildServiceProvider();
-            Assert.IsType<TestAzureServiceBusMessageRouter>(provider.GetRequiredService<IAzureServiceBusMessageRouter>());
         }
 
         [Theory]
@@ -410,27 +393,8 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             Assert.Equal(messageCount, spyOrderV2MessageHandler.ProcessedMessages.Length);
         }
 
-        [Fact]
-        public void CreateWithoutOptionsAndLogger_WithoutServiceProvider_Fails()
-        {
-            Assert.ThrowsAny<ArgumentException>(
-                () => new AzureServiceBusMessageRouter(serviceProvider: null));
-        }
-
-        [Fact]
-        public void CreateWithoutOptions_WithoutServiceProvider_Fails()
-        {
-            Assert.ThrowsAny<ArgumentException>(
-                () => new AzureServiceBusMessageRouter(serviceProvider: null, logger: NullLogger<AzureServiceBusMessageRouter>.Instance));
-        }
-
-        [Fact]
-        public void CreateWithoutLogger_WithoutServiceProvider_Fails()
-        {
-            Assert.ThrowsAny<ArgumentException>(
-                () => new AzureServiceBusMessageRouter(serviceProvider: null, options: new AzureServiceBusMessageRouterOptions()));
-        }
-
+       
+        
         [Fact]
         public void Create_WithoutServiceProvider_Fails()
         {

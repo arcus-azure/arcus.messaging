@@ -9,15 +9,13 @@ using Arcus.Observability.Telemetry.Core;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Serilog.Context;
 using static Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingError;
-using ServiceBusFallbackMessageHandler = Arcus.Messaging.Abstractions.MessageHandling.FallbackMessageHandler<Azure.Messaging.ServiceBus.ServiceBusReceivedMessage, Arcus.Messaging.Abstractions.ServiceBus.AzureServiceBusMessageContext>;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
     /// <summary>
-    /// Represents an <see cref="IMessageRouter"/> that can route Azure Service Bus <see cref="ServiceBusReceivedMessage"/>s.
+    /// Represents an <see cref="IAzureServiceBusMessageRouter"/> that can route Azure Service Bus <see cref="ServiceBusReceivedMessage"/>s.
     /// </summary>
     public class AzureServiceBusMessageRouter : MessageRouter, IAzureServiceBusMessageRouter
     {
@@ -29,68 +27,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
         public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options, ILogger<AzureServiceBusMessageRouter> logger)
-            : base(serviceProvider, options, (ILogger) logger)
-        {
-            ServiceBusOptions = options;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
-        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
-        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options)
-            : this(serviceProvider, options, NullLogger.Instance)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
-        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
-        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger<AzureServiceBusMessageRouter> logger)
-            : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), (ILogger) logger)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
-        public AzureServiceBusMessageRouter(IServiceProvider serviceProvider)
-            : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), NullLogger.Instance)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
-        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
-        protected AzureServiceBusMessageRouter(IServiceProvider serviceProvider, ILogger logger)
-            : this(serviceProvider, new AzureServiceBusMessageRouterOptions(), logger)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
-        /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
-        /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 for simplified message router initialization")]
-        protected AzureServiceBusMessageRouter(IServiceProvider serviceProvider, AzureServiceBusMessageRouterOptions options, ILogger logger)
-            : base(serviceProvider, options, logger ?? NullLogger<AzureServiceBusMessageRouter>.Instance)
+            : base(serviceProvider, options, logger)
         {
             ServiceBusOptions = options;
         }
@@ -101,9 +38,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         protected AzureServiceBusMessageRouterOptions ServiceBusOptions { get; }
 
         /// <summary>
-        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// and optionally through a <see cref="IAzureServiceBusFallbackMessageHandler"/>
-        /// if none of the message handlers were able to process the <paramref name="message"/>.
+        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.
         /// </summary>
         /// <param name="messageReceiver">
         ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>.
@@ -129,9 +64,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         }
 
         /// <summary>
-        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s
-        /// and optionally through a registered <see cref="IAzureServiceBusFallbackMessageHandler"/>
-        /// if none of the message handlers were able to process the <paramref name="message"/>.
+        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.
         /// </summary>
         /// <param name="messageReceiver">
         ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>.
@@ -178,11 +111,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
             try
             {
-#pragma warning disable CS0618 // Type or member is obsolete: will be refactored when moving towards v3.0.
-                var accessor = serviceScope.ServiceProvider.GetService<IMessageCorrelationInfoAccessor>();
-#pragma warning restore CS0618 // Type or member is obsolete
-                accessor?.SetCorrelationInfo(correlationInfo);
-
                 MessageProcessingResult routingResult = await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
 
 #pragma warning disable CS0618 // Type or member is obsolete: specific telemetry calls will be removed in v3.0.
@@ -224,11 +152,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     MessageResult result = await DeserializeMessageForHandlerAsync(messageBody, messageContext, messageHandler);
                     if (result.IsSuccess)
                     {
-#pragma warning disable CS0618 // Type or member is obsolete: Azure Service bus-specific message handler templates will be removed in v3.0.
-                        var args = new ProcessMessageEventArgs(message, messageReceiver, cancellationToken);
-                        SetServiceBusPropertiesForSpecificOperations(messageHandler, args, messageContext);
-#pragma warning restore CS0618 // Type or member is obsolete
-
                         bool isProcessed = await messageHandler.ProcessMessageAsync(result.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
 
                         hasGoneThroughMessageHandler = true;
@@ -239,40 +162,14 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                     }
                 }
 
-#pragma warning disable CS0618 // Type or member is obsolete: fallback message handlers will be removed in v3.0.
-                ServiceBusFallbackMessageHandler[] serviceBusFallbackHandlers =
-                    GetAvailableFallbackMessageHandlersByContext<ServiceBusReceivedMessage, AzureServiceBusMessageContext>(messageContext);
-
-                FallbackMessageHandler<string, MessageContext>[] generalFallbackHandlers =
-                    GetAvailableFallbackMessageHandlersByContext<string, MessageContext>(messageContext);
-#pragma warning restore CS0618 // Type or member is obsolete
-
-                bool fallbackAvailable = serviceBusFallbackHandlers.Length > 0 || generalFallbackHandlers.Length > 0;
-
-                if (hasGoneThroughMessageHandler && !fallbackAvailable)
+                if (hasGoneThroughMessageHandler)
                 {
                     await AbandonMessageMatchedHandlerFailedAsync(messageContext);
                     return MessageProcessingResult.Failure(message.MessageId, MatchedHandlerFailed, "Failed to process Azure Service Bus message in pump as the matched handler did not successfully processed the message and no fallback message handlers were configured");
                 }
 
-                if (!hasGoneThroughMessageHandler && !fallbackAvailable)
-                {
-                    await DeadLetterMessageNoHandlerMatchedAsync(messageContext);
-                    return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process message in pump as no message handler was matched against the message and no fallback message handlers were configured");
-                }
-
-#pragma warning disable CS0618 // Type or member is obsolete: general message routing will be removed in v3.0.
-                bool isProcessedByGeneralFallback = await TryFallbackProcessMessageAsync(messageBody, messageContext, correlationInfo, cancellationToken);
-#pragma warning restore CS0618 // Type or member is obsolete
-                if (isProcessedByGeneralFallback)
-                {
-                    return MessageProcessingResult.Success(message.MessageId);
-                }
-
-#pragma warning disable CS0618 // Type or member is obsolete: fallback message handling will be removed in v3.0.
-                return await TryServiceBusFallbackMessageAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
-#pragma warning restore CS0618 // Type or member is obsolete
-
+                await DeadLetterMessageNoHandlerMatchedAsync(messageContext);
+                return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process Azure Service Bus message in pump as no message handler was matched against the message");
             }
             catch (Exception exception)
             {
@@ -326,121 +223,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         {
             Logger.LogDebug("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully process the message and no fallback message handlers configured, abandoning message!", messageContext.MessageId, messageContext.JobId);
             await messageContext.AbandonMessageAsync(null, CancellationToken.None);
-        }
-
-        /// <summary>
-        /// Sets the Azure Service Bus properties on registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.
-        /// </summary>
-        /// <param name="messageHandler">The message handler on which the Service Bus properties should be set.</param>
-        /// <param name="eventArgs">The event args of the incoming Service Bus message.</param>
-        /// <param name="messageContext">The context in which the received Service Bus message is processed.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageHandler"/> or <paramref name="messageContext"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(AzureServiceBusMessageContext) + " instead")]
-        protected void SetServiceBusPropertiesForSpecificOperations(
-            MessageHandler messageHandler,
-            ProcessMessageEventArgs eventArgs,
-            AzureServiceBusMessageContext messageContext)
-        {
-            if (messageHandler is null)
-            {
-                throw new ArgumentNullException(nameof(messageHandler));
-            }
-
-            if (messageContext is null)
-            {
-                throw new ArgumentNullException(nameof(messageContext));
-            }
-
-            object messageHandlerInstance = messageHandler.GetMessageHandlerInstance();
-            Type messageHandlerType = messageHandlerInstance.GetType();
-
-            if (messageHandlerInstance is AzureServiceBusMessageHandlerTemplate template)
-            {
-                if (eventArgs is null)
-                {
-                    Logger.LogWarning("Message handler '{MessageHandlerType}' uses specific Azure Service Bus operations, but is not able to be configured during message routing because the message router didn't receive a Azure Service Bus message receiver; use other '{RouteMessageOverload}' method overload", messageHandlerType.Name, nameof(RouteMessageAsync));
-                }
-                else
-                {
-                    template.SetProcessMessageEventArgs(eventArgs);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Tries to process the unhandled <paramref name="message"/> through an potential registered <see cref="IAzureServiceBusFallbackMessageHandler"/> instance.
-        /// </summary>
-        /// <param name="messageReceiver">
-        ///     The instance that can receive Azure Service Bus <see cref="ServiceBusReceivedMessage"/>; used within <see cref="IAzureServiceBusFallbackMessageHandler"/>s with Azure Service Bus specific operations.
-        /// </param>
-        /// <param name="message">The message that was received by the <paramref name="messageReceiver"/>.</param>
-        /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
-        /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
-        /// <param name="cancellationToken">The token to cancel the message processing.</param>
-        /// <exception cref="ArgumentNullException">
-        ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
-        /// </exception>
-        [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(AzureServiceBusMessageContext) + " instead of defining fallback message handlers")]
-        protected async Task<MessageProcessingResult> TryServiceBusFallbackMessageAsync(
-            ServiceBusReceiver messageReceiver,
-            ServiceBusReceivedMessage message,
-            AzureServiceBusMessageContext messageContext,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellationToken)
-        {
-            if (message is null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-
-            if (messageContext is null)
-            {
-                throw new ArgumentNullException(nameof(messageContext));
-            }
-
-            if (correlationInfo is null)
-            {
-                throw new ArgumentNullException(nameof(correlationInfo));
-            }
-
-            ServiceBusFallbackMessageHandler[] fallbackHandlers =
-                GetAvailableFallbackMessageHandlersByContext<ServiceBusReceivedMessage, AzureServiceBusMessageContext>(messageContext);
-
-            foreach (ServiceBusFallbackMessageHandler handler in fallbackHandlers)
-            {
-                if (handler.MessageHandlerInstance is AzureServiceBusMessageHandlerTemplate template)
-                {
-                    if (messageReceiver is null)
-                    {
-                        Logger.LogWarning("Fallback message handler '{MessageHandlerType}' uses specific Azure Service Bus operations, but is unable to be configured during message routing because the message router didn't receive a Azure Service Bus message receiver; use other '{MethodName}' method overload", handler.MessageHandlerType.Name, nameof(RouteMessageAsync));
-                    }
-                    else
-                    {
-                        var args = new ProcessMessageEventArgs(message, messageReceiver, cancellationToken);
-                        template.SetProcessMessageEventArgs(args);
-                    }
-                }
-
-                string fallbackMessageHandlerTypeName = handler.MessageHandlerType.Name;
-                Logger.LogTrace("Fallback on registered '{FallbackMessageHandlerType}' because none of the message handlers were able to process the message", fallbackMessageHandlerTypeName);
-
-                bool result = await handler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                if (result)
-                {
-                    Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' has processed the message", fallbackMessageHandlerTypeName);
-                    return MessageProcessingResult.Success(message.MessageId);
-                }
-
-                Logger.LogTrace("Fallback message handler '{FallbackMessageHandlerType}' was not able to process the message", fallbackMessageHandlerTypeName);
-            }
-
-            if (messageReceiver != null)
-            {
-                Logger.LogWarning("No fallback message handler processed the Azure Service Bus message '{MessageId}' in pump '{JobId}', abandoning message!", message.MessageId, messageContext.JobId);
-                await messageReceiver.AbandonMessageAsync(message);
-            }
-
-            return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "No fallback message handler processed the message");
         }
     }
 }

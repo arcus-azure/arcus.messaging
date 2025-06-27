@@ -27,16 +27,15 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
 
             // Act
             collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                messageContextFilter: context =>
+                options => options.AddMessageContextFilter(context =>
                 {
                     Assert.Same(expectedContext, context);
                     return matchesContext;
-                },
-                messageBodyFilter: body =>
+                }).AddMessageBodyFilter(body =>
                 {
                     Assert.Same(expectedMessage, body);
                     return matchesBody;
-                });
+                }));
 
             // Assert
             IServiceProvider provider = collection.Services.BuildServiceProvider();
@@ -47,32 +46,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
             Assert.NotSame(expectedHandler, handler.GetMessageHandlerInstance());
             Assert.Equal(matchesContext, handler.CanProcessMessageBasedOnContext(expectedContext));
             Assert.Equal(matchesBody, handler.CanProcessMessageBasedOnMessage(expectedMessage));
-        }
-
-        [Fact]
-        public void WithServiceBusMessageHandler_WithoutMessageContextFilterWithMessageBodyFilter_Fails()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    messageContextFilter: null,
-                    messageBodyFilter: body => true));
-        }
-
-        [Fact]
-        public void WithServiceBusMessageHandler_WithMessageContextFilterWithoutMessageBodyFilter_Fails()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    messageContextFilter: context => true,
-                    messageBodyFilter: null));
         }
 
         [Theory]
@@ -90,17 +63,16 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
 
             // Act
             collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                messageContextFilter: context =>
+                implementationFactory: _ => expectedHandler,
+                options => options.AddMessageContextFilter(context =>
                 {
                     Assert.Same(expectedContext, context);
                     return matchesContext;
-                },
-                messageBodyFilter: body =>
+                }).AddMessageBodyFilter(body =>
                 {
                     Assert.Same(expectedMessage, body);
                     return matchesBody;
-                },
-                implementationFactory: serviceProvider => expectedHandler);
+                }));
 
             // Assert
             IServiceProvider provider = collection.Services.BuildServiceProvider();
@@ -111,48 +83,6 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
             Assert.Same(expectedHandler, handler.GetMessageHandlerInstance());
             Assert.Equal(matchesContext, handler.CanProcessMessageBasedOnContext(expectedContext));
             Assert.Equal(matchesBody, handler.CanProcessMessageBasedOnMessage(expectedMessage));
-        }
-
-        [Fact]
-        public void WithServiceBusMessageHandler_WithoutMessageContextFilterWithMessageBodyFilterWithImplementationFactory_Fails()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    messageContextFilter: null,
-                    messageBodyFilter: body => true,
-                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler()));
-        }
-
-        [Fact]
-        public void WithServiceBusMessageHandler_WithMessageContextFilterWithoutMessageBodyFilterWithImplementationFactory_Fails()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    messageContextFilter: context => true,
-                    messageBodyFilter: null,
-                    implementationFactory: serviceProvider => new TestServiceBusMessageHandler()));
-        }
-
-        [Fact]
-        public void WithServiceBusMessageHandler_WithMessageContextFilterWithMessageBodyFilterWithoutImplementationFactory_Fails()
-        {
-            // Arrange
-            var collection = new ServiceBusMessageHandlerCollection(new ServiceCollection());
-
-            // Act / Assert
-            Assert.ThrowsAny<ArgumentException>(
-                () => collection.WithServiceBusMessageHandler<TestServiceBusMessageHandler, TestMessage>(
-                    messageContextFilter: context => true,
-                    messageBodyFilter: body => false,
-                    implementationFactory: null));
         }
     }
 }
