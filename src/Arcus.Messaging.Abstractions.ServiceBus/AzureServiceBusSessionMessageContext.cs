@@ -25,7 +25,13 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <summary>
         /// Gets the SessionId that is associated with the message that is being processed.
         /// </summary>
-        public string SessionId { get { return _processSessionMessageEventArgs.SessionId; } }
+        public string SessionId
+        {
+            get
+            {
+                return _processSessionMessageEventArgs.SessionId;
+            }
+        }
 
         /// <summary>
         /// Creates a new instance of the <see cref="AzureServiceBusSessionMessageContext"/> based on the current Azure Service bus situation.
