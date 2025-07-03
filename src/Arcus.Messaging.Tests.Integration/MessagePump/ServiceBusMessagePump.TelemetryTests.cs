@@ -133,7 +133,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             return await Poll.Target<Activity, XunitException>(() =>
             {
                 var requestDependencies = activities.Where(a => a.OperationName == operationName).ToArray();
-                Assert.NotEmpty(requestDependencies);
+                Assert.True(requestDependencies.Length > 0,
+                    $"no request activities found with operation name '{operationName}' in" +
+                    $"[{string.Join(", ", activities.Select(a => a.OperationName))}]");
                 
                 return AssertX.Any(requestDependencies, request =>
                 {
@@ -150,7 +152,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             return await Poll.Target<Activity, XunitException>(() =>
             {
                 var dependencyActivities = activities.Where(a => a.OperationName == operationName).ToArray();
-                Assert.NotEmpty(dependencyActivities);
+                Assert.True(dependencyActivities.Length > 0, 
+                    $"no dependency activities found with operation name '{operationName}' in " +
+                    $"[{string.Join(", ", activities.Select(a => a.OperationName))}]");
 
                 return AssertX.Any(dependencyActivities, dependency =>
                 {
