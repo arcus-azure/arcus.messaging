@@ -83,7 +83,7 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
 
             protected override void StopOperation(bool isSuccessful, DateTimeOffset startTime, TimeSpan duration)
             {
-                _logger.LogTrace("Stop Azure Service Bus request '{OperationName}' operation (isSuccessful={IsSuccessful}", _activity.OperationName, isSuccessful);
+                _logger.LogTrace("Stop Azure Service Bus request '{OperationName}' operation (isSuccessful={IsSuccessful})", _activity.OperationName, isSuccessful);
 
                 _activity.SetStatus(isSuccessful ? ActivityStatusCode.Ok : ActivityStatusCode.Error);
                 _activity.SetEndTime(_activity.StartTimeUtc.Add(duration));
