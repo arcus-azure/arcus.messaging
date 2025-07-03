@@ -4,6 +4,7 @@ using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
 using Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -26,7 +27,12 @@ namespace Microsoft.Extensions.DependencyInjection
             ArgumentNullException.ThrowIfNull(handlers);
             ArgumentNullException.ThrowIfNull(activitySource);
 
-            handlers.Services.TryAddSingleton<IServiceBusMessageCorrelationScope>(new OpenTelemetryServiceBusMessageCorrelationScope(activitySource));
+            handlers.Services.TryAddSingleton<IServiceBusMessageCorrelationScope>(serviceProvider =>
+            {
+                var logger = serviceProvider.GetService<ILogger<OpenTelemetryServiceBusMessageCorrelationScope>>();
+                return new OpenTelemetryServiceBusMessageCorrelationScope(activitySource, logger);
+            });
+
             return handlers;
         }
     }

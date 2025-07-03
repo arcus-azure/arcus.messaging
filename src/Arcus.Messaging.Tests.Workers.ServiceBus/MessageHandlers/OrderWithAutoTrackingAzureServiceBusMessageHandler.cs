@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -20,16 +19,16 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
         /// Initializes a new instance of the <see cref="OrderWithAutoTrackingAzureServiceBusMessageHandler" /> class.
         /// </summary>
         public OrderWithAutoTrackingAzureServiceBusMessageHandler(ILogger<OrderWithAutoTrackingAzureServiceBusMessageHandler> logger)
+            : this(isSuccessful: true, logger)
         {
-            _logger = logger;
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OrderWithAutoTrackingAzureServiceBusMessageHandler"/> class.
         /// </summary>
         public OrderWithAutoTrackingAzureServiceBusMessageHandler(bool isSuccessful, ILogger<OrderWithAutoTrackingAzureServiceBusMessageHandler> logger)
-            : this(logger)
         {
+            _logger = logger;
             _isSuccessful = isSuccessful;
         }
 

@@ -132,8 +132,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             return await Poll.Target<Activity, XunitException>(() =>
             {
-                Assert.NotEmpty(activities);
-                return AssertX.Any(activities.Where(a => a.OperationName == operationName), request =>
+                var requestDependencies = activities.Where(a => a.OperationName == operationName).ToArray();
+                Assert.NotEmpty(requestDependencies);
+                
+                return AssertX.Any(requestDependencies, request =>
                 {
                     Assert.True(IsSuccessful == request.Status is ActivityStatusCode.Ok, $"request for operation '{operationName}' did not match the expected status, expected '{(IsSuccessful ? ActivityStatusCode.Ok : ActivityStatusCode.Error)}' but got '{request.Status}'");
                     Assert.Contains(request.Tags, tag => tag is { Key: "ServiceBus-EntityType", Value: "Queue" });
@@ -147,8 +149,10 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             return await Poll.Target<Activity, XunitException>(() =>
             {
-                Assert.NotEmpty(activities);
-                return AssertX.Any(activities.Where(a => a.OperationName == operationName), dependency =>
+                var dependencyActivities = activities.Where(a => a.OperationName == operationName).ToArray();
+                Assert.NotEmpty(dependencyActivities);
+
+                return AssertX.Any(dependencyActivities, dependency =>
                 {
                     Assert.True(filter is null || filter(dependency), $"dependency for operation '{operationName}' did not match the given custom filter assertion, please check whether the OpenTelemetry correlation system did add all the necessary properties");
                 });

@@ -5,6 +5,8 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
 using Arcus.Messaging.Abstractions.Telemetry;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
 {
@@ -15,14 +17,16 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
     internal class OpenTelemetryServiceBusMessageCorrelationScope : IServiceBusMessageCorrelationScope
     {
         private readonly ActivitySource _activitySource;
+        private readonly ILogger _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OpenTelemetryServiceBusMessageCorrelationScope"/> class.
         /// </summary>
-        internal OpenTelemetryServiceBusMessageCorrelationScope(ActivitySource activitySource)
+        internal OpenTelemetryServiceBusMessageCorrelationScope(ActivitySource activitySource, ILogger<OpenTelemetryServiceBusMessageCorrelationScope> logger)
         {
             ArgumentNullException.ThrowIfNull(activitySource);
             _activitySource = activitySource;
+            _logger = logger ?? NullLogger<OpenTelemetryServiceBusMessageCorrelationScope>.Instance;
         }
 
         /// <summary>
@@ -35,6 +39,7 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
             ArgumentNullException.ThrowIfNull(messageContext);
             ArgumentNullException.ThrowIfNull(options);
 
+            _logger.LogTrace("Start Azure Service Bus request '{OperationName}' operation...", options.OperationName);
             (string transactionId, string operationParentId) = messageContext.Properties.GetTraceParent();
 
             ActivityContext context = new(
@@ -61,21 +66,25 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
             activity.SetTag("ServiceBus-Entity", messageContext.EntityPath);
             activity.SetTag("ServiceBus-EntityType", messageContext.EntityType.ToString());
 
-            return new OpenTelemetryMessageOperationResult(activity);
+            return new OpenTelemetryMessageOperationResult(activity, _logger);
         }
 
         private sealed class OpenTelemetryMessageOperationResult : MessageOperationResult
         {
             private readonly Activity _activity;
+            private readonly ILogger _logger;
 
-            internal OpenTelemetryMessageOperationResult(Activity activity)
+            internal OpenTelemetryMessageOperationResult(Activity activity, ILogger logger)
                 : base(new MessageCorrelationInfo(activity.TraceId.ToString(), activity.SpanId.ToString(), activity.ParentSpanId.ToString()))
             {
                 _activity = activity;
+                _logger = logger;
             }
 
             protected override void StopOperation(bool isSuccessful, DateTimeOffset startTime, TimeSpan duration)
             {
+                _logger.LogTrace("Stop Azure Service Bus request '{OperationName}' operation (isSuccessful={IsSuccessful}", _activity.OperationName, isSuccessful);
+
                 _activity.SetStatus(isSuccessful ? ActivityStatusCode.Ok : ActivityStatusCode.Error);
                 _activity.SetEndTime(_activity.StartTimeUtc.Add(duration));
                 _activity.Dispose();
