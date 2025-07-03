@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Xunit;
+using Xunit.Sdk;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 {
@@ -12,6 +14,30 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
     /// </summary>
     public static class AssertX
     {
+        public static T Any<T>(IEnumerable<T> collection, Action<T> action)
+        {
+            Stack<(int index, object item, Exception exception)> failures = new();
+            T[] array = collection.ToArray();
+            
+            for (int index = 0; index < array.Length; ++index)
+            {
+                T item = array[index];
+                try
+                {
+                    action(item);
+                    return item;
+                }
+                catch (Exception ex)
+                {
+                    failures.Push((index, item, ex));
+                }
+            }
+
+            throw new XunitException(
+                $"None of the {array.Length} item(s) matches against the given action: {Environment.NewLine}" +
+                $"{string.Join(Environment.NewLine, failures.Select(f => $"- [{f.index}] {f.item}: {f.exception}"))}");
+        }
+
         public static RequestTelemetry GetRequestFrom(
             IEnumerable<ITelemetry> telemetries,
             Predicate<RequestTelemetry> filter)

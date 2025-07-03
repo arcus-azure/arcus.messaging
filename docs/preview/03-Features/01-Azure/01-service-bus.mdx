@@ -2,6 +2,9 @@
 sidebar_label: Service Bus
 ---
 
+import Tabs from '@theme/Tabs'; 
+import TabItem from '@theme/TabItem';
+
 # Azure Service Bus messaging
 The `Arcus.Messaging.Pumps.ServiceBus` library provides a way to process Azure Service Bus messages on queues/topic subscriptions via custom routed *message handlers*, instead of interacting with the [`ServiceBusReceiver`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceiver) yourself. 
 
@@ -138,11 +141,51 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
     // this job instance in a multi-instance deployment (default: generated GUID).
     options.JobId = Guid.NewGuid().ToString();
 
+    // The name for the request operation which will be used in the chosen message correlation system.
+    // Default: Process  
+    options.Telemetry.OperationName = "ReceiveOrder";
+
     // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
     // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
     options.Routing.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
 });
 ```
+
+#### Correlation system
+The following correlation systems are available when registering the message pump. These systems will use the incoming Azure Service Bus message to start a request operation. A `MessageCorrelationInfo` model is passed to your registered message handlers, which represents the current request operation. All interactions to dependent systems should be children of this operation for a transactional service-to-service relationship.
+
+<Tabs groupId="correlation-systems">
+<TabItem value="open-telemetry" label="OpenTelemetry">
+
+```powershell
+PS> Install-Package -Name Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
+```
+
+Make sure to include the following line to your message pump registration:
+```diff
++ ActivitySource applicationSource = new("<activity-source-name>");
+
+services.AddServiceBusTopicMessagePump(...)
++       .UseServiceBusOpenTelemetryRequestTracking(applicationSource)           
+        .WithServiceBusMessageHandler<...>()
+        .WithServiceBusMessageHandler<...>();
+```
+
+Now Arcus will use the OpenTelemetry approach to track Azure Service Bus messages. Make sure that the `ActivitySource` that is passed, is also tracked by OpenTelemetry:
+```csharp
+IServiceCollection services = ...
+
+services.AddOpenTelemetry()
+        .AddTraces(traces =>
+        {
+            traces.AddSource("<activity-source-name>");
+        });
+```
+
+> 🔗 [More info on OpenTelemetry on Azure](https://learn.microsoft.com/en-us/azure/azure-monitor/app/opentelemetry) 
+
+</TabItem>
+</Tabs>
 
 ### Message handler routing customization
 The following routing options are available when registering an Azure Service Bus message handler on a message pump.
@@ -265,7 +308,9 @@ Both the recovery period after the circuit is open and the interval between mess
 }
 ```
 
-#### 🔔 Get notified on a circuit breaker state transition
+<details>
+<summary>**🔔 Get notified on a circuit breaker state transition**</summary>
+
 To get notified on circuit-breaker state transitions, you can register one or more event handlers on a message pump.
 
 These event handlers should implement the `ICircuitBreakerEventHandler` interface:
@@ -294,3 +339,4 @@ services.AddServiceBus[Queue/Topic]MessagePump(...)
         .WithCircuitBreakerStateChangedEventHandler<MyFirstCircuitBreakerEventHandler>()
         .WithCircuitBreakerStateChangedEventHandler<MySecondCircuitBreakerEventHandler>();
 ```
+</details>

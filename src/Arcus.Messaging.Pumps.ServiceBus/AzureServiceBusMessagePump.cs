@@ -7,6 +7,8 @@ using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
+using Arcus.Messaging.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.Abstractions;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Azure.Messaging.ServiceBus;
@@ -419,10 +421,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
             }
 
-            using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
             var messageContext = AzureServiceBusMessageContext.Create(JobId, Settings.ServiceBusEntity, _messageReceiver, message);
+            using MessageOperationResult correlationResult = DetermineMessageCorrelation(message, messageContext);
 
-            MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
+            MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.Correlation, cancellationToken);
+            correlationResult.IsSuccessful = routingResult.IsSuccessful;
 
             if (routingResult.IsSuccessful && Settings.Options.AutoComplete)
             {
@@ -445,13 +448,35 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             return routingResult;
         }
 
-        private MessageCorrelationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message)
+        private MessageOperationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
         {
-            (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
-            var client = ServiceProvider.GetRequiredService<TelemetryClient>();
+            var correlationScope = ServiceProvider.GetService<IServiceBusMessageCorrelationScope>();
+            if (correlationScope is null)
+            {
+                (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
+                var client = ServiceProvider.GetRequiredService<TelemetryClient>();
 
-            return MessageCorrelationResult.Create(client, transactionId, operationParentId);
+                var deprecatedResult = MessageCorrelationResult.Create(client, transactionId, operationParentId);
+                return new W3CAdapterMessageOperationResult(deprecatedResult);
+            }
 
+            return correlationScope.StartOperation(messageContext, Options.Telemetry);
+        }
+
+        [Obsolete("Will be removed once " + nameof(MessageCorrelationResult) + " is removed")]
+        private sealed class W3CAdapterMessageOperationResult : MessageOperationResult
+        {
+            private readonly MessageCorrelationResult _deprecatedResult;
+
+            internal W3CAdapterMessageOperationResult(MessageCorrelationResult deprecatedResult) : base(deprecatedResult.CorrelationInfo)
+            {
+                _deprecatedResult = deprecatedResult;
+            }
+
+            protected override void StopOperation(bool isSuccessful, DateTimeOffset startTime, TimeSpan duration)
+            {
+                _deprecatedResult.Dispose();
+            }
         }
 
         private static async Task UntilCancelledAsync(CancellationToken cancellationToken)

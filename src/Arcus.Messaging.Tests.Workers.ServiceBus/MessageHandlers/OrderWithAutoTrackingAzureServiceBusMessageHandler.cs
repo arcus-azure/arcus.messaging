@@ -13,6 +13,7 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
 {
     public class OrderWithAutoTrackingAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<Order>
     {
+        private readonly bool _isSuccessful;
         private readonly ILogger<OrderWithAutoTrackingAzureServiceBusMessageHandler> _logger;
 
         /// <summary>
@@ -23,6 +24,15 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OrderWithAutoTrackingAzureServiceBusMessageHandler"/> class.
+        /// </summary>
+        public OrderWithAutoTrackingAzureServiceBusMessageHandler(bool isSuccessful, ILogger<OrderWithAutoTrackingAzureServiceBusMessageHandler> logger)
+            : this(logger)
+        {
+            _isSuccessful = isSuccessful;
+        }
+
         public Task ProcessMessageAsync(
             Order message,
             AzureServiceBusMessageContext messageContext,
@@ -31,6 +41,12 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
         {
             _logger.LogAzureKeyVaultDependency("https://my-vault.azure.net", "Sql-connection-string", isSuccessful: true, DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
             SimulateSqlQueryWithMicrosoftTracking();
+
+            if (!_isSuccessful)
+            {
+                throw new InvalidOperationException(
+                    "[Test] Sabotage this message processing to let the message correlation system pick up an 'unsuccessful request'");
+            }
 
             return Task.CompletedTask;
         }
