@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Transactions;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
@@ -32,7 +33,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     public partial class ServiceBusMessagePumpTests
     {
-        private const string DefaultSqlTable = "master";
+        private const string DefaultSqlTable = "master",
+                             DefaultHttpOperationName = "System.Net.Http.HttpRequestOut";
 
         private string CustomOperationName { get; } = $"operation-{Guid.NewGuid()}";
         private bool IsSuccessful { get; } = Bogus.Random.Bool();
@@ -57,7 +59,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    {
                        traces.AddSource(source.Name);
                        traces.AddInMemoryExporter(activities);
-                       traces.AddSqlClientInstrumentation();
+                       traces.AddHttpClientInstrumentation();
                        traces.SetSampler(new AlwaysOnSampler());
                    }); 
 
@@ -67,9 +69,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
             {
                 Activity serviceBusRequest = await GetQueueRequestActivityAsync(activities, CustomOperationName);
-                Activity sqlDependency = await GetDependencyActivityAsync(activities, DefaultSqlTable, a => a.ParentId == serviceBusRequest.Id);
+                Activity httpDependency = await GetDependencyActivityAsync(activities, DefaultHttpOperationName, a => a.ParentId == serviceBusRequest.Id);
 
-                Assert.Equal(serviceBusRequest, sqlDependency.Parent);
+                Assert.Equal(serviceBusRequest, httpDependency.Parent);
             });
         }
 
@@ -98,7 +100,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                    {
                        traces.AddSource(source.Name);
                        traces.AddInMemoryExporter(activities);
-                       traces.AddSqlClientInstrumentation();
+                       traces.AddHttpClientInstrumentation();
                        traces.SetSampler(new AlwaysOnSampler());
                    });
 
@@ -110,9 +112,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
 
                 Activity serviceBusRequest = await GetQueueRequestActivityAsync(activities, CustomOperationName, a => a.TraceId.ToString() == transactionId && a.ParentSpanId.ToString() == operationParentId);
-                Activity sqlDependency = await GetDependencyActivityAsync(activities, DefaultSqlTable, a => a.TraceId.ToString() == transactionId && a.ParentId == serviceBusRequest.Id);
+                Activity httpDependency = await GetDependencyActivityAsync(activities, DefaultHttpOperationName, a => a.TraceId.ToString() == transactionId && a.ParentId == serviceBusRequest.Id);
 
-                Assert.Equal(serviceBusRequest, sqlDependency.Parent);
+                Assert.Equal(serviceBusRequest, httpDependency.Parent);
             });
         }
 
