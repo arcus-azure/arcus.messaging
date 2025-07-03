@@ -49,7 +49,7 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
 
             Activity activity = _activitySource.CreateActivity(
                 name: options.OperationName,
-                kind: ActivityKind.Server,
+                kind: ActivityKind.Consumer,
                 context);
 
             activity?.Start();
@@ -60,7 +60,10 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
 
             activity.SetTag("az.namespace", "Microsoft.ServiceBus");
             activity.SetTag("messaging.system", "servicebus");
-            activity.SetTag("messaging.operation", "receive");
+            activity.SetTag("messaging.operation.type", "receive");
+            activity.SetTag("messaging.destination.name", messageContext.EntityPath);
+            activity.SetTag("messaging.message.id", messageContext.MessageId);
+            activity.SetTag("network.protocol.name", "amqp");
 
             activity.SetTag("ServiceBus-Endpoint", messageContext.FullyQualifiedNamespace);
             activity.SetTag("ServiceBus-Entity", messageContext.EntityPath);
@@ -86,6 +89,8 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
                 _logger.LogTrace("Stop Azure Service Bus request '{OperationName}' operation (isSuccessful={IsSuccessful})", _activity.OperationName, isSuccessful);
 
                 _activity.SetStatus(isSuccessful ? ActivityStatusCode.Ok : ActivityStatusCode.Error);
+                _activity.SetTag("messaging.operation.name", isSuccessful ? "ack" : "nack");
+
                 _activity.SetEndTime(_activity.StartTimeUtc.Add(duration));
                 _activity.Dispose();
             }
