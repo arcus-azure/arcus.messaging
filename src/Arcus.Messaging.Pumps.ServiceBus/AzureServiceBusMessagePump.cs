@@ -272,25 +272,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             var messageContext = AzureServiceBusMessageContext.Create(JobId, Settings.ServiceBusEntity, _messageReceiver, message);
 
             MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
-
-            if (routingResult.IsSuccessful && Settings.Options.AutoComplete)
-            {
-                try
-                {
-                    Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
-                    await _messageReceiver.CompleteMessageAsync(message);
-                }
-                catch (ServiceBusException exception) when (
-                    exception.Message.Contains("lock")
-                    && exception.Message.Contains("expired")
-                    && exception.Message.Contains("already")
-                    && exception.Message.Contains("removed"))
-                {
-#pragma warning disable CS0618 // Typ or member is obsolete: entity type will be moved to this message pump in v3.0.
-                    Logger.LogTrace("Message '{MessageId}' on Azure Service Bus {EntityType} message pump '{JobId}' does not need to be auto-completed, because it was already settled", message.MessageId, Settings.ServiceBusEntity, JobId);
-                }
-            }
-
             return routingResult;
         }
 
