@@ -2,19 +2,23 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Arcus.Security.Core" Version="2.0.0" />
     <PackageReference Include="Arcus.Testing.Security.Providers.InMemory" Version="1.2.0" />
-    <PackageReference Include="Arcus.Testing.Logging.Xunit" Version="2.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
+    <PackageReference Include="Arcus.Testing.Logging.Xunit.v3" Version="2.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="Moq" Version="4.13.1" />
     <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="3.1.0" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+    <PackageReference Include="xunit.v3" Version="2.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

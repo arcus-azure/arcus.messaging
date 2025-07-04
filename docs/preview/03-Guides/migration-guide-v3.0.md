@@ -127,6 +127,18 @@ public class OrderServiceBusMessageHandler
 }
 ```
 
+:::note[prepare already for v4.0]
+In the same fashion, message routing and message pumps have been placed more closely together since no separate use is by default supported. Because of this, the `AutoComplete` option has been moved to the message routing options. The original location has been deprecated in v3.0 and will be removed in v4.0.
+
+```diff
+services.AddServiceBusQueueMessagePump(..., options =>
+{
+-   options.AutoComplete = false;
++   options.Routing.AutoComplete = false;
+})
+```
+:::
+
 ### ✨ New Service Bus message correlation
 Previous versions hard-linked the message correlation with the required use of **Arcus.Observability** and **Serilog** to always track telemetry in Azure Application Insights.
 
