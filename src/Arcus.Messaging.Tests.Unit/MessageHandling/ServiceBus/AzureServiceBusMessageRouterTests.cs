@@ -21,7 +21,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
 using Xunit;
-using Xunit.Abstractions;
 using Order = Arcus.Messaging.Tests.Core.Messages.v1.Order;
 using OrderV2AzureServiceBusMessageHandler = Arcus.Messaging.Tests.Unit.Fixture.OrderV2AzureServiceBusMessageHandler;
 
