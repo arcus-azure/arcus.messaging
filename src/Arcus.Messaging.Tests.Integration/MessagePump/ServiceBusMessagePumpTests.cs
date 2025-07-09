@@ -177,7 +177,6 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 MessageId = order.Id,
                 ApplicationProperties =
                 {
-                    { PropertyNames.ContentType, "application/json" },
                     { PropertyNames.Encoding, encoding.WebName }
                 }
             };
