@@ -281,6 +281,8 @@ namespace Microsoft.Extensions.DependencyInjection
             var options = AzureServiceBusSessionMessagePumpOptions.DefaultOptions;
             configureOptions?.Invoke(options);
 
+            services.AddApplicationInsightsTelemetryWorkerService();
+
             services.TryAddSingleton<IAzureServiceBusMessageRouter>(provider =>
             {
                 var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
