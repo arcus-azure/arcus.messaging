@@ -16,7 +16,14 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         private readonly ServiceBusReceiver _receiver;
         private readonly ServiceBusReceivedMessage _message;
 
-        private AzureServiceBusMessageContext(
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageContext"/> class.
+        /// </summary>
+        /// <param name="jobId"></param>
+        /// <param name="entityType"></param>
+        /// <param name="receiver"></param>
+        /// <param name="message"></param>
+        protected AzureServiceBusMessageContext(
             string jobId,
             ServiceBusEntityType entityType,
             ServiceBusReceiver receiver,
@@ -26,8 +33,12 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             _receiver = receiver;
             _message = message;
 
-            FullyQualifiedNamespace = receiver.FullyQualifiedNamespace;
-            EntityPath = receiver.EntityPath;
+            if (receiver != null)
+            {
+                FullyQualifiedNamespace = receiver.FullyQualifiedNamespace;
+                EntityPath = receiver.EntityPath;
+            }
+
             EntityType = entityType;
             SystemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
             LockToken = message.LockToken;
@@ -38,13 +49,13 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// Gets the fully qualified Azure Service bus namespace that the message pump is associated with.
         /// This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
         /// </summary>
-        public string FullyQualifiedNamespace { get; }
+        public string FullyQualifiedNamespace { get; init; }
 
         /// <summary>
         /// Gets the path of the Azure Service bus entity that the message pump is connected to,
         /// specific to the Azure Service bus namespace that contains it.
         /// </summary>
-        public string EntityPath { get; }
+        public string EntityPath { get; init; }
 
         /// <summary>
         /// Gets the type of the Azure Service Bus entity on which the message was received.
@@ -92,7 +103,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// Completes the Azure Service Bus message on Azure. This will delete the message from the service.
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        public async Task CompleteMessageAsync(CancellationToken cancellationToken)
+        public virtual async Task CompleteMessageAsync(CancellationToken cancellationToken)
         {
             await _receiver.CompleteMessageAsync(_message, cancellationToken);
         }
@@ -104,7 +115,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="deadLetterErrorDescription">The optional extra description of the dead letter error.</param>
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized correctly.</exception>
-        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+        public virtual async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
         {
             await DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties: null, cancellationToken);
         }
@@ -117,7 +128,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <param name="newMessageProperties">The properties to modify on the message during the dead lettering of the message.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+        public virtual async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
         {
             await _receiver.DeadLetterMessageAsync(_message, newMessageProperties, deadLetterReason, deadLetterErrorDescription, cancellationToken);
         }
@@ -133,7 +144,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="newMessageProperties">The properties to modify on the message during the abandoning of the message.</param>
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message context was not initialized correctly.</exception>
-        public async Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+        public virtual async Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
         {
             await _receiver.AbandonMessageAsync(_message, newMessageProperties, cancellationToken);
         }

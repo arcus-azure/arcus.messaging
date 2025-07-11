@@ -127,7 +127,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             return async (rawMessage, generalMessageContext, correlationInfo, cancellationToken) =>
             {
                 if (rawMessage is TMessage message
-                    && generalMessageContext.GetType() == typeof(TMessageContext)
                     && generalMessageContext is TMessageContext messageContext)
                 {
                     await messageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
