@@ -33,8 +33,12 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             _receiver = receiver;
             _message = message;
 
-            FullyQualifiedNamespace = receiver.FullyQualifiedNamespace;
-            EntityPath = receiver.EntityPath;
+            if (receiver != null)
+            {
+                FullyQualifiedNamespace = receiver.FullyQualifiedNamespace;
+                EntityPath = receiver.EntityPath;
+            }
+
             EntityType = entityType;
             SystemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
             LockToken = message.LockToken;
@@ -45,13 +49,13 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// Gets the fully qualified Azure Service bus namespace that the message pump is associated with.
         /// This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
         /// </summary>
-        public string FullyQualifiedNamespace { get; }
+        public string FullyQualifiedNamespace { get; init; }
 
         /// <summary>
         /// Gets the path of the Azure Service bus entity that the message pump is connected to,
         /// specific to the Azure Service bus namespace that contains it.
         /// </summary>
-        public string EntityPath { get; }
+        public string EntityPath { get; init; }
 
         /// <summary>
         /// Gets the type of the Azure Service Bus entity on which the message was received.

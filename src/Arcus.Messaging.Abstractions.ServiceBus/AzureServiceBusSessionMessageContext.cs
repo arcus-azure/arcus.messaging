@@ -19,6 +19,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             ServiceBusEntityType entityType,
             ProcessSessionMessageEventArgs messageArgs) : base(jobId, entityType, null, messageArgs.Message)
         {
+            FullyQualifiedNamespace = messageArgs.FullyQualifiedNamespace;
+            EntityPath = messageArgs.EntityPath;
             _processSessionMessageEventArgs = messageArgs;
         }
 
