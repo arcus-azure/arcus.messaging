@@ -121,10 +121,6 @@ The following options are available when registering the Azure Service Bus messa
 ```csharp
 services.AddServiceBus[Topic/Queue]MessagePump(..., options => 
 {
-    // Indicate whether or not messages should be automatically marked as completed 
-    // if no exceptions occurred and processing has finished (default: true).
-    options.AutoComplete = false;
-
     // The amount of concurrent calls to process messages 
     // (default: null, leading to the defaults of the Azure Service Bus SDK message handler options).
     options.MaxConcurrentCalls = 5;
@@ -137,6 +133,10 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
     // The unique identifier for this background job to distinguish 
     // this job instance in a multi-instance deployment (default: generated GUID).
     options.JobId = Guid.NewGuid().ToString();
+
+    // Indicate whether or not messages should be automatically marked as completed 
+    // if no exceptions occurred and processing has finished (default: true).
+    options.Routing.AutoComplete = false;
 
     // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
     // when deserializing the incoming message (default: AdditionalMemberHandling.Error).

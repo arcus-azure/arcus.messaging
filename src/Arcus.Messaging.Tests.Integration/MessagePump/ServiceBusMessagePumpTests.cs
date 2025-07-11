@@ -25,7 +25,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Xunit;
-using Xunit.Abstractions;
 using static Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus.DiskMessageEventConsumer;
 using static Microsoft.Extensions.Logging.ServiceBusEntityType;
 
@@ -183,7 +182,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 }
             };
 
-            return message.WithDiagnosticId(traceParent);
+            message.ApplicationProperties["Diagnostic-Id"] = traceParent.DiagnosticId;
+            return message;
         }
 
         private static void AssertReceivedOrderEventDataForW3C(
@@ -224,7 +224,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public string QueueName { get; } = $"queue-{Guid.NewGuid()}";
         public string TopicName { get; } = $"topic-{Guid.NewGuid()}";
 
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             var config = TestConfig.Create().GetServiceBus();
             ServiceBusAdministrationClient adminClient = config.GetAdminClient();
@@ -234,7 +234,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             _queue = await TemporaryQueue.CreateIfNotExistsAsync(adminClient, _client, QueueName, NullLogger.Instance);
         }
 
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             await using var disposables = new DisposableCollection(NullLogger.Instance);
             disposables.Add(_queue);

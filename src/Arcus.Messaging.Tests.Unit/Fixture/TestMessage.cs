@@ -3,7 +3,7 @@
 namespace Arcus.Messaging.Tests.Unit.Fixture
 {
     /// <summary>
-    /// Test message model implementation as indication to handle a specific messages in the <see cref="IMessageHandler{TMessage}"/>.
+    /// Test message model implementation as indication to handle a specific messages in the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.
     /// </summary>
     public class TestMessage
     {
