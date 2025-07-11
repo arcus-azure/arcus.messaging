@@ -83,6 +83,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 _serviceBusSessionProcessor.ProcessErrorAsync += ProcessErrorAsync;
 
                 await _serviceBusSessionProcessor.StartProcessingAsync(stoppingToken);
+                await UntilCancelledAsync(stoppingToken);
             }
             catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
             {
@@ -142,7 +143,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             var messageContext = AzureServiceBusSessionMessageContext.Create(JobId, Settings.ServiceBusEntity, arg);
 
-            var routingResult = await _messageRouter.RouteMessageAsync(null, arg.Message, messageContext, correlationResult.CorrelationInfo, arg.CancellationToken);
+            var routingResult = await _messageRouter.RouteMessageAsync(arg.Message, messageContext, correlationResult.CorrelationInfo, arg.CancellationToken);
 
             if (routingResult.IsSuccessful && Settings.Options.AutoComplete)
             {
@@ -152,10 +153,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     await messageContext.CompleteMessageAsync(CancellationToken.None);
                 }
                 catch (ServiceBusException exception) when (
-                    exception.Message.Contains("lock")
-                    && exception.Message.Contains("expired")
-                    && exception.Message.Contains("already")
-                    && exception.Message.Contains("removed"))
+                    exception.Reason is ServiceBusFailureReason.MessageLockLost or ServiceBusFailureReason.SessionLockLost)
+                //&& exception.Message.Contains("expired")
+                //&& exception.Message.Contains("already")
+                //&& exception.Message.Contains("removed"))
                 {
 #pragma warning disable CS0618 // Typ or member is obsolete: entity type will be moved to this message pump in v3.0.
                     Logger.LogTrace("Message '{MessageId}' on Azure Service Bus {EntityType} message pump '{JobId}' does not need to be auto-completed, because it was already settled", messageContext.MessageId, Settings.ServiceBusEntity, JobId);
@@ -181,6 +182,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             var client = ServiceProvider.GetRequiredService<TelemetryClient>();
 
             return MessageCorrelationResult.Create(client, transactionId, operationParentId);
+        }
+
+        private static async Task UntilCancelledAsync(CancellationToken cancellationToken)
+        {
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
         }
     }
 }

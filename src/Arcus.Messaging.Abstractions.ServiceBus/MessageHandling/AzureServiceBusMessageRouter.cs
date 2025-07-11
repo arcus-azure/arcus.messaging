@@ -40,46 +40,38 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.
         /// </summary>
-        /// <param name="messageReceiver">
-        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>.
-        /// </param>
         /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
         /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
         /// <param name="cancellationToken">The token to cancel the message processing.</param>
         /// <exception cref="ArgumentNullException">
-        ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
+        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
         public async Task<MessageProcessingResult> RouteMessageAsync(
-            ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
 #pragma warning disable CS0618 // Type or member is obsolete: fallback handlers will be removed in v3.0.
-            return await RouteMessageWithPotentialFallbackAsync(messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+            return await RouteMessageWithPotentialFallbackAsync(message, messageContext, correlationInfo, cancellationToken);
 #pragma warning restore CS0618 // Type or member is obsolete
         }
 
         /// <summary>
         /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.
         /// </summary>
-        /// <param name="messageReceiver">
-        ///     The receiver that can call operations (dead letter, complete...) on an Azure Service Bus <see cref="ServiceBusReceivedMessage"/>.
-        /// </param>
         /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
         /// <param name="correlationInfo">The information concerning correlation of telemetry and processes by using a variety of unique identifiers.</param>
         /// <param name="cancellationToken">The token to cancel the message processing.</param>
         /// <exception cref="ArgumentNullException">
-        ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
+        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
         [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(AzureServiceBusMessageContext) + " instead of defining fallback message handlers")]
         protected async Task<MessageProcessingResult> RouteMessageWithPotentialFallbackAsync(
-            ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -100,8 +92,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 throw new ArgumentNullException(nameof(correlationInfo));
             }
 
-            string entityName = messageReceiver?.EntityPath ?? "<not-available>";
-            string serviceBusNamespace = messageReceiver?.FullyQualifiedNamespace ?? "<not-available>";
+            string entityName = messageContext.EntityPath ?? "<not-available>";
+            string serviceBusNamespace = messageContext.FullyQualifiedNamespace ?? "<not-available>";
 
             using DurationMeasurement measurement = DurationMeasurement.Start();
             using IServiceScope serviceScope = ServiceProvider.CreateScope();
@@ -111,7 +103,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
             try
             {
-                MessageProcessingResult routingResult = await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
+                MessageProcessingResult routingResult = await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, message, messageContext, correlationInfo, cancellationToken);
 
 #pragma warning disable CS0618 // Type or member is obsolete: specific telemetry calls will be removed in v3.0.
                 Logger.LogServiceBusRequest(serviceBusNamespace, entityName, Options.Telemetry.OperationName, routingResult.IsSuccessful, measurement, messageContext.EntityType);
@@ -129,7 +121,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 
         private async Task<MessageProcessingResult> TryRouteMessageWithPotentialFallbackAsync(
             IServiceProvider serviceProvider,
-            ServiceBusReceiver messageReceiver,
+            //ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -157,7 +149,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                         hasGoneThroughMessageHandler = true;
                         if (isProcessed)
                         {
-                            await PotentiallyAutoCompleteMessageAsync(messageReceiver, message, messageContext);
+                            await PotentiallyAutoCompleteMessageAsync(message, messageContext);
                             return MessageProcessingResult.Success(message.MessageId);
                         }
                     }
@@ -208,14 +200,14 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             }
         }
 
-        private async Task PotentiallyAutoCompleteMessageAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        private async Task PotentiallyAutoCompleteMessageAsync(ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
         {
             if (ServiceBusOptions.AutoComplete)
             {
                 try
                 {
                     Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus in message pump '{JobId}'", message.MessageId, messageContext.JobId);
-                    await messageReceiver.CompleteMessageAsync(message);
+                    await messageContext.CompleteMessageAsync(CancellationToken.None);
                 }
                 catch (ServiceBusException exception) when (
                     exception.Message.Contains("lock")
