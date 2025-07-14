@@ -7,6 +7,7 @@ using Azure.Core;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -79,21 +80,7 @@ namespace Microsoft.Extensions.DependencyInjection
             ArgumentException.ThrowIfNullOrWhiteSpace(queueName);
             ArgumentNullException.ThrowIfNull(clientImplementationFactory);
 
-            ServiceBusMessageHandlerCollection collection =
-                AddServiceBusMessagePump(services, CreateSettings, configureMessagePump);
-
-            return collection;
-
-            AzureServiceBusMessagePumpSettings CreateSettings(IServiceProvider serviceProvider, AzureServiceBusMessagePumpOptions options)
-            {
-                return new AzureServiceBusMessagePumpSettings(
-                    queueName,
-                    subscriptionName: null,
-                    ServiceBusEntityType.Queue,
-                    clientImplementationFactory,
-                    options,
-                    serviceProvider);
-            }
+            return AddServiceBusMessagePump(services, queueName, clientImplementationFactory, ServiceBusEntityType.Queue, configureMessagePump);
         }
 
         /// <summary>
@@ -165,23 +152,13 @@ namespace Microsoft.Extensions.DependencyInjection
             ArgumentException.ThrowIfNullOrWhiteSpace(subscriptionName);
             ArgumentNullException.ThrowIfNull(clientImplementationFactory);
 
-            ServiceBusMessageHandlerCollection collection = AddServiceBusMessagePump(
+            return AddServiceBusMessagePump(
                 services,
-                CreateSettings,
-                configureMessagePump);
-
-            return collection;
-
-            AzureServiceBusMessagePumpSettings CreateSettings(IServiceProvider serviceProvider, AzureServiceBusMessagePumpOptions options)
-            {
-                return new AzureServiceBusMessagePumpSettings(
-                    topicName,
-                    subscriptionName,
-                    ServiceBusEntityType.Topic,
-                    clientImplementationFactory,
-                    options,
-                    serviceProvider);
-            }
+                topicName,
+                clientImplementationFactory,
+                ServiceBusEntityType.Topic,
+                configureMessagePump,
+                subscriptionName);
         }
 
         private static Func<IServiceProvider, ServiceBusClient> CreateClientFactory(string fullyQualifiedNamespace, TokenCredential credential)
@@ -201,34 +178,49 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static ServiceBusMessageHandlerCollection AddServiceBusMessagePump(
             IServiceCollection services,
-            Func<IServiceProvider, AzureServiceBusMessagePumpOptions, AzureServiceBusMessagePumpSettings> createSettings,
-            Action<AzureServiceBusMessagePumpOptions> configureOptions = null)
+            string entityPath,
+            Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
+            ServiceBusEntityType entityType,
+            Action<AzureServiceBusMessagePumpOptions> configureOptions = null,
+            string subscriptionName = null)
         {
             ArgumentNullException.ThrowIfNull(services);
 
             var options = new AzureServiceBusMessagePumpOptions();
             configureOptions?.Invoke(options);
 
-            services.TryAddSingleton<IAzureServiceBusMessageRouter>(provider =>
-            {
-                var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
-                return new AzureServiceBusMessageRouter(provider, options.Routing, logger);
-            });
-
             services.AddApplicationInsightsTelemetryWorkerService();
 
-            services.TryAddSingleton<IMessagePumpCircuitBreaker>(provider => new DefaultMessagePumpCircuitBreaker(provider, provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>()));
+            services.TryAddSingleton<IMessagePumpCircuitBreaker>(provider =>
+            {
+                var logger = provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>();
+                return new DefaultMessagePumpCircuitBreaker(provider, logger);
+            });
 
             services.AddHostedService(provider =>
             {
-                var router = provider.GetService<IAzureServiceBusMessageRouter>();
+                subscriptionName = SanitizeSubscriptionName(subscriptionName, provider);
                 var logger = provider.GetService<ILogger<AzureServiceBusMessagePump>>();
 
-                AzureServiceBusMessagePumpSettings settings = createSettings(provider, options);
-                return new AzureServiceBusMessagePump(settings, provider, router, logger);
+                return new AzureServiceBusMessagePump(entityPath, subscriptionName, entityType, clientImplementationFactory, options, provider, logger);
             });
 
             return new ServiceBusMessageHandlerCollection(services) { JobId = options.JobId };
+        }
+
+        private static string SanitizeSubscriptionName(string subscriptionName, IServiceProvider provider)
+        {
+            var logger =
+                provider.GetService<ILogger<AzureServiceBusMessagePump>>()
+                ?? NullLogger<AzureServiceBusMessagePump>.Instance;
+
+            if (subscriptionName is { Length: > 50 })
+            {
+                logger.LogWarning("Azure Service Bus Topic subscription name was truncated to 50 characters");
+                subscriptionName = subscriptionName[..50];
+            }
+
+            return subscriptionName;
         }
     }
 }
