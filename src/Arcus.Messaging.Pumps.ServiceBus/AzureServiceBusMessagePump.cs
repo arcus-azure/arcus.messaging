@@ -14,8 +14,6 @@ using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-#pragma warning disable CS0618 // Type or member is obsolete: lots of deprecated functionality will be removed in v3.0.
-
 namespace Arcus.Messaging.Pumps.ServiceBus
 {
     /// <summary>
@@ -23,7 +21,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// </summary>
     public class AzureServiceBusMessagePump : MessagePump
     {
-        private readonly IAzureServiceBusMessageRouter _messageRouter;
+        private readonly string _entityName;
+        private readonly Func<IServiceProvider, ServiceBusClient> _clientImplementationFactory;
+        private readonly AzureServiceBusMessageRouter _messageRouter;
         private readonly IDisposable _loggingScope;
 
         private bool _isHostShuttingDown;
@@ -33,40 +33,36 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessagePump"/> class.
         /// </summary>
-        /// <param name="settings">Settings to configure the message pump</param>
-        /// <param name="serviceProvider">Collection of services that are configured</param>
-        /// <param name="messageRouter">The router to route incoming Azure Service Bus messages through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.</param>
-        /// <param name="logger">Logger to write telemetry to</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="settings"/>, <paramref name="settings"/>, <paramref name="serviceProvider"/>, <paramref name="messageRouter"/> is <c>null</c>.</exception>
         internal AzureServiceBusMessagePump(
-            AzureServiceBusMessagePumpSettings settings,
+            string entityName,
+            string subscriptionName,
+            ServiceBusEntityType entityType,
+            Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
+            AzureServiceBusMessagePumpOptions options,
             IServiceProvider serviceProvider,
-            IAzureServiceBusMessageRouter messageRouter,
             ILogger<AzureServiceBusMessagePump> logger)
             : base(serviceProvider, logger)
         {
-            Settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            JobId = Settings.Options.JobId;
-            SubscriptionName = Settings.SubscriptionName;
+            JobId = options.JobId;
+            EntityType = entityType;
+            SubscriptionName = subscriptionName;
+            Options = options;
 
-            _messageRouter = messageRouter ?? throw new ArgumentNullException(nameof(messageRouter));
+            _entityName = entityName;
+            _clientImplementationFactory = clientImplementationFactory;
+            _messageRouter = new AzureServiceBusMessageRouter(ServiceProvider, options.Routing, ServiceProvider.GetService<ILogger<AzureServiceBusMessageRouter>>());
             _loggingScope = logger?.BeginScope("Job: {JobId}", JobId);
         }
 
         /// <summary>
-        ///     Gets the settings configuring the message pump.
-        /// </summary>
-        internal AzureServiceBusMessagePumpSettings Settings { get; }
-
-        /// <summary>
         /// Gets the type of the Azure Service Bus entity for which this message pump is configured.
         /// </summary>
-        public ServiceBusEntityType EntityType => Settings.ServiceBusEntity;
+        public ServiceBusEntityType EntityType { get; }
 
         /// <summary>
         /// Gets the user-configurable options of the message pump.
         /// </summary>
-        public AzureServiceBusMessagePumpOptions Options => Settings.Options;
+        public AzureServiceBusMessagePumpOptions Options { get; }
 
         /// <summary>
         ///     Service Bus namespace that contains the entity
@@ -74,7 +70,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         public string Namespace { get; private set; }
 
         /// <summary>
-        /// Gets the name of the topic subscription; combined from the <see cref="AzureServiceBusMessagePumpSettings.SubscriptionName"/> and the <see cref="MessagePump.JobId"/>.
+        /// Gets the name of the topic subscription, when the message pump receives messages from an Azure Service Bus topic.
         /// </summary>
         protected string SubscriptionName { get; }
 
@@ -83,24 +79,32 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             try
             {
-                _messageReceiver = await Settings.CreateMessageReceiverAsync();
+                _messageReceiver = CreateMessageReceiver();
 
                 await StartProcessingMessagesAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
             }
-            catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
+            catch (Exception exception) when (exception is TaskCanceledException or OperationCanceledException)
             {
-#pragma warning disable CS0618 // Type or member is obsolete: the entity type will be moved down to this message pump in v3.0.
-                Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' was cancelled", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace);
+                Logger.LogDebug(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' was cancelled", EntityType, JobId, _entityName, Namespace);
             }
             catch (Exception exception)
             {
-                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace);
+                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", EntityType, JobId, _entityName, Namespace);
             }
             finally
             {
                 await StopProcessingMessagesAsync(CancellationToken.None);
             }
+        }
+
+        private ServiceBusReceiver CreateMessageReceiver()
+        {
+            ServiceBusClient client = _clientImplementationFactory(ServiceProvider);
+
+            return string.IsNullOrWhiteSpace(SubscriptionName)
+                ? client.CreateReceiver(_entityName, new ServiceBusReceiverOptions { PrefetchCount = Options.PrefetchCount })
+                : client.CreateReceiver(_entityName, SubscriptionName, new ServiceBusReceiverOptions { PrefetchCount = Options.PrefetchCount });
         }
 
         private static readonly TimeSpan MessagePollingWaitTime = TimeSpan.FromMilliseconds(300);
@@ -118,7 +122,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             /* TODO: we can't support Azure Service Bus plug-ins yet because the new Azure SDK doesn't yet support this:
                    https://github.com/arcus-azure/arcus.messaging/issues/176 */
 
-            Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace);
+            Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", EntityType, JobId, _entityName, Namespace);
 
             Namespace = _messageReceiver.FullyQualifiedNamespace;
 
@@ -153,12 +157,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 {
                     IsStarted = false;
 
-                    Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' was cancelled", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace);
+                    Logger.LogTrace(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' was cancelled", EntityType, JobId, _entityName, Namespace);
                     return;
                 }
                 catch (Exception exception)
                 {
-                    await ProcessErrorAsync(exception, cancellationToken);
+                    await ProcessErrorAsync(exception);
                 }
             }
         }
@@ -166,7 +170,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private async Task ProcessMultipleMessagesAsync(CancellationToken cancellationToken)
         {
             IReadOnlyList<ServiceBusReceivedMessage> messages =
-                await _messageReceiver.ReceiveMessagesAsync(Settings.Options.MaxConcurrentCalls, cancellationToken: _receiveMessagesCancellation.Token);
+                await _messageReceiver.ReceiveMessagesAsync(Options.MaxConcurrentCalls, cancellationToken: _receiveMessagesCancellation.Token);
 
             await Task.WhenAll(messages.Select(msg => ProcessMessageAsync(msg, cancellationToken)));
         }
@@ -176,11 +180,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             if (_messageReceiver is null)
             {
                 throw new InvalidOperationException(
-                    $"Cannot try process a single message in the Azure Service Bus {Settings.EntityName} message pump '{JobId}' because there was not a message receiver set before this point, " +
+                    $"Cannot try process a single message in the Azure Service Bus {_entityName} message pump '{JobId}' because there was not a message receiver set before this point, " +
                     $"this probably happens when the message pump is used in the wrong way or manually called, please let only the circuit breaker functionality call this functionality");
             }
 
-            Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' tries to process single message during half-open circuit...", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace);
+            Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' tries to process single message during half-open circuit...", EntityType, JobId, _entityName, Namespace);
 
             ServiceBusReceivedMessage message = null;
             while (message is null)
@@ -188,7 +192,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 message = await _messageReceiver.ReceiveMessageAsync();
                 if (message is null)
                 {
-                    Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to receive a single message, trying again...", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace);
+                    Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to receive a single message, trying again...", EntityType, JobId, _entityName, Namespace);
                     await Task.Delay(MessagePollingWaitTime);
                 }
             }
@@ -200,7 +204,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             catch (Exception exception)
             {
-                Logger.LogError(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to process single message during half-open circuit, retrying after circuit delay", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace);
+                Logger.LogError(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' failed to process single message during half-open circuit, retrying after circuit delay", EntityType, JobId, _entityName, Namespace);
                 return MessageProcessingResult.Failure(message.MessageId, MessageProcessingError.ProcessingInterrupted, "Failed to process single message during half-open circuit due to an unexpected exception", exception);
             }
         }
@@ -213,18 +217,22 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
-            Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace, DateTimeOffset.UtcNow);
+            Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}", EntityType, JobId, _entityName, Namespace, DateTimeOffset.UtcNow);
 
-            _receiveMessagesCancellation?.Cancel();
+            if (_receiveMessagesCancellation != null)
+            {
+                await _receiveMessagesCancellation.CancelAsync();
+            }
+
             await base.StopProcessingMessagesAsync(cancellationToken);
 
         }
 
-        private async Task ProcessErrorAsync(Exception exception, CancellationToken cancellationToken)
+        private async Task ProcessErrorAsync(Exception exception)
         {
             if (exception is null)
             {
-                Logger.LogWarning("Thrown exception on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", Settings.ServiceBusEntity, JobId);
+                Logger.LogWarning("Thrown exception on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", EntityType, JobId);
                 return;
             }
 
@@ -252,24 +260,25 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             if (message is null)
             {
-                Logger.LogWarning("Received message on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", Settings.ServiceBusEntity, JobId);
+                Logger.LogWarning("Received message on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", EntityType, JobId);
                 return MessageProcessingResult.Failure("<unavailable>", MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message is was 'null'");
             }
 
             if (_isHostShuttingDown)
             {
-                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure Service Bus {EntityType} message pump '{JobId}' is shutting down", message.MessageId, Settings.ServiceBusEntity, JobId);
+                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure Service Bus {EntityType} message pump '{JobId}' is shutting down", message.MessageId, EntityType, JobId);
                 await _messageReceiver.AbandonMessageAsync(message);
                 return MessageProcessingResult.Failure(message.MessageId, MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message pump is shutting down");
             }
 
             if (string.IsNullOrEmpty(message.CorrelationId))
             {
-                Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
+                Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, EntityType, JobId);
             }
 
+#pragma warning disable CS0618 // Type or member is obsolete
             using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
-            var messageContext = AzureServiceBusMessageContext.Create(JobId, Settings.ServiceBusEntity, _messageReceiver, message);
+            var messageContext = AzureServiceBusMessageContext.Create(JobId, EntityType, _messageReceiver, message);
 
             MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
             return routingResult;
