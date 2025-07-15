@@ -36,15 +36,8 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, TEventHandler> implementationFactory)
             where TEventHandler : ICircuitBreakerEventHandler
         {
-            if (collection is null)
-            {
-                throw new ArgumentNullException(nameof(collection));
-            }
-
-            if (implementationFactory is null)
-            {
-                throw new ArgumentNullException(nameof(implementationFactory));
-            }
+            ArgumentNullException.ThrowIfNull(collection);
+            ArgumentNullException.ThrowIfNull(implementationFactory);
 
             collection.Services.AddCircuitBreakerEventHandler(collection.JobId, implementationFactory);
             return collection;

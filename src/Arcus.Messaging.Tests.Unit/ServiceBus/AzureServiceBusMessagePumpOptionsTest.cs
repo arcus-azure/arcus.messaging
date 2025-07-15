@@ -30,7 +30,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var invalidConcurrentCalls = 0;
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => options.MaxConcurrentCalls = invalidConcurrentCalls);
+            Assert.ThrowsAny<ArgumentException>(() => options.MaxConcurrentCalls = invalidConcurrentCalls);
         }
 
         [Fact]
@@ -41,7 +41,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
             var invalidConcurrentCalls = new Faker().Random.Number(min: -9999, max: -1);
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => options.MaxConcurrentCalls = invalidConcurrentCalls);
+            Assert.ThrowsAny<ArgumentException>(() => options.MaxConcurrentCalls = invalidConcurrentCalls);
         }
 
         [Fact]
@@ -77,10 +77,10 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         {
             // Arrange
             var options = new AzureServiceBusMessagePumpOptions();
-            var invalidPrefetchCount = new Faker().Random.Number(min: -9999, max: -1); 
+            var invalidPrefetchCount = new Faker().Random.Number(min: -9999, max: -1);
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => options.PrefetchCount = invalidPrefetchCount);
+            Assert.ThrowsAny<ArgumentException>(() => options.PrefetchCount = invalidPrefetchCount);
         }
 
         [Theory]

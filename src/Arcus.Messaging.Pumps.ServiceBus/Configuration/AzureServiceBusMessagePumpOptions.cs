@@ -14,14 +14,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         private string _jobId = Guid.NewGuid().ToString();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpOptions"/> class.
-        /// </summary>
-        public AzureServiceBusMessagePumpOptions()
-        {
-            Routing = new AzureServiceBusMessageRouterOptions();
-        }
-
-        /// <summary>
         /// Gets or sets the maximum concurrent calls to process messages.
         /// </summary>
         /// <remarks>The default value is 1</remarks>
@@ -31,11 +23,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _maxConcurrentCalls;
             set
             {
-                if (value <= 0)
-                {
-                    throw new ArgumentException("Max concurrent calls has to be 1 or above", nameof(value));
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, 0);
                 _maxConcurrentCalls = value;
             }
         }
@@ -52,11 +40,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _prefetchCount;
             set
             {
-                if (value < 0)
-                {
-                    throw new ArgumentException("PrefetchCount has to be 0 or above", nameof(value));
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 0);
                 _prefetchCount = value;
             }
         }
@@ -81,11 +65,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             get => _jobId;
             set
             {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    throw new ArgumentException("Requires a non-blank job identifier for the Azure Service Bus message pump", nameof(value));
-                }
-
+                ArgumentException.ThrowIfNullOrWhiteSpace(value);
                 _jobId = value;
             }
         }
@@ -93,7 +73,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets the consumer-configurable options to change the behavior of the message router.
         /// </summary>
-        public AzureServiceBusMessageRouterOptions Routing { get; }
+        public AzureServiceBusMessageRouterOptions Routing { get; } = new();
 
         /// <summary>
         /// Gets the consumer configurable options model to change the behavior of the tracked Azure Service bus request telemetry.
