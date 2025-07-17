@@ -13,49 +13,43 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
     /// </summary>
     public class AzureServiceBusMessageContext : MessageContext
     {
-        private readonly ServiceBusReceiver _receiver;
-        private readonly ServiceBusReceivedMessage _message;
+        private readonly IMessageSettlementStrategy _messageSettlementHandler;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessageContext"/> class.
         /// </summary>
         /// <param name="jobId"></param>
         /// <param name="entityType"></param>
-        /// <param name="receiver"></param>
-        /// <param name="message"></param>
-        protected AzureServiceBusMessageContext(
+        /// <param name="messageSettlementHandler"></param>
+
+        private AzureServiceBusMessageContext(
             string jobId,
             ServiceBusEntityType entityType,
-            ServiceBusReceiver receiver,
-            ServiceBusReceivedMessage message)
-            : base(message.MessageId, jobId, message.ApplicationProperties.ToDictionary(item => item.Key, item => item.Value))
+            IMessageSettlementStrategy messageSettlementHandler)
+            : base(messageSettlementHandler.Message.MessageId, jobId, messageSettlementHandler.Message.ApplicationProperties.ToDictionary(item => item.Key, item => item.Value))
         {
-            _receiver = receiver;
-            _message = message;
-
-            if (receiver != null)
-            {
-                FullyQualifiedNamespace = receiver.FullyQualifiedNamespace;
-                EntityPath = receiver.EntityPath;
-            }
+            _messageSettlementHandler = messageSettlementHandler;
 
             EntityType = entityType;
-            SystemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
-            LockToken = message.LockToken;
-            DeliveryCount = message.DeliveryCount;
+            SystemProperties = AzureServiceBusSystemProperties.CreateFrom(messageSettlementHandler.Message);
         }
 
         /// <summary>
         /// Gets the fully qualified Azure Service bus namespace that the message pump is associated with.
         /// This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.
         /// </summary>
-        public string FullyQualifiedNamespace { get; init; }
+        public string FullyQualifiedNamespace => _messageSettlementHandler.FullyQualifiedNamespace;
 
         /// <summary>
         /// Gets the path of the Azure Service bus entity that the message pump is connected to,
         /// specific to the Azure Service bus namespace that contains it.
         /// </summary>
-        public string EntityPath { get; init; }
+        public string EntityPath => _messageSettlementHandler.EntityPath;
+
+        /// <summary>
+        /// Gets the Session-Identifier for a session aware entity.
+        /// </summary>
+        public string SessionId => _messageSettlementHandler.Message.SessionId;
 
         /// <summary>
         /// Gets the type of the Azure Service Bus entity on which the message was received.
@@ -70,18 +64,18 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <summary>
         /// Gets the token used to lock an individual message for processing
         /// </summary>
-        public string LockToken { get; }
+        public string LockToken => _messageSettlementHandler.Message.LockToken;
 
         /// <summary>
         /// Gets the amount of times a message was delivered
         /// </summary>
         /// <remarks>This increases when a message is abandoned and re-delivered for processing</remarks>
-        public int DeliveryCount { get; }
+        public int DeliveryCount => _messageSettlementHandler.Message.DeliveryCount;
 
         /// <summary>
         /// Creates a new instance of the <see cref="AzureServiceBusMessageContext"/> based on the current Azure Service bus situation.
         /// </summary>
-        /// <param name="jobId">The unique ID to identity the Azure Service bus message pump that is responsible for pumping messages from the <paramref name="receiver"/>.</param>
+        /// <param name="jobId">The unique ID to identify the Azure Service bus message pump that is responsible for pumping messages from the <paramref name="receiver"/>.</param>
         /// <param name="entityType">The type of Azure Service bus entity that the <paramref name="receiver"/> receives from.</param>
         /// <param name="receiver">The Azure Service bus receiver that is responsible for receiving the <paramref name="message"/>.</param>
         /// <param name="message">The Azure Service bus message that is currently being processed.</param>
@@ -96,16 +90,33 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             ArgumentNullException.ThrowIfNull(receiver);
             ArgumentNullException.ThrowIfNull(message);
 
-            return new AzureServiceBusMessageContext(jobId, entityType, receiver, message);
+            return new AzureServiceBusMessageContext(jobId, entityType, new MessageSettlementViaReceiver(receiver, message));
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="AzureServiceBusMessageContext"/> for a ServiceBus message that was received by a ServiceBus session.
+        /// </summary>
+        /// <param name="jobId">The unique ID to identify the Azure Service bus message pump that has received the message for which this is a context.</param>
+        /// <param name="entityType">The type of Azure Service bus entity from which messages are being retrieved.</param>
+        /// <param name="processSessionMessageArgs">The <see cref="ProcessSessionMessageEventArgs"/> instance that was received by the MessagePump.</param>
+        public static AzureServiceBusMessageContext Create(
+            string jobId,
+            ServiceBusEntityType entityType,
+            ProcessSessionMessageEventArgs processSessionMessageArgs)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
+            ArgumentNullException.ThrowIfNull(processSessionMessageArgs);
+
+            return new AzureServiceBusMessageContext(jobId, entityType, new MessageSettlementViaSessionEventArgs(processSessionMessageArgs));
         }
 
         /// <summary>
         /// Completes the Azure Service Bus message on Azure. This will delete the message from the service.
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        public virtual async Task CompleteMessageAsync(CancellationToken cancellationToken)
+        public async Task CompleteMessageAsync(CancellationToken cancellationToken)
         {
-            await _receiver.CompleteMessageAsync(_message, cancellationToken);
+            await _messageSettlementHandler.CompleteMessageAsync(cancellationToken);
         }
 
         /// <summary>
@@ -115,9 +126,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="deadLetterErrorDescription">The optional extra description of the dead letter error.</param>
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized correctly.</exception>
-        public virtual async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
         {
-            await DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties: null, cancellationToken);
+            await _messageSettlementHandler.DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, cancellationToken);
         }
 
         /// <summary>
@@ -128,9 +139,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <param name="newMessageProperties">The properties to modify on the message during the dead lettering of the message.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        public virtual async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
         {
-            await _receiver.DeadLetterMessageAsync(_message, newMessageProperties, deadLetterReason, deadLetterErrorDescription, cancellationToken);
+            await _messageSettlementHandler.DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties, cancellationToken);
         }
 
         /// <summary>
@@ -144,10 +155,152 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="newMessageProperties">The properties to modify on the message during the abandoning of the message.</param>
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message context was not initialized correctly.</exception>
-        public virtual async Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+        public async Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
         {
-            await _receiver.AbandonMessageAsync(_message, newMessageProperties, cancellationToken);
+            await _messageSettlementHandler.AbandonMessageAsync(newMessageProperties, cancellationToken);
         }
+
+        #region MessageSettlement strategies
+
+        private interface IMessageSettlementStrategy
+        {
+            /// <summary>
+            /// Gets the fully qualified Azure Service bus namespace from which the message was received.
+            /// </summary>
+            public string FullyQualifiedNamespace { get; }
+
+            /// <summary>
+            /// Gets the path of the Azure Service bus entity from which the message was received.
+            /// </summary>
+            public string EntityPath { get; }
+
+            /// <summary>
+            /// Gets the <see cref="ServiceBusReceivedMessage"/> that was received and which must be settled.
+            /// </summary>
+            public ServiceBusReceivedMessage Message { get; }
+
+            /// <summary>
+            /// Completes the <see cref="ServiceBusReceivedMessage"/> that was received.
+            /// </summary>
+            /// <param name="cancellationToken"></param>
+            Task CompleteMessageAsync(CancellationToken cancellationToken);
+
+            /// <summary>
+            /// Deadletters the <see cref="ServiceBusReceivedMessage"/> that was received.
+            /// </summary>
+            /// <param name="deadLetterReason"></param>
+            /// <param name="deadLetterErrorDescription"></param>
+            /// <param name="cancellationToken"></param>
+            Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken);
+
+            /// <summary>
+            /// Deadletters the <see cref="ServiceBusReceivedMessage"/> that was received.
+            /// </summary>
+            /// <param name="deadLetterReason"></param>
+            /// <param name="deadLetterErrorDescription"></param>
+            /// <param name="newMessageProperties"></param>
+            /// <param name="cancellationToken"></param>
+            /// <returns></returns>
+            Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken);
+
+            /// <summary>
+            /// Abandons the lock that is associated with the <see cref="ServiceBusReceivedMessage"/> that was received, which
+            /// makes sure that the <see cref="ServiceBusReceivedMessage"/> is available again and can be picked up by another consumer.
+            /// </summary>
+            /// <param name="newMessageProperties"></param>
+            /// <param name="cancellationToken"></param>
+            /// <returns></returns>
+            Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken);
+        }
+
+        private sealed class MessageSettlementViaReceiver : IMessageSettlementStrategy
+        {
+            private readonly ServiceBusReceiver _receiver;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="MessageSettlementViaReceiver"/> class.
+            /// </summary>
+            /// <param name="serviceBusReceiver">The <see cref="ServiceBusReceiver"/> instance that was used to receive the <paramref name="message"/>.</param>
+            /// <param name="message">The <see cref="ServiceBusReceivedMessage"/> that has been received and that must be settled.</param>
+            public MessageSettlementViaReceiver(ServiceBusReceiver serviceBusReceiver, ServiceBusReceivedMessage message)
+            {
+                _receiver = serviceBusReceiver;
+                Message = message;
+                FullyQualifiedNamespace = serviceBusReceiver.FullyQualifiedNamespace;
+                EntityPath = serviceBusReceiver.EntityPath;
+            }
+
+            public string FullyQualifiedNamespace { get; }
+            public string EntityPath { get; }
+            public string SessionId { get; }
+            public ServiceBusReceivedMessage Message { get; }
+
+            public Task CompleteMessageAsync(CancellationToken cancellationToken)
+            {
+                return _receiver.CompleteMessageAsync(Message, cancellationToken);
+            }
+
+            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription,
+                CancellationToken cancellationToken)
+            {
+                return DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties: null, cancellationToken);
+            }
+
+            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            {
+                return _receiver.DeadLetterMessageAsync(Message, newMessageProperties, deadLetterReason, deadLetterErrorDescription, cancellationToken);
+            }
+
+            public Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            {
+                return _receiver.AbandonMessageAsync(Message, newMessageProperties, cancellationToken);
+            }
+        }
+
+        private sealed class MessageSettlementViaSessionEventArgs : IMessageSettlementStrategy
+        {
+            private readonly ProcessSessionMessageEventArgs _args;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="MessageSettlementViaSessionEventArgs"/> class.
+            /// </summary>
+            /// <param name="processSessionMessageEventArgs">The <see cref="ProcessSessionMessageEventArgs"/> that contains the information
+            /// about the ServiceBus message that has been received.</param>
+            public MessageSettlementViaSessionEventArgs(ProcessSessionMessageEventArgs processSessionMessageEventArgs)
+            {
+                _args = processSessionMessageEventArgs;
+                Message = _args.Message;
+                FullyQualifiedNamespace = _args.FullyQualifiedNamespace;
+                EntityPath = _args.EntityPath;
+            }
+
+            public string FullyQualifiedNamespace { get; }
+            public string EntityPath { get; }
+            public ServiceBusReceivedMessage Message { get; }
+
+            public Task CompleteMessageAsync(CancellationToken cancellationToken)
+            {
+                return _args.CompleteMessageAsync(_args.Message, cancellationToken);
+            }
+
+            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription,
+                CancellationToken cancellationToken)
+            {
+                return DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties: null, cancellationToken);
+            }
+
+            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            {
+                return _args.DeadLetterMessageAsync(_args.Message, newMessageProperties.ToDictionary(), deadLetterReason, deadLetterErrorDescription, cancellationToken);
+            }
+
+            public Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            {
+                return _args.AbandonMessageAsync(_args.Message, newMessageProperties, cancellationToken);
+            }
+        }
+
+        #endregion
     }
 
     /// <summary>

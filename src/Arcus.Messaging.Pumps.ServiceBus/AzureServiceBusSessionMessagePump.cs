@@ -141,7 +141,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
 
-            var messageContext = AzureServiceBusSessionMessageContext.Create(JobId, Settings.ServiceBusEntity, arg);
+            var messageContext = AzureServiceBusMessageContext.Create(JobId, Settings.ServiceBusEntity, arg);
 
             var routingResult = await _messageRouter.RouteMessageAsync(arg.Message, messageContext, correlationResult.CorrelationInfo, arg.CancellationToken);
 
