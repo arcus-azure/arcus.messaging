@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DependencyInjection
     /// Extensions on the <see cref="IServiceCollection"/> to add an <see cref="IAzureServiceBusMessageHandler{TMessage}"/>'s implementations.
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public static partial class ServiceBusMessageHandlerCollectionExtensions
+    public static class ServiceBusMessageHandlerCollectionExtensions
     {
         /// <summary>
         /// Adds a <see cref="IAzureServiceBusMessageHandler{TMessage}" /> implementation to process the messages from Azure Service Bus resources.
@@ -76,15 +76,8 @@ namespace Microsoft.Extensions.DependencyInjection
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
-            if (handlers is null)
-            {
-                throw new ArgumentNullException(nameof(handlers));
-            }
-
-            if (implementationFactory is null)
-            {
-                throw new ArgumentNullException(nameof(implementationFactory));
-            }
+            ArgumentNullException.ThrowIfNull(handlers);
+            ArgumentNullException.ThrowIfNull(implementationFactory);
 
             var options = new ServiceBusMessageHandlerOptions<TMessage>();
             configureOptions?.Invoke(options);
