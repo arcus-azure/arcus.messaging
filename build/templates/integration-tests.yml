@@ -14,7 +14,7 @@ jobs:
         version: '$(DotNet.Sdk.PreviousVersion)'
   
     - task: AzureCLI@2
-      displayName: 'Import secrets from Azure Key Vault'
+      displayName: 'Load secrets as appsettings tokens'
       inputs:
         azureSubscription: '${{ parameters.azureServiceConnection }}'
         addSpnToEnvironment: true
@@ -24,17 +24,10 @@ jobs:
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           Install-Module -Name Arcus.Scripting.DevOps -AllowClobber -MinimumVersion 1.3.0
   
-          $subscriptionId = (az account show | ConvertFrom-Json).id
-          $objectId = (az ad sp show --id $env:servicePrincipalId | ConvertFrom-Json).id
-          Set-AzDevOpsVariable -Name 'Arcus.Infra.SubscriptionId' -Value $subscriptionId
           Set-AzDevOpsVariable -Name 'Arcus.Infra.TenantId' -Value $env:tenantId -AsSecret
-          Set-AzDevOpsVariable -Name 'Arcus.Infra.ServicePrincipal.ObjectId' -Value $objectId
           Set-AzDevOpsVariable -Name 'Arcus.Infra.ServicePrincipal.ClientId' -Value $env:servicePrincipalId -AsSecret
           Set-AzDevOpsVariable -Name 'Arcus.Infra.ServicePrincipal.ClientSecret' -Value $env:servicePrincipalKey -AsSecret
-  
-          $serviceBusConnectionString = az keyvault secret show --name $env:ARCUS_MESSAGING_SERVICEBUS_CONNECTIONSTRING_SECRETNAME --vault-name $env:ARCUS_MESSAGING_KEYVAULT_NAME | ConvertFrom-Json
-          Set-AzDevOpsVariable -Name 'Arcus.Messaging.ServiceBus.ConnectionString' -Value $serviceBusConnectionString.value -AsSecret
-  
+    
     - template: test/run-integration-tests.yml@templates
       parameters:
         dotnetSdkVersion: '$(DotNet.Sdk.Version)'

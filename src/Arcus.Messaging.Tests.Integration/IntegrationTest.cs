@@ -1,5 +1,5 @@
 ﻿using Arcus.Testing;
-using Microsoft.Extensions.Configuration;
+using Bogus;
 using Xunit;
 
 namespace Arcus.Messaging.Tests.Integration
@@ -9,6 +9,8 @@ namespace Arcus.Messaging.Tests.Integration
     /// </summary>
     public abstract class IntegrationTest
     {
+        protected static readonly Faker Bogus = new();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationTest"/> class.
         /// </summary>
@@ -21,8 +23,8 @@ namespace Arcus.Messaging.Tests.Integration
         /// <summary>
         /// Gets the configuration of the current environment.
         /// </summary>
-        protected IConfiguration Configuration { get; }
-        
+        protected TestConfig Configuration { get; }
+
         /// <summary>
         /// Gets the logger for this test run.
         /// </summary>

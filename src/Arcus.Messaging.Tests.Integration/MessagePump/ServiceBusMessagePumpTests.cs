@@ -1,209 +1,55 @@
 ﻿using System;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Tests.Core.Correlation;
-using Arcus.Messaging.Tests.Core.Events.v1;
-using Arcus.Messaging.Tests.Core.Generators;
-using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.MessagePump.Fixture;
-using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
-using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Testing;
-using Azure.Identity;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
-using Bogus;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
 using Xunit;
-using static Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus.DiskMessageEventConsumer;
-using static Microsoft.Extensions.Logging.ServiceBusEntityType;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     [Collection("Integration")]
     [Trait("Category", "Integration")]
-    public partial class ServiceBusMessagePumpTests : IClassFixture<ServiceBusEntityFixture>, IDisposable
+    public partial class ServiceBusMessagePumpTests : IntegrationTest, IClassFixture<TemporaryServiceBusEntityState>, IDisposable
     {
-        private readonly TestConfig _config;
-        private readonly ServiceBusConfig _serviceBusConfig;
         private readonly TemporaryManagedIdentityConnection _connection;
-        private readonly ILogger _logger;
-        private readonly ITestOutputHelper _outputWriter;
-
-        private static readonly Faker Bogus = new();
+        private readonly TemporaryServiceBusEntityState _entity;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessagePumpTests"/> class.
         /// </summary>
-        public ServiceBusMessagePumpTests(ServiceBusEntityFixture entity, ITestOutputHelper outputWriter)
+        public ServiceBusMessagePumpTests(TemporaryServiceBusEntityState entity, ITestOutputHelper outputWriter) : base(outputWriter)
         {
-            _config = TestConfig.Create();
-            _serviceBusConfig = _config.GetServiceBus();
-
-            _outputWriter = outputWriter;
-            _logger = new XunitTestLogger(outputWriter);
-            _connection = TemporaryManagedIdentityConnection.Create(_config, _logger);
-
-            QueueName = entity.QueueName;
-            TopicName = entity.TopicName;
+            _entity = entity;
+            _connection = TemporaryManagedIdentityConnection.Create(Configuration, Logger);
         }
 
-        private string QueueName { get; }
-        private string TopicName { get; }
-        private string HostName => _serviceBusConfig.HostName;
-        private string NamespaceConnectionString => _serviceBusConfig.NamespaceConnectionString;
-
-        [Fact(Skip = ".NET application cannot start multiple blocking background tasks, see https://github.com/dotnet/runtime/issues/36063")]
+        [Fact(Skip = ".NET application cannot start multiple blocking background tasks, see https://github.com/dotnet/runtime/issues/36063" +
+                     "will maybe be in the .NET 10 release in November")]
         public async Task ServiceBusMessagePumpWithQueueAndTopic_PublishServiceBusMessage_MessageSuccessfullyProcessed()
         {
             // Arrange
-            await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
+            await using var serviceBus = GivenServiceBus();
 
-            var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
-            options.AddServiceBusTopicMessagePump(TopicName, HostName, topicSubscription.Name, new DefaultAzureCredential())
-                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
+            serviceBus.WhenServiceBusQueueMessagePump()
+                      .WithMatchedServiceBusMessageHandler();
 
-            // Act / Assert
-            await TestServiceBusMessageHandlingAsync(options, Queue);
-            await TestServiceBusMessageHandlingAsync(options, Topic);
-        }
-
-        private async Task TestServiceBusMessageHandlingAsync(
-            WorkerOptions options,
-            ServiceBusEntityType entityType,
-            [CallerMemberName] string memberName = null)
-        {
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
-
-            await TestServiceBusMessageHandlingAsync(options, entityType, message, async () =>
-            {
-                OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId);
-                AssertReceivedOrderEventDataForW3C(message, eventData);
-            }, memberName);
-        }
-
-        private async Task TestServiceBusMessageHandlingAsync(
-            ServiceBusEntityType entityType,
-            Action<WorkerOptions> configureOptions,
-            MessageCorrelationFormat format = MessageCorrelationFormat.W3C,
-            [CallerMemberName] string memberName = null)
-        {
-            ServiceBusMessage message = format switch
-            {
-                MessageCorrelationFormat.W3C => CreateOrderServiceBusMessageForW3C(),
-            };
-
-            var options = new WorkerOptions();
-            configureOptions(options);
-
-            await TestServiceBusMessageHandlingAsync(options, entityType, message, async () =>
-            {
-                OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(message.MessageId);
-                switch (format)
-                {
-                    case MessageCorrelationFormat.W3C:
-                        AssertReceivedOrderEventDataForW3C(message, eventData);
-                        break;
-
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(format), format, null);
-                }
-            }, memberName);
-        }
-
-        private async Task TestServiceBusMessageHandlingAsync(
-            WorkerOptions options,
-            ServiceBusEntityType entityType,
-            ServiceBusMessage message,
-            Func<Task> assertionAsync,
-            [CallerMemberName] string memberName = null)
-        {
-            // Arrange
-            options.AddXunitTestLogging(_outputWriter);
-
-            await using var worker = await Worker.StartNewAsync(options, memberName);
-            ServiceBusEntityType registeredEntityType = DetermineRegisteredEntityType(worker);
-
-            var producer = TestServiceBusMessageProducer.CreateFor(registeredEntityType switch
-            {
-                Queue => QueueName,
-                Topic => TopicName,
-                _ => throw new ArgumentOutOfRangeException(nameof(entityType), entityType, "Unknown Service bus entity type")
-            }, _config);
+            serviceBus.WhenServiceBusTopicMessagePump()
+                      .WithMatchedServiceBusMessageHandler();
 
             // Act
-            await producer.ProduceAsync(message);
+            var messages = await serviceBus.WhenProducingMessagesAsync();
 
             // Assert
-            await assertionAsync();
+            await serviceBus.ShouldConsumeViaMatchedHandlerAsync(messages);
         }
 
-        private static ServiceBusEntityType DetermineRegisteredEntityType(Worker worker)
+        private ServiceBusTestContext GivenServiceBus()
         {
-            ServiceBusEntityType registeredEntityType =
-                Assert.Single(
-                    worker.Services.GetServices<IHostedService>()
-                                   .Where(h => h is AzureServiceBusMessagePump)
-                                   .Cast<AzureServiceBusMessagePump>()
-                                   .Select(m => m.EntityType)
-                                   .ToArray());
-
-            return registeredEntityType;
-        }
-
-        private static ServiceBusMessage CreateOrderServiceBusMessageForW3C(Encoding encoding = null)
-        {
-            encoding ??= Encoding.UTF8;
-            TraceParent traceParent = TraceParent.Generate();
-
-            Order order = OrderGenerator.Generate();
-            string json = JsonConvert.SerializeObject(order);
-            byte[] raw = encoding.GetBytes(json);
-
-            var message = new ServiceBusMessage(raw)
-            {
-                MessageId = order.Id,
-                ApplicationProperties =
-                {
-                    { PropertyNames.ContentType, "application/json" },
-                    { PropertyNames.Encoding, encoding.WebName }
-                }
-            };
-
-            message.ApplicationProperties["Diagnostic-Id"] = traceParent.DiagnosticId;
-            return message;
-        }
-
-        private static void AssertReceivedOrderEventDataForW3C(
-            ServiceBusMessage message,
-            OrderCreatedEventData receivedEventData)
-        {
-            var encoding = Encoding.GetEncoding(message.ApplicationProperties[PropertyNames.Encoding].ToString() ?? Encoding.UTF8.WebName);
-            string json = encoding.GetString(message.Body);
-
-            var order = JsonConvert.DeserializeObject<Order>(json);
-
-            (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
-            Assert.NotNull(receivedEventData);
-            Assert.NotNull(receivedEventData.CorrelationInfo);
-            Assert.Equal(order.Id, receivedEventData.Id);
-            Assert.Equal(order.Amount, receivedEventData.Amount);
-            Assert.Equal(order.ArticleNumber, receivedEventData.ArticleNumber);
-            Assert.Equal(transactionId, receivedEventData.CorrelationInfo.TransactionId);
-            Assert.NotNull(receivedEventData.CorrelationInfo.OperationId);
-            Assert.Equal(operationParentId, receivedEventData.CorrelationInfo.OperationParentId);
+            return ServiceBusTestContext.GivenServiceBus(_entity, Logger);
         }
 
         /// <summary>
@@ -215,30 +61,34 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
     }
 
-    public class ServiceBusEntityFixture : IAsyncLifetime
+    public class TemporaryServiceBusEntityState : IAsyncLifetime
     {
-        private TemporaryQueue _queue;
-        private TemporaryTopic _topic;
         private ServiceBusClient _client;
 
+        public TemporaryQueue Queue { get; set; }
+        public TemporaryTopic Topic { get; set; }
         public string QueueName { get; } = $"queue-{Guid.NewGuid()}";
         public string TopicName { get; } = $"topic-{Guid.NewGuid()}";
+        public ServiceBusConfig ServiceBusConfig { get; private set; }
 
         public async ValueTask InitializeAsync()
         {
-            var config = TestConfig.Create().GetServiceBus();
-            ServiceBusAdministrationClient adminClient = config.GetAdminClient();
+            ServiceBusConfig = TestConfig.Create().GetServiceBus();
+            ServiceBusAdministrationClient adminClient = ServiceBusConfig.GetAdminClient();
 
-            _client = config.GetClient();
-            _topic = await TemporaryTopic.CreateIfNotExistsAsync(adminClient, _client, TopicName, NullLogger.Instance);
-            _queue = await TemporaryQueue.CreateIfNotExistsAsync(adminClient, _client, QueueName, NullLogger.Instance);
+            _client = ServiceBusConfig.GetClient();
+            Topic = await TemporaryTopic.CreateIfNotExistsAsync(adminClient, _client, TopicName, NullLogger.Instance, temp => temp.OnTeardown.CompleteMessages());
+            Queue = await TemporaryQueue.CreateIfNotExistsAsync(adminClient, _client, QueueName, NullLogger.Instance, temp =>
+            {
+                temp.OnTeardown.CompleteMessages();
+            });
         }
 
         public async ValueTask DisposeAsync()
         {
             await using var disposables = new DisposableCollection(NullLogger.Instance);
-            disposables.Add(_queue);
-            disposables.Add(_topic);
+            disposables.Add(Queue);
+            disposables.Add(Topic);
             disposables.Add(_client);
         }
     }
