@@ -3,6 +3,7 @@ using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Messaging.Pumps.ServiceBus.Resiliency;
 using Azure.Core;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection.Extensions;
