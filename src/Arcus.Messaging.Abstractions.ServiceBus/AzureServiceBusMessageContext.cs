@@ -291,7 +291,13 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
 
             public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
             {
-                return _args.DeadLetterMessageAsync(_args.Message, newMessageProperties.ToDictionary(), deadLetterReason, deadLetterErrorDescription, cancellationToken);
+                if (newMessageProperties != null)
+                {
+                    var propertiesToModify = newMessageProperties.ToDictionary();
+                    return _args.DeadLetterMessageAsync(_args.Message, propertiesToModify, deadLetterReason, deadLetterErrorDescription, cancellationToken);
+                }
+
+                return _args.DeadLetterMessageAsync(_args.Message, deadLetterReason, deadLetterErrorDescription, cancellationToken);
             }
 
             public Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
