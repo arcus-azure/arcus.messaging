@@ -32,7 +32,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
         /// <summary>
         /// Gets the unique identifier for this background job to distinguish this job instance in a multi-instance deployment.
         /// </summary>
-        public string JobId { get; protected set; } = Guid.NewGuid().ToString();
+        public string JobId { get; protected init; } = Guid.NewGuid().ToString();
 
         /// <summary>
         /// Gets the boolean flag that indicates whether the message pump is started.
