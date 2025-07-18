@@ -193,8 +193,8 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.TryAddSingleton<IMessagePumpCircuitBreaker>(provider =>
             {
-                var logger = provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>();
-                return new DefaultMessagePumpCircuitBreaker(provider, logger);
+                var logger = provider.GetService<ILogger<DefaultAzureServiceBusMessagePumpCircuitBreaker>>();
+                return new DefaultAzureServiceBusMessagePumpCircuitBreaker(provider, logger);
             });
 
             services.AddHostedService(provider =>
