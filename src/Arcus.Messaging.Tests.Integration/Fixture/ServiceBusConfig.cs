@@ -11,17 +11,14 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         public ServiceBusConfig(
             ServicePrincipal servicePrincipal,
-            string @namespace,
-            string namespaceConnectionString = null)
+            string @namespace)
         {
             ServicePrincipal = servicePrincipal;
-            NamespaceConnectionString = namespaceConnectionString;
             HostName = $"{@namespace}.servicebus.windows.net";
         }
 
         public string HostName { get; }
         public ServicePrincipal ServicePrincipal { get; }
-        public string NamespaceConnectionString { get; }
 
         public ServiceBusClient GetClient()
         {
@@ -40,8 +37,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         {
             return new ServiceBusConfig(
                 config.GetServicePrincipal(),
-                config["Arcus:ServiceBus:Namespace"],
-                config["Arcus:ServiceBus:ConnectionString"]);
+                config["Arcus:ServiceBus:Namespace"]);
         }
     }
 }
