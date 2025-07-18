@@ -161,9 +161,42 @@ namespace Microsoft.Extensions.DependencyInjection
                 subscriptionName);
         }
 
+        /// <summary>
+        /// Adds a message pump to consume messages with session-support from an Azure Service bus topic subscription.
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="topicName"></param>
+        /// <param name="subscriptionName"></param>
+        /// <param name="fullyQualifiedNamespace"></param>
+        /// <param name="credential"></param>
+        /// <param name="configureMessagePump"></param>
+        /// <returns></returns>
+        public static ServiceBusMessageHandlerCollection AddServiceBusTopicMessagePumpWithSessionSupport(
+            this IServiceCollection services,
+            string topicName,
+            string subscriptionName,
+            string fullyQualifiedNamespace,
+            TokenCredential credential,
+            Action<AzureServiceBusSessionMessagePumpOptions> configureMessagePump)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(topicName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(subscriptionName);
+            ArgumentNullException.ThrowIfNull(credential);
+
+            ServiceBusMessageHandlerCollection collection = AddServiceBusSessionMessagePump(
+                services,
+                topicName,
+                CreateClientFactory(fullyQualifiedNamespace, credential),
+                ServiceBusEntityType.Topic,
+                configureMessagePump,
+                subscriptionName);
+
+            return collection;
+        }
+
         private static Func<IServiceProvider, ServiceBusClient> CreateClientFactory(string fullyQualifiedNamespace, TokenCredential credential)
         {
-            string SanitizeServiceBusNamespace(string serviceBusNamespace)
+            static string SanitizeServiceBusNamespace(string serviceBusNamespace)
             {
                 if (!serviceBusNamespace.EndsWith(".servicebus.windows.net"))
                 {
@@ -203,6 +236,32 @@ namespace Microsoft.Extensions.DependencyInjection
                 var logger = provider.GetService<ILogger<AzureServiceBusMessagePump>>();
 
                 return new AzureServiceBusMessagePump(entityPath, subscriptionName, entityType, clientImplementationFactory, options, provider, logger);
+            });
+
+            return new ServiceBusMessageHandlerCollection(services) { JobId = options.JobId };
+        }
+
+        private static ServiceBusMessageHandlerCollection AddServiceBusSessionMessagePump(
+            IServiceCollection services,
+            string entityPath,
+            Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
+            ServiceBusEntityType entityType,
+            Action<AzureServiceBusSessionMessagePumpOptions> configureOptions = null,
+            string subscriptionName = null)
+        {
+            ArgumentNullException.ThrowIfNull(services);
+
+            var options = AzureServiceBusSessionMessagePumpOptions.DefaultOptions;
+            configureOptions?.Invoke(options);
+
+            services.AddApplicationInsightsTelemetryWorkerService();
+
+            services.AddHostedService(provider =>
+            {
+                subscriptionName = SanitizeSubscriptionName(subscriptionName, provider);
+                var logger = provider.GetService<ILogger<AzureServiceBusSessionMessagePump>>();
+
+                return new AzureServiceBusSessionMessagePump(entityPath, subscriptionName, entityType, clientImplementationFactory, options, provider, logger);
             });
 
             return new ServiceBusMessageHandlerCollection(services) { JobId = options.JobId };
