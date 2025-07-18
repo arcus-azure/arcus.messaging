@@ -107,7 +107,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             // Act
             MessageProcessingResult result = await router.RouteMessageAsync(Mock.Of<ServiceBusReceiver>(), message, context, correlationInfo, CancellationToken.None);
-            
+
             // Assert
             Assert.True(result.IsSuccessful, result.ErrorMessage);
             Assert.True(spyHandler.IsProcessed, result.ErrorMessage);
@@ -122,10 +122,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var ignoredHandler = new StubServiceBusMessageHandler<Order>();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
-                          implementationFactory: _ => spyHandler, 
+                          implementationFactory: _ => spyHandler,
                           opt => opt.AddMessageContextFilter(_ => true))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
-                          implementationFactory: _ => ignoredHandler, 
+                          implementationFactory: _ => ignoredHandler,
                           opt => opt.AddMessageContextFilter(_ => false));
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
@@ -135,10 +135,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             Order order = OrderGenerator.Generate();
             ServiceBusReceivedMessage message = order.AsServiceBusReceivedMessage();
-            
+
             // Act
             MessageProcessingResult result = await router.RouteMessageAsync(Mock.Of<ServiceBusReceiver>(), message, context, correlationInfo, CancellationToken.None);
-            
+
             // Assert
             Assert.True(result.IsSuccessful, result.ErrorMessage);
             Assert.True(spyHandler.IsProcessed);
@@ -158,7 +158,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                           implementationFactory: _ => ignoredHandler, opt => opt.AddMessageBodyFilter(_ => false));
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
-            
+
             AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
@@ -185,7 +185,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: _ => ignoredHandler, opt => opt.AddMessageBodyFilter(_ => true));
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
-            
+
             AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
@@ -245,7 +245,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: _ => ignoredHandler);
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
-            
+
             AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
@@ -253,7 +253,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             // Act
             MessageProcessingResult result = await router.RouteMessageAsync(Mock.Of<ServiceBusReceiver>(), message, context, correlationInfo, CancellationToken.None);
-            
+
             // Assert
             Assert.True(result.IsSuccessful, result.ErrorMessage);
             Assert.True(spyHandler.IsProcessed);
@@ -297,10 +297,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
             ServiceBusReceivedMessage message = expectedMessage.AsServiceBusReceivedMessage();
-            
+
             // Act
             MessageProcessingResult result = await router.RouteMessageAsync(Mock.Of<ServiceBusReceiver>(), message, context, correlationInfo, CancellationToken.None);
-            
+
             // Assert
             Assert.True(result.IsSuccessful, result.ErrorMessage);
             Assert.True(spyHandler.IsProcessed);

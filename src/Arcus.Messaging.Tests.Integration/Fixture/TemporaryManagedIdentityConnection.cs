@@ -42,14 +42,13 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             ArgumentNullException.ThrowIfNull(configuration);
             logger ??= NullLogger.Instance;
 
-            string tenantId = configuration.GetTenantId();
             ServicePrincipal servicePrincipal = configuration.GetServicePrincipal();
 
-            logger.LogTrace("Set managed identity connection for service principal: {ClientId}", servicePrincipal.ClientId);
+            logger.LogTrace("[Test:Setup] Set managed identity connection for service principal: {ClientId}", servicePrincipal.ClientId);
             return new TemporaryManagedIdentityConnection(
                 servicePrincipal.ClientId,
                 logger,
-                TemporaryEnvironmentVariable.SetIfNotExists(EnvironmentVariables.AzureTenantId, tenantId, logger),
+                TemporaryEnvironmentVariable.SetIfNotExists(EnvironmentVariables.AzureTenantId, servicePrincipal.TenantId, logger),
                 TemporaryEnvironmentVariable.SetIfNotExists(EnvironmentVariables.AzureServicePrincipalClientId, servicePrincipal.ClientId, logger),
                 TemporaryEnvironmentVariable.SetSecretIfNotExists(EnvironmentVariables.AzureServicePrincipalClientSecret, servicePrincipal.ClientSecret, logger));
         }
@@ -59,7 +58,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         /// </summary>
         public void Dispose()
         {
-            _logger.LogTrace("Remove managed identity connection for service principal: {ClientId}", ClientId);
+            _logger.LogTrace("[Test:Teardown] Remove managed identity connection for service principal: {ClientId}", ClientId);
             Assert.All(_environmentVariables, envVar => envVar.Dispose());
         }
     }
