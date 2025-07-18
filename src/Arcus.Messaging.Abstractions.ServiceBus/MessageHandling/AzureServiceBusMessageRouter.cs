@@ -166,7 +166,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 if (hasGoneThroughMessageHandler)
                 {
                     await AbandonMessageMatchedHandlerFailedAsync(messageReceiver, message, messageContext);
-                    return MessageProcessingResult.Failure(message.MessageId, MatchedHandlerFailed, "Failed to process Azure Service Bus message in pump as the matched handler did not successfully processed the message and no fallback message handlers were configured");
+                    return MessageProcessingResult.Failure(message.MessageId, MatchedHandlerFailed, "Failed to process Azure Service Bus message in pump as the matched handler did not successfully processed the message");
                 }
 
                 await DeadLetterMessageNoHandlerMatchedAsync(messageReceiver, message, messageContext);
@@ -243,8 +243,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         {
             if (messageReceiver != null)
             {
-                Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handler was matched against the message and no fallback message handlers was configured, dead-lettering message!", message.MessageId, messageContext.JobId);
-                await messageReceiver.DeadLetterMessageAsync(message, "No message handler was matched against the message and no fallback handlers were configured");
+                Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no registered message handler was matched against the message, dead-lettering message!", message.MessageId, messageContext.JobId);
+                await messageReceiver.DeadLetterMessageAsync(message, "No registered message handler was matched against the message");
             }
         }
 
@@ -252,7 +252,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         {
             if (messageReceiver != null)
             {
-                Logger.LogDebug("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully process the message and no fallback message handlers configured, abandoning message!", message.MessageId, messageContext.JobId);
+                Logger.LogDebug("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully process the message, abandoning message!", message.MessageId, messageContext.JobId);
                 await messageReceiver.AbandonMessageAsync(message);
             }
         }
