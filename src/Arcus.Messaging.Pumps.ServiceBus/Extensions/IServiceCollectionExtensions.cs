@@ -3,6 +3,7 @@ using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Arcus.Messaging.Pumps.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Messaging.Pumps.ServiceBus.Resiliency;
 using Azure.Core;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -193,8 +194,8 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.TryAddSingleton<IMessagePumpCircuitBreaker>(provider =>
             {
-                var logger = provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>();
-                return new DefaultMessagePumpCircuitBreaker(provider, logger);
+                var logger = provider.GetService<ILogger<DefaultAzureServiceBusMessagePumpCircuitBreaker>>();
+                return new DefaultAzureServiceBusMessagePumpCircuitBreaker(provider, logger);
             });
 
             services.AddHostedService(provider =>
