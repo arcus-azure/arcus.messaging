@@ -22,6 +22,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     public class AzureServiceBusMessagePump : MessagePump
     {
         private readonly string _entityName;
+        private readonly AzureServiceBusMessagePumpOptions _options;
         private readonly Func<IServiceProvider, ServiceBusClient> _clientImplementationFactory;
         private readonly AzureServiceBusMessageRouter _messageRouter;
         private readonly IDisposable _loggingScope;
@@ -46,7 +47,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             JobId = options.JobId;
             EntityType = entityType;
             SubscriptionName = subscriptionName;
-            Options = options;
+            _options = options;
 
             _entityName = entityName;
             _clientImplementationFactory = clientImplementationFactory;
@@ -62,7 +63,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Gets the user-configurable options of the message pump.
         /// </summary>
-        public AzureServiceBusMessagePumpOptions Options { get; }
+        [Obsolete("This property will be removed in a future release")]
+        public AzureServiceBusMessagePumpOptions Options => _options;
 
         /// <summary>
         ///     Service Bus namespace that contains the entity
@@ -80,6 +82,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             try
             {
                 _messageReceiver = CreateMessageReceiver();
+#pragma warning disable CS0618 // Type or member is obsolete
+                Namespace = _messageReceiver.FullyQualifiedNamespace;
+#pragma warning restore CS0618 // Type or member is obsolete
 
                 await StartProcessingMessagesAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
@@ -103,8 +108,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ServiceBusClient client = _clientImplementationFactory(ServiceProvider);
 
             return string.IsNullOrWhiteSpace(SubscriptionName)
-                ? client.CreateReceiver(_entityName, new ServiceBusReceiverOptions { PrefetchCount = Options.PrefetchCount })
-                : client.CreateReceiver(_entityName, SubscriptionName, new ServiceBusReceiverOptions { PrefetchCount = Options.PrefetchCount });
+                ? client.CreateReceiver(_entityName, new ServiceBusReceiverOptions { PrefetchCount = _options.PrefetchCount })
+                : client.CreateReceiver(_entityName, SubscriptionName, new ServiceBusReceiverOptions { PrefetchCount = _options.PrefetchCount });
         }
 
         private static readonly TimeSpan MessagePollingWaitTime = TimeSpan.FromMilliseconds(300);
@@ -123,8 +128,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                    https://github.com/arcus-azure/arcus.messaging/issues/176 */
 
             Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", EntityType, JobId, _entityName, Namespace);
-
-            Namespace = _messageReceiver.FullyQualifiedNamespace;
 
             _receiveMessagesCancellation = new CancellationTokenSource();
             while (CircuitState.IsClosed
@@ -170,7 +173,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private async Task ProcessMultipleMessagesAsync(CancellationToken cancellationToken)
         {
             IReadOnlyList<ServiceBusReceivedMessage> messages =
-                await _messageReceiver.ReceiveMessagesAsync(Options.MaxConcurrentCalls, cancellationToken: _receiveMessagesCancellation.Token);
+                await _messageReceiver.ReceiveMessagesAsync(_options.MaxConcurrentCalls, cancellationToken: _receiveMessagesCancellation.Token);
 
             await Task.WhenAll(messages.Select(msg => ProcessMessageAsync(msg, cancellationToken)));
         }

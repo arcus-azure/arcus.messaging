@@ -18,6 +18,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     /// </summary>
     public class AzureServiceBusSessionMessagePump : MessagePump
     {
+        private readonly string _entityName;
+        private readonly AzureServiceBusSessionMessagePumpOptions _options;
+        private readonly Func<IServiceProvider, ServiceBusClient> _clientImplementationFactory;
         private readonly IAzureServiceBusMessageRouter _messageRouter;
         private readonly IDisposable _loggingScope;
 
@@ -27,35 +30,30 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusSessionMessagePump"/> class.
         /// </summary>
-        /// <param name="settings"></param>
-        /// <param name="serviceProvider"></param>
-        /// <param name="messageRouter"></param>
-        /// <param name="logger"></param>
-        /// <exception cref="ArgumentNullException"></exception>
         internal AzureServiceBusSessionMessagePump(
-            AzureServiceBusSessionMessagePumpSettings settings,
+            string entityName,
+            string subscriptionName,
+            ServiceBusEntityType entityType,
+            Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
+            AzureServiceBusSessionMessagePumpOptions options,
             IServiceProvider serviceProvider,
-            IAzureServiceBusMessageRouter messageRouter,
             ILogger<AzureServiceBusSessionMessagePump> logger)
             : base(serviceProvider, logger)
         {
-            Settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            JobId = Settings.Options.JobId;
-            SubscriptionName = Settings.SubscriptionName;
+            _entityName = entityName;
+            SubscriptionName = subscriptionName;
+            EntityType = entityType;
+            _clientImplementationFactory = clientImplementationFactory;
+            _options = options;
 
-            _messageRouter = messageRouter ?? throw new ArgumentNullException(nameof(messageRouter));
+            _messageRouter = new AzureServiceBusMessageRouter(ServiceProvider, options.Routing, ServiceProvider.GetService<ILogger<AzureServiceBusMessageRouter>>());
             _loggingScope = logger?.BeginScope("Job: {JobId}", JobId);
         }
 
         /// <summary>
-        ///     Gets the settings configuring the message pump.
+        /// Gets the type of the Azure Service Bus entity for which this message pump is configured.
         /// </summary>
-        internal AzureServiceBusSessionMessagePumpSettings Settings { get; }
-
-        /// <summary>
-        /// Gets the user-configurable options of the message pump.
-        /// </summary>
-        public AzureServiceBusSessionMessagePumpOptions Options => Settings.Options;
+        public ServiceBusEntityType EntityType { get; }
 
         /// <summary>
         ///     Service Bus namespace that contains the entity
@@ -63,8 +61,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         public string Namespace { get; private set; }
 
         /// <summary>
-        /// Gets the name of the topic subscription; combined from the <see cref="AzureServiceBusMessagePumpSettings.SubscriptionName"/> and the <see cref="MessagePump.JobId"/>.
+        /// Gets the name of the topic subscription that is used to retrieve messages from/>.
         /// </summary>
+        /// <remarks>This is only applicable when using Azure Service Bus Topics</remarks>
         protected string SubscriptionName { get; }
 
         /// <summary>
@@ -76,7 +75,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             try
             {
-                _serviceBusSessionProcessor = await Settings.CreateSessionProcessorAsync();
+                _serviceBusSessionProcessor = CreateSessionProcessorAsync();
 
                 Namespace = _serviceBusSessionProcessor.FullyQualifiedNamespace;
                 _serviceBusSessionProcessor.ProcessMessageAsync += ProcessMessageAsync;
@@ -88,11 +87,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
             {
 #pragma warning disable CS0618 // Type or member is obsolete: the entity type will be moved down to this message pump in v3.0.
-                Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' was cancelled", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace);
+                Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' was cancelled", EntityType, JobId, _entityName, Namespace);
             }
             catch (Exception exception)
             {
-                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", Settings.ServiceBusEntity, JobId, Settings.EntityName, Namespace);
+                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", EntityType, JobId, _entityName, Namespace);
             }
             finally
             {
@@ -111,8 +110,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (_serviceBusSessionProcessor != null)
             {
-                await _serviceBusSessionProcessor.StopProcessingAsync();
-                await _serviceBusSessionProcessor.CloseAsync();
+                await _serviceBusSessionProcessor.StopProcessingAsync(cancellationToken);
+                await _serviceBusSessionProcessor.CloseAsync(cancellationToken);
             }
 
             await base.StopAsync(cancellationToken);
@@ -124,42 +123,39 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ServiceBusReceivedMessage message = arg?.Message;
             if (message is null)
             {
-                Logger.LogWarning("Received message on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", Settings.ServiceBusEntity, JobId);
+                Logger.LogWarning("Received message on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", EntityType, JobId);
                 return;
             }
 
             if (_isHostShuttingDown)
             {
-                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure Service Bus {EntityType} message pump '{JobId}' is shutting down", message.MessageId, Settings.ServiceBusEntity, JobId);
+                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure Service Bus {EntityType} message pump '{JobId}' is shutting down", message.MessageId, EntityType, JobId);
                 await arg.AbandonMessageAsync(message);
                 return;
             }
             if (string.IsNullOrEmpty(message.CorrelationId))
             {
-                Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
+                Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, EntityType, JobId);
             }
 
             using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
 
-            var messageContext = AzureServiceBusMessageContext.Create(JobId, Settings.ServiceBusEntity, arg);
+            var messageContext = AzureServiceBusMessageContext.Create(JobId, EntityType, arg);
 
             var routingResult = await _messageRouter.RouteMessageAsync(arg.Message, messageContext, correlationResult.CorrelationInfo, arg.CancellationToken);
 
-            if (routingResult.IsSuccessful && Settings.Options.AutoComplete)
+            if (routingResult.IsSuccessful && _options.AutoComplete)
             {
                 try
                 {
-                    Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, Settings.ServiceBusEntity, JobId);
+                    Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, EntityType, JobId);
                     await messageContext.CompleteMessageAsync(CancellationToken.None);
                 }
                 catch (ServiceBusException exception) when (
                     exception.Reason is ServiceBusFailureReason.MessageLockLost or ServiceBusFailureReason.SessionLockLost)
-                //&& exception.Message.Contains("expired")
-                //&& exception.Message.Contains("already")
-                //&& exception.Message.Contains("removed"))
                 {
 #pragma warning disable CS0618 // Typ or member is obsolete: entity type will be moved to this message pump in v3.0.
-                    Logger.LogTrace("Message '{MessageId}' on Azure Service Bus {EntityType} message pump '{JobId}' does not need to be auto-completed, because it was already settled", messageContext.MessageId, Settings.ServiceBusEntity, JobId);
+                    Logger.LogTrace("Message '{MessageId}' on Azure Service Bus {EntityType} message pump '{JobId}' does not need to be auto-completed, because it was already settled", messageContext.MessageId, EntityType, JobId);
                 }
             }
         }
@@ -168,12 +164,21 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             if (arg.Exception is null)
             {
-                Logger.LogWarning("Thrown exception on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", Settings.ServiceBusEntity, JobId);
+                Logger.LogWarning("Thrown exception on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", EntityType, JobId);
                 return Task.CompletedTask;
             }
 
             Logger.LogCritical(arg.Exception, "Message pump '{JobId}' was unable to process message: {Message}", JobId, arg.Exception.Message);
             return Task.CompletedTask;
+        }
+
+        internal ServiceBusSessionProcessor CreateSessionProcessorAsync()
+        {
+            ServiceBusClient client = _clientImplementationFactory(ServiceProvider);
+
+            return string.IsNullOrWhiteSpace(SubscriptionName)
+                ? client.CreateSessionProcessor(_entityName, _options.ToServiceBusSessionProcessorOptions())
+                : client.CreateSessionProcessor(_entityName, SubscriptionName, _options.ToServiceBusSessionProcessorOptions());
         }
 
         private MessageCorrelationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message)

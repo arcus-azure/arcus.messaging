@@ -185,21 +185,13 @@ namespace Microsoft.Extensions.DependencyInjection
 
             ServiceBusMessageHandlerCollection collection = AddServiceBusSessionMessagePump(
                 services,
-                CreateSettings,
-                configureMessagePump);
+                topicName,
+                CreateClientFactory(fullyQualifiedNamespace, credential),
+                ServiceBusEntityType.Topic,
+                configureMessagePump,
+                subscriptionName);
 
             return collection;
-
-            AzureServiceBusSessionMessagePumpSettings CreateSettings(IServiceProvider serviceProvider, AzureServiceBusSessionMessagePumpOptions options)
-            {
-                return new AzureServiceBusSessionMessagePumpSettings(
-                    topicName,
-                    subscriptionName,
-                    ServiceBusEntityType.Topic,
-                    CreateClientFactory(fullyQualifiedNamespace, credential),
-                    options,
-                    serviceProvider);
-            }
         }
 
         private static Func<IServiceProvider, ServiceBusClient> CreateClientFactory(string fullyQualifiedNamespace, TokenCredential credential)
@@ -249,6 +241,32 @@ namespace Microsoft.Extensions.DependencyInjection
             return new ServiceBusMessageHandlerCollection(services) { JobId = options.JobId };
         }
 
+        private static ServiceBusMessageHandlerCollection AddServiceBusSessionMessagePump(
+            IServiceCollection services,
+            string entityPath,
+            Func<IServiceProvider, ServiceBusClient> clientImplementationFactory,
+            ServiceBusEntityType entityType,
+            Action<AzureServiceBusSessionMessagePumpOptions> configureOptions = null,
+            string subscriptionName = null)
+        {
+            ArgumentNullException.ThrowIfNull(services);
+
+            var options = AzureServiceBusSessionMessagePumpOptions.DefaultOptions;
+            configureOptions?.Invoke(options);
+
+            services.AddApplicationInsightsTelemetryWorkerService();
+
+            services.AddHostedService(provider =>
+            {
+                subscriptionName = SanitizeSubscriptionName(subscriptionName, provider);
+                var logger = provider.GetService<ILogger<AzureServiceBusSessionMessagePump>>();
+
+                return new AzureServiceBusSessionMessagePump(entityPath, subscriptionName, entityType, clientImplementationFactory, options, provider, logger);
+            });
+
+            return new ServiceBusMessageHandlerCollection(services) { JobId = options.JobId };
+        }
+
         private static string SanitizeSubscriptionName(string subscriptionName, IServiceProvider provider)
         {
             var logger =
@@ -262,38 +280,6 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             return subscriptionName;
-        }
-
-        private static ServiceBusMessageHandlerCollection AddServiceBusSessionMessagePump(IServiceCollection services,
-            Func<IServiceProvider, AzureServiceBusSessionMessagePumpOptions, AzureServiceBusSessionMessagePumpSettings> createSettings,
-            Action<AzureServiceBusSessionMessagePumpOptions> configureOptions = null)
-        {
-            ArgumentNullException.ThrowIfNull(services);
-
-            var options = AzureServiceBusSessionMessagePumpOptions.DefaultOptions;
-            configureOptions?.Invoke(options);
-
-            services.AddApplicationInsightsTelemetryWorkerService();
-
-            services.TryAddSingleton<IAzureServiceBusMessageRouter>(provider =>
-            {
-                var logger = provider.GetService<ILogger<AzureServiceBusMessageRouter>>();
-                return new AzureServiceBusMessageRouter(provider, options.Routing, logger);
-            });
-
-            // Circuitbreaker is not supported on a MessagePump that supports sessions.
-            //services.TryAddSingleton<IMessagePumpCircuitBreaker>(provider => new DefaultMessagePumpCircuitBreaker(provider, provider.GetService<ILogger<DefaultMessagePumpCircuitBreaker>>()));
-
-            services.AddHostedService(provider =>
-            {
-                var router = provider.GetService<IAzureServiceBusMessageRouter>();
-                var logger = provider.GetService<ILogger<AzureServiceBusSessionMessagePump>>();
-
-                AzureServiceBusSessionMessagePumpSettings settings = createSettings(provider, options);
-                return new AzureServiceBusSessionMessagePump(settings, provider, router, logger);
-            });
-
-            return new ServiceBusMessageHandlerCollection(services) { JobId = options.JobId };
         }
     }
 }

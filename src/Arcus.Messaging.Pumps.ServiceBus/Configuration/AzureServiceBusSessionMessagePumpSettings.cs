@@ -14,7 +14,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         private readonly Func<IServiceProvider, Task<(ServiceBusClient client, string entityPath)>> _clientImplementationFactory;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="AzureServiceBusMessagePumpSettings"/> class.
+        /// Initializes a new instance of the <see cref="AzureServiceBusSessionMessagePumpSettings"/> class.
         /// </summary>
         /// <param name="entityName">The name of the entity to process.</param>
         /// <param name="subscriptionName">The name of the subscription to process.</param>

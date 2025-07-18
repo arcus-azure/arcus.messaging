@@ -1,5 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Azure.Messaging.ServiceBus;
 
 namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
 {
@@ -72,5 +73,21 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets the default consumer-configurable options for Azure Service Bus message pumps that have Session support.
         /// </summary>
         public static readonly AzureServiceBusSessionMessagePumpOptions DefaultOptions = new AzureServiceBusSessionMessagePumpOptions();
+
+        /// <summary>
+        /// Creates a <see cref="ServiceBusSessionProcessorOptions"/> instance based
+        /// on the settings that are configured in this instance.
+        /// </summary>
+        /// <returns>A <see cref="ServiceBusSessionProcessorOptions"/> instance.</returns>
+        internal ServiceBusSessionProcessorOptions ToServiceBusSessionProcessorOptions()
+        {
+            return new ServiceBusSessionProcessorOptions()
+            {
+                MaxConcurrentCallsPerSession = this.MaxConcurrentCallsPerSession,
+                MaxConcurrentSessions = this.MaxConcurrentSessions,
+                SessionIdleTimeout = this.SessionIdleTimeout,
+                PrefetchCount = this.PrefetchCount
+            };
+        }
     }
 }
