@@ -40,6 +40,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ILogger<AzureServiceBusSessionMessagePump> logger)
             : base(serviceProvider, logger)
         {
+            JobId = options.JobId;
             _entityName = entityName;
             SubscriptionName = subscriptionName;
             EntityType = entityType;
@@ -142,22 +143,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             var messageContext = AzureServiceBusMessageContext.Create(JobId, EntityType, arg);
 
-            var routingResult = await _messageRouter.RouteMessageAsync(arg.Message, messageContext, correlationResult.CorrelationInfo, arg.CancellationToken);
-
-            if (routingResult.IsSuccessful && _options.AutoComplete)
-            {
-                try
-                {
-                    Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, EntityType, JobId);
-                    await messageContext.CompleteMessageAsync(CancellationToken.None);
-                }
-                catch (ServiceBusException exception) when (
-                    exception.Reason is ServiceBusFailureReason.MessageLockLost or ServiceBusFailureReason.SessionLockLost)
-                {
-#pragma warning disable CS0618 // Typ or member is obsolete: entity type will be moved to this message pump in v3.0.
-                    Logger.LogTrace("Message '{MessageId}' on Azure Service Bus {EntityType} message pump '{JobId}' does not need to be auto-completed, because it was already settled", messageContext.MessageId, EntityType, JobId);
-                }
-            }
+            _ = await _messageRouter.RouteMessageAsync(arg.Message, messageContext, correlationResult.CorrelationInfo, arg.CancellationToken);
         }
 
         private Task ProcessErrorAsync(ProcessErrorEventArgs arg)
