@@ -82,9 +82,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             try
             {
                 _messageReceiver = CreateMessageReceiver();
-#pragma warning disable CS0618 // Type or member is obsolete
                 Namespace = _messageReceiver.FullyQualifiedNamespace;
-#pragma warning restore CS0618 // Type or member is obsolete
 
                 await StartProcessingMessagesAsync(stoppingToken);
                 await UntilCancelledAsync(stoppingToken);
