@@ -49,7 +49,57 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         private ServiceBusTestContext GivenServiceBus()
         {
-            return ServiceBusTestContext.GivenServiceBus(_entity, Logger);
+            ServiceBusEntityType registeredEntityType =
+                Assert.Single(
+                    worker.Services.GetServices<IHostedService>()
+                                   .Where(h => h is AzureServiceBusMessagePump)
+                                   .Cast<AzureServiceBusMessagePump>()
+                                   .Select(m => m.EntityType)
+                                   .ToArray());
+
+            return registeredEntityType;
+        }
+
+        private static ServiceBusMessage CreateOrderServiceBusMessageForW3C(Encoding encoding = null)
+        {
+            encoding ??= Encoding.UTF8;
+            TraceParent traceParent = TraceParent.Generate();
+
+            Order order = OrderGenerator.Generate();
+            string json = JsonConvert.SerializeObject(order);
+            byte[] raw = encoding.GetBytes(json);
+
+            var message = new ServiceBusMessage(raw)
+            {
+                MessageId = order.Id,
+                ApplicationProperties =
+                {
+                    { PropertyNames.Encoding, encoding.WebName }
+                }
+            };
+
+            message.ApplicationProperties["Diagnostic-Id"] = traceParent.DiagnosticId;
+            return message;
+        }
+
+        private static void AssertReceivedOrderEventDataForW3C(
+            ServiceBusMessage message,
+            OrderCreatedEventData receivedEventData)
+        {
+            var encoding = Encoding.GetEncoding(message.ApplicationProperties[PropertyNames.Encoding].ToString() ?? Encoding.UTF8.WebName);
+            string json = encoding.GetString(message.Body);
+
+            var order = JsonConvert.DeserializeObject<Order>(json);
+
+            (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
+            Assert.NotNull(receivedEventData);
+            Assert.NotNull(receivedEventData.CorrelationInfo);
+            Assert.Equal(order.Id, receivedEventData.Id);
+            Assert.Equal(order.Amount, receivedEventData.Amount);
+            Assert.Equal(order.ArticleNumber, receivedEventData.ArticleNumber);
+            Assert.Equal(transactionId, receivedEventData.CorrelationInfo.TransactionId);
+            Assert.NotNull(receivedEventData.CorrelationInfo.OperationId);
+            Assert.Equal(operationParentId, receivedEventData.CorrelationInfo.OperationParentId);
         }
 
         /// <summary>
