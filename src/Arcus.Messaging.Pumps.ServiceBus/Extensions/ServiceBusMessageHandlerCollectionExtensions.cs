@@ -36,18 +36,40 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IServiceProvider, TEventHandler> implementationFactory)
             where TEventHandler : ICircuitBreakerEventHandler
         {
-            if (collection is null)
-            {
-                throw new ArgumentNullException(nameof(collection));
-            }
+            ArgumentNullException.ThrowIfNull(collection);
+            ArgumentNullException.ThrowIfNull(implementationFactory);
 
-            if (implementationFactory is null)
-            {
-                throw new ArgumentNullException(nameof(implementationFactory));
-            }
-
-            collection.Services.AddCircuitBreakerEventHandler(collection.JobId, implementationFactory);
+            collection.Services.AddTransient(serviceProvider => new CircuitBreakerEventHandler(collection.JobId, implementationFactory(serviceProvider)));
             return collection;
         }
+    }
+
+    /// <summary>
+    /// Represents a registration of an <see cref="ICircuitBreakerEventHandler"/> instance in the application services,
+    /// specifically linked to a message pump.
+    /// </summary>
+    internal sealed class CircuitBreakerEventHandler
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CircuitBreakerEventHandler" /> class.
+        /// </summary>
+        public CircuitBreakerEventHandler(string jobId, ICircuitBreakerEventHandler handler)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
+            ArgumentNullException.ThrowIfNull(handler);
+
+            JobId = jobId;
+            Handler = handler;
+        }
+
+        /// <summary>
+        /// Gets the unique ID to distinguish the linked message pump.
+        /// </summary>
+        public string JobId { get; }
+
+        /// <summary>
+        /// Gets the event handler implementation to trigger on transition changes in the linked message pump.
+        /// </summary>
+        public ICircuitBreakerEventHandler Handler { get; }
     }
 }

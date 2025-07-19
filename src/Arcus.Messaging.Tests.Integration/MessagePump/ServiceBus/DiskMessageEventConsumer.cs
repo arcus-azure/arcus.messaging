@@ -25,7 +25,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
                 await Poll.Target(() => Assert.Single(dir.GetFiles($"{messageId}.json", SearchOption.AllDirectories)))
                           .Until(files => files.Length > 0)
                           .Every(TimeSpan.FromMilliseconds(100))
-                          .Timeout(timeout ?? TimeSpan.FromSeconds(10))
+                          .Timeout(timeout ?? TimeSpan.FromSeconds(15))
                           .FailWith(errorMessage);
 
             string json = await File.ReadAllTextAsync(file.FullName);

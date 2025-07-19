@@ -5,11 +5,10 @@ using System.Collections.ObjectModel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Serilog;
-using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
-using Xunit;
 
 namespace Arcus.Messaging.Tests.Integration.Fixture
 {
@@ -18,7 +17,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
     /// </summary>
     public class WorkerOptions : IServiceCollection
     {
-        private ITestOutputHelper _outputWriter;
         private readonly ICollection<Action<LoggerConfiguration>> _additionalSerilogConfigOptions = new Collection<Action<LoggerConfiguration>>();
         private readonly ICollection<Action<IHostBuilder>> _additionalHostOptions = new Collection<Action<IHostBuilder>>();
 
@@ -33,29 +31,34 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
         public IDictionary<string, string> Configuration { get; } = new Dictionary<string, string>();
 
         /// <summary>
-        /// Adds an additional configuration option on the to-be-created <see cref="IHostBuilder"/>.
-        /// </summary>
-        /// <param name="additionalHostOption">The action that configures the additional option.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="additionalHostOption"/> is <c>null</c>.</exception>
-        public WorkerOptions Configure(Action<IHostBuilder> additionalHostOption)
-        {
-            ArgumentNullException.ThrowIfNull(additionalHostOption);
-            _additionalHostOptions.Add(additionalHostOption);
-
-            return this;
-        }
-
-        /// <summary>
         /// Adds a <paramref name="logger"/> to the test worker instance to write diagnostic trace messages to the test output.
         /// </summary>
         /// <param name="logger">The test logger to write the diagnostic trace messages to.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="logger"/> is <c>null</c>.</exception>
-        public WorkerOptions AddXunitTestLogging(ITestOutputHelper logger)
+        public WorkerOptions AddTestLogging(Microsoft.Extensions.Logging.ILogger logger)
         {
             ArgumentNullException.ThrowIfNull(logger);
+            ConfigureSerilog(logging => logging.WriteTo.Sink(new MicrosoftLoggerSink(logger)));
 
-            _outputWriter = logger;
             return this;
+        }
+
+        private sealed class MicrosoftLoggerSink(Microsoft.Extensions.Logging.ILogger logger) : ILogEventSink
+        {
+            public void Emit(LogEvent logEvent)
+            {
+                var level = logEvent.Level switch
+                {
+                    LogEventLevel.Debug => LogLevel.Debug,
+                    LogEventLevel.Error => LogLevel.Error,
+                    LogEventLevel.Fatal => LogLevel.Critical,
+                    LogEventLevel.Information => LogLevel.Information,
+                    LogEventLevel.Verbose => LogLevel.Trace,
+                    LogEventLevel.Warning => LogLevel.Warning,
+                };
+
+                logger.Log(level, logEvent.Exception, logEvent.RenderMessage());
+            }
         }
 
         /// <summary>
@@ -85,11 +88,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                     .MinimumLevel.Verbose()
                     .Enrich.FromLogContext();
 
-            if (_outputWriter != null)
-            {
-                config.WriteTo.Sink(new XunitTestLogSink(_outputWriter));
-            }
-
             foreach (Action<LoggerConfiguration> configure in _additionalSerilogConfigOptions)
             {
                 configure(config);
@@ -110,21 +108,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             foreach (Action<IHostBuilder> additionalHostOption in _additionalHostOptions)
             {
                 additionalHostOption(hostBuilder);
-            }
-        }
-
-        private sealed class XunitTestLogSink : ILogEventSink
-        {
-            private readonly ITestOutputHelper _outputWriter;
-
-            internal XunitTestLogSink(ITestOutputHelper outputWriter)
-            {
-                _outputWriter = outputWriter;
-            }
-
-            public void Emit(LogEvent logEvent)
-            {
-                _outputWriter.WriteLine(logEvent.RenderMessage());
             }
         }
 

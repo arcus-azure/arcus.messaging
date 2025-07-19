@@ -23,11 +23,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serializer"/> is <c>null</c>.</exception>
         public ServiceBusMessageHandlerOptions<TMessage> AddMessageBodySerializer(IMessageBodySerializer serializer)
         {
-            if (serializer is null)
-            {
-                throw new ArgumentNullException(nameof(serializer));
-            }
-
+            ArgumentNullException.ThrowIfNull(serializer);
             return AddMessageBodySerializer(_ => serializer);
         }
 
@@ -35,15 +31,11 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a custom serializer instance that deserializes the incoming <see cref="ServiceBusReceivedMessage.Body"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        public ServiceBusMessageHandlerOptions<TMessage> AddMessageBodySerializer(
-            Func<IServiceProvider, IMessageBodySerializer> implementationFactory)
+        public ServiceBusMessageHandlerOptions<TMessage> AddMessageBodySerializer(Func<IServiceProvider, IMessageBodySerializer> implementationFactory)
         {
-            if (implementationFactory is null)
-            {
-                throw new ArgumentNullException(nameof(implementationFactory));
-            }
-
+            ArgumentNullException.ThrowIfNull(implementationFactory);
             MessageBodySerializerImplementationFactory = implementationFactory;
+
             return this;
         }
 
@@ -52,27 +44,20 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         public ServiceBusMessageHandlerOptions<TMessage> AddMessageBodyFilter(Func<TMessage, bool> bodyFilter)
         {
-            if (bodyFilter is null)
-            {
-                throw new ArgumentNullException(nameof(bodyFilter));
-            }
-
+            ArgumentNullException.ThrowIfNull(bodyFilter);
             MessageBodyFilter = bodyFilter;
+
             return this;
         }
 
         /// <summary>
         /// Adds a custom <paramref name="contextFilter"/> to only select a subset of messages, based on its context, that the registered message handler can handle.
         /// </summary>
-        public ServiceBusMessageHandlerOptions<TMessage> AddMessageContextFilter(
-            Func<AzureServiceBusMessageContext, bool> contextFilter)
+        public ServiceBusMessageHandlerOptions<TMessage> AddMessageContextFilter(Func<AzureServiceBusMessageContext, bool> contextFilter)
         {
-            if (contextFilter is null)
-            {
-                throw new ArgumentNullException(nameof(contextFilter));
-            }
-
+            ArgumentNullException.ThrowIfNull(contextFilter);
             MessageContextFilter = contextFilter;
+
             return this;
         }
     }
