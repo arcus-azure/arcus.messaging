@@ -1,33 +1,36 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Arcus.Messaging.Pumps.Abstractions;
+using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
+namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
 {
     /// <summary>
     /// Represents a default implementation of the <see cref="IMessagePumpCircuitBreaker"/>
     /// that starts and stops a configured message pump by its configured <see cref="MessagePumpCircuitBreakerOptions"/>.
     /// </summary>
-    [Obsolete("Will be removed in v4.0, please use implementations of the " + nameof(IMessagePumpCircuitBreaker) + " directly available with the concrete message pumps")]
-    public class DefaultMessagePumpCircuitBreaker : IMessagePumpCircuitBreaker
+    internal class DefaultAzureServiceBusMessagePumpCircuitBreaker : IMessagePumpCircuitBreaker
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DefaultMessagePumpCircuitBreaker" /> class.
+        /// Initializes a new instance of the <see cref="DefaultAzureServiceBusMessagePumpCircuitBreaker" /> class.
         /// </summary>
         /// <param name="serviceProvider">The application services to retrieve the registered <see cref="MessagePump"/>.</param>
         /// <param name="logger">The logger instance to write diagnostic messages during the inspection of healthy message pumps.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        public DefaultMessagePumpCircuitBreaker(IServiceProvider serviceProvider, ILogger<DefaultMessagePumpCircuitBreaker> logger)
+        public DefaultAzureServiceBusMessagePumpCircuitBreaker(IServiceProvider serviceProvider, ILogger<DefaultAzureServiceBusMessagePumpCircuitBreaker> logger)
         {
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _logger = logger ?? NullLogger<DefaultMessagePumpCircuitBreaker>.Instance;
+            ArgumentNullException.ThrowIfNull(serviceProvider);
+
+            _serviceProvider = serviceProvider;
+            _logger = logger ?? NullLogger<DefaultAzureServiceBusMessagePumpCircuitBreaker>.Instance;
         }
 
         /// <summary>
@@ -38,12 +41,9 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         public virtual Task PauseMessageProcessingAsync(string jobId, Action<MessagePumpCircuitBreakerOptions> configureOptions)
         {
-            if (string.IsNullOrWhiteSpace(jobId))
-            {
-                throw new ArgumentException("Requires a non-blank unique job ID to identify he message pump", nameof(jobId));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
 
-            MessagePump messagePump = GetRegisteredMessagePump(jobId);
+            AzureServiceBusMessagePump messagePump = GetRegisteredMessagePump(jobId);
 
             if (!messagePump.IsStarted)
             {
@@ -70,32 +70,19 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
         public MessagePumpCircuitState GetCircuitBreakerState(string jobId)
         {
-            if (string.IsNullOrWhiteSpace(jobId))
-            {
-                throw new ArgumentException("Requires a non-blank unique job ID to identify he message pump", nameof(jobId));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
 
-            MessagePump messagePump = GetRegisteredMessagePump(jobId);
+            AzureServiceBusMessagePump messagePump = GetRegisteredMessagePump(jobId);
             return messagePump.CircuitState;
         }
 
-        /// <summary>
-        /// Get the registered <see cref="MessagePump"/> from the application services
-        /// for which to pause the process of receiving messages.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown when not a single or more than one message pump could be found by the configured job ID.</exception>
-        protected MessagePump GetRegisteredMessagePump(string jobId)
+        private AzureServiceBusMessagePump GetRegisteredMessagePump(string jobId)
         {
-            if (string.IsNullOrWhiteSpace(jobId))
-            {
-                throw new ArgumentException("Requires a non-blank unique job ID to identify he message pump", nameof(jobId));
-            }
-
-            MessagePump[] messagePumps =
+            AzureServiceBusMessagePump[] messagePumps =
                 _serviceProvider.GetServices<IHostedService>()
-                         .OfType<MessagePump>()
-                         .Where(p => p.JobId == jobId)
-                         .ToArray();
+                                .OfType<AzureServiceBusMessagePump>()
+                                .Where(p => p.JobId == jobId)
+                                .ToArray();
 
             if (messagePumps.Length == 0)
             {

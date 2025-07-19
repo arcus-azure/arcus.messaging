@@ -23,8 +23,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Abstraction
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ServiceBus", "ServiceBus", "{2CD090E7-7306-49A0-9680-6ED78CFECAE1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Workers.ServiceBus", "Arcus.Messaging.Tests.Workers.ServiceBus\Arcus.Messaging.Tests.Workers.ServiceBus.csproj", "{F1B24FD4-099E-489D-B45D-A1A992CA5C3A}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D30D298C-0C7E-4400-B7C6-AE75A3BEC62C}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
@@ -68,10 +66,6 @@ Global
 		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F1B24FD4-099E-489D-B45D-A1A992CA5C3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F1B24FD4-099E-489D-B45D-A1A992CA5C3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F1B24FD4-099E-489D-B45D-A1A992CA5C3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F1B24FD4-099E-489D-B45D-A1A992CA5C3A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -82,7 +76,6 @@ Global
 		{9EED9AD7-B69D-45D5-870F-D4F63A1C3495} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
 		{864C12DF-DE3D-421F-8687-EC3918FFB8BE} = {2CD090E7-7306-49A0-9680-6ED78CFECAE1}
-		{F1B24FD4-099E-489D-B45D-A1A992CA5C3A} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {066FD85A-3DDE-4615-B550-BF67ACCDAA51}

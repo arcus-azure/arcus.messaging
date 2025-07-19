@@ -45,7 +45,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// <summary>
         /// Initializes a new instance of the <see cref="MessagePumpCircuitStateChangedEventArgs" /> class.
         /// </summary>
-        internal MessagePumpCircuitStateChangedEventArgs(
+        public MessagePumpCircuitStateChangedEventArgs(
             string jobId,
             MessagePumpCircuitState oldState,
             MessagePumpCircuitState newState)
@@ -115,9 +115,22 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
     /// <summary>
     /// Represents the available states in the <see cref="MessagePumpCircuitState"/> in which the message pump can transition into.
     /// </summary>
-    internal enum CircuitBreakerState
+    public enum CircuitBreakerState
     {
-        Closed, HalfOpen, Open
+        /// <summary>
+        /// Represents the state in which the message pump is able to process messages normally.
+        /// </summary>
+        Closed,
+
+        /// <summary>
+        /// Represents the state in which the message pump tries to startup again after a failure,
+        /// </summary>
+        HalfOpen,
+
+        /// <summary>
+        /// Represents the state in which the message pump has stopped processing messages all together,
+        /// </summary>
+        Open
     }
 
     /// <summary>
@@ -172,12 +185,20 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// Gets an instance of the <see cref="MessagePumpCircuitState"/> class that represents a closed state,
         /// in which the message pump is able to process messages normally.
         /// </summary>
-        internal static MessagePumpCircuitState Closed => new(CircuitBreakerState.Closed);
+        public static MessagePumpCircuitState Closed => new(CircuitBreakerState.Closed);
 
         /// <summary>
         /// Lets the current instance of the state transition to another state.
         /// </summary>
-        internal MessagePumpCircuitState TransitionTo(CircuitBreakerState state, MessagePumpCircuitBreakerOptions options = null)
+        public MessagePumpCircuitState TransitionTo(CircuitBreakerState state)
+        {
+            return TransitionTo(state, options: null);
+        }
+
+        /// <summary>
+        /// Lets the current instance of the state transition to another state.
+        /// </summary>
+        public MessagePumpCircuitState TransitionTo(CircuitBreakerState state, MessagePumpCircuitBreakerOptions options)
         {
             return new(state, options ?? Options);
         }

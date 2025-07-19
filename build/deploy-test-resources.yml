@@ -11,9 +11,6 @@ parameters:
   - name: resourceGroupName
     displayName: 'Resource group name'
     default: arcus-messaging-dev-we-rg
-  - name: keyVaultName
-    displayName: 'Key vault name'
-    default: 'arcus-messaging-kv'
 
 variables:
   - template: ./variables/build.yml
@@ -53,15 +50,4 @@ stages:
                   --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME `
                   --template-file ./build/templates/test-resources.bicep `
                   --parameters serviceBusNamespace=$env:ARCUS_MESSAGING_SERVICEBUS_NAMESPACE `
-                  --parameters keyVaultName=$env:ARCUS_MESSAGING_KEYVAULT_NAME `
                   --parameters servicePrincipal_objectId=$objectId
-
-                $serviceBusKeys = az servicebus namespace authorization-rule keys list `
-                  --resource-group $env:ARCUS_MESSAGING_RESOURCEGROUP_NAME `
-                  --namespace-name $env:ARCUS_MESSAGING_SERVICEBUS_NAMESPACE `
-                  --authorization-rule-name 'RootManageSharedAccessKey' `
-                  | ConvertFrom-Json
-                az keyvault secret set `
-                  --name $env:ARCUS_MESSAGING_SERVICEBUS_CONNECTIONSTRING_SECRETNAME `
-                  --value $serviceBusKeys.primaryConnectionString `
-                  --vault-name ${{ parameters.keyVaultName }}
