@@ -3,28 +3,23 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
-using System.Transactions;
-using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Integration.Fixture;
 using Arcus.Messaging.Tests.Integration.Fixture.Logging;
-using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
-using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers;
 using Arcus.Testing;
+using Azure.Messaging.ServiceBus;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
-using Microsoft.Extensions.Logging;
-using OpenTelemetry.Trace;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Trace;
 using Serilog;
+using Serilog.Sinks.ApplicationInsights.TelemetryConverters;
+using Xunit;
 using Xunit.Sdk;
-using static Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus.DiskMessageEventConsumer;
-using static Arcus.Observability.Telemetry.Core.ContextProperties.Correlation;
 using static Arcus.Observability.Telemetry.Core.ContextProperties.RequestTracking.ServiceBus;
 using static Microsoft.Extensions.Logging.ServiceBusEntityType;
 
@@ -32,8 +27,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     public partial class ServiceBusMessagePumpTests
     {
-        private const string DefaultSqlTable = "master",
-                             DefaultHttpOperationName = "System.Net.Http.HttpRequestOut";
+        private const string DefaultHttpOperationName = "System.Net.Http.HttpRequestOut";
 
         private string CustomOperationName { get; } = $"operation-{Guid.NewGuid()}";
         private bool IsSuccessful { get; } = Bogus.Random.Bool();
@@ -42,51 +36,44 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         public async Task ServiceBusMessagePump_WithW3CCorrelationFormatNewParentViaOpenTelemetry_AutomaticallyTracksMicrosoftDependencies()
         {
             // Arrange
-            var options = new WorkerOptions();
             using ActivitySource source = CreateActivitySource();
+            await using var serviceBus = GivenServiceBus();
 
-            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), pump =>
+            serviceBus.WhenServiceBusQueueMessagePump(pump =>
             {
                 pump.Telemetry.OperationName = CustomOperationName;
-
             }).UseServiceBusOpenTelemetryRequestTracking(source)
               .WithServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler, Order>(CreateAutoTrackingMessageHandler);
 
             var activities = new Collection<Activity>();
-            options.AddOpenTelemetry()
-                   .WithTracing(traces =>
-                   {
-                       traces.AddSource(source.Name);
-                       traces.AddInMemoryExporter(activities);
-                       traces.AddHttpClientInstrumentation();
-                       traces.SetSampler(new AlwaysOnSampler());
-                   }); 
-
-            ServiceBusMessage message = CreateOrderServiceBusMessage();
+            serviceBus.Services.AddOpenTelemetry()
+                      .WithTracing(traces =>
+                      {
+                          traces.AddSource(source.Name);
+                          traces.AddInMemoryExporter(activities);
+                          traces.AddHttpClientInstrumentation();
+                          traces.SetSampler(new AlwaysOnSampler());
+                      });
 
             // Act
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
-            {
-                Activity serviceBusRequest = await GetQueueRequestActivityAsync(activities, CustomOperationName);
-                Activity httpDependency = await GetDependencyActivityAsync(activities, DefaultHttpOperationName, a => a.ParentId == serviceBusRequest.Id);
+            await serviceBus.WhenProducingMessagesAsync(msg => msg.WithoutTraceParent());
 
-                Assert.Equal(serviceBusRequest, httpDependency.Parent);
-            });
-        }
+            // Assert
+            Activity serviceBusRequest = await GetQueueRequestActivityAsync(activities, CustomOperationName);
+            Activity httpDependency = await GetDependencyActivityAsync(activities, DefaultHttpOperationName, a => a.ParentId == serviceBusRequest.Id);
 
-        private static ServiceBusMessage CreateOrderServiceBusMessage()
-        {
-            return new ServiceBusMessage(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(OrderGenerator.Generate())));
+            Assert.Equal(serviceBusRequest, httpDependency.Parent);
         }
 
         [Fact]
         public async Task ServiceBusMessagePump_WithW3CCorrelationFormatViaOpenTelemetry_AutomaticallyTracksMicrosoftDependencies()
         {
             // Arrange
-            var options = new WorkerOptions();
             using ActivitySource source = CreateActivitySource();
 
-            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), pump =>
+            await using var serviceBus = GivenServiceBus();
+
+            serviceBus.WhenServiceBusQueueMessagePump(pump =>
             {
                 pump.Telemetry.OperationName = CustomOperationName;
 
@@ -94,27 +81,25 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
               .UseServiceBusOpenTelemetryRequestTracking(source);
 
             var activities = new Collection<Activity>();
-            options.AddOpenTelemetry()
-                   .WithTracing(traces =>
-                   {
-                       traces.AddSource(source.Name);
-                       traces.AddInMemoryExporter(activities);
-                       traces.AddHttpClientInstrumentation();
-                       traces.SetSampler(new AlwaysOnSampler());
-                   });
+            serviceBus.Services.AddOpenTelemetry()
+                      .WithTracing(traces =>
+                      {
+                          traces.AddSource(source.Name);
+                          traces.AddInMemoryExporter(activities);
+                          traces.AddHttpClientInstrumentation();
+                          traces.SetSampler(new AlwaysOnSampler());
+                      });
 
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
+            // Act
+            ServiceBusMessage message = await serviceBus.WhenProducingMessageAsync();
 
-            // Act / Assert
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
-            {
-                (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
+            // Assert
+            (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
 
-                Activity serviceBusRequest = await GetQueueRequestActivityAsync(activities, CustomOperationName, a => a.TraceId.ToString() == transactionId && a.ParentSpanId.ToString() == operationParentId);
-                Activity httpDependency = await GetDependencyActivityAsync(activities, DefaultHttpOperationName, a => a.TraceId.ToString() == transactionId && a.ParentId == serviceBusRequest.Id);
+            Activity serviceBusRequest = await GetQueueRequestActivityAsync(activities, CustomOperationName, a => a.TraceId.ToString() == transactionId && a.ParentSpanId.ToString() == operationParentId);
+            Activity httpDependency = await GetDependencyActivityAsync(activities, DefaultHttpOperationName, a => a.TraceId.ToString() == transactionId && a.ParentId == serviceBusRequest.Id);
 
-                Assert.Equal(serviceBusRequest, httpDependency.Parent);
-            });
+            Assert.Equal(serviceBusRequest, httpDependency.Parent);
         }
 
         private OrderWithAutoTrackingAzureServiceBusMessageHandler CreateAutoTrackingMessageHandler(IServiceProvider provider)
@@ -137,8 +122,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                 Assert.True(requestDependencies.Length > 0,
                     $"no request activities found with operation name '{operationName}' in" +
                     $"[{string.Join(", ", activities.Select(a => a.OperationName))}]");
-                
-                return AssertX.Any(requestDependencies, request =>
+
+                return AssertAny(requestDependencies, request =>
                 {
                     Assert.True(IsSuccessful == request.Status is ActivityStatusCode.Ok, $"request for operation '{operationName}' did not match the expected status, expected '{(IsSuccessful ? ActivityStatusCode.Ok : ActivityStatusCode.Error)}' but got '{request.Status}'");
                     Assert.Contains(request.Tags, tag => tag is { Key: "ServiceBus-EntityType", Value: "Queue" });
@@ -153,16 +138,41 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             return await Poll.Target<Activity, XunitException>(() =>
             {
                 var dependencyActivities = activities.Where(a => a.OperationName == operationName).ToArray();
-                Assert.True(dependencyActivities.Length > 0, 
+                Assert.True(dependencyActivities.Length > 0,
                     $"no dependency activities found with operation name '{operationName}' in " +
                     $"[{string.Join(", ", activities.Select(a => a.OperationName))}]");
 
-                return AssertX.Any(dependencyActivities, dependency =>
+                return AssertAny(dependencyActivities, dependency =>
                 {
                     Assert.True(filter is null || filter(dependency), $"dependency for operation '{operationName}' did not match the given custom filter assertion, please check whether the OpenTelemetry correlation system did add all the necessary properties");
+
                 });
 
             }).FailWith("cannot find dependency telemetry in spied-upon OpenTelemetry activities");
+        }
+
+        public static T AssertAny<T>(IEnumerable<T> collection, Action<T> action)
+        {
+            Stack<(int index, object item, Exception exception)> failures = new();
+            T[] array = collection.ToArray();
+
+            for (int index = 0; index < array.Length; ++index)
+            {
+                T item = array[index];
+                try
+                {
+                    action(item);
+                    return item;
+                }
+                catch (Exception ex)
+                {
+                    failures.Push((index, item, ex));
+                }
+            }
+
+            throw new XunitException(
+                $"None of the {array.Length} item(s) matches against the given action: {Environment.NewLine}" +
+                $"{string.Join(Environment.NewLine, failures.Select(f => $"- [{f.index}] {f.item}: {f.exception}"))}");
         }
 
         [Fact]
