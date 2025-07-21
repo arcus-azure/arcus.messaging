@@ -1,292 +1,140 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions.ServiceBus;
-using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using Arcus.Messaging.Pumps.ServiceBus;
-using Arcus.Messaging.Tests.Core.Events.v1;
-using Arcus.Messaging.Tests.Core.Messages.v1;
-using Arcus.Messaging.Tests.Integration.Fixture;
-using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
+﻿using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
-using Arcus.Testing;
-using Azure;
-using Azure.Identity;
-using Azure.Messaging.ServiceBus;
-using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
-using static Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus.DiskMessageEventConsumer;
-using static Microsoft.Extensions.Logging.ServiceBusEntityType;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
     public partial class ServiceBusMessagePumpTests
     {
         [Fact]
-        public async Task ServiceBusQueueMessagePumpWithServiceBusDeadLetter_PublishServiceBusMessage_MessageSuccessfullyDeadLettered()
-        {
-            await TestServiceBusQueueDeadLetteredMessageAsync(options =>
-            {
-                options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = false)
-                       .WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageContextFilter(context => context.Properties["Topic"].ToString() == "Customers"))
-                       .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>();
-            });
-        }
-
-        private async Task TestServiceBusQueueDeadLetteredMessageAsync(Action<WorkerOptions> configureOptions)
+        public async Task ServiceBusTopicMessagePump_WithCustomComplete_SuccessfullyProcessesMessage()
         {
             // Arrange
-            var options = new WorkerOptions();
-            configureOptions(options);
+            await using var serviceBus = GivenServiceBus();
 
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
-
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
-            {
-                TestServiceMessageConsumer consumer = CreateQueueConsumer();
-                await consumer.AssertDeadLetterMessageAsync(message.MessageId);
-            });
-        }
-
-        [Fact]
-        public async Task ServiceBusQueueMessagePumpWithServiceBusAbandon_PublishServiceBusMessage_MessageSuccessfullyAbandoned()
-        {
-            await TestServiceBusQueueAbandonMessageAsync(options =>
-            {
-                options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential())
-                       .WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
-                       .WithServiceBusMessageHandler<AbandonAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => true));
-            });
-        }
-
-        private async Task TestServiceBusQueueAbandonMessageAsync(Action<WorkerOptions> configureOptions)
-        {
-            // Arrange
-            var options = new WorkerOptions();
-            configureOptions(options);
-
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
+            serviceBus.WhenServiceBusTopicMessagePump(pump => pump.Routing.AutoComplete = false)
+                      .WithMatchedServiceBusMessageHandler<CompleteAzureServiceBusMessageHandler>();
 
             // Act
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
-            {
-                // Assert
-                TestServiceMessageConsumer consumer = CreateQueueConsumer();
-                await consumer.AssertAbandonMessageAsync(message.MessageId);
-            });
-        }
-
-        [Fact]
-        public async Task ServiceBusTopicMessagePumpWithCustomComplete_PublishServiceBusMessage_MessageSuccessfullyProcessed()
-        {
-            // Arrange
-            var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = false)
-                   .WithServiceBusMessageHandler<CompleteAzureServiceBusMessageHandler, Order>();
-
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
-
-            // Act
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
-            {
-                // Assert
-                TestServiceMessageConsumer consumer = CreateQueueConsumer();
-                await consumer.AssertCompletedMessageAsync(message.MessageId);
-            });
-        }
-
-        [Fact]
-        public async Task ServiceBusQueueMessagePumpWithAutoComplete_WhenNoMessageHandlerRegistered_ThenMessageShouldBeDeadLettered()
-        {
-            // Arrange
-            var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true);
-
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
-
-            // Act
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
-            {
-                // Assert
-                TestServiceMessageConsumer consumer = CreateQueueConsumer();
-                await consumer.AssertDeadLetterMessageAsync(message.MessageId);
-            });
-        }
-
-        [Fact]
-        public async Task ServiceBusQueueMessagePumpWithAutoComplete_WhenNoMessageHandlerAbleToHandle_ThenMessageShouldBeDeadLettered()
-        {
-            // Arrange
-            var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
-
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
-
-            // Act
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
-            {
-                // Assert
-                TestServiceMessageConsumer consumer = CreateQueueConsumer();
-                await consumer.AssertDeadLetterMessageAsync(message.MessageId);
-            });
-        }
-
-        [Fact]
-        public async Task ServiceBusQueueMessagePumpWithAutoComplete_PublishServiceBusMessage_MessageSuccessfullyCompleted()
-        {
-            // Arrange
-            var options = new WorkerOptions();
-            options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential(), configureMessagePump: opt => opt.AutoComplete = true)
-                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
-
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
-
-            // Act
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
-            {
-                // Assert
-                TestServiceMessageConsumer consumer = CreateQueueConsumer();
-                await consumer.AssertCompletedMessageAsync(message.MessageId);
-            });
-        }
-
-        [Fact]
-        public async Task ServiceBusTopicMessagePumpWithMultipleMessages_PublishesServiceBusMessages_AllMessagesSuccessfullyHandled()
-        {
-            // Arrange
-            await using var topicSubscription = await TemporaryTopicSubscription.CreateIfNotExistsAsync(HostName, TopicName, Guid.NewGuid().ToString(), _logger);
-
-            var options = new WorkerOptions();
-            options.AddXunitTestLogging(_outputWriter);
-            options.AddServiceBusTopicMessagePump(TopicName, topicSubscription.Name, HostName, new DefaultAzureCredential())
-                   .WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
-
-            ServiceBusMessage[] messages =
-                Bogus.Make(50, () => CreateOrderServiceBusMessageForW3C()).ToArray();
-
-            await using var worker = await Worker.StartNewAsync(options);
-            var producer = TestServiceBusMessageProducer.CreateFor(TopicName, _config);
-
-            // Act
-            await producer.ProduceAsync(messages);
+            var messages = await serviceBus.WhenProducingMessagesAsync();
 
             // Assert
-            foreach (ServiceBusMessage msg in messages)
-            {
-                OrderCreatedEventData eventData = await ConsumeOrderCreatedAsync(msg.MessageId);
-                AssertReceivedOrderEventDataForW3C(msg, eventData);
-            }
+            await serviceBus.ShouldCompleteConsumedAsync(messages);
+        }
+
+        [Fact]
+        public async Task ServiceBusTopicMessagePump_WithMultipleMessages_SuccessfullyProcessesAllMessages()
+        {
+            // Arrange
+            await using var serviceBus = GivenServiceBus();
+
+            serviceBus.WhenServiceBusTopicMessagePump()
+                      .WithMatchedServiceBusMessageHandler();
+
+            // Act
+            var messages = await serviceBus.WhenProducingMessagesAsync(50);
+
+            // Assert
+            await serviceBus.ShouldConsumeViaMatchedHandlerAsync(messages);
+            await serviceBus.ShouldCompleteConsumedAsync(messages);
         }
 
         [Fact]
         public async Task ServiceBusMessagePump_WithServiceBusDeadLetterDuringProcessing_ThenMessageShouldBeDeadLettered()
         {
-            await TestServiceBusMessageHandlingAsync(pump =>
-            {
-                pump.WithServiceBusMessageHandler<CustomerMessageHandler, Customer>(opt => opt.AddMessageContextFilter(context => context.Properties["Topic"].ToString() == "Customers"))
-                    .WithServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler, Order>();
-            },
-            async (message, consumer) =>
-            {
-                await consumer.AssertDeadLetterMessageAsync(message.MessageId);
-            });
+            // Arrange
+            await using var serviceBus = GivenServiceBus();
+
+            serviceBus.WhenServiceBusQueueMessagePump()
+                      .WithMatchedServiceBusMessageHandler<DeadLetterAzureServiceMessageHandler>();
+
+            // Act
+            var messages = await serviceBus.WhenProducingMessagesAsync();
+
+            // Assert
+            await serviceBus.ShouldNotConsumeButDeadLetterAsync(messages);
         }
 
         [Fact]
         public async Task ServiceBusMessagePump_WithServiceBusAbandonInProcessing_ThenMessageShouldBeAbandoned()
         {
-            await TestServiceBusMessageHandlingAsync(
-                pump =>
-                {
-                    pump.WithServiceBusMessageHandler<PassThruOrderMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => false))
-                        .WithServiceBusMessageHandler<AbandonAzureServiceBusMessageHandler, Order>(opt => opt.AddMessageContextFilter(_ => true));
-                },
-                async (message, consumer) =>
-                {
-                    await consumer.AssertAbandonMessageAsync(message.MessageId);
-                });
+            // Arrange
+            await using var serviceBus = GivenServiceBus();
+
+            serviceBus.WhenServiceBusQueueMessagePump()
+                      .WithMatchedServiceBusMessageHandler<AbandonAzureServiceBusMessageHandler>();
+
+            // Act
+            var messages = await serviceBus.WhenProducingMessagesAsync();
+
+            // Assert
+            await serviceBus.ShouldNotConsumeButAbandonAsync(messages);
         }
 
         [Fact]
         public async Task ServiceBusMessagePumpWithAutoComplete_WithMatchedMessageHandler_ThenMessageShouldBeCompleted()
         {
-            await TestServiceBusMessageHandlingAsync(
-                pump =>
-                {
-                    pump.WithServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler, Order>();
-                },
-                async (message, consumer) =>
-                {
-                    await consumer.AssertCompletedMessageAsync(message.MessageId);
-                });
+            // Arrange
+            await using var serviceBus = GivenServiceBus();
+
+            serviceBus.WhenServiceBusQueueMessagePump(pump => pump.Routing.AutoComplete = true)
+                      .WithMatchedServiceBusMessageHandler();
+
+            // Act
+            var messages = await serviceBus.WhenProducingMessagesAsync();
+
+            // Assert
+            await serviceBus.ShouldConsumeViaMatchedHandlerAsync(messages);
+            await serviceBus.ShouldCompleteConsumedAsync(messages);
         }
 
         [Fact]
-        public async Task ServiceBusMessagePumpWithAutoComplete_WhenNoMessageHandlerRegistered_ThenMessageShouldBeDeadLettered()
+        public async Task ServiceBusMessagePump_WhenNoMessageHandlerRegistered_ThenMessageShouldBeDeadLettered()
         {
-            await TestServiceBusMessageHandlingAsync(
-                pump =>
-                {
-                },
-                async (message, consumer) =>
-                {
-                    await consumer.AssertDeadLetterMessageAsync(message.MessageId);
-                });
+            // Arrange
+            await using var serviceBus = GivenServiceBus();
+
+            serviceBus.WhenServiceBusQueueMessagePump();
+
+            // Act
+            var messages = await serviceBus.WhenProducingMessagesAsync();
+
+            // Assert
+            await serviceBus.ShouldNotConsumeButDeadLetterAsync(messages);
         }
 
         [Fact]
         public async Task ServiceBusMessagePump_WhenMessageHandlerIsSelectedButFailsToProcess_ThenMessageShouldBeAbandonedUntilDeadLettered()
         {
-            await TestServiceBusMessageHandlingAsync(
-                pump =>
-                {
-                    pump.WithServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler, Order>();
-                },
-                async (message, consumer) =>
-                {
-                    await consumer.AssertAbandonMessageAsync(message.MessageId);
-                    await consumer.AssertDeadLetterMessageAsync(message.MessageId);
-                });
+            // Arrange
+            await using var serviceBus = GivenServiceBus();
+
+            serviceBus.WhenServiceBusQueueMessagePump()
+                      .WithMatchedServiceBusMessageHandler<OrdersSabotageAzureServiceBusMessageHandler>();
+
+            // Act
+            var messages = await serviceBus.WhenProducingMessagesAsync();
+
+            // Assert
+            await serviceBus.ShouldNotConsumeButAbandonAsync(messages);
+            await serviceBus.ShouldNotConsumeButDeadLetterAsync(messages);
         }
 
         [Fact]
-        public async Task ServiceBusMessagePump_WhenMessageHandlerIsNotSelectedWithoutFallback_ThenMessageShouldBeDeadLettered()
+        public async Task ServiceBusMessagePump_WhenMessageHandlerIsNotSelected_ThenMessageShouldBeDeadLettered()
         {
-            await TestServiceBusMessageHandlingAsync(
-                pump =>
-                {
-                    pump.WithServiceBusMessageHandler<ShipmentAzureServiceBusMessageHandler, Shipment>();
-                },
-                async (message, consumer) =>
-                {
-                    await consumer.AssertDeadLetterMessageAsync(message.MessageId);
-                });
-        }
+            // Arrange
+            await using var serviceBus = GivenServiceBus();
 
-        private async Task TestServiceBusMessageHandlingAsync(
-            Action<ServiceBusMessageHandlerCollection> configurePump,
-            Func<ServiceBusMessage, TestServiceMessageConsumer, Task> assertion)
-        {
-            var options = new WorkerOptions();
-            ServiceBusMessageHandlerCollection collection = options.AddServiceBusQueueMessagePump(QueueName, HostName, new DefaultAzureCredential());
+            serviceBus.WhenServiceBusQueueMessagePump()
+                      .WithUnrelatedServiceBusMessageHandler();
 
-            configurePump(collection);
+            // Act
+            var messages = await serviceBus.WhenProducingMessagesAsync();
 
-            ServiceBusMessage message = CreateOrderServiceBusMessageForW3C();
-
-            await TestServiceBusMessageHandlingAsync(options, Queue, message, async () =>
-            {
-                TestServiceMessageConsumer consumer = CreateQueueConsumer();
-                await assertion(message, consumer);
-            });
-        }
-
-        private TestServiceMessageConsumer CreateQueueConsumer()
-        {
-            var consumer = TestServiceMessageConsumer.CreateForQueue(QueueName, _serviceBusConfig, _logger);
-            return consumer;
+            // Assert
+            await serviceBus.ShouldNotConsumeButDeadLetterAsync(messages);
         }
     }
 }
