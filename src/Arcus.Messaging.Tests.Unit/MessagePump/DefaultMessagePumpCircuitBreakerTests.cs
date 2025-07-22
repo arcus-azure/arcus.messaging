@@ -13,14 +13,14 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
 {
     public class DefaultMessagePumpCircuitBreakerTests
     {
-        private readonly ILogger _logger;
+        private readonly ILogger<DefaultMessagePumpCircuitBreaker> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DefaultMessagePumpCircuitBreakerTests" /> class.
         /// </summary>
         public DefaultMessagePumpCircuitBreakerTests(ITestOutputHelper outputWriter)
         {
-            _logger = new XunitTestLogger(outputWriter);
+            _logger = new XunitTestLogger<DefaultMessagePumpCircuitBreaker>(outputWriter);
         }
 
         [Fact]
@@ -57,11 +57,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
 
         private DefaultMessagePumpCircuitBreaker CreateCircuitBreaker(IServiceProvider provider)
         {
-            var factory = new LoggerFactory();
-            factory.AddProvider(new CustomLoggerProvider(_logger));
-            var logger = new Logger<DefaultMessagePumpCircuitBreaker>(factory);
-
-            return new DefaultMessagePumpCircuitBreaker(provider, logger);
+            return new DefaultMessagePumpCircuitBreaker(provider, _logger);
         }
     }
 }
