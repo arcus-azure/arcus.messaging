@@ -70,6 +70,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             await using var serviceBus = GivenServiceBus();
 
+            serviceBus.Services.AddSingleton<OrderBatchMessageBodySerializer>();
             serviceBus.WhenServiceBusQueueMessagePump()
                       .WithMatchedServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(handler =>
                       {
@@ -115,6 +116,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             await using var serviceBus = GivenServiceBus();
 
+            serviceBus.Services.AddSingleton<OrderBatchMessageBodySerializer>();
             var contextProperty = new KeyValuePair<string, object>(Bogus.Lorem.Word(), Bogus.Lorem.Sentence());
             serviceBus.WhenServiceBusQueueMessagePump()
                       .WithMatchedServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(handler =>
