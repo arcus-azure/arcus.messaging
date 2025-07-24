@@ -25,11 +25,5 @@ namespace Arcus.Messaging.Abstractions
         /// Gets the context property name to get the encoding that was used on the message.
         /// </summary>
         public const string Encoding = "Message-Encoding";
-
-        /// <summary>
-        /// Gets the context property to get the content type of the message.
-        /// </summary>
-        [Obsolete("Will be removed in v3.0 as the property name is only used in deprecated 'Hierarchical' correlation message construction")]
-        public const string ContentType = "Content-Type";
     }
 }
