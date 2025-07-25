@@ -157,10 +157,12 @@ services.AddServiceBus[Topic/Queue]MessagePump(...)
         {
             // Adds a filter to the message handler registration:
             // Only messages with 'Type=Order' property goes through this message handler.
+            // ⚡ Multiple calls will be aggregated in an AND expression.
             options.AddMessageContextFilter(ctx => ctx.Properties["Type"] == "Order");
 
             // Adds a filter to the message handler registration:
             // Only messages with certain bodies goes through this message handler.
+            // ⚡ Multiple calls will be aggregated in an AND expression.
             options.AddMessageBodyFilter((Order order) => order.OrderId = "123");
 
             // Adds a custom message deserializer to the message handler registration:
@@ -170,7 +172,7 @@ services.AddServiceBus[Topic/Queue]MessagePump(...)
             //      {
             //          Task<MessageResult> DeserializeMessageAsync(string messageBody);
             //      }
-            options.AddMessageBodySerializer(new CustomXmlMessageBodySerializer());
+            options.UseMessageBodySerializer(new CustomXmlMessageBodySerializer());
         });
 ```
 
