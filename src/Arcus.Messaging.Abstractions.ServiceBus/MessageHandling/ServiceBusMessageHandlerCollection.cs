@@ -18,5 +18,10 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         public ServiceBusMessageHandlerCollection(IServiceCollection services) : base(services)
         {
         }
+
+        /// <summary>
+        /// Gets or sets the boolean flag to indicate whether the message pump is configured to use sessions.
+        /// </summary>
+        public bool UseSessions { get; set; }
     }
 }
