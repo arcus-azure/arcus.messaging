@@ -66,6 +66,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         private ServiceBusClient _client;
 
         public TemporaryQueue Queue { get; set; }
+        public TemporaryQueue QueueWithSession { get; set; }
         public TemporaryTopic Topic { get; set; }
         public string QueueName { get; } = $"queue-{Guid.NewGuid()}";
         public string TopicName { get; } = $"topic-{Guid.NewGuid()}";
@@ -80,6 +81,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             Topic = await TemporaryTopic.CreateIfNotExistsAsync(adminClient, _client, TopicName, NullLogger.Instance, temp => temp.OnTeardown.CompleteMessages());
             Queue = await TemporaryQueue.CreateIfNotExistsAsync(adminClient, _client, QueueName, NullLogger.Instance, temp =>
             {
+                temp.OnTeardown.CompleteMessages();
+            });
+
+            QueueWithSession = await TemporaryQueue.CreateIfNotExistsAsync(adminClient, _client, $"{QueueName}-session", NullLogger.Instance, temp =>
+            {
+                temp.OnSetup.CreateQueueWith(queue => queue.RequiresSession = true);
                 temp.OnTeardown.CompleteMessages();
             });
         }
