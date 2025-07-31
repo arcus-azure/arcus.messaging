@@ -8,24 +8,6 @@ namespace Arcus.Messaging.Abstractions
     /// </summary>
     public class MessageContext
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MessageContext"/> class.
-        /// </summary>
-        /// <param name="messageId">The unique identifier of the message.</param>
-        /// <param name="properties">The contextual properties provided on the message.</param>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="messageId"/> is blank.</exception>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="properties"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 as only job-linked message contexts are supported from now on")]
-        public MessageContext(string messageId, IDictionary<string, object> properties)
-        {
-            if (string.IsNullOrWhiteSpace(messageId))
-            {
-                throw new ArgumentException("Requires a non-blank message ID", nameof(messageId));
-            }
-
-            MessageId = messageId;
-            Properties = properties ?? throw new ArgumentNullException(nameof(properties));
-        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageContext"/> class.
