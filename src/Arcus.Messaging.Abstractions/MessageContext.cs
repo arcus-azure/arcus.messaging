@@ -6,7 +6,7 @@ namespace Arcus.Messaging.Abstractions
     /// <summary>
     /// Represents the contextual information concerning a message that will be processed by a message pump.
     /// </summary>
-    public class MessageContext
+    public abstract class MessageContext
     {
 
         /// <summary>
@@ -17,7 +17,7 @@ namespace Arcus.Messaging.Abstractions
         /// <param name="properties">The contextual properties provided on the message.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="messageId"/> or the <paramref name="jobId"/> is blank.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="properties"/> is <c>null</c>.</exception>
-        public MessageContext(string messageId, string jobId, IDictionary<string, object> properties)
+        protected MessageContext(string messageId, string jobId, IDictionary<string, object> properties)
         {
             if (string.IsNullOrWhiteSpace(messageId))
             {
