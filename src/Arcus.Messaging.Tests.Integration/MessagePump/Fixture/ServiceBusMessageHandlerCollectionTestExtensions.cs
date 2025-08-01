@@ -1,4 +1,6 @@
 ﻿using System;
+using Arcus.Messaging;
+using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
@@ -32,7 +34,8 @@ namespace Microsoft.Extensions.DependencyInjection
                         (bool matchesContext, bool matchesBody) =
                             Bogus.PickRandom((false, true), (true, false), (false, false));
 
-                        handler.AddMessageContextFilter(_ => matchesContext);
+                        handler.AddMessageContextFilter((ServiceBusMessageContext _) => matchesContext);
+                        handler.AddMessageContextFilter((AzureServiceBusMessageContext _) => matchesContext);
                         handler.AddMessageBodyFilter(_ => matchesBody);
                     });
                     break;
@@ -52,20 +55,13 @@ namespace Microsoft.Extensions.DependencyInjection
                     break;
 
                 case 1:
-                    options.AddMessageContextFilter(_ => false);
+                    options.AddMessageContextFilter((ServiceBusMessageContext _) => false);
                     break;
 
                 case 2:
                     options.AddMessageBodyFilter(_ => false);
                     break;
             }
-        }
-
-        internal static ServiceBusMessageHandlerCollection WithMatchedServiceBusMessageHandler(
-            this ServiceBusMessageHandlerCollection collection,
-            Action<ServiceBusMessageHandlerOptions<Order>> configureOptions = null)
-        {
-            return WithMatchedServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler>(collection, configureOptions);
         }
 
         internal static ServiceBusMessageHandlerCollection WithMatchedServiceBusMessageHandler<TMessageHandler>(
@@ -80,6 +76,33 @@ namespace Microsoft.Extensions.DependencyInjection
             this ServiceBusMessageHandlerCollection collection,
             Action<ServiceBusMessageHandlerOptions<TMessage>> configureOptions = null)
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
+            where TMessage : class
+        {
+            return collection.WithServiceBusMessageHandler<TMessageHandler, TMessage>(configureOptions);
+        }
+    }
+
+    internal static class AdditionalExtensions
+    {
+        internal static ServiceBusMessageHandlerCollection WithMatchedServiceBusMessageHandler(
+            this ServiceBusMessageHandlerCollection collection,
+            Action<ServiceBusMessageHandlerOptions<Order>> configureOptions = null)
+        {
+            return WithMatchedServiceBusMessageHandler<WriteOrderToDiskAzureServiceBusMessageHandler>(collection, configureOptions);
+        }
+
+        internal static ServiceBusMessageHandlerCollection WithMatchedServiceBusMessageHandler<TMessageHandler>(
+            this ServiceBusMessageHandlerCollection collection,
+            Action<ServiceBusMessageHandlerOptions<Order>> configureOptions = null)
+            where TMessageHandler : class, IServiceBusMessageHandler<Order>
+        {
+            return collection.WithServiceBusMessageHandler<TMessageHandler, Order>(configureOptions);
+        }
+
+        internal static ServiceBusMessageHandlerCollection WithMatchedServiceBusMessageHandler<TMessageHandler, TMessage>(
+            this ServiceBusMessageHandlerCollection collection,
+            Action<ServiceBusMessageHandlerOptions<TMessage>> configureOptions = null)
+            where TMessageHandler : class, IServiceBusMessageHandler<TMessage>
             where TMessage : class
         {
             return collection.WithServiceBusMessageHandler<TMessageHandler, TMessage>(configureOptions);

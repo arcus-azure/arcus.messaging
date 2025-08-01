@@ -11,12 +11,15 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
     /// <summary>
     /// Represents the contextual information concerning an Azure Service Bus message.
     /// </summary>
+#pragma warning disable S1133 // Will be removed in v4.0.
+    [Obsolete("Will be removed in v4.0, please use the renamed " + nameof(ServiceBusMessageContext) + " instead")]
+#pragma warning restore S1133
     public class AzureServiceBusMessageContext : MessageContext
     {
         private readonly ServiceBusReceiver _receiver;
         private readonly ServiceBusReceivedMessage _message;
 
-        private AzureServiceBusMessageContext(
+        internal AzureServiceBusMessageContext(
             string jobId,
             ServiceBusEntityType entityType,
             ServiceBusReceiver receiver,
@@ -32,6 +35,15 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             SystemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
             LockToken = message.LockToken;
             DeliveryCount = message.DeliveryCount;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureServiceBusMessageContext"/> class.
+        /// </summary>
+        internal AzureServiceBusMessageContext(
+            AzureServiceBusMessageContext context)
+            : this(context.JobId, context.EntityType, context._receiver, context._message)
+        {
         }
 
         /// <summary>
