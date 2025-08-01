@@ -2,8 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Abstractions.ServiceBus;
-using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Microsoft.Extensions.Logging;
@@ -11,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
-    public class WriteOrderToDiskAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<Order>
+    public class WriteOrderToDiskAzureServiceBusMessageHandler : IServiceBusMessageHandler<Order>
     {
         private readonly ILogger<WriteOrderToDiskAzureServiceBusMessageHandler> _logger;
 
@@ -26,7 +24,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 
         public async Task ProcessMessageAsync(
             Order message,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {

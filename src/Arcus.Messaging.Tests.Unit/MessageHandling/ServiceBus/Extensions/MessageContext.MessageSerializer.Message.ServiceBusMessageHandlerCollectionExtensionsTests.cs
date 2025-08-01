@@ -99,7 +99,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
         [InlineData(true, false)]
         [InlineData(true, true)]
         public async Task WithServiceBusMessageHandler_WithContextFilterWithMessageBodySerializerWithMessageBodyFilterWithMessagehandlerImplementationFactory_UsesAll(
-            bool matchesContext, 
+            bool matchesContext,
             bool matchesBody)
         {
             // Arrange
@@ -144,7 +144,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Extensions
         [InlineData(true, false)]
         [InlineData(true, true)]
         public async Task WithServiceBusMessageHandler_WithContextFilterWithMessageBodySerializerImplementationFactoryWithMessageBodyFilterWithMessageHandlerImplementationFactory_UsesAll(
-            bool matchesContext, 
+            bool matchesContext,
             bool matchesBody)
         {
             // Arrange

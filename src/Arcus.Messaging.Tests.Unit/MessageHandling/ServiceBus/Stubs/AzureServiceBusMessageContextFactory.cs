@@ -17,13 +17,13 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs
         /// <summary>
         /// Generates a valid <see cref="AzureServiceBusMessageContext"/> instance.
         /// </summary>
-        public static AzureServiceBusMessageContext Generate(string jobId = null)
+        public static ServiceBusMessageContext Generate(string jobId = null)
         {
             var message = ServiceBusModelFactory.ServiceBusReceivedMessage(
                 messageId: $"message-id-{Guid.NewGuid()}",
                 deliveryCount: Bogus.Random.Int());
 
-            var context = AzureServiceBusMessageContext.Create(
+            var context = ServiceBusMessageContext.Create(
                 jobId ?? $"job-id-{Guid.NewGuid()}",
                 Bogus.PickRandom<ServiceBusEntityType>(),
                 Mock.Of<ServiceBusReceiver>(),

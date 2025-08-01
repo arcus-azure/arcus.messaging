@@ -1,4 +1,5 @@
 ﻿using System;
+using Arcus.Messaging;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
@@ -15,7 +16,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         internal Func<IServiceProvider, IMessageBodySerializer> MessageBodySerializerImplementationFactory { get; private set; }
         internal Func<TMessage, bool> MessageBodyFilter { get; private set; }
-        internal Func<AzureServiceBusMessageContext, bool> MessageContextFilter { get; private set; }
+        internal Func<ServiceBusMessageContext, bool> MessageContextFilter { get; private set; }
 
         /// <summary>
         /// Adds a custom serializer instance that deserializes the incoming <see cref="ServiceBusReceivedMessage.Body"/>.
@@ -53,6 +54,20 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Adds a custom <paramref name="contextFilter"/> to only select a subset of messages, based on its context, that the registered message handler can handle.
         /// </summary>
+        public ServiceBusMessageHandlerOptions<TMessage> AddMessageContextFilter(Func<ServiceBusMessageContext, bool> contextFilter)
+        {
+            ArgumentNullException.ThrowIfNull(contextFilter);
+            MessageContextFilter = contextFilter;
+
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a custom <paramref name="contextFilter"/> to only select a subset of messages, based on its context, that the registered message handler can handle.
+        /// </summary>
+#pragma warning disable S1133
+        [Obsolete("Will be removed in v4.0, please use the other overload that accepts a ServiceBusMessageContext instead")]
+#pragma warning restore S1133
         public ServiceBusMessageHandlerOptions<TMessage> AddMessageContextFilter(Func<AzureServiceBusMessageContext, bool> contextFilter)
         {
             ArgumentNullException.ThrowIfNull(contextFilter);

@@ -3,8 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.Abstractions.ServiceBus;
-using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Microsoft.Extensions.Logging;
 
@@ -14,7 +12,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
     /// Represents a template for a message handler that interacts with an unstable dependency system that requires a circuit breaker to prevent overloading the system.
     /// </summary>
     /// <typeparam name="TMessage">The type of the message that this handler can process.</typeparam>
-    public abstract class CircuitBreakerServiceBusMessageHandler<TMessage> : IAzureServiceBusMessageHandler<TMessage>
+    public abstract class CircuitBreakerServiceBusMessageHandler<TMessage> : IServiceBusMessageHandler<TMessage>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="CircuitBreakerServiceBusMessageHandler{TMessage}" /> class.
@@ -52,7 +50,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
         /// </exception>
         public async Task ProcessMessageAsync(
             TMessage message,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
@@ -73,7 +71,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
 
         private async Task<MessageProcessingResult> TryProcessMessageAsync(
             TMessage message,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             MessagePumpCircuitBreakerOptions options,
             CancellationToken cancellationToken)
@@ -103,7 +101,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
         /// </exception>
         protected abstract Task ProcessMessageAsync(
             TMessage message,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             MessagePumpCircuitBreakerOptions options,
             CancellationToken cancellationToken);

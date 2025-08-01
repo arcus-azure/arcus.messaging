@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Arcus.Messaging.Pumps.ServiceBus.Resiliency;
 using Arcus.Messaging.Tests.Core.Messages.v1;
@@ -76,7 +75,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         protected override Task ProcessMessageAsync(
             Order message,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             MessagePumpCircuitBreakerOptions options,
             CancellationToken cancellationToken)

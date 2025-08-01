@@ -1,16 +1,14 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Abstractions.ServiceBus;
-using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
-    public class OrderBatchMessageHandler : IAzureServiceBusMessageHandler<OrderBatch>
+    public class OrderBatchMessageHandler : IServiceBusMessageHandler<OrderBatch>
     {
-        private readonly IAzureServiceBusMessageHandler<Order> _messageHandler;
+        private readonly IServiceBusMessageHandler<Order> _messageHandler;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OrderBatchMessageHandler"/> class.
@@ -33,13 +31,13 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
         /// <param name="cancellationToken">Cancellation token</param>
         public async Task ProcessMessageAsync(
             OrderBatch batch,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
             foreach (Order order in batch.Orders)
             {
-                await _messageHandler.ProcessMessageAsync(order, messageContext, correlationInfo, cancellationToken); 
+                await _messageHandler.ProcessMessageAsync(order, messageContext, correlationInfo, cancellationToken);
             }
         }
     }

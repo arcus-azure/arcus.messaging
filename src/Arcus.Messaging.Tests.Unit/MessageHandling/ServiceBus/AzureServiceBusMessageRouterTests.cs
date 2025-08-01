@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Generators;
 using Arcus.Messaging.Tests.Core.Messages.v1;
@@ -54,7 +53,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             var order = OrderGenerator.Generate();
             var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
-            var context = AzureServiceBusMessageContext.Create(jobId, ServiceBusEntityType.Unknown, Mock.Of<ServiceBusReceiver>(), message);
+            var context = ServiceBusMessageContext.Create(jobId, ServiceBusEntityType.Unknown, Mock.Of<ServiceBusReceiver>(), message);
             var correlationInfo = new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}");
 
             MessageProcessingResult result = await router.RouteMessageAsync(Mock.Of<ServiceBusReceiver>(), message, context, correlationInfo, CancellationToken.None);
@@ -99,7 +98,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
 
-            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            ServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             Order order = OrderGenerator.Generate();
@@ -130,7 +129,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
 
-            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            ServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             Order order = OrderGenerator.Generate();
@@ -159,7 +158,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
 
-            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            ServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             Order order = OrderGenerator.Generate();
@@ -186,7 +185,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
 
-            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            ServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             Order order = OrderGenerator.Generate();
@@ -216,7 +215,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: _ => ignoredHandler);
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
-            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            ServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             ServiceBusReceivedMessage message = expectedMessage.AsServiceBusReceivedMessage();
@@ -246,7 +245,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
 
-            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            ServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             ServiceBusReceivedMessage message = expectedMessage.AsServiceBusReceivedMessage();
@@ -270,7 +269,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var ignoredHandler3 = new StubServiceBusMessageHandler<Order>();
             var spyHandler = new StubServiceBusMessageHandler<Order>();
 
-            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            ServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var expectedMessage = new TestMessage { TestProperty = "Some value" };
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, OrderGenerator.Generate());
@@ -327,7 +326,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             // Assert
             OrderV2 orderV2 = OrderV2Generator.Generate();
             ServiceBusReceivedMessage message = orderV2.AsServiceBusReceivedMessage();
-            AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
+            ServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var correlationInfo = new MessageCorrelationInfo("operation-id", "transaction-id");
 
             MessageProcessingResult result = await router.RouteMessageAsync(Mock.Of<ServiceBusReceiver>(), message, context, correlationInfo, CancellationToken.None);
@@ -369,7 +368,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                 await router.RouteMessageAsync(
                     Mock.Of<ServiceBusReceiver>(),
                     message,
-                    AzureServiceBusMessageContext.Create(
+                    ServiceBusMessageContext.Create(
                         $"job-{Guid.NewGuid()}",
                         ServiceBusEntityType.Unknown,
                         Mock.Of<ServiceBusReceiver>(),

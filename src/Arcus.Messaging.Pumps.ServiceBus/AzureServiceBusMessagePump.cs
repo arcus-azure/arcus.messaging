@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
@@ -286,7 +285,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
 #pragma warning disable CS0618 // Type or member is obsolete
             using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
-            var messageContext = AzureServiceBusMessageContext.Create(JobId, EntityType, _messageReceiver, message);
+            var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, _messageReceiver, message);
 
             MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(_messageReceiver, message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
             return routingResult;
