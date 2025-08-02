@@ -13,21 +13,21 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
     /// </summary>
     public class AzureServiceBusMessageContext : MessageContext
     {
-        private readonly ServiceBusReceiver _receiver;
-        private readonly ServiceBusReceivedMessage _message;
+        private readonly IMessageSettleStrategy _messageSettle;
 
         private AzureServiceBusMessageContext(
             string jobId,
+            string fullyQualifiedNamespace,
             ServiceBusEntityType entityType,
-            ServiceBusReceiver receiver,
+            string entityPath,
+            IMessageSettleStrategy messageSettle,
             ServiceBusReceivedMessage message)
             : base(message.MessageId, jobId, message.ApplicationProperties.ToDictionary(item => item.Key, item => item.Value))
         {
-            _receiver = receiver;
-            _message = message;
+            _messageSettle = messageSettle;
 
-            FullyQualifiedNamespace = receiver.FullyQualifiedNamespace;
-            EntityPath = receiver.EntityPath;
+            FullyQualifiedNamespace = fullyQualifiedNamespace;
+            EntityPath = entityPath;
             EntityType = entityType;
             SystemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
             LockToken = message.LockToken;
@@ -85,16 +85,109 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             ArgumentNullException.ThrowIfNull(receiver);
             ArgumentNullException.ThrowIfNull(message);
 
-            return new AzureServiceBusMessageContext(jobId, entityType, receiver, message);
+            var messageSettle = new MessageSettleViaReceiver(receiver, message);
+            return new AzureServiceBusMessageContext(jobId, receiver.FullyQualifiedNamespace, entityType, receiver.EntityPath, messageSettle, message);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="AzureServiceBusMessageContext"/> based on the current Azure Service bus situation.
+        /// </summary>
+        /// <param name="jobId">The unique ID to identity the Azure Service bus message pump that is responsible for pumping messages from the <paramref name="eventArgs"/>.</param>
+        /// <param name="entityType">The type of Azure Service bus entity that the <paramref name="eventArgs"/> receives from.</param>
+        /// <param name="eventArgs">The Azure Service bus event arguments upon receiving the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when one of the parameters is <c>null</c>.</exception>
+        public static AzureServiceBusMessageContext Create(
+            string jobId,
+            ServiceBusEntityType entityType,
+            ProcessSessionMessageEventArgs eventArgs)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
+            ArgumentNullException.ThrowIfNull(eventArgs);
+
+            var messageSettle = new MessageSettleViaSessionEventArgs(eventArgs);
+            return new AzureServiceBusMessageContext(jobId, eventArgs.FullyQualifiedNamespace, entityType, eventArgs.EntityPath, messageSettle, eventArgs.Message);
+        }
+
+        private interface IMessageSettleStrategy
+        {
+            Task CompleteMessageAsync(CancellationToken cancellationToken);
+            Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken);
+            Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken);
+            Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken);
+        }
+
+        private sealed class MessageSettleViaReceiver : IMessageSettleStrategy
+        {
+            private readonly ServiceBusReceiver _receiver;
+            private readonly ServiceBusReceivedMessage _message;
+
+            internal MessageSettleViaReceiver(ServiceBusReceiver receiver, ServiceBusReceivedMessage message)
+            {
+                ArgumentNullException.ThrowIfNull(receiver);
+                ArgumentNullException.ThrowIfNull(message);
+                _receiver = receiver;
+                _message = message;
+            }
+
+            public Task CompleteMessageAsync(CancellationToken cancellationToken)
+            {
+                return _receiver.CompleteMessageAsync(_message, cancellationToken);
+            }
+
+            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+            {
+                return _receiver.DeadLetterMessageAsync(_message, deadLetterReason, deadLetterErrorDescription, cancellationToken);
+            }
+
+            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            {
+                return _receiver.DeadLetterMessageAsync(_message, newMessageProperties, deadLetterReason, deadLetterErrorDescription, cancellationToken);
+            }
+
+            public Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            {
+                return _receiver.AbandonMessageAsync(_message, newMessageProperties, cancellationToken);
+            }
+        }
+
+        private sealed class MessageSettleViaSessionEventArgs : IMessageSettleStrategy
+        {
+            private readonly ProcessSessionMessageEventArgs _eventArgs;
+
+            internal MessageSettleViaSessionEventArgs(ProcessSessionMessageEventArgs eventArgs)
+            {
+                ArgumentNullException.ThrowIfNull(eventArgs);
+                _eventArgs = eventArgs;
+            }
+
+            public Task CompleteMessageAsync(CancellationToken cancellationToken)
+            {
+                return _eventArgs.CompleteMessageAsync(_eventArgs.Message, cancellationToken);
+            }
+
+            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+            {
+                return _eventArgs.DeadLetterMessageAsync(_eventArgs.Message, deadLetterReason, deadLetterErrorDescription, cancellationToken);
+            }
+
+            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            {
+                return _eventArgs.DeadLetterMessageAsync(_eventArgs.Message, newMessageProperties.ToDictionary(), deadLetterReason, deadLetterErrorDescription, cancellationToken);
+            }
+
+            public Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            {
+                return _eventArgs.AbandonMessageAsync(_eventArgs.Message, newMessageProperties, cancellationToken);
+            }
         }
 
         /// <summary>
         /// Completes the Azure Service Bus message on Azure. This will delete the message from the service.
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        public async Task CompleteMessageAsync(CancellationToken cancellationToken)
+        public Task CompleteMessageAsync(CancellationToken cancellationToken)
         {
-            await _receiver.CompleteMessageAsync(_message, cancellationToken);
+            return _messageSettle.CompleteMessageAsync(cancellationToken);
         }
 
         /// <summary>
@@ -104,9 +197,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="deadLetterErrorDescription">The optional extra description of the dead letter error.</param>
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized correctly.</exception>
-        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+        public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
         {
-            await DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties: null, cancellationToken);
+            return _messageSettle.DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, cancellationToken);
         }
 
         /// <summary>
@@ -117,9 +210,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <param name="newMessageProperties">The properties to modify on the message during the dead lettering of the message.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
-        public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+        public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
         {
-            await _receiver.DeadLetterMessageAsync(_message, newMessageProperties, deadLetterReason, deadLetterErrorDescription, cancellationToken);
+            return _messageSettle.DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties, cancellationToken);
         }
 
         /// <summary>
@@ -133,9 +226,9 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="newMessageProperties">The properties to modify on the message during the abandoning of the message.</param>
         /// <param name="cancellationToken">The optional <see cref="CancellationToken" /> instance to signal the request to cancel the operation.</param>
         /// <exception cref="InvalidOperationException">Thrown when the message context was not initialized correctly.</exception>
-        public async Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+        public Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
         {
-            await _receiver.AbandonMessageAsync(_message, newMessageProperties, cancellationToken);
+            return _messageSettle.AbandonMessageAsync(newMessageProperties, cancellationToken);
         }
     }
 

@@ -17,6 +17,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TEventHandler">The custom type of the event handler.</typeparam>
         /// <param name="collection">The application services to register the event handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> is <c>null</c>.</exception>
+        /// <exception cref="NotSupportedException">Thrown when the message pump was configured to use sessions.</exception>
         public static ServiceBusMessageHandlerCollection WithCircuitBreakerStateChangedEventHandler<TEventHandler>(
             this ServiceBusMessageHandlerCollection collection)
             where TEventHandler : ICircuitBreakerEventHandler
@@ -31,6 +32,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="collection">The application services to register the event handler.</param>
         /// <param name="implementationFactory">The factory function to create the custom <see cref="ICircuitBreakerEventHandler"/> implementation.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="collection"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
+        /// <exception cref="NotSupportedException">Thrown when the message pump was configured to use sessions.</exception>
         public static ServiceBusMessageHandlerCollection WithCircuitBreakerStateChangedEventHandler<TEventHandler>(
             this ServiceBusMessageHandlerCollection collection,
             Func<IServiceProvider, TEventHandler> implementationFactory)
@@ -38,6 +40,13 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             ArgumentNullException.ThrowIfNull(collection);
             ArgumentNullException.ThrowIfNull(implementationFactory);
+
+            if (collection.UseSessions)
+            {
+                throw new NotSupportedException(
+                    "Cannot register a circuit breaker event handler for an Azure Service Bus message pump that uses sessions, " +
+                    "because the circuit breaker functionality is not supported for session-based message pumps.");
+            }
 
             collection.Services.AddTransient(serviceProvider => new CircuitBreakerEventHandler(collection.JobId, implementationFactory(serviceProvider)));
             return collection;
