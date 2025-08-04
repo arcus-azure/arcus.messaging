@@ -21,12 +21,12 @@ namespace Arcus.Messaging.Abstractions
         {
             if (string.IsNullOrWhiteSpace(messageId))
             {
-                throw new ArgumentException("Requires a non-blank message ID", nameof(messageId));
+                ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
             }
 
             if (string.IsNullOrWhiteSpace(jobId))
             {
-                throw new ArgumentException("Requires a non-blank job ID", nameof(jobId));
+                ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
             }
 
             MessageId = messageId;
