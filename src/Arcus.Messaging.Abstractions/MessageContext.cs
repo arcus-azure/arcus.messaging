@@ -21,10 +21,11 @@ namespace Arcus.Messaging.Abstractions
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
             ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
+            ArgumentNullException.ThrowIfNull(properties);
 
             MessageId = messageId;
             JobId = jobId;
-            Properties = properties ?? throw new ArgumentNullException(nameof(properties));
+            Properties = properties;
         }
 
         /// <summary>
