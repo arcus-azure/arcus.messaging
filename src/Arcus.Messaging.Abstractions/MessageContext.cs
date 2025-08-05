@@ -19,15 +19,8 @@ namespace Arcus.Messaging.Abstractions
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="properties"/> is <c>null</c>.</exception>
         protected MessageContext(string messageId, string jobId, IDictionary<string, object> properties)
         {
-            if (string.IsNullOrWhiteSpace(messageId))
-            {
-                ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
-            }
-
-            if (string.IsNullOrWhiteSpace(jobId))
-            {
-                ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
 
             MessageId = messageId;
             JobId = jobId;
