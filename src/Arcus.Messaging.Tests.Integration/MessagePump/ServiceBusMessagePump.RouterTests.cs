@@ -70,10 +70,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             await using var serviceBus = GivenServiceBus();
 
+            serviceBus.Services.AddSingleton<OrderBatchMessageBodySerializer>();
             serviceBus.WhenServiceBusQueueMessagePump()
                       .WithMatchedServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(handler =>
                       {
-                          handler.AddMessageBodySerializer(provider => ActivatorUtilities.CreateInstance<OrderBatchMessageBodySerializer>(provider));
+                          handler.UseMessageBodySerializer<OrderBatchMessageBodySerializer>();
                       });
 
             // Act
@@ -115,13 +116,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             await using var serviceBus = GivenServiceBus();
 
+            serviceBus.Services.AddSingleton<OrderBatchMessageBodySerializer>();
             var contextProperty = new KeyValuePair<string, object>(Bogus.Lorem.Word(), Bogus.Lorem.Sentence());
             serviceBus.WhenServiceBusQueueMessagePump()
                       .WithMatchedServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(handler =>
                       {
                           handler.AddMessageContextFilter(context => context.Properties.Contains(contextProperty))
                                  .AddMessageBodyFilter(message => message.Orders.Length == 1)
-                                 .AddMessageBodySerializer(provider => ActivatorUtilities.CreateInstance<OrderBatchMessageBodySerializer>(provider));
+                                 .UseMessageBodySerializer<OrderBatchMessageBodySerializer>();
                       });
 
             // Act
