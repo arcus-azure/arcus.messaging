@@ -12,7 +12,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void TopicOptionsMaxConcurrentCalls_ValueIsAboveZero_Succeeds()
         {
             // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
+            var options = new ServiceBusMessagePumpOptions();
             var validConcurrentCalls = 1337;
 
             // Act
@@ -26,7 +26,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void TopicOptionsMaxConcurrentCalls_ValueIsZero_ThrowsException()
         {
             // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
+            var options = new ServiceBusMessagePumpOptions();
             var invalidConcurrentCalls = 0;
 
             // Act & Assert
@@ -37,7 +37,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void TopicOptionsMaxConcurrentCalls_ValueIsNegative_ThrowsException()
         {
             // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
+            var options = new ServiceBusMessagePumpOptions();
             var invalidConcurrentCalls = new Faker().Random.Number(min: -9999, max: -1);
 
             // Act & Assert
@@ -48,7 +48,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void TopicOptionsPrefetchCount_ValueIsAboveZero_Succeeds()
         {
             // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
+            var options = new ServiceBusMessagePumpOptions();
             var validPrefetchCount = new Faker().Random.Number(min: 1, max: 500);
 
             // Act
@@ -62,7 +62,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void TopicOptionsPrefetchCount_ValueIsZero_Succeeds()
         {
             // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
+            var options = new ServiceBusMessagePumpOptions();
             var validPrefetchCount = 0;
 
             // Act
@@ -76,7 +76,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void TopicOptionsPrefetchCount_ValueIsNegative_ThrowsException()
         {
             // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
+            var options = new ServiceBusMessagePumpOptions();
             var invalidPrefetchCount = new Faker().Random.Number(min: -9999, max: -1);
 
             // Act & Assert
@@ -88,7 +88,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void OperationName_ValueIsBlank_Throws(string operationName)
         {
             // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
+            var options = new ServiceBusMessagePumpOptions();
 
             // Act / Assert
             Assert.ThrowsAny<ArgumentException>(() =>
@@ -99,7 +99,7 @@ namespace Arcus.Messaging.Tests.Unit.ServiceBus
         public void OperationName_ValueNotBlank_Succeeds()
         {
             // Arrange
-            var options = new AzureServiceBusMessagePumpOptions();
+            var options = new ServiceBusMessagePumpOptions();
             var operationName = $"operation-name-{Guid.NewGuid()}";
 
             // Act

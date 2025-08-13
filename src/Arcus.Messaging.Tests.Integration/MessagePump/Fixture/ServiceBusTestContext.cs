@@ -16,6 +16,7 @@ using Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus;
 using Arcus.Testing;
 using Azure.Identity;
 using Azure.Messaging.ServiceBus;
+using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -36,6 +37,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         private bool _isStarted;
         private readonly ILogger _logger;
 
+        private static readonly Faker Bogus = new();
+
         private ServiceBusTestContext(TemporaryServiceBusEntityState serviceBus, ILogger logger)
         {
             _serviceBus = serviceBus;
@@ -44,6 +47,14 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 
             Services.AddTestLogging(logger);
         }
+
+        private TemporaryQueue Queue => UseSessions ? _serviceBus.QueueWithSession : _serviceBus.Queue;
+        private TemporaryTopic Topic => _serviceBus.Topic;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the Azure Service Bus message pump managed by the test context should use sessions.
+        /// </summary>
+        internal bool UseSessions { get; set; } = Bogus.Random.Bool();
 
         /// <summary>
         /// Gets the collection of services that are used to configure the Azure Service Bus message pump.
@@ -78,20 +89,42 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// <summary>
         /// Registers an Azure Service Bus message pump listening on a queue.
         /// </summary>
-        internal ServiceBusMessageHandlerCollection WhenServiceBusQueueMessagePump(Action<AzureServiceBusMessagePumpOptions> configureOptions = null)
+        internal ServiceBusMessageHandlerCollection WhenServiceBusQueueMessagePump(Action<ServiceBusMessagePumpOptions> configureOptions = null)
         {
-            return Services.AddServiceBusQueueMessagePump(_serviceBus.QueueName, _serviceBusConfig.HostName, new DefaultAzureCredential(), configureOptions);
+            string sessionAwareDescription = UseSessions ? " session-aware" : string.Empty;
+            _logger.LogTrace("[Test:Setup] Register Azure Service Bus{SessionDescription} queue message pump", sessionAwareDescription);
+
+            return Services.AddServiceBusQueueMessagePump(Queue.Name, _serviceBusConfig.HostName, new DefaultAzureCredential(), options =>
+            {
+                if (UseSessions)
+                {
+                    options.UseSessions();
+                }
+
+                configureOptions?.Invoke(options);
+            });
         }
 
         /// <summary>
         /// Registers an Azure Service Bus message pump listening on a topic subscription.
         /// </summary>
-        internal ServiceBusMessageHandlerCollection WhenServiceBusTopicMessagePump(Action<AzureServiceBusMessagePumpOptions> configureOptions = null)
+        internal ServiceBusMessageHandlerCollection WhenServiceBusTopicMessagePump(Action<ServiceBusMessagePumpOptions> configureOptions = null)
         {
             string subscriptionName = $"test-{Guid.NewGuid()}";
             _subscriptionNames.Add(subscriptionName);
 
-            return Services.AddServiceBusTopicMessagePump(_serviceBus.TopicName, subscriptionName, _serviceBusConfig.HostName, new DefaultAzureCredential(), configureOptions);
+            string sessionAwareDescription = UseSessions ? " session-aware" : string.Empty;
+            _logger.LogTrace("[Test:Setup] Register Azure Service Bus{SessionDescription} topic message pump", sessionAwareDescription);
+
+            return Services.AddServiceBusTopicMessagePump(Topic.Name, subscriptionName, _serviceBusConfig.HostName, new DefaultAzureCredential(), options =>
+            {
+                if (UseSessions)
+                {
+                    options.UseSessions(sessions => sessions.SessionIdleTimeout = TimeSpan.FromSeconds(1));
+                }
+
+                configureOptions?.Invoke(options);
+            });
         }
 
         /// <summary>
@@ -124,29 +157,57 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             {
                 foreach (var subscriptionName in _subscriptionNames)
                 {
-                    _disposables.Add(await TemporaryTopicSubscription.CreateIfNotExistsAsync(_serviceBusConfig.GetAdminClient(), _serviceBus.TopicName, subscriptionName, _logger));
+                    _disposables.Add(await CreateTopicSubscriptionAsync(subscriptionName));
                 }
+
+                _logger.LogTrace("--------------------------------------------------------------------------------------------------------");
 
                 _disposables.Insert(0, await Worker.StartNewAsync(Services));
                 _isStarted = true;
             }
 
-            var messages = configureMessages.DefaultIfEmpty(_ => { }).Select(configureMessage =>
-            {
-                var builder = new ServiceBusMessageBuilder();
-                configureMessage?.Invoke(builder);
-
-                return builder.Build();
-            }).ToArray();
-
-            string entityName = _subscriptionNames.Any()
-                ? _serviceBus.TopicName
-                : _serviceBus.QueueName;
+            ServiceBusMessage[] messages = CreateMessages(configureMessages);
+            string entityName = _subscriptionNames.Count > 0 ? Topic.Name : Queue.Name;
 
             var producer = TestServiceBusMessageProducer.CreateFor(entityName, _serviceBusConfig, _logger);
             await producer.ProduceAsync(messages);
 
             return messages;
+        }
+
+        private async Task<TemporaryTopicSubscription> CreateTopicSubscriptionAsync(string subscriptionName)
+        {
+            return await TemporaryTopicSubscription.CreateIfNotExistsAsync(
+                _serviceBusConfig.GetAdminClient(),
+                Topic.Name,
+                subscriptionName,
+                _logger,
+                options => options.OnSetup.CreateSubscriptionWith(sub =>
+                {
+                    sub.RequiresSession = UseSessions;
+                }));
+        }
+
+        private ServiceBusMessage[] CreateMessages(Action<ServiceBusMessageBuilder>[] configureMessages)
+        {
+            string sessionId = Bogus.Random.Guid().ToString();
+            return configureMessages.DefaultIfEmpty(_ => { }).Select(configureMessage =>
+            {
+                var builder = new ServiceBusMessageBuilder();
+                if (UseSessions)
+                {
+                    string sameOrNewSessionId = Bogus.Random.Bool(0.8f)
+                        ? sessionId
+                        : Bogus.Random.Guid().ToString();
+
+                    builder.WithSessionId(sameOrNewSessionId);
+                }
+
+                configureMessage?.Invoke(builder);
+
+                return builder.Build();
+
+            }).ToArray();
         }
 
         /// <summary>
@@ -168,7 +229,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         {
             foreach (var message in messages)
             {
-                await Poll.Target(() => _serviceBus.Queue.Messages.Where(msg => msg.MessageId == message.MessageId).ToListAsync())
+                await Poll.Target(() => Queue.Messages.Where(msg => msg.MessageId == message.MessageId).ToListAsync())
                           .Until(available => available.Count is 0)
                           .FailWith($"Azure Service bus message '{message.MessageId}' did not get completed in time");
             }
@@ -181,7 +242,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         {
             foreach (var message in messages)
             {
-                await Poll.Target(() => _serviceBus.Queue.Messages.FromDeadLetter().Where(msg => msg.MessageId == message.MessageId).ToListAsync())
+                await Poll.Target(() => Queue.Messages.FromDeadLetter().Where(msg => msg.MessageId == message.MessageId).ToListAsync())
                           .Until(deadLettered => deadLettered.Count > 0)
                           .Every(TimeSpan.FromMilliseconds(500))
                           .Timeout(TimeSpan.FromMinutes(2))
@@ -196,7 +257,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         {
             foreach (var message in messages)
             {
-                await Poll.Target(() => _serviceBus.Queue.Messages.Where(msg => msg.MessageId == message.MessageId && msg.DeliveryCount > 0).ToListAsync())
+
+                await Poll.Target(() => Queue.Messages.Where(msg => msg.MessageId == message.MessageId && msg.DeliveryCount > 0).ToListAsync())
                           .Until(abandoned => abandoned.Count > 0)
                           .Every(TimeSpan.FromMilliseconds(100))
                           .Timeout(TimeSpan.FromMinutes(2))
@@ -226,10 +288,17 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 
         internal sealed class ServiceBusMessageBuilder
         {
+            private string _sessionId;
             private Encoding _encoding = Encoding.UTF8;
             private TraceParent _traceParent = TraceParent.Generate();
             private readonly Dictionary<string, object> _applicationProperties = new();
             private readonly Collection<Action<Order>> _bodyConfigurations = new();
+
+            internal ServiceBusMessageBuilder WithSessionId(string sessionId)
+            {
+                _sessionId = sessionId;
+                return this;
+            }
 
             /// <summary>
             /// Configures the encoding to use for the message body.
@@ -283,6 +352,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
                 var message = new ServiceBusMessage(raw)
                 {
                     MessageId = order.Id,
+                    SessionId = _sessionId,
                     ApplicationProperties =
                     {
                         { "Content-Type", "application/json" },
@@ -306,6 +376,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// <returns>A task that represents the asynchronous dispose operation.</returns>
         public async ValueTask DisposeAsync()
         {
+            _logger.LogTrace("--------------------------------------------------------------------------------------------------------");
+
             await using var disposables = new DisposableCollection(_logger);
             disposables.AddRange(_disposables);
         }
