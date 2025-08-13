@@ -17,7 +17,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
     /// <summary>
     /// Represents an <see cref="IAzureServiceBusMessageRouter"/> that can route Azure Service Bus <see cref="ServiceBusReceivedMessage"/>s.
     /// </summary>
-    public class AzureServiceBusMessageRouter : MessageRouter, IAzureServiceBusMessageRouter
+    public class AzureServiceBusMessageRouter : MessageRouter
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureServiceBusMessageRouter"/> class.
@@ -51,10 +51,11 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
+        [Obsolete("Will be removed in v3.0")]
         public async Task<MessageProcessingResult> RouteMessageAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
@@ -77,11 +78,11 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(AzureServiceBusMessageContext) + " instead of defining fallback message handlers")]
+        [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(ServiceBusMessageContext) + " instead of defining fallback message handlers")]
         protected async Task<MessageProcessingResult> RouteMessageWithPotentialFallbackAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
@@ -131,7 +132,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             IServiceProvider serviceProvider,
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
@@ -184,7 +185,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             }
         }
 
-        private static string LoadMessageBody(ServiceBusReceivedMessage message, AzureServiceBusMessageContext context)
+        private static string LoadMessageBody(ServiceBusReceivedMessage message, ServiceBusMessageContext context)
         {
             Encoding encoding = DetermineEncoding();
             string messageBody = encoding.GetString(message.Body.ToArray());
@@ -210,7 +211,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             }
         }
 
-        private async Task PotentiallyAutoCompleteMessageAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        private async Task PotentiallyAutoCompleteMessageAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, ServiceBusMessageContext messageContext)
         {
             if (ServiceBusOptions.AutoComplete)
             {
@@ -230,7 +231,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             }
         }
 
-        private async Task DeadLetterMessageNoHandlerRegisteredAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        private async Task DeadLetterMessageNoHandlerRegisteredAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, ServiceBusMessageContext messageContext)
         {
             if (messageReceiver != null)
             {
@@ -239,7 +240,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             }
         }
 
-        private async Task DeadLetterMessageNoHandlerMatchedAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        private async Task DeadLetterMessageNoHandlerMatchedAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, ServiceBusMessageContext messageContext)
         {
             if (messageReceiver != null)
             {
@@ -248,7 +249,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             }
         }
 
-        private async Task AbandonMessageMatchedHandlerFailedAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        private async Task AbandonMessageMatchedHandlerFailedAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, ServiceBusMessageContext messageContext)
         {
             if (messageReceiver != null)
             {
