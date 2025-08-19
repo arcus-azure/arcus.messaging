@@ -106,7 +106,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                         hasGoneThroughMessageHandler = true;
                         if (isProcessed)
                         {
-                            await PotentiallyAutoCompleteMessageAsync(message, messageContext);
+                            await PotentiallyAutoCompleteMessageAsync(messageContext);
                             return MessageProcessingResult.Success(message.MessageId);
                         }
                     }
@@ -156,13 +156,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
         }
 
-        private async Task PotentiallyAutoCompleteMessageAsync(ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
+        private async Task PotentiallyAutoCompleteMessageAsync(AzureServiceBusMessageContext messageContext)
         {
             if (_serviceBusOptions.AutoComplete)
             {
                 try
                 {
-                    Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus in message pump '{JobId}'", message.MessageId, messageContext.JobId);
+                    Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus in message pump '{JobId}'", messageContext.MessageId, messageContext.JobId);
                     await messageContext.CompleteMessageAsync(CancellationToken.None);
                 }
                 catch (ServiceBusException exception) when (
@@ -171,7 +171,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     && exception.Message.Contains("already")
                     && exception.Message.Contains("removed"))
                 {
-                    Logger.LogTrace(exception, "Message '{MessageId}' on Azure Service Bus in message pump '{JobId}' does not need to be auto-completed, because it was already settled", message.MessageId, messageContext.JobId);
+                    Logger.LogTrace(exception, "Message '{MessageId}' on Azure Service Bus in message pump '{JobId}' does not need to be auto-completed, because it was already settled", messageContext.MessageId, messageContext.JobId);
                 }
             }
         }
