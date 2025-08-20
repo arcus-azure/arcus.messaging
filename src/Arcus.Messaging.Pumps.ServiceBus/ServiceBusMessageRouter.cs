@@ -165,11 +165,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                     Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus in message pump '{JobId}'", messageContext.MessageId, messageContext.JobId);
                     await messageContext.CompleteMessageAsync(CancellationToken.None);
                 }
-                catch (ServiceBusException exception) when (
-                    exception.Message.Contains("lock")
-                    && exception.Message.Contains("expired")
-                    && exception.Message.Contains("already")
-                    && exception.Message.Contains("removed"))
+                catch (ServiceBusException exception) when (exception.Reason is ServiceBusFailureReason.MessageLockLost)
                 {
                     Logger.LogTrace(exception, "Message '{MessageId}' on Azure Service Bus in message pump '{JobId}' does not need to be auto-completed, because it was already settled", messageContext.MessageId, messageContext.JobId);
                 }
