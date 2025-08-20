@@ -7,7 +7,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// </summary>
     public class MessageTelemetryOptions
     {
-        private string _operationName = "Process";
+        private string _operationName = "Service Bus message processing";
 
         /// <summary>
         /// Gets or sets the name of the operation that is used when a request telemetry is tracked - default 'Process' is used as operation name.
