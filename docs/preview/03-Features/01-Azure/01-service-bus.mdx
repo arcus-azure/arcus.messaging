@@ -151,7 +151,7 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
 });
 ```
 
-#### Correlation system
+#### Service Bus request tracking
 The following correlation systems are available when registering the message pump. These systems will use the incoming Azure Service Bus message to start a request operation. A `MessageCorrelationInfo` model is passed to your registered message handlers, which represents the current request operation. All interactions to dependent systems should be children of this operation for a transactional service-to-service relationship.
 
 <Tabs groupId="correlation-systems">
