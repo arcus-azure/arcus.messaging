@@ -152,7 +152,8 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
 ```
 
 #### Service Bus request tracking
-The following correlation systems are available when registering the message pump. These systems will use the incoming Azure Service Bus message to start a request operation. A `MessageCorrelationInfo` model is passed to your registered message handlers, which represents the current request operation. All interactions to dependent systems should be children of this operation for a transactional service-to-service relationship.
+Arcus Messaging makes it possible to make it visible in a logging system like Azure Application Insights, what happens when a message is received from a Service Bus topic or queue.
+Below, you will find the different options that are supported to enable Service Bus request tracking. When this is enabled, Arcus.Messaging will log a request operation for every message that is received from Service Bus and all traces and interactions to dependent systems that happen during the processing of that message, will be logged as children of this request operation.
 
 <Tabs groupId="correlation-systems">
 <TabItem value="open-telemetry" label="OpenTelemetry">
