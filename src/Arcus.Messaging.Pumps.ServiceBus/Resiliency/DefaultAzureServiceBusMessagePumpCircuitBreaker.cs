@@ -43,7 +43,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
 
-            AzureServiceBusMessagePump messagePump = GetRegisteredMessagePump(jobId);
+            ServiceBusReceiverMessagePump messagePump = GetRegisteredMessagePump(jobId);
 
             if (!messagePump.IsStarted)
             {
@@ -72,15 +72,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
 
-            AzureServiceBusMessagePump messagePump = GetRegisteredMessagePump(jobId);
+            ServiceBusReceiverMessagePump messagePump = GetRegisteredMessagePump(jobId);
             return messagePump.CircuitState;
         }
 
-        private AzureServiceBusMessagePump GetRegisteredMessagePump(string jobId)
+        private ServiceBusReceiverMessagePump GetRegisteredMessagePump(string jobId)
         {
-            AzureServiceBusMessagePump[] messagePumps =
+            ServiceBusReceiverMessagePump[] messagePumps =
                 _serviceProvider.GetServices<IHostedService>()
-                                .OfType<AzureServiceBusMessagePump>()
+                                .OfType<ServiceBusReceiverMessagePump>()
                                 .Where(p => p.JobId == jobId)
                                 .ToArray();
 
