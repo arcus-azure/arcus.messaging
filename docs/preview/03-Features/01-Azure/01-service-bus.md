@@ -141,6 +141,25 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
     // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
     // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
     options.Routing.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
+
+    // Configure the message pump to use sessions to receive messages (with or without additional options).
+    options.UseSessions();
+    options.UseSessions(sessions =>
+    {
+        // The maximum number of calls to the callback the processor will initiate per session.
+        // The total number of callbacks = MaxConcurrentSessions * MaxConcurrentCallsPerSession
+        // (default: 1).
+        options.MaxConcurrentCallsPerSession = 5;
+
+        // The maximum number of sessions that will be processed concurrently by the processor
+        // (default: 8).
+        options.MaxConcurrentSessions = 3;
+
+        // The maximum amount of time to wait for a message to be received for the currently active session.
+        // After this time has elapsed, the processor will close the session and attempt to process another session.
+        // (default: 1 minute)
+        options.SessionIdleTimeout = TimeSpan.FromSeconds(30);
+    });
 });
 ```
 
@@ -206,6 +225,10 @@ The following operations are supported:
 * **Complete**
 
 ### Pause message processing with a circuit breaker
+:::warning[Cannot be used in combination with `options.UseSessions(...)`]
+When the message pump is configured to use Azure Service Bus sessions, the circuit-breaker functionality is unavailable.
+:::
+
 When your message handler interacts with an external dependency, that dependency may become unavailable. In that case you want to temporarily stop processing messages.
 
 To interact with the message processing system within your *message handler*, you can inherit from the `CircuitBreakerServiceBusMessageHandler<>`, which allows you to 'enrich' your handler with circuit-breaker functionality.
