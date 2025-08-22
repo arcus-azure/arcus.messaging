@@ -8,7 +8,6 @@ using Azure.Core;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -200,7 +199,6 @@ namespace Microsoft.Extensions.DependencyInjection
 
             services.AddHostedService(provider =>
             {
-                subscriptionName = SanitizeSubscriptionName(subscriptionName, provider);
                 var logger = provider.GetService<ILogger<ServiceBusMessagePump>>();
 
                 return options.RequestedToUseSessions
@@ -213,21 +211,6 @@ namespace Microsoft.Extensions.DependencyInjection
                 JobId = options.JobId,
                 UseSessions = options.RequestedToUseSessions
             };
-        }
-
-        private static string SanitizeSubscriptionName(string subscriptionName, IServiceProvider provider)
-        {
-            var logger =
-                provider.GetService<ILogger<ServiceBusMessagePump>>()
-                ?? NullLogger<ServiceBusMessagePump>.Instance;
-
-            if (subscriptionName is { Length: > 50 })
-            {
-                logger.LogWarning("Azure Service Bus Topic subscription name was truncated to 50 characters");
-                subscriptionName = subscriptionName[..50];
-            }
-
-            return subscriptionName;
         }
     }
 }
