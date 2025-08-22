@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -9,7 +10,6 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Abstractions.Telemetry;
-using Arcus.Observability.Telemetry.Core;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -55,7 +55,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            using DurationMeasurement measurement = DurationMeasurement.Start();
+            var startTime = DateTimeOffset.UtcNow;
+            var watch = Stopwatch.StartNew();
+
             using IServiceScope serviceScope = ServiceProvider.CreateScope();
 #pragma warning disable CS0618 // Type or member is obsolete: will be refactored when moving towards v3.0.
             using IDisposable _ = LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher));
@@ -71,8 +73,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             finally
             {
+                watch.Stop();
 #pragma warning disable CS0618 // Type or member is obsolete
-                Logger.LogServiceBusRequest(messageContext.FullyQualifiedNamespace, messageContext.EntityPath, Options.Telemetry.OperationName, isSuccessful, measurement, messageContext.EntityType);
+                Logger.LogServiceBusRequest(messageContext.FullyQualifiedNamespace, messageContext.EntityPath, Options.Telemetry.OperationName, isSuccessful, watch.Elapsed, startTime, messageContext.EntityType);
 #pragma warning restore CS0618 // Type or member is obsolete
             }
         }
@@ -189,5 +192,45 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             Logger.LogDebug("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully process the message, abandoning message!", messageContext.MessageId, messageContext.JobId);
             await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), CancellationToken.None);
         }
+    }
+
+    internal static class ILoggerExtensions
+    {
+        public static void LogServiceBusRequest(
+            this ILogger logger,
+            string serviceBusNamespace,
+            string entityName,
+            string operationName,
+            bool isSuccessful,
+            TimeSpan duration,
+            DateTimeOffset startTime,
+            ServiceBusEntityType entityType,
+            Dictionary<string, object> context = null)
+        {
+            if (string.IsNullOrWhiteSpace(operationName))
+            {
+                operationName = "Azure Service Bus message processing";
+            }
+
+            context = context is null ? new Dictionary<string, object>() : new Dictionary<string, object>(context);
+            context["Endpoint"] = serviceBusNamespace;
+            context["EntityName"] = entityName;
+            context["EntityType"] = entityType;
+
+            logger.LogWarning("@{Request}", new
+            {
+                SourceSystem = RequestSourceSystem.AzureServiceBus,
+                RequestMethod = "<not-applicable>",
+                RequestHost = "<not-applicable>",
+                RequestUri = "<not-applicable>",
+                ResponseStatusCode = isSuccessful ? 200 : 500,
+                OperationName = operationName,
+                RequestDuration = duration,
+                RequestTime = startTime.ToString("yyyy-MM-ddTHH:mm:ss.fffffff zzz"),
+                Context = context
+            });
+        }
+
+        private enum RequestSourceSystem { AzureServiceBus }
     }
 }

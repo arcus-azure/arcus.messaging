@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.Telemetry;
-using Arcus.Observability.Telemetry.Core;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -100,31 +99,12 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
                 throw new ArgumentNullException(nameof(correlationInfo));
             }
 
-            string entityName = messageReceiver?.EntityPath ?? "<not-available>";
-            string serviceBusNamespace = messageReceiver?.FullyQualifiedNamespace ?? "<not-available>";
-
-            using DurationMeasurement measurement = DurationMeasurement.Start();
             using IServiceScope serviceScope = ServiceProvider.CreateScope();
 #pragma warning disable CS0618 // Type or member is obsolete: will be refactored when moving towards v3.0.
             using IDisposable _ = LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher));
 #pragma warning restore CS0618 // Type or member is obsolete
 
-            try
-            {
-                MessageProcessingResult routingResult = await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
-
-#pragma warning disable CS0618 // Type or member is obsolete: specific telemetry calls will be removed in v3.0.
-                Logger.LogServiceBusRequest(serviceBusNamespace, entityName, Options.Telemetry.OperationName, routingResult.IsSuccessful, measurement, messageContext.EntityType);
-#pragma warning restore CS0618 // Type or member is obsolete
-                return routingResult;
-            }
-            catch
-            {
-#pragma warning disable CS0618 // Type or member is obsolete: specific telemery calls will be removed in v3.0.
-                Logger.LogServiceBusRequest(serviceBusNamespace, entityName, Options.Telemetry.OperationName, false, measurement, messageContext.EntityType);
-#pragma warning restore CS0618 // Type or member is obsolete
-                throw;
-            }
+            return await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
         }
 
         private async Task<MessageProcessingResult> TryRouteMessageWithPotentialFallbackAsync(
