@@ -2,8 +2,8 @@
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Azure.Messaging.ServiceBus;
 using Bogus;
-using Microsoft.Extensions.Logging;
 using Moq;
+using ServiceBusEntityType = Arcus.Messaging.Abstractions.ServiceBus.ServiceBusEntityType;
 
 namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs
 {

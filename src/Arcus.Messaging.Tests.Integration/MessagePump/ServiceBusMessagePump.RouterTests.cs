@@ -9,9 +9,9 @@ using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using static Arcus.Messaging.Tests.Integration.MessagePump.Fixture.ServiceBusTestContext;
+using ServiceBusEntityType = Arcus.Messaging.Abstractions.ServiceBus.ServiceBusEntityType;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
