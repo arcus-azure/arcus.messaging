@@ -12,11 +12,14 @@ using Microsoft.Extensions.Logging;
 using Serilog.Context;
 using static Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingError;
 
+#pragma warning disable S1133
+
 namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
     /// <summary>
     /// Represents an <see cref="IAzureServiceBusMessageRouter"/> that can route Azure Service Bus <see cref="ServiceBusReceivedMessage"/>s.
     /// </summary>
+    [Obsolete("Will be removed in v4.0 as the message router is being made internal")]
     public class AzureServiceBusMessageRouter : MessageRouter, IAzureServiceBusMessageRouter
     {
         /// <summary>
