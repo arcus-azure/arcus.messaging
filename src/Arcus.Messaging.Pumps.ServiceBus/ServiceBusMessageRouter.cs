@@ -263,24 +263,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 DateTimeOffset startTime,
                 IDictionary<string, object> context)
             {
-                return CreateWithoutHttpRequest(RequestSourceSystem.AzureServiceBus, operationName, isSuccessful, duration, startTime, context);
-            }
-
-            private static RequestLogEntry CreateWithoutHttpRequest(
-                RequestSourceSystem source,
-                string operationName,
-                bool isSuccessful,
-                TimeSpan duration,
-                DateTimeOffset startTime,
-                IDictionary<string, object> context)
-            {
                 return new RequestLogEntry(
                     method: "<not-applicable>",
                     host: "<not-applicable>",
                     uri: "<not-applicable>",
                     operationName: operationName,
                     statusCode: isSuccessful ? 200 : 500,
-                    sourceSystem: source,
+                    sourceSystem: RequestSourceSystem.AzureServiceBus,
                     requestTime: startTime.ToString("yyyy-MM-ddTHH:mm:ss.fffffff zzz"),
                     duration: duration,
                     context: context);
