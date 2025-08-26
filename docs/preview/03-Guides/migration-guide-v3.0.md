@@ -93,7 +93,7 @@ services.AddServiceBusQueueMessagePump(...)
 +           {
 +               options.AddMessageContextFilter(ctx => ctx.Properties["MessageType"] == "Order")
 +                      .AddMessageBodyFilter(order => order.Type == OrderType.Registration)
-+                      .AddMessageBodySerializer(new OrdersXmlMessageBodySerializer())
++                      .UseMessageBodySerializer(new OrdersXmlMessageBodySerializer())
 +           });
 
 ```

@@ -46,9 +46,6 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static void WithUnrelatedHandlerFiltering<T>(ServiceBusMessageHandlerOptions<T> options)
         {
-            options.AddMessageContextFilter(_ => true)
-                   .AddMessageBodyFilter(_ => true);
-
             switch (Bogus.Random.Int(0, 2))
             {
                 case 0:
@@ -62,6 +59,9 @@ namespace Microsoft.Extensions.DependencyInjection
                     options.AddMessageBodyFilter(_ => false);
                     break;
             }
+
+            options.AddMessageContextFilter(_ => true)
+                   .AddMessageBodyFilter(_ => true);
         }
 
         internal static ServiceBusMessageHandlerCollection WithMatchedServiceBusMessageHandler<TMessageHandler>(

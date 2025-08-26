@@ -27,7 +27,15 @@ namespace Arcus.Messaging
             ServiceBusEntityType entityType,
             ServiceBusReceiver receiver,
             ServiceBusReceivedMessage message)
-            : base(jobId, entityType, receiver, message)
+            : base(jobId, receiver.FullyQualifiedNamespace, entityType, receiver.EntityPath, new MessageSettleViaReceiver(receiver, message), message)
+        {
+        }
+
+        private ServiceBusMessageContext(
+            string jobId,
+            ServiceBusEntityType entityType,
+            ProcessSessionMessageEventArgs eventArgs)
+            : base(jobId, eventArgs.FullyQualifiedNamespace, entityType, eventArgs.EntityPath, new MessageSettleViaSessionEventArgs(eventArgs), eventArgs.Message)
         {
         }
 
@@ -50,6 +58,24 @@ namespace Arcus.Messaging
             ArgumentNullException.ThrowIfNull(message);
 
             return new ServiceBusMessageContext(jobId, entityType, receiver, message);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="AzureServiceBusMessageContext"/> based on the current Azure Service bus situation.
+        /// </summary>
+        /// <param name="jobId">The unique ID to identity the Azure Service bus message pump that is responsible for pumping messages from the <paramref name="eventArgs"/>.</param>
+        /// <param name="entityType">The type of Azure Service bus entity that the <paramref name="eventArgs"/> receives from.</param>
+        /// <param name="eventArgs">The Azure Service bus event arguments upon receiving the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when one of the parameters is <c>null</c>.</exception>
+        public static ServiceBusMessageContext Create(
+            string jobId,
+            ServiceBusEntityType entityType,
+            ProcessSessionMessageEventArgs eventArgs)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
+            ArgumentNullException.ThrowIfNull(eventArgs);
+
+            return new ServiceBusMessageContext(jobId, entityType, eventArgs);
         }
     }
 }

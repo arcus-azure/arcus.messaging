@@ -10,7 +10,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
     /// Represents an instance that can route Azure Service Bus <see cref="ServiceBusReceivedMessage"/>s through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.
     /// </summary>
 #pragma warning disable S1133
-    [Obsolete("Will be removed in v4.0 since the message router is not publicly exposed anymore")]
+    [Obsolete("Will be removed in v4.0 as the message router is being made internal")]
 #pragma warning restore S1133
     public interface IAzureServiceBusMessageRouter
     {

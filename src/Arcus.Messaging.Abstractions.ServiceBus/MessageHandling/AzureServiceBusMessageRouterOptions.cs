@@ -3,7 +3,7 @@
 namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
 {
     /// <summary>
-    /// Represents the consumer-configurable options to change the behavior of the <see cref="AzureServiceBusMessageRouter"/>.
+    /// Represents the consumer-configurable options to change the behavior of the message router in an Azure Service Bus message pump.
     /// </summary>
     public class AzureServiceBusMessageRouterOptions : MessageRouterOptions
     {

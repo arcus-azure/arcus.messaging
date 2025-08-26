@@ -30,6 +30,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             var mockEventHandler2 = new MockCircuitBreakerEventHandler();
 
             await using var serviceBus = GivenServiceBus();
+            serviceBus.UseSessions = false;
 
             var messageSink = WithMessageSink(serviceBus.Services);
             serviceBus.WhenServiceBusMessagePump(entityType)
