@@ -215,9 +215,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, EntityType, JobId);
             }
 
-            var messageContext = AzureServiceBusMessageContext.Create(JobId, EntityType, _messageReceiver, message);
 
+            var messageContext = AzureServiceBusMessageContext.Create(JobId, EntityType, _messageReceiver, message);
             MessageProcessingResult routingResult = await RouteMessageAsync(message, messageContext, cancellationToken);
+
             return routingResult;
         }
 

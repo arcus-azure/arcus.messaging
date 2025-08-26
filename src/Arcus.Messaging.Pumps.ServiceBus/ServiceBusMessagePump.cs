@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
+using Arcus.Messaging.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Azure.Messaging.ServiceBus;
 using Microsoft.ApplicationInsights;
@@ -171,20 +173,47 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, EntityType, JobId);
             }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-            using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
+            using MessageOperationResult correlationResult = DetermineMessageCorrelation(message, messageContext);
 
-            MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
+            MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(message, messageContext, correlationResult.Correlation, cancellationToken);
+            correlationResult.IsSuccessful = routingResult.IsSuccessful;
+
             return routingResult;
         }
 
-        private MessageCorrelationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message)
+        private MessageOperationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext)
         {
-            (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
-            var client = ServiceProvider.GetRequiredService<TelemetryClient>();
+            var correlationScope = ServiceProvider.GetService<IServiceBusMessageCorrelationScope>();
+            if (correlationScope is null)
+            {
+                (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
+                var client = ServiceProvider.GetRequiredService<TelemetryClient>();
 
-            return MessageCorrelationResult.Create(client, transactionId, operationParentId);
+#pragma warning disable CS0618 // Type or member is obsolete
+                var deprecatedResult = MessageCorrelationResult.Create(client, transactionId, operationParentId);
+                return new W3CAdapterMessageOperationResult(deprecatedResult);
+#pragma warning restore CS0618 // Type or member is obsolete
+            }
 
+            return correlationScope.StartOperation(messageContext, Options.Telemetry);
+        }
+
+#pragma warning disable S1133 // Will be removed in v3.0.
+        [Obsolete("Will be removed once " + nameof(MessageCorrelationResult) + " is removed")]
+#pragma warning restore S1133
+        private sealed class W3CAdapterMessageOperationResult : MessageOperationResult
+        {
+            private readonly MessageCorrelationResult _deprecatedResult;
+
+            internal W3CAdapterMessageOperationResult(MessageCorrelationResult deprecatedResult) : base(deprecatedResult.CorrelationInfo)
+            {
+                _deprecatedResult = deprecatedResult;
+            }
+
+            protected override void StopOperation(bool isSuccessful, DateTimeOffset startTime, TimeSpan duration)
+            {
+                _deprecatedResult.Dispose();
+            }
         }
 
         /// <summary>
