@@ -4,10 +4,25 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Extensions.Logging;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus
 {
+    /// <summary>
+    /// Represents the type of Azure Service Bus entity on which the message was received.
+    /// </summary>
+    public enum ServiceBusEntityType
+    {
+        /// <summary>
+        /// The Azure Service Bus entity is a queue.
+        /// </summary>
+        Queue,
+
+        /// <summary>
+        /// The Azure Service Bus entity is a topic subscription.
+        /// </summary>
+        Topic
+    }
+
     /// <summary>
     /// Represents the contextual information concerning an Azure Service Bus message.
     /// </summary>
