@@ -81,7 +81,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         ///     Thrown when the <paramref name="messageReceiver"/>, <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
-        [Obsolete("Will be removed in v3.0, please use the Azure service bus operations on the " + nameof(ServiceBusMessageContext) + " instead of defining fallback message handlers")]
+        [Obsolete("Will be removed in v4.0, please use the Azure service bus operations on the " + nameof(ServiceBusMessageContext) + " instead of defining fallback message handlers")]
         protected async Task<MessageProcessingResult> RouteMessageWithPotentialFallbackAsync(
             ServiceBusReceiver messageReceiver,
             ServiceBusReceivedMessage message,
