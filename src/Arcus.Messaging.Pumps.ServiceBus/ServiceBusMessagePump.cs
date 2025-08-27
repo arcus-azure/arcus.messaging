@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
+using Arcus.Messaging.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Azure.Messaging.ServiceBus;
-using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -125,7 +126,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
             {
-#pragma warning disable CS0618 // Type or member is obsolete: the entity type will be moved down to this message pump in v3.0.
                 Logger.LogDebug(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' was cancelled", EntityType, JobId, EntityName, Namespace);
             }
             catch (Exception exception)
@@ -171,20 +171,32 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, EntityType, JobId);
             }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-            using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
+            var correlation = ServiceProvider.GetService<IServiceBusMessageCorrelationScope>() ?? new NullMessageCorrelationScope(message);
+            using var operation = correlation.StartOperation(messageContext, Options.Telemetry);
 
-            MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
+            MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(message, messageContext, operation.Correlation, cancellationToken);
+            operation.IsSuccessful = routingResult.IsSuccessful;
+
             return routingResult;
         }
 
-        private MessageCorrelationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message)
+        private sealed class NullMessageCorrelationScope(ServiceBusReceivedMessage message) : IServiceBusMessageCorrelationScope
         {
-            (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
-            var client = ServiceProvider.GetRequiredService<TelemetryClient>();
+            public MessageOperationResult StartOperation(AzureServiceBusMessageContext messageContext, MessageTelemetryOptions options)
+            {
+                var correlation = new MessageCorrelationInfo(
+                    operationId: message.CorrelationId ?? Guid.NewGuid().ToString(),
+                    transactionId: Guid.NewGuid().ToString());
 
-            return MessageCorrelationResult.Create(client, transactionId, operationParentId);
+                return new NullMessageOperationResult(correlation);
+            }
 
+            private sealed class NullMessageOperationResult(MessageCorrelationInfo correlation) : MessageOperationResult(correlation)
+            {
+                protected override void StopOperation(bool isSuccessful, DateTimeOffset startTime, TimeSpan duration)
+                {
+                }
+            }
         }
 
         /// <summary>

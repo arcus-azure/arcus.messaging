@@ -9,6 +9,8 @@ using Arcus.Testing;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Sinks.ApplicationInsights.TelemetryConverters;
@@ -21,7 +23,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
     public partial class ServiceBusMessagePumpTests
     {
         [Fact]
-        public async Task ServiceBusMessagePump_WithW3CCorrelationFormat_AutomaticallyTracksMicrosoftDependencies()
+        public async Task ServiceBusMessagePump_WithW3CCorrelationFormatUsingSerilog_AutomaticallyTracksMicrosoftDependencies()
         {
             // Arrange
             var spySink = new InMemoryApplicationInsightsTelemetryConverter();
@@ -31,7 +33,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await using var serviceBus = GivenServiceBus();
 
             serviceBus.WhenServiceBusQueueMessagePump(pump => pump.Telemetry.OperationName = customOperationName)
-                      .WithMatchedServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler>();
+                      .WithMatchedServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler>()
+                      .UseServiceBusSerilogRequestTracking();
 
             WithTelemetryChannel(serviceBus.Services, spyChannel);
             WithTelemetryConverter(serviceBus.Services, spySink);
@@ -51,7 +54,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         }
 
         [Fact]
-        public async Task ServiceBusMessagePump_WithW3CCorrelationFormatForNewParent_AutomaticallyTracksMicrosoftDependencies()
+        public async Task ServiceBusMessagePump_WithW3CCorrelationFormatForNewParentUsingSerilog_AutomaticallyTracksMicrosoftDependencies()
         {
             // Arrange
             var spySink = new InMemoryApplicationInsightsTelemetryConverter();
@@ -61,7 +64,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await using var serviceBus = GivenServiceBus();
 
             serviceBus.WhenServiceBusQueueMessagePump(pump => pump.Telemetry.OperationName = customOperationName)
-                      .WithMatchedServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler>();
+                      .WithMatchedServiceBusMessageHandler<OrderWithAutoTrackingAzureServiceBusMessageHandler>()
+                      .UseServiceBusSerilogRequestTracking();
 
             WithTelemetryChannel(serviceBus.Services, spyChannel);
             WithTelemetryConverter(serviceBus.Services, spySink);
@@ -80,6 +84,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
         private static void WithTelemetryChannel(WorkerOptions options, ITelemetryChannel channel)
         {
+            options.Services.AddSingleton<IHostingEnvironment, HostingEnvironment>();
+            options.Services.AddApplicationInsightsTelemetry();
             options.Services.Configure<TelemetryConfiguration>(conf => conf.TelemetryChannel = channel);
         }
 
