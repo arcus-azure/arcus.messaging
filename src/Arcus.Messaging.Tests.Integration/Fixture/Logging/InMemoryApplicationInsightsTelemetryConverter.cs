@@ -16,7 +16,6 @@ namespace Arcus.Messaging.Tests.Integration.Fixture.Logging
     {
         private readonly ApplicationInsightsTelemetryConverter _telemetryConverter;
         private readonly ConcurrentStack<ITelemetry> _telemetries = new ConcurrentStack<ITelemetry>();
-        private readonly ConcurrentStack<LogEvent> _logEvents = new ConcurrentStack<LogEvent>();
         private readonly ILogger _logger;
 
         /// <summary>
@@ -29,12 +28,9 @@ namespace Arcus.Messaging.Tests.Integration.Fixture.Logging
         }
 
         public ITelemetry[] Telemetries => _telemetries.ToArray();
-        public LogEvent[] LogEvents => _logEvents.ToArray();
 
         public override IEnumerable<ITelemetry> Convert(LogEvent logEvent, IFormatProvider formatProvider)
         {
-            _logEvents.Push(logEvent);
-
             IEnumerable<ITelemetry> telemetries = _telemetryConverter.Convert(logEvent, formatProvider);
             foreach (ITelemetry telemetry in telemetries)
             {
