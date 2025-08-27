@@ -171,7 +171,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, EntityType, JobId);
             }
 
-            var correlation = ServiceProvider.GetService<IServiceBusMessageCorrelationScope>() ?? new NullMessageCorrelationScope(message);
+            var correlation = ServiceProvider.GetService<IServiceBusMessageCorrelationScope>() ?? new DefaultMessageCorrelationScope(message);
             using var operation = correlation.StartOperation(messageContext, Options.Telemetry);
 
             MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(message, messageContext, operation.Correlation, cancellationToken);
@@ -180,13 +180,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             return routingResult;
         }
 
-        private sealed class NullMessageCorrelationScope(ServiceBusReceivedMessage message) : IServiceBusMessageCorrelationScope
+        private sealed class DefaultMessageCorrelationScope(ServiceBusReceivedMessage message) : IServiceBusMessageCorrelationScope
         {
             public MessageOperationResult StartOperation(AzureServiceBusMessageContext messageContext, MessageTelemetryOptions options)
             {
+                (string transactionId, string operationParentId) = messageContext.Properties.GetTraceParent();
+
                 var correlation = new MessageCorrelationInfo(
                     operationId: message.CorrelationId ?? Guid.NewGuid().ToString(),
-                    transactionId: Guid.NewGuid().ToString());
+                    transactionId,
+                    operationParentId);
 
                 return new NullMessageOperationResult(correlation);
             }
