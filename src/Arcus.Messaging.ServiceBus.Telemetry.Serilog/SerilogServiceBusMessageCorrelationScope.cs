@@ -32,6 +32,10 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.Serilog
             SerilogMessageCorrelationOptions serilogOptions,
             ILogger<SerilogServiceBusMessageCorrelationScope> logger)
         {
+            ArgumentNullException.ThrowIfNull(client);
+            ArgumentNullException.ThrowIfNull(serilogOptions);
+            ArgumentNullException.ThrowIfNull(logger);
+
             _client = client;
             _serilogOptions = serilogOptions;
             _logger = logger;
@@ -44,6 +48,9 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.Serilog
         /// <param name="options">The user-configurable options to manipulate the telemetry.</param>
         public MessageOperationResult StartOperation(AzureServiceBusMessageContext messageContext, MessageTelemetryOptions options)
         {
+            ArgumentNullException.ThrowIfNull(messageContext);
+            ArgumentNullException.ThrowIfNull(options);
+
             (string transactionId, string operationParentId) = messageContext.Properties.GetTraceParent();
 
             var telemetry = new RequestTelemetry();

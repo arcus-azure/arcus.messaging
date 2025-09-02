@@ -38,6 +38,8 @@ namespace Microsoft.Extensions.DependencyInjection
             this ServiceBusMessageHandlerCollection collection,
             Action<SerilogMessageCorrelationOptions> configureOptions)
         {
+            ArgumentNullException.ThrowIfNull(collection);
+
             collection.Services.AddSingleton<IServiceBusMessageCorrelationScope>(provider =>
             {
                 var options = new SerilogMessageCorrelationOptions();
