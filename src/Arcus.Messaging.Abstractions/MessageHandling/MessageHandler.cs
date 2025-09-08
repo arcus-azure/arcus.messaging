@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using ProcessMessageAsync = System.Func<object, Arcus.Messaging.Abstractions.MessageContext, Arcus.Messaging.Abstractions.MessageCorrelationInfo, System.Threading.CancellationToken, System.Threading.Tasks.Task<bool>>;
+using ProcessMessageAsync = System.Func<object, Arcus.Messaging.Abstractions.MessageContext, Arcus.Messaging.Abstractions.MessageCorrelationInfo, System.Threading.CancellationToken, System.Threading.Tasks.Task<Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingResult>>;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
@@ -17,11 +17,10 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     public class MessageHandler
     {
         private readonly object _messageHandlerInstance;
-        private readonly Type _messageHandlerInstanceType;
         private readonly ProcessMessageAsync _messageHandlerImplementation;
         private readonly IMessageBodySerializer _messageBodySerializer;
-        private readonly Func<MessageContext, bool> _messageContextFilter;
-        private readonly Func<object, bool> _messageBodyFilter;
+        private readonly Func<MessageContext, MessageHandlerSummary, bool> _messageContextFilter;
+        private readonly Func<object, MessageHandlerSummary, bool> _messageBodyFilter;
         private readonly ILogger _logger;
 
         private MessageHandler(
@@ -29,22 +28,34 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             ProcessMessageAsync messageHandlerImplementation,
             Type messageType,
             Type messageContextType,
-            Func<MessageContext, bool> messageContextFilter,
-            Func<object, bool> messageBodyFilter,
+            Func<MessageContext, MessageHandlerSummary, bool> messageContextFilter,
+            Func<object, MessageHandlerSummary, bool> messageBodyFilter,
             IMessageBodySerializer messageBodySerializer,
             ILogger logger)
         {
-            _messageHandlerInstance = messageHandlerInstance ?? throw new ArgumentNullException(nameof(messageHandlerInstance));
-            _messageHandlerInstanceType = messageHandlerInstance.GetType();
-            _messageHandlerImplementation = messageHandlerImplementation ?? throw new ArgumentNullException(nameof(messageHandlerImplementation));
-            _messageContextFilter = messageContextFilter ?? throw new ArgumentNullException(nameof(messageContextFilter));
-            _messageBodyFilter = messageBodyFilter ?? throw new ArgumentNullException(nameof(messageBodyFilter));
+            ArgumentNullException.ThrowIfNull(messageHandlerInstance);
+            ArgumentNullException.ThrowIfNull(messageHandlerImplementation);
+            ArgumentNullException.ThrowIfNull(messageContextFilter);
+            ArgumentNullException.ThrowIfNull(messageBodyFilter);
+            ArgumentNullException.ThrowIfNull(messageType);
+            ArgumentNullException.ThrowIfNull(messageContextType);
+
+            _messageHandlerInstance = messageHandlerInstance;
+            _messageHandlerImplementation = messageHandlerImplementation;
+            _messageContextFilter = messageContextFilter;
+            _messageBodyFilter = messageBodyFilter;
             _messageBodySerializer = messageBodySerializer;
             _logger = logger ?? NullLogger.Instance;
 
-            MessageType = messageType ?? throw new ArgumentNullException(nameof(messageType));
-            MessageContextType = messageContextType ?? throw new ArgumentNullException(nameof(messageContextType));
+            MessageType = messageType;
+            MessageContextType = messageContextType;
+            MessageHandlerType = messageHandlerInstance.GetType();
         }
+
+        /// <summary>
+        /// Gets the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
+        /// </summary>
+        internal Type MessageHandlerType { get; }
 
         /// <summary>
         /// Gets the type of the message that this abstracted message handler can process.
@@ -64,10 +75,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> or <paramref name="logger"/> is <c>null</c>.</exception>
         public static IEnumerable<MessageHandler> SubtractFrom(IServiceProvider serviceProvider, ILogger logger)
         {
-            if (serviceProvider is null)
-            {
-                throw new ArgumentNullException(nameof(serviceProvider));
-            }
+            ArgumentNullException.ThrowIfNull(serviceProvider);
 
             MessageHandler[] registrations =
                 serviceProvider.GetServices<MessageHandler>()
@@ -98,25 +106,18 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             IMessageBodySerializer messageBodySerializer = null)
             where TMessageContext : MessageContext
         {
-            if (messageHandler is null)
-            {
-                throw new ArgumentNullException(nameof(messageHandler));
-            }
+            ArgumentNullException.ThrowIfNull(messageHandler);
 
             ProcessMessageAsync processMessageAsync = DetermineMessageImplementation(messageHandler);
             logger ??= NullLogger.Instance;
-            Type messageHandlerType = messageHandler.GetType();
-
-            Func<object, bool> messageFilter = DetermineMessageBodyFilter(messageBodyFilter, messageHandlerType, logger);
-            Func<MessageContext, bool> contextFilter = DetermineMessageContextFilter(messageContextFilter, jobId, messageHandlerType, logger);
 
             return new MessageHandler(
                 messageHandlerInstance: messageHandler,
                 messageHandlerImplementation: processMessageAsync,
                 messageType: typeof(TMessage),
                 messageContextType: typeof(TMessageContext),
-                messageContextFilter: contextFilter,
-                messageBodyFilter: messageFilter,
+                messageContextFilter: DetermineMessageContextFilter(messageContextFilter, jobId),
+                messageBodyFilter: DetermineMessageBodyFilter(messageBodyFilter),
                 messageBodySerializer: messageBodySerializer,
                 logger: logger);
         }
@@ -126,52 +127,60 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         {
             return async (rawMessage, generalMessageContext, correlationInfo, cancellationToken) =>
             {
-                if (rawMessage is TMessage message
-                    && generalMessageContext.GetType() == typeof(TMessageContext)
-                    && generalMessageContext is TMessageContext messageContext)
+                if (rawMessage is not TMessage message)
                 {
-                    await messageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
-                    return true;
+                    return MessageProcessingResult.Failure(generalMessageContext.MessageId, MessageProcessingError.MatchedHandlerFailed, $"requires message type {typeof(TMessage).Name}");
                 }
 
-                return false;
+                if (generalMessageContext is not TMessageContext messageContext)
+                {
+                    return MessageProcessingResult.Failure(generalMessageContext.MessageId, MessageProcessingError.MatchedHandlerFailed, $"requires message context type {typeof(TMessageContext).Name}");
+                }
+
+                await messageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+                return MessageProcessingResult.Success(generalMessageContext.MessageId);
             };
         }
 
-        private static Func<object, bool> DetermineMessageBodyFilter<TMessage>(Func<TMessage, bool> messageBodyFilter, Type messageHandlerType, ILogger logger)
+        private static Func<object, MessageHandlerSummary, bool> DetermineMessageBodyFilter<TMessage>(Func<TMessage, bool> messageBodyFilter)
         {
-            return rawMessage =>
+            return (rawMessage, summary) =>
             {
                 if (messageBodyFilter is null)
                 {
                     return true;
                 }
 
-                if (rawMessage is TMessage message)
+                if (rawMessage is not TMessage message)
                 {
-                    logger.LogTrace("Running message body filter of message handler '{MessageHandler}' for message '{Message}'...", messageHandlerType.Name, typeof(TMessage).Name);
-                    bool canProcessMessage = messageBodyFilter(message);
-                    logger.LogTrace("Ran message body filter of message handler '{MessageHandler}' for message '{Message}' results in: {Result}", messageHandlerType.Name, typeof(TMessage).Name, canProcessMessage);
-
-                    return canProcessMessage;
+                    summary.AddFailed("custom body filter failed", ("requires type", typeof(TMessage).Name));
+                    return false;
                 }
 
-                logger.LogTrace("Cannot run message body filter of message handler '{MessageHandler}' for incoming message '{Message}' because the message is of another type '{OtherMessage}'", messageHandlerType.Name, typeof(TMessage).Name, rawMessage.GetType().Name);
+                bool matches = messageBodyFilter(message);
+                if (matches)
+                {
+                    summary.AddPassed("custom body filter passed", ("against type", typeof(TMessage).Name));
+                    return true;
+                }
+
+                summary.AddFailed("custom body filter failed", reason: "returns 'false'");
                 return false;
             };
         }
 
-        private static Func<MessageContext, bool> DetermineMessageContextFilter<TMessageContext>(
+        private static Func<MessageContext, MessageHandlerSummary, bool> DetermineMessageContextFilter<TMessageContext>(
             Func<TMessageContext, bool> messageContextFilter,
-            string jobId,
-            Type messageHandlerType,
-            ILogger logger)
+            string jobId)
             where TMessageContext : MessageContext
         {
-            return rawContext =>
+            return (rawContext, summary) =>
             {
-                if (rawContext is not null && jobId is not null && rawContext.JobId != jobId)
+                ArgumentNullException.ThrowIfNull(rawContext);
+
+                if (jobId is not null && rawContext.JobId != jobId)
                 {
+                    summary.AddFailed("custom context filter failed", ("requires job ID", rawContext.JobId));
                     return false;
                 }
 
@@ -180,16 +189,20 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                     return true;
                 }
 
-                if (rawContext is TMessageContext messageContext)
+                if (rawContext is not TMessageContext messageContext)
                 {
-                    logger.LogTrace("Running message context filter of message handler '{MessageHandler}' in message context '{MessageContext}'......", messageHandlerType.Name, typeof(TMessageContext).Name);
-                    bool canProcessMessage = messageContextFilter(messageContext);
-                    logger.LogTrace("Ran message context filter of message handler '{MessageHandler}' for message context '{MessageContext}' results in: {Result}", messageHandlerType.Name, typeof(TMessageContext).Name, canProcessMessage);
-
-                    return canProcessMessage;
+                    summary.AddFailed("custom context filter filter failed", ("requires type", typeof(TMessageContext).Name));
+                    return false;
                 }
 
-                logger.LogTrace("Cannot run message context filter of message handler '{MessageHandler}' for message context '{MessageContext}' because the message is in another context '{OtherMessageContext}'", messageHandlerType, typeof(TMessageContext).Name, rawContext?.GetType().Name);
+                bool matches = messageContextFilter(messageContext);
+                if (matches)
+                {
+                    summary.AddPassed("custom context filter passed", ("against type", typeof(TMessageContext).Name));
+                    return true;
+                }
+
+                summary.AddFailed("custom context filter failed", reason: "returns 'false'");
                 return false;
             };
         }
@@ -197,6 +210,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets the concrete class type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
         /// </summary>
+        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router")]
         public object GetMessageHandlerInstance()
         {
             return _messageHandlerInstance;
@@ -205,9 +219,25 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
         /// </summary>
+        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router")]
         public Type GetMessageHandlerType()
         {
-            return _messageHandlerInstanceType;
+            return MessageHandlerType;
+        }
+
+        internal bool MatchesMessageContext<TMessageContext>(TMessageContext context, MessageHandlerSummary summary)
+            where TMessageContext : MessageContext
+        {
+            ArgumentNullException.ThrowIfNull(context);
+            try
+            {
+                return _messageContextFilter(context, summary);
+            }
+            catch (Exception exception)
+            {
+                summary.AddFailed(exception, "context filter failed");
+                return false;
+            }
         }
 
         /// <summary>
@@ -215,21 +245,23 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
         /// <param name="messageContext">The context in which the incoming message is processed.</param>
+        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router")]
         public bool CanProcessMessageBasedOnContext<TMessageContext>(TMessageContext messageContext)
             where TMessageContext : MessageContext
         {
-            if (messageContext is null)
-            {
-                throw new ArgumentNullException(nameof(messageContext));
-            }
+            return MatchesMessageContext(messageContext, new MessageHandlerSummary());
+        }
 
+        internal bool MatchesMessageBody(object message, MessageHandlerSummary summary)
+        {
+            ArgumentNullException.ThrowIfNull(message);
             try
             {
-                return _messageContextFilter.Invoke(messageContext);
+                return _messageBodyFilter.Invoke(message, summary);
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Failed to run message context {MessageContextType} predicate for {MessageHandlerType}", messageContext.GetType().Name, _messageHandlerInstanceType.Name);
+                summary.AddFailed(exception, "body filter failed");
                 return false;
             }
         }
@@ -238,18 +270,50 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// Determines if the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> can process the incoming deserialized message based on the consumer-provided message predicate.
         /// </summary>
         /// <param name="message">The incoming deserialized message body.</param>
+        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router")]
         public bool CanProcessMessageBasedOnMessage(object message)
         {
-            try
+            return MatchesMessageBody(message, new MessageHandlerSummary());
+        }
+
+        internal async Task<MessageResult> TryCustomDeserializeMessageAsync(string message, MessageHandlerSummary summary)
+        {
+            if (_messageBodySerializer is null)
             {
-                bool canProcessMessage = _messageBodyFilter.Invoke(message);
-                return canProcessMessage;
+                return MessageResult.Failure("n/a");
             }
-            catch (Exception exception)
+
+            Task<MessageResult> deserializeMessageAsync = _messageBodySerializer.DeserializeMessageAsync(message);
+            Type serializerType = _messageBodySerializer.GetType();
+
+            if (deserializeMessageAsync is null)
             {
-                _logger.LogError(exception, "Failed to run message predicate for {MessageHandlerType}", _messageHandlerInstanceType.Name);
-                return false;
+                summary.AddFailed("custom body parsing failed", ("using type", serializerType.Name), "returns 'null'");
+                return MessageResult.Failure("n/a");
             }
+
+            MessageResult result = await deserializeMessageAsync;
+            if (result is null)
+            {
+                summary.AddFailed("custom body parsing failed", ("using type", serializerType.Name), "returns 'null'");
+                return MessageResult.Failure("n/a");
+            }
+
+            if (result.IsSuccess)
+            {
+                Type deserializedMessageType = result.DeserializedMessage.GetType();
+                if (deserializedMessageType == MessageType || deserializedMessageType.IsSubclassOf(MessageType))
+                {
+                    summary.AddPassed("custom body parsing passed", ("using type", serializerType.Name));
+                    return result;
+                }
+
+                summary.AddFailed("custom body parsing failed", ("using type", serializerType.Name), ("requires type", MessageType.Name), ("but got type", deserializedMessageType.Name));
+                return MessageResult.Failure("n/a");
+            }
+
+            summary.AddFailed(result.Exception, "custom body parsing failed", result.ErrorMessage);
+            return MessageResult.Failure("n/a");
         }
 
         /// <summary>
@@ -260,6 +324,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <returns>
         ///     A <see cref="MessageResult"/> instance that either represents a successful or faulted deserialization of the incoming <paramref name="message"/>.
         /// </returns>
+        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router")]
         public async Task<MessageResult> TryCustomDeserializeMessageAsync(string message)
         {
             if (_messageBodySerializer is null)
@@ -324,56 +389,70 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler cannot process the message correctly.</exception>
         /// <exception cref="AmbiguousMatchException">Thrown when more than a single processing method was found on the message handler.</exception>
+        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router")]
         public async Task<bool> ProcessMessageAsync<TMessageContext>(
             object message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken) where TMessageContext : MessageContext
         {
-            if (message is null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
+            ArgumentNullException.ThrowIfNull(message);
+            ArgumentNullException.ThrowIfNull(messageContext);
+            ArgumentNullException.ThrowIfNull(correlationInfo);
 
-            if (messageContext is null)
-            {
-                throw new ArgumentNullException(nameof(messageContext));
-            }
+            MessageProcessingResult result = await TryProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
+            return result.IsSuccessful;
+        }
 
-            if (correlationInfo is null)
-            {
-                throw new ArgumentNullException(nameof(correlationInfo));
-            }
-
-            Type messageType = message.GetType();
-            _logger.LogTrace("Start processing '{MessageType}' message in message handler '{MessageHandlerType}'...", messageType, _messageHandlerInstanceType.Name);
+        /// <summary>
+        /// Process the given <paramref name="message"/> in the current <see cref="IMessageHandler{TMessage,TMessageContext}"/> representation.
+        /// </summary>
+        /// <typeparam name="TMessageContext">The type of the message context used in the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</typeparam>
+        /// <param name="message">The parsed message to be processed by the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</param>
+        /// <param name="messageContext">The context providing more information concerning the processing.</param>
+        /// <param name="correlationInfo">
+        ///     The information concerning correlation of telemetry and processes by using a variety of unique
+        ///     identifiers.
+        /// </param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>
+        ///     [true] if the message handler was able to successfully process the message; [false] otherwise.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the message handler cannot process the message correctly.</exception>
+        internal async Task<MessageProcessingResult> TryProcessMessageAsync<TMessageContext>(
+            object message,
+            TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellationToken) where TMessageContext : MessageContext
+        {
+            ArgumentNullException.ThrowIfNull(message);
+            ArgumentNullException.ThrowIfNull(messageContext);
+            ArgumentNullException.ThrowIfNull(correlationInfo);
 
             const string methodName = nameof(IMessageHandler<object, MessageContext>.ProcessMessageAsync);
             try
             {
-                Task<bool> processMessageAsync =
+                Task<MessageProcessingResult> processMessageAsync =
                     _messageHandlerImplementation(message, messageContext, correlationInfo, cancellationToken);
 
                 if (processMessageAsync is null)
                 {
                     throw new InvalidOperationException(
-                        $"The '{typeof(IMessageHandler<,>).Name}' implementation '{_messageHandlerInstanceType.Name}' returned 'null' while calling the '{methodName}' method");
+                        $"The '{typeof(IMessageHandler<,>).Name}' implementation '{MessageHandlerType.Name}' returned 'null' while calling the '{methodName}' method");
                 }
 
-                bool isProcessed = await processMessageAsync;
-                _logger.LogTrace("Message handler '{MessageHandlerType}' successfully processed '{MessageType}' message", _messageHandlerInstanceType.Name, messageType.Name);
-
-                return isProcessed;
+                return await processMessageAsync;
             }
             catch (AmbiguousMatchException exception)
             {
-                _logger.LogError(exception, "Ambiguous match found of '{MethodName}' methods in the '{MessageHandlerType}'. Make sure that only 1 matching '{MethodName}' was found on the '{MessageHandlerType}' message handler", methodName, _messageHandlerInstanceType.Name, methodName, _messageHandlerInstanceType.Name);
-                return false;
+                return MessageProcessingResult.Failure(messageContext.MessageId, MessageProcessingError.ProcessingInterrupted, $"ambiguous {methodName} method", exception);
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Message handler '{MessageHandlerType}' failed to process '{MessageType}' due to a thrown exception", _messageHandlerInstanceType.Name, messageType.Name);
-                return false;
+                return MessageProcessingResult.Failure(messageContext.MessageId, MessageProcessingError.ProcessingInterrupted, "exception thrown", exception);
             }
         }
     }

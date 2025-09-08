@@ -87,50 +87,37 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            try
+            using var _ = Logger.BeginScope(new Dictionary<string, string> { ["MessageId"] = messageContext.MessageId });
+
+            Logger.LogDebug("[Received] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump", messageContext.MessageId, messageContext.EntityType);
+
+            string messageBody = LoadMessageBody(message, messageContext);
+
+            MessageProcessingResult result =
+                await RouteMessageThroughRegisteredHandlersAsync(serviceProvider, messageBody, messageContext, correlationInfo, cancellationToken);
+
+            if (result.IsSuccessful)
             {
-                MessageHandler[] messageHandlers = GetRegisteredMessageHandlers(serviceProvider).ToArray();
-                if (messageHandlers.Length <= 0)
-                {
-                    await DeadLetterMessageNoHandlerRegisteredAsync(messageContext);
-                    return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process message in the message pump as no message handler is registered in the dependency container");
-                }
-
-                string messageBody = LoadMessageBody(message, messageContext);
-                bool hasGoneThroughMessageHandler = false;
-
-                foreach (MessageHandler messageHandler in messageHandlers)
-                {
-                    MessageResult result = await DeserializeMessageForHandlerAsync(messageBody, messageContext, messageHandler);
-                    if (result.IsSuccess)
-                    {
-                        bool isProcessed = await messageHandler.ProcessMessageAsync(result.DeserializedMessage, messageContext, correlationInfo, cancellationToken);
-
-                        hasGoneThroughMessageHandler = true;
-                        if (isProcessed)
-                        {
-                            await PotentiallyAutoCompleteMessageAsync(messageContext);
-                            return MessageProcessingResult.Success(message.MessageId);
-                        }
-                    }
-                }
-
-                if (hasGoneThroughMessageHandler)
-                {
-                    await AbandonMessageMatchedHandlerFailedAsync(messageContext);
-                    return MessageProcessingResult.Failure(message.MessageId, MatchedHandlerFailed, "Failed to process Azure Service Bus message in pump as the matched handler did not successfully processed the message");
-                }
-
-                await DeadLetterMessageNoHandlerMatchedAsync(messageContext);
-                return MessageProcessingResult.Failure(message.MessageId, CannotFindMatchedHandler, "Failed to process Azure Service Bus message in pump as no message handler was matched against the message");
+                await PotentiallyAutoCompleteMessageAsync(messageContext);
             }
-            catch (Exception exception)
+            else
             {
-                Logger.LogCritical(exception, "Unable to process message with ID '{MessageId}'", message.MessageId);
+                switch (result.Error)
+                {
+                    case ProcessingInterrupted:
+                    case MatchedHandlerFailed:
+                        Logger.LogDebug("[Settle:Abandon] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump => {ErrorMessage}", messageContext.MessageId, messageContext.EntityType, result.ErrorMessage);
+                        await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), CancellationToken.None);
+                        break;
 
-                await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), CancellationToken.None);
-                return MessageProcessingResult.Failure(message.MessageId, ProcessingInterrupted, "Failed to process message in pump as there was an unexpected critical problem during processing, please see the logs for more information", exception);
+                    case CannotFindMatchedHandler:
+                        Logger.LogDebug("[Settle:DeadLetter] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump => {ErrorMessage}", messageContext.MessageId, messageContext.EntityType, result.ErrorMessage);
+                        await messageContext.DeadLetterMessageAsync(CannotFindMatchedHandler.ToString(), result.ErrorMessage, CancellationToken.None);
+                        break;
+                }
             }
+
+            return result;
         }
 
         private static string LoadMessageBody(ServiceBusReceivedMessage message, AzureServiceBusMessageContext context)
@@ -165,32 +152,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 try
                 {
-                    Logger.LogTrace("Auto-complete message '{MessageId}' (if needed) after processing in Azure Service Bus in message pump '{JobId}'", messageContext.MessageId, messageContext.JobId);
                     await messageContext.CompleteMessageAsync(CancellationToken.None);
                 }
                 catch (ServiceBusException exception) when (exception.Reason is ServiceBusFailureReason.MessageLockLost)
                 {
-                    Logger.LogTrace(exception, "Message '{MessageId}' on Azure Service Bus in message pump '{JobId}' does not need to be auto-completed, because it was already settled", messageContext.MessageId, messageContext.JobId);
+                    Logger.LogTrace(exception, "[Skipped] auto-completion of message '{MessageId}' in Azure Service Bus message pump (already settled)", messageContext.MessageId);
                 }
             }
-        }
-
-        private async Task DeadLetterMessageNoHandlerRegisteredAsync(AzureServiceBusMessageContext messageContext)
-        {
-            Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no message handlers were registered in the application services, dead-lettering message!", messageContext.MessageId, messageContext.JobId);
-            await messageContext.DeadLetterMessageAsync(CannotFindMatchedHandler.ToString(), "No message handlers were registered in the application services", CancellationToken.None);
-        }
-
-        private async Task DeadLetterMessageNoHandlerMatchedAsync(AzureServiceBusMessageContext messageContext)
-        {
-            Logger.LogError("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as no registered message handler was matched against the message, dead-lettering message!", messageContext.MessageId, messageContext.JobId);
-            await messageContext.DeadLetterMessageAsync(CannotFindMatchedHandler.ToString(), "No registered message handler was matched against the message", CancellationToken.None);
-        }
-
-        private async Task AbandonMessageMatchedHandlerFailedAsync(AzureServiceBusMessageContext messageContext)
-        {
-            Logger.LogDebug("Failed to process Azure Service Bus message '{MessageId}' in pump '{JobId}' as the matched message handler did not successfully process the message, abandoning message!", messageContext.MessageId, messageContext.JobId);
-            await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), CancellationToken.None);
         }
     }
 
