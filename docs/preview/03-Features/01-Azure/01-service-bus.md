@@ -134,7 +134,7 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
     // this job instance in a multi-instance deployment (default: generated GUID).
     options.JobId = Guid.NewGuid().ToString();
 
-    // Indicate whether or not messages should be automatically marked as completed when the handler succeeded (no exceptions) (default: true)
+    // Indicate whether or not messages should be automatically marked as completed when the handler succeeded (no exceptions thrown) (default: true)
     // If you put this on false you are responsible yourself for completing the message.
     options.Routing.AutoComplete = false;
 
