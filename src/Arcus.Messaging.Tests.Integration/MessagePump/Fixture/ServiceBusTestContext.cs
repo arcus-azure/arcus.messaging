@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Arcus.Messaging.Tests.Core.Correlation;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Generators;
@@ -23,6 +22,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Xunit;
 using ServiceBusEntityType = Arcus.Messaging.Abstractions.ServiceBus.ServiceBusEntityType;
+using ServiceBusMessagePumpOptions = Arcus.Messaging.Pumps.ServiceBus.Configuration.ServiceBusMessagePumpOptions;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 {
@@ -31,6 +31,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
     /// </summary>
     internal class ServiceBusTestContext : IAsyncDisposable
     {
+        private enum ServiceBusOperation { TriggerRun, ClientCreation }
+        private readonly Collection<(DateTimeOffset time, ServiceBusOperation type)> _timedOperations = [];
+
         private readonly TemporaryServiceBusEntityState _serviceBus;
         private readonly ServiceBusConfig _serviceBusConfig;
         private readonly List<IAsyncDisposable> _disposables = [];
@@ -51,6 +54,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 
         private TemporaryQueue Queue => UseSessions ? _serviceBus.QueueWithSession : _serviceBus.Queue;
         private TemporaryTopic Topic => _serviceBus.Topic;
+        private bool UseTrigger { get; } = Bogus.Random.Bool();
 
         /// <summary>
         /// Gets or sets a value indicating whether the Azure Service Bus message pump managed by the test context should use sessions.
@@ -95,7 +99,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             string sessionAwareDescription = UseSessions ? " session-aware" : string.Empty;
             _logger.LogTrace("[Test:Setup] Register Azure Service Bus{SessionDescription} queue message pump", sessionAwareDescription);
 
-            return Services.AddServiceBusQueueMessagePump(Queue.Name, _serviceBusConfig.HostName, new DefaultAzureCredential(), options =>
+            return UseTrigger
+                ? Services.AddServiceBusQueueMessagePump(Queue.Name, _ => CreateServiceBusClient(), ConfigureWithTrigger)
+                : Services.AddServiceBusQueueMessagePump(Queue.Name, _serviceBusConfig.HostName, new DefaultAzureCredential(), ConfigureWithoutTrigger);
+
+            void ConfigureWithoutTrigger(ServiceBusMessagePumpOptions options)
             {
                 if (UseSessions)
                 {
@@ -103,7 +111,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
                 }
 
                 configureOptions?.Invoke(options);
-            });
+            }
+
+            void ConfigureWithTrigger(ServiceBusMessagePumpOptions options)
+            {
+                ConfigureWithoutTrigger(options);
+                AddServiceBusTrigger(options);
+            }
         }
 
         /// <summary>
@@ -117,7 +131,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             string sessionAwareDescription = UseSessions ? " session-aware" : string.Empty;
             _logger.LogTrace("[Test:Setup] Register Azure Service Bus{SessionDescription} topic message pump", sessionAwareDescription);
 
-            return Services.AddServiceBusTopicMessagePump(Topic.Name, subscriptionName, _serviceBusConfig.HostName, new DefaultAzureCredential(), options =>
+            return UseTrigger
+                ? Services.AddServiceBusTopicMessagePump(Topic.Name, subscriptionName, _ => CreateServiceBusClient(), ConfigureWithTrigger)
+                : Services.AddServiceBusTopicMessagePump(Topic.Name, subscriptionName, _serviceBusConfig.HostName, new DefaultAzureCredential(), ConfigureWithoutTrigger);
+
+            void ConfigureWithoutTrigger(ServiceBusMessagePumpOptions options)
             {
                 if (UseSessions)
                 {
@@ -125,6 +143,27 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
                 }
 
                 configureOptions?.Invoke(options);
+            }
+
+            void ConfigureWithTrigger(ServiceBusMessagePumpOptions options)
+            {
+                ConfigureWithoutTrigger(options);
+                AddServiceBusTrigger(options);
+            }
+        }
+
+        private ServiceBusClient CreateServiceBusClient()
+        {
+            _timedOperations.Add((DateTimeOffset.UtcNow, ServiceBusOperation.ClientCreation));
+            return new ServiceBusClient(_serviceBusConfig.HostName, new DefaultAzureCredential());
+        }
+
+        private void AddServiceBusTrigger(ServiceBusMessagePumpOptions options)
+        {
+            options.UseStartupTrigger(_ =>
+            {
+                _timedOperations.Add((DateTimeOffset.UtcNow, ServiceBusOperation.TriggerRun));
+                return Task.CompletedTask;
             });
         }
 
@@ -216,6 +255,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// </summary>
         internal async Task ShouldConsumeViaMatchedHandlerAsync(IEnumerable<ServiceBusMessage> messages)
         {
+            AssertTimedOperations();
             foreach (var message in messages)
             {
                 OrderCreatedEventData eventData = await DiskMessageEventConsumer.ConsumeOrderCreatedAsync(message.MessageId);
@@ -228,6 +268,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// </summary>
         internal async Task ShouldCompleteConsumedAsync(IEnumerable<ServiceBusMessage> messages)
         {
+            AssertTimedOperations();
             foreach (var message in messages)
             {
                 await Poll.Target(() => Queue.Messages.Where(msg => msg.MessageId == message.MessageId).ToListAsync())
@@ -241,6 +282,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// </summary>
         internal async Task ShouldNotConsumeButDeadLetterAsync(IEnumerable<ServiceBusMessage> messages)
         {
+            AssertTimedOperations();
             foreach (var message in messages)
             {
                 await Poll.Target(() => Queue.Messages.FromDeadLetter().Where(msg => msg.MessageId == message.MessageId).ToListAsync())
@@ -256,15 +298,26 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// </summary>
         internal async Task ShouldNotConsumeButAbandonAsync(IEnumerable<ServiceBusMessage> messages)
         {
+            AssertTimedOperations();
             foreach (var message in messages)
             {
-
                 await Poll.Target(() => Queue.Messages.Where(msg => msg.MessageId == message.MessageId && msg.DeliveryCount > 0).ToListAsync())
                           .Until(abandoned => abandoned.Count > 0)
                           .Every(TimeSpan.FromMilliseconds(100))
                           .Timeout(TimeSpan.FromMinutes(2))
                           .FailWith($"cannot receive abandoned message with the message ID: '{message.MessageId}' in time");
             }
+        }
+
+        private void AssertTimedOperations()
+        {
+            Assert.Collection(_timedOperations,
+                op => Assert.Equal(ServiceBusOperation.TriggerRun, op.type),
+                op => Assert.Equal(ServiceBusOperation.ClientCreation, op.type));
+
+            DateTimeOffset[] times = _timedOperations.Select(op => op.time).ToArray();
+            Assert.True(times.Order().SequenceEqual(times),
+                $"Service Bus operations should be run in the expected order, but weren't: {string.Join(", ", times.Select(t => t.ToString("s")))}");
         }
 
         private static void AssertReceivedOrderEventDataForW3C(

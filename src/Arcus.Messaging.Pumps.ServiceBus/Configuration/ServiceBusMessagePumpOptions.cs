@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 
@@ -59,6 +60,23 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             }
         }
 
+        internal Func<IServiceProvider, Task> OnStartupAsync { get; set; } = _ => Task.CompletedTask;
+
+        /// <summary>
+        /// Sets a function on the message pump that should run before the pump receives Azure Service Bus messages.
+        /// Useful for when dependent systems are not always directly available.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠️ Multiple calls will override each other.
+        /// </remarks>
+        /// <param name="onStartupAsync">The function that upon completion 'triggers' the message pump to be started.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="onStartupAsync"/> is <c>null</c>.</exception>
+        public void UseStartupTrigger(Func<IServiceProvider, Task> onStartupAsync)
+        {
+            ArgumentNullException.ThrowIfNull(onStartupAsync);
+            OnStartupAsync = onStartupAsync;
+        }
+
         /// <summary>
         /// Gets the consumer-configurable options to change the behavior of the message router.
         /// </summary>
@@ -80,7 +98,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Activates the session-aware message pump that processes messages in the Azure Service Bus
         /// with additional configuration options for session handling.
         /// </summary>
-        /// <param name="configureSessionOptions"></param>
+        /// <param name="configureSessionOptions">The function to manipulate how sessions should be handled by the pump.</param>
         public void UseSessions(Action<ServiceBusSessionOptions> configureSessionOptions)
         {
             RequestedToUseSessions = true;
