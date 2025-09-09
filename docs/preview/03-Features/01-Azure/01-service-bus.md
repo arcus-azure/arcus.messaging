@@ -135,7 +135,7 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
     options.JobId = Guid.NewGuid().ToString();
 
     // Indicate whether or not messages should be automatically marked as completed when the handler succeeded (no exceptions thrown) (default: true)
-    // If you put this on false you are responsible yourself for completing the message.
+    // ⚠️ If you put this on false, you are responsible for completing the message yourself.
     options.Routing.AutoComplete = false;
 
     // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
