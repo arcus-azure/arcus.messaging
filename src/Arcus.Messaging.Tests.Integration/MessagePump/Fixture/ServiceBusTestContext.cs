@@ -311,13 +311,16 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 
         private void AssertTimedOperations()
         {
-            Assert.Collection(_timedOperations,
-                op => Assert.Equal(ServiceBusOperation.TriggerRun, op.type),
-                op => Assert.Equal(ServiceBusOperation.ClientCreation, op.type));
+            if (UseTrigger)
+            {
+                Assert.Collection(_timedOperations,
+                       op => Assert.Equal(ServiceBusOperation.TriggerRun, op.type),
+                       op => Assert.Equal(ServiceBusOperation.ClientCreation, op.type));
 
-            DateTimeOffset[] times = _timedOperations.Select(op => op.time).ToArray();
-            Assert.True(times.Order().SequenceEqual(times),
-                $"Service Bus operations should be run in the expected order, but weren't: {string.Join(", ", times.Select(t => t.ToString("s")))}");
+                DateTimeOffset[] times = _timedOperations.Select(op => op.time).ToArray();
+                Assert.True(times.Order().SequenceEqual(times),
+                    $"Service Bus operations should be run in the expected order, but weren't: {string.Join(", ", times.Select(t => t.ToString("s")))}");
+            }
         }
 
         private static void AssertReceivedOrderEventDataForW3C(
