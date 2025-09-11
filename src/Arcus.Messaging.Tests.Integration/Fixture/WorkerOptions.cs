@@ -86,6 +86,8 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
             LoggerConfiguration config =
                 new LoggerConfiguration()
                     .MinimumLevel.Verbose()
+                    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Fatal)
                     .Enrich.FromLogContext();
 
             foreach (Action<LoggerConfiguration> configure in _additionalSerilogConfigOptions)

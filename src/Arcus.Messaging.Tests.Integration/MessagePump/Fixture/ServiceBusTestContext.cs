@@ -96,6 +96,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// </summary>
         internal ServiceBusMessageHandlerCollection WhenServiceBusQueueMessagePump(Action<ServiceBusMessagePumpOptions> configureOptions = null)
         {
+            return WhenOnlyServiceBusQueueMessagePump(configureOptions)
+                   .WithUnrelatedServiceBusMessageHandler()
+                   .WithUnrelatedServiceBusMessageHandler();
+        }
+
+        internal ServiceBusMessageHandlerCollection WhenOnlyServiceBusQueueMessagePump(Action<ServiceBusMessagePumpOptions> configureOptions = null)
+        {
             string sessionAwareDescription = UseSessions ? " session-aware" : string.Empty;
             _logger.LogTrace("[Test:Setup] Register Azure Service Bus{SessionDescription} queue message pump", sessionAwareDescription);
 
@@ -131,9 +138,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             string sessionAwareDescription = UseSessions ? " session-aware" : string.Empty;
             _logger.LogTrace("[Test:Setup] Register Azure Service Bus{SessionDescription} topic message pump", sessionAwareDescription);
 
-            return UseTrigger
+            var collection = UseTrigger
                 ? Services.AddServiceBusTopicMessagePump(Topic.Name, subscriptionName, _ => CreateServiceBusClient(), ConfigureWithTrigger)
                 : Services.AddServiceBusTopicMessagePump(Topic.Name, subscriptionName, _serviceBusConfig.HostName, new DefaultAzureCredential(), ConfigureWithoutTrigger);
+
+            return collection.WithUnrelatedServiceBusMessageHandler()
+                             .WithUnrelatedServiceBusMessageHandler();
 
             void ConfigureWithoutTrigger(ServiceBusMessagePumpOptions options)
             {
@@ -345,7 +355,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 
         internal sealed class ServiceBusMessageBuilder
         {
-            private string _sessionId;
+            private string _messageId, _sessionId;
             private Encoding _encoding = Encoding.UTF8;
             private TraceParent _traceParent = TraceParent.Generate();
             private readonly Dictionary<string, object> _applicationProperties = new();
@@ -354,6 +364,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             internal ServiceBusMessageBuilder WithSessionId(string sessionId)
             {
                 _sessionId = sessionId;
+                return this;
+            }
+
+            internal ServiceBusMessageBuilder WithMessageId(string messageId)
+            {
+                _messageId = messageId;
                 return this;
             }
 
@@ -408,7 +424,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 
                 var message = new ServiceBusMessage(raw)
                 {
-                    MessageId = order.Id,
+                    MessageId = _messageId ?? order.Id,
                     SessionId = _sessionId,
                     ApplicationProperties =
                     {

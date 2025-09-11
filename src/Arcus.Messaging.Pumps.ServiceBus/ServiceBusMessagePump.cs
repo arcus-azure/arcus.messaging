@@ -167,11 +167,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return MessageProcessingResult.Failure(message.MessageId, MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message pump is shutting down");
             }
 
-            if (string.IsNullOrEmpty(message.CorrelationId))
-            {
-                Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, EntityType, JobId);
-            }
-
 #pragma warning disable CS0618 // Type or member is obsolete
             using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
 

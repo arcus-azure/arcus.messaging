@@ -28,17 +28,14 @@ namespace Arcus.Messaging.Tests.Workers.MessageBodyHandlers
         /// </returns>
         public Task<MessageResult> DeserializeMessageAsync(string messageBody)
         {
-            _logger.LogTrace("Start deserializing to an 'Order'...");
             var order = JsonConvert.DeserializeObject<Order>(messageBody);
-            
+
             if (order is null)
             {
-                _logger.LogError("Cannot deserialize incoming message to an 'Order', so can't use 'Order'");
                 return Task.FromResult(MessageResult.Failure("Cannot deserialize incoming message to an 'Order', so can't use 'Order'"));
             }
 
-            _logger.LogInformation("Deserialized to an 'Order', using 'Order'");
-            return Task.FromResult(MessageResult.Success(new OrderBatch { Orders = new [] { order } }));
+            return Task.FromResult(MessageResult.Success(new OrderBatch { Orders = new[] { order } }));
         }
     }
 }

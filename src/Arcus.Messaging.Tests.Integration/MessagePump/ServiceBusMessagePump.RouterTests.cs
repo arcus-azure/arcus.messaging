@@ -142,7 +142,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             await using var serviceBus = GivenServiceBus();
 
-            serviceBus.WhenServiceBusQueueMessagePump(pump =>
+            serviceBus.WhenOnlyServiceBusQueueMessagePump(pump =>
             {
                 pump.Routing.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
 
