@@ -87,8 +87,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            using var _ = Logger.BeginScope(new Dictionary<string, string> { ["MessageId"] = messageContext.MessageId });
-
+            using var _ = Logger.BeginScope(new Dictionary<string, object>
+            {
+                ["JobId"] = messageContext.JobId,
+                ["Service Bus namespace"] = messageContext.FullyQualifiedNamespace,
+                ["Service Bus entity name"] = messageContext.EntityPath
+            });
             Logger.LogDebug("[Received] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump", messageContext.MessageId, messageContext.EntityType);
 
             string messageBody = LoadMessageBody(message, messageContext);

@@ -168,6 +168,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             CancellationToken cancellation)
             where TMessageContext : MessageContext
         {
+            using var _ = Logger.BeginScope(new Dictionary<string, object> { ["JobId"] = context.JobId });
             var summary = new MessageHandlerSummary();
 
             if (!handler.MatchesMessageContext(context, summary))
