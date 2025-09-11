@@ -72,7 +72,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                    https://github.com/arcus-azure/arcus.messaging/issues/176 */
 #pragma warning restore S1135
 
-            Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", EntityType, JobId, EntityName, Namespace);
+            Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", EntityType, JobId, EntityName, Namespace);
 
             _receiveMessagesCancellation = new CancellationTokenSource();
             while (CircuitState.IsClosed
@@ -179,7 +179,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             IsStarted = false;
             CircuitState = CircuitState.TransitionTo(CircuitBreakerState.Open);
 
-            Logger.LogInformation("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}", EntityType, JobId, EntityName, Namespace, DateTimeOffset.UtcNow);
+            Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in '{Namespace}' closed : {Time}", EntityType, JobId, EntityName, Namespace, DateTimeOffset.UtcNow);
 
             if (_receiveMessagesCancellation != null)
             {
@@ -208,11 +208,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 Logger.LogWarning("Received message on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", EntityType, JobId);
                 return MessageProcessingResult.Failure("<unavailable>", MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message is was 'null'");
-            }
-
-            if (string.IsNullOrEmpty(message.CorrelationId))
-            {
-                Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} message pump '{JobId}'", message.MessageId, EntityType, JobId);
             }
 
             var messageContext = AzureServiceBusMessageContext.Create(JobId, EntityType, _messageReceiver, message);

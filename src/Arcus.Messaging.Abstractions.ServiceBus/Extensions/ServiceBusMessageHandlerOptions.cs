@@ -19,8 +19,8 @@ namespace Microsoft.Extensions.DependencyInjection
         private readonly Collection<Func<AzureServiceBusMessageContext, bool>> _messageContextFilters = [];
 
         internal Func<IServiceProvider, IMessageBodySerializer> MessageBodySerializerImplementationFactory { get; private set; }
-        internal Func<TMessage, bool> MessageBodyFilter => msg => _messageBodyFilters.All(filter => filter(msg));
-        internal Func<AzureServiceBusMessageContext, bool> MessageContextFilter => ctx => _messageContextFilters.All(filter => filter(ctx));
+        internal Func<TMessage, bool> MessageBodyFilter => _messageBodyFilters.Count is 0 ? null : msg => _messageBodyFilters.All(filter => filter(msg));
+        internal Func<AzureServiceBusMessageContext, bool> MessageContextFilter => _messageContextFilters.Count is 0 ? null : ctx => _messageContextFilters.All(filter => filter(ctx));
 
         /// <summary>
         /// Adds a custom serializer instance that deserializes the incoming <see cref="ServiceBusReceivedMessage.Body"/>.

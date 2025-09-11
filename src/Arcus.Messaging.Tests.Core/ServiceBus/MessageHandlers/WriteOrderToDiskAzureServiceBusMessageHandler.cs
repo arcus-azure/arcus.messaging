@@ -30,7 +30,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
-            _logger.LogTrace("Write order v1 message to disk: {MessageId}", message.Id);
+            _logger.LogTrace("[Test] Write order v1 message to disk: {MessageId}", message.Id);
 
             string fileName = message.Id + ".json";
             string dirPath = Directory.GetCurrentDirectory();

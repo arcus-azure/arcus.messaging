@@ -74,11 +74,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
-            if (string.IsNullOrEmpty(message.CorrelationId))
-            {
-                Logger.LogTrace("No operation ID was found on the message '{MessageId}' during processing in the Azure Service Bus {EntityType} session-aware message pump '{JobId}'", message.MessageId, EntityType, JobId);
-            }
-
             var messageContext = AzureServiceBusMessageContext.Create(JobId, EntityType, arg);
             await RouteMessageAsync(message, messageContext, arg.CancellationToken);
         }
