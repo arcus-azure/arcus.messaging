@@ -34,17 +34,20 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await using var serviceBus = GivenServiceBus();
             serviceBus.UseSessions = false;
 
-            var messageSink = WithMessageSink(serviceBus.Services);
+            string messageIdBeforeBreak = $"test-{Bogus.Random.Guid()}",
+                   messageIdAfterBreak = $"test-{Bogus.Random.Guid()}";
+            var messageSink = WithMessageSink(serviceBus.Services, messageIdBeforeBreak, messageIdAfterBreak);
+
             serviceBus.WhenServiceBusMessagePump(entityType)
                       .WithMatchedServiceBusMessageHandler<TestUnavailableDependencyAzureServiceBusMessageHandler>()
                       .WithCircuitBreakerStateChangedEventHandler(_ => mockEventHandler1)
                       .WithCircuitBreakerStateChangedEventHandler(_ => mockEventHandler2);
 
-            ServiceBusMessage messageBeforeBreak = await serviceBus.WhenProducingMessageAsync();
+            ServiceBusMessage messageBeforeBreak = await serviceBus.WhenProducingMessageAsync(msg => msg.WithMessageId(messageIdBeforeBreak));
             await messageSink.ShouldReceiveMessageDuringBreakAsync(messageBeforeBreak);
 
             // Act
-            ServiceBusMessage messageAfterBreak = await serviceBus.WhenProducingMessageAsync();
+            ServiceBusMessage messageAfterBreak = await serviceBus.WhenProducingMessageAsync(msg => msg.WithMessageId(messageIdAfterBreak));
 
             // Assert
             await messageSink.ShouldReceiveMessageAfterBreakAsync(messageAfterBreak);
@@ -53,9 +56,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             await mockEventHandler2.ShouldTransitionedCorrectlyAsync();
         }
 
-        private static OrderMessageSink WithMessageSink(WorkerOptions options)
+        private static OrderMessageSink WithMessageSink(WorkerOptions options, params string[] targetMessageIds)
         {
-            var messageSink = new OrderMessageSink();
+            var messageSink = new OrderMessageSink(targetMessageIds);
             options.Services.AddSingleton(messageSink);
 
             return messageSink;
@@ -87,7 +90,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             options.MessageIntervalDuringRecovery = TimeSpan.FromSeconds(1);
 
             Logger.LogDebug("Process order for the {DeliveryCount}nd time", messageContext.DeliveryCount);
-            _messageSink.SendOrder(message);
+            _messageSink.SendOrder(message, messageContext);
 
             if (_messageSink.ReceiveOrders().Length < RequiredAttempts)
             {
@@ -101,14 +104,26 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
     public class OrderMessageSink
     {
-        private readonly Collection<Order> _orders = new();
+        private readonly string[] _targetMessageIds;
+        private readonly Collection<(string messageId, Order order)> _messages = new();
 
-        public void SendOrder(Order message)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OrderMessageSink"/> class.
+        /// </summary>
+        public OrderMessageSink(string[] targetMessageIds)
         {
-            _orders.Add(message);
+            _targetMessageIds = targetMessageIds;
         }
 
-        public Order[] ReceiveOrders() => _orders.ToArray();
+        public void SendOrder(Order order, AzureServiceBusMessageContext messageContext)
+        {
+            if (_targetMessageIds.Contains(messageContext.MessageId))
+            {
+                _messages.Add((messageContext.MessageId, order));
+            }
+        }
+
+        public Order[] ReceiveOrders() => _messages.Select(msg => msg.order).ToArray();
 
         public async Task ShouldReceiveMessageDuringBreakAsync(ServiceBusMessage message)
         {
@@ -116,9 +131,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             await Poll.Target(() =>
             {
-                Assert.Equal(RequiredAttempts, _orders.Count(o => o.Id == message.MessageId));
+                Assert.Equal(RequiredAttempts, _messages.Count(o => o.messageId == message.MessageId));
 
-            }).Every(_1s).Timeout(_1min).FailWith($"message should be retried {RequiredAttempts} times with the help of the circuit breaker");
+            }).Every(_1s).Timeout(_1min).FailWith($"message '{message.MessageId}' should be retried {RequiredAttempts} times with the help of the circuit breaker");
         }
 
         public async Task ShouldReceiveMessageAfterBreakAsync(ServiceBusMessage message)
@@ -127,8 +142,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
 
             await Poll.Target(() =>
             {
-                Assert.Equal(RequiredAttempts + 1, _orders.Count);
-                Assert.Single(_orders, o => o.Id == message.MessageId);
+                Assert.Equal(RequiredAttempts + 1, _messages.Count);
+                Assert.Single(_messages, o => o.messageId == message.MessageId);
 
             }).Every(_1s).Timeout(_1min).FailWith("pump should continue normal message processing after the message was retried");
         }

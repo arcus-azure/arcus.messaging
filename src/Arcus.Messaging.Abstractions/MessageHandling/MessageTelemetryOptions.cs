@@ -18,11 +18,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             get => _operationName;
             set
             {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    throw new ArgumentException("Requires a non-blank operation name", nameof(value));
-                }
-
+                ArgumentException.ThrowIfNullOrWhiteSpace(value);
                 _operationName = value;
             }
         }

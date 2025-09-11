@@ -10,9 +10,9 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump.Fixture
     {
         public TestMessagePump(
             string jobId,
-            IConfiguration _, 
-            IServiceProvider serviceProvider, 
-            ILogger logger) 
+            IConfiguration _,
+            IServiceProvider serviceProvider,
+            ILogger logger)
             : base(serviceProvider, logger)
         {
             JobId = jobId;

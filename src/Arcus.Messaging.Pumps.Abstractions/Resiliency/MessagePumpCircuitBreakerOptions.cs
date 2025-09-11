@@ -7,7 +7,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
     /// </summary>
     public class MessagePumpCircuitBreakerOptions
     {
-        private TimeSpan _messageRecoveryPeriod = TimeSpan.FromSeconds(30), 
+        private TimeSpan _messageRecoveryPeriod = TimeSpan.FromSeconds(30),
                          _messageIntervalDuringRecovery = TimeSpan.FromSeconds(10);
 
         /// <summary>
@@ -23,11 +23,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             get => _messageRecoveryPeriod;
             set
             {
-                if (value <= TimeSpan.Zero)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), "Requires a positive time period for the message recovery");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
                 _messageRecoveryPeriod = value;
             }
         }
@@ -45,11 +41,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             get => _messageIntervalDuringRecovery;
             set
             {
-                if (value <= TimeSpan.Zero)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value), "Requires a positive time period for the message interval");
-                }
-
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, TimeSpan.Zero);
                 _messageIntervalDuringRecovery = value;
             }
         }

@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using static Arcus.Messaging.Abstractions.MessageHandling.MessageRouterLoggerExtensions;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
@@ -28,14 +32,9 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             Options = options ?? new MessageRouterOptions();
             Logger = logger ?? NullLogger<MessageRouter>.Instance;
 
-            _jsonOptions = CreateJsonSerializerOptions(Options.Deserialization, Logger);
-        }
-
-        private static JsonSerializerOptions CreateJsonSerializerOptions(MessageDeserializationOptions deserializationOptions, ILogger logger)
-        {
-            var jsonOptions = new JsonSerializerOptions
+            _jsonOptions = new JsonSerializerOptions
             {
-                UnmappedMemberHandling = deserializationOptions?.AdditionalMembers switch
+                UnmappedMemberHandling = Options.Deserialization?.AdditionalMembers switch
                 {
                     null => JsonUnmappedMemberHandling.Disallow,
                     AdditionalMemberHandling.Error => JsonUnmappedMemberHandling.Disallow,
@@ -43,9 +42,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                     _ => JsonUnmappedMemberHandling.Disallow
                 }
             };
-
-            logger.LogTrace("JSON deserialization uses '{UnmappedMemberHandling}' result when encountering additional members", jsonOptions.UnmappedMemberHandling);
-            return jsonOptions;
         }
 
         /// <summary>
@@ -63,21 +59,157 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         protected ILogger Logger { get; }
 
-
         /// <summary>
         /// Gets all the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances in the application.
         /// </summary>
         /// <param name="serviceProvider">The scoped service provider from which the registered message handlers will be extracted.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 in favor of centralizing message routing functionality, please use the " + nameof(RouteMessageThroughRegisteredHandlersAsync))]
         protected IEnumerable<MessageHandler> GetRegisteredMessageHandlers(IServiceProvider serviceProvider)
         {
-            if (serviceProvider is null)
-            {
-                throw new ArgumentNullException(nameof(serviceProvider));
-            }
+            ArgumentNullException.ThrowIfNull(serviceProvider);
 
             IEnumerable<MessageHandler> handlers = MessageHandler.SubtractFrom(serviceProvider, Logger);
             return handlers;
+        }
+
+        /// <summary>
+        /// Routes the incoming <paramref name="messageBody"/> within the <paramref name="messageContext"/>
+        /// through all the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances registered in the application <paramref name="services"/>.
+        /// </summary>
+        /// <typeparam name="TMessageContext">The custom type of the message context in which the message gets handled.</typeparam>
+        /// <param name="services">The current application services with the registered message handlers.</param>
+        /// <param name="messageBody">The raw message body to be deserialized to a message type that a message handler can accept.</param>
+        /// <param name="messageContext">The context in which the message gets processed.</param>
+        /// <param name="correlationInfo">The additional service-to-service correlation scope in which this message is a part of.</param>
+        /// <param name="cancellation">The token to cancel the message handling process.</param>
+        /// <returns>
+        ///     <para>[Success] when one of the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> instances successfully processed the incoming <paramref name="messageBody"/>;</para>
+        ///     <para>[Failure] otherwise, with additional information about the failure.</para>
+        /// </returns>
+        /// <exception cref="ArgumentNullException">Thrown when one of the arguments is <c>null</c>.</exception>
+        protected async Task<MessageProcessingResult> RouteMessageThroughRegisteredHandlersAsync<TMessageContext>(
+            IServiceProvider services,
+            string messageBody,
+            TMessageContext messageContext,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellation)
+            where TMessageContext : MessageContext
+        {
+            ArgumentNullException.ThrowIfNull(services);
+            ArgumentNullException.ThrowIfNull(messageBody);
+            ArgumentNullException.ThrowIfNull(messageContext);
+            ArgumentNullException.ThrowIfNull(correlationInfo);
+
+            MessageHandler[] handlers = MessageHandler.SubtractFrom(services, Logger).ToArray();
+            if (handlers.Length <= 0)
+            {
+                return NoHandlersRegistered(messageContext.MessageId);
+            }
+
+            try
+            {
+                int skippedHandlers = 0;
+                bool hasGoneThroughMessageHandler = false;
+
+                foreach (var handler in handlers)
+                {
+                    MessageProcessingResult result = await ProcessMessageHandlerAsync(handler, messageBody, messageContext, correlationInfo, cancellation);
+                    hasGoneThroughMessageHandler = result.IsSuccessful || result.Error is MessageProcessingError.ProcessingInterrupted;
+
+                    if (result.IsSuccessful)
+                    {
+                        Logger.LogMessageProcessedSummary(messageContext.MessageId, handler.MessageHandlerType, skippedHandlers);
+                        return result;
+                    }
+
+                    skippedHandlers++;
+                }
+
+                return hasGoneThroughMessageHandler
+                    ? MatchedHandlerFailed(messageContext.MessageId)
+                    : NoMatchedHandler(messageContext.MessageId);
+            }
+            catch (Exception exception)
+            {
+                return ExceptionDuringRouting(exception, messageContext.MessageId);
+            }
+
+            MessageProcessingResult NoHandlersRegistered(string messageId)
+            {
+                Logger.LogNoHandlersRegistered(messageId);
+                return MessageProcessingResult.Failure(messageId, MessageProcessingError.CannotFindMatchedHandler, NoHandlersRegisteredMessage);
+            }
+
+            MessageProcessingResult NoMatchedHandler(string messageId)
+            {
+                Logger.LogNoMatchedMessageHandler(messageId);
+                return MessageProcessingResult.Failure(messageId, MessageProcessingError.CannotFindMatchedHandler, NoMatchedHandlerMessage);
+            }
+
+            MessageProcessingResult MatchedHandlerFailed(string messageId)
+            {
+                Logger.LogMatchedHandlerFailedToProcessMessage(messageId);
+                return MessageProcessingResult.Failure(messageId, MessageProcessingError.MatchedHandlerFailed, MatchedHandlerFailedMessage);
+            }
+
+            MessageProcessingResult ExceptionDuringRouting(Exception exception, string messageId)
+            {
+                Logger.LogExceptionDuringRouting(exception, messageId);
+                return MessageProcessingResult.Failure(messageId, MessageProcessingError.ProcessingInterrupted, ExceptionDuringRoutingMessage, exception);
+            }
+        }
+
+        private async Task<MessageProcessingResult> ProcessMessageHandlerAsync<TMessageContext>(
+            MessageHandler handler,
+            string messageBody,
+            TMessageContext context,
+            MessageCorrelationInfo correlationInfo,
+            CancellationToken cancellation)
+            where TMessageContext : MessageContext
+        {
+            var summary = new MessageHandlerSummary();
+
+            if (!handler.MatchesMessageContext(context, summary))
+            {
+                return MatchedHandlerSkipped();
+            }
+
+            MessageResult bodyResult = await DeserializeMessageAsync(handler, messageBody, handler.MessageType, summary);
+            if (!bodyResult.IsSuccess)
+            {
+                return MatchedHandlerSkipped();
+            }
+
+            if (!handler.MatchesMessageBody(bodyResult.DeserializedMessage, summary))
+            {
+                return MatchedHandlerSkipped();
+            }
+
+            Type messageType = bodyResult.DeserializedMessage.GetType();
+
+            MessageProcessingResult processResult = await handler.TryProcessMessageAsync(bodyResult.DeserializedMessage, context, correlationInfo, cancellation);
+            if (!processResult.IsSuccessful)
+            {
+                return MatchedHandlerFailed(processResult.ProcessingException, processResult.ErrorMessage);
+            }
+
+            Logger.LogMessageProcessedByHandler(messageType, context.MessageId, handler.MessageHandlerType, summary);
+            return MessageProcessingResult.Success(context.MessageId);
+
+            MessageProcessingResult MatchedHandlerSkipped()
+            {
+                Logger.LogMessageSkippedByHandler(context.MessageId, handler.MessageHandlerType, summary);
+                return MessageProcessingResult.Failure(context.MessageId, MessageProcessingError.MatchedHandlerFailed, "n/a");
+            }
+
+            MessageProcessingResult MatchedHandlerFailed(Exception exception, string errorMessage)
+            {
+                summary.AddFailed(exception, "message processing failed", errorMessage);
+
+                Logger.LogMessageFailedInHandler(messageType, context.MessageId, handler.MessageHandlerType, summary);
+                return MessageProcessingResult.Failure(context.MessageId, MessageProcessingError.ProcessingInterrupted, "n/a");
+            }
         }
 
         /// <summary>
@@ -91,6 +223,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     and all the required predicates that the <paramref name="handler"/> requires are met; [<see cref="MessageResult.Failure(string)"/>] otherwise.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handler"/> is <c>null</c>.</exception>
+        [Obsolete("Will be removed in v3.0 in favor of centralizing message routing functionality, please use the " + nameof(RouteMessageThroughRegisteredHandlersAsync))]
         protected async Task<MessageResult> DeserializeMessageForHandlerAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
@@ -129,20 +262,33 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message because it fails the '{handler.MessageType.Name}' filter");
         }
 
-        private async Task<MessageResult> DeserializeMessageAsync(MessageHandler handler, string message, Type handlerMessageType)
+        private async Task<MessageResult> DeserializeMessageAsync(MessageHandler handler, string messageBody, Type handlerMessageType, MessageHandlerSummary summary = null)
         {
-            MessageResult result = await handler.TryCustomDeserializeMessageAsync(message);
+            summary ??= new MessageHandlerSummary();
+
+            MessageResult result = await handler.TryCustomDeserializeMessageAsync(messageBody, summary);
             if (result.IsSuccess)
             {
                 return result;
             }
 
-            if (TryDeserializeToMessageFormat(message, handlerMessageType, out object deserializedByType) && deserializedByType != null)
+            try
             {
-                return MessageResult.Success(deserializedByType);
-            }
+                object deserializedByType = JsonSerializer.Deserialize(messageBody, handlerMessageType, _jsonOptions);
+                if (deserializedByType != null)
+                {
+                    summary.AddPassed("default JSON body parsing passed", ("additional members", Options.Deserialization.AdditionalMembers));
+                    return MessageResult.Success(deserializedByType);
+                }
 
-            return MessageResult.Failure($"Incoming message cannot be deserialized to type '{handlerMessageType.Name}' because it is not in the correct format");
+                summary.AddFailed("default JSON body parsing failed", reason: "returns 'null'");
+                return MessageResult.Failure("n/a");
+            }
+            catch (JsonException exception)
+            {
+                summary.AddFailed(exception, "default JSON body parsing failed");
+                return MessageResult.Failure(exception);
+            }
         }
 
         /// <summary>
@@ -155,6 +301,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     [true] if the <paramref name="message"/> conforms the <see cref="IMessageHandler{TMessage,TMessageContext}"/>'s contract; otherwise [false].
         /// </returns>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="messageType"/> is blank.</exception>
+        [Obsolete("Will be removed in v3.0 in favor of centralizing message routing, use the " + nameof(RouteMessageThroughRegisteredHandlersAsync) + " instead")]
         protected virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object result)
         {
             if (string.IsNullOrWhiteSpace(message))
@@ -179,6 +326,176 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
             result = null;
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Extensions on the <see cref="ILogger"/> for centralizing and more easily streamlining the log messages during the message routing.
+    /// </summary>
+    internal static partial class MessageRouterLoggerExtensions
+    {
+        internal const string NoHandlersRegisteredMessage = "no message handlers registered in application services",
+                              NoMatchedHandlerMessage = "no matched handler handled found for message",
+                              MatchedHandlerFailedMessage = "matched message handler failed to process message",
+                              ExceptionDuringRoutingMessage = "unexpected critical problem during message processing";
+
+        [LoggerMessage(LogLevel.Error, "Message '{MessageId}' [Failed in] message pump => ✗ " + NoHandlersRegisteredMessage)]
+        internal static partial void LogNoHandlersRegistered(this ILogger logger, string messageId);
+
+        [LoggerMessage(LogLevel.Error, "Message '{MessageId}' [Failed in] message pump => ✗ " + NoMatchedHandlerMessage)]
+        internal static partial void LogNoMatchedMessageHandler(this ILogger logger, string messageId);
+
+        [LoggerMessage(LogLevel.Error, "Message '{MessageId}' [Failed in] message pump => ✗ " + MatchedHandlerFailedMessage)]
+        internal static partial void LogMatchedHandlerFailedToProcessMessage(this ILogger logger, string messageId);
+
+        [LoggerMessage(LogLevel.Critical, "Message '{MessageId}' [Failed in] message pump => ✗ " + ExceptionDuringRoutingMessage)]
+        internal static partial void LogExceptionDuringRouting(this ILogger logger, Exception exception, string messageId);
+
+        internal static void LogMessageSkippedByHandler(this ILogger logger, string messageId, Type messageHandlerType, MessageHandlerSummary summary)
+        {
+            LogMessageSkippedByHandler(logger, summary.OccurredException, messageId, messageHandlerType.Name, summary);
+        }
+
+        [LoggerMessage(LogLevel.Debug, "Message {MessageId} [Skipped by] {MessageHandlerType} => {Summary}")]
+        internal static partial void LogMessageSkippedByHandler(this ILogger logger, Exception exception, string messageId, string messageHandlerType, MessageHandlerSummary summary);
+
+        internal static void LogMessageFailedInHandler(this ILogger logger, Type messageType, string messageId, Type messageHandlerType, MessageHandlerSummary summary)
+        {
+            LogMessageFailedInHandler(logger, summary.OccurredException, messageType.Name, messageId, messageHandlerType.Name, summary);
+        }
+
+        [LoggerMessage(LogLevel.Error, "{MessageType} {MessageId} [Failed in] {MessageHandlerType} => {Summary}")]
+        internal static partial void LogMessageFailedInHandler(this ILogger logger, Exception exception, string messageType, string messageId, string messageHandlerType, MessageHandlerSummary summary);
+
+        internal static void LogMessageProcessedByHandler(this ILogger logger, Type messageType, string messageId, Type messageHandlerType, MessageHandlerSummary summary)
+        {
+            LogMessageProcessedByHandler(logger, messageType.Name, messageId, messageHandlerType.Name, summary);
+        }
+
+        [LoggerMessage(LogLevel.Debug, "{MessageType} {MessageId} [Processed by] {MessageHandlerType} => {Summary}")]
+        internal static partial void LogMessageProcessedByHandler(this ILogger logger, string messageType, string messageId, string messageHandlerType, MessageHandlerSummary summary);
+
+        internal static void LogMessageProcessedSummary(this ILogger logger, string messageId, Type messageHandlerType, int skippedHandlers)
+        {
+            string skippedHandlersDescription = skippedHandlers switch
+            {
+                0 => "no other handlers",
+                1 => "1 other handler",
+                _ => skippedHandlers + " other handlers"
+            };
+
+            LogMessageProcessedSummary(logger, messageId, messageHandlerType.Name, skippedHandlersDescription);
+        }
+
+        [LoggerMessage(LogLevel.Information, "Message '{MessageId}' was processed by {MessageHandlerType} | skipped by {SkippedHandlers}")]
+        internal static partial void LogMessageProcessedSummary(this ILogger logger, string messageId, string messageHandlerType, string skippedHandlers);
+    }
+
+    /// <summary>
+    /// Represents a summary of all the pre-checks that were performed
+    /// during the processing of a message by a specific <see cref="IMessageHandler{TMessage,TMessageContext}"/>.
+    /// </summary>
+    internal class MessageHandlerSummary
+    {
+        private readonly Collection<string> _lines = [];
+        private readonly Collection<Exception> _exceptions = [];
+
+        /// <summary>
+        /// Gets the possible exception(s) that occurred during the pre-checks.
+        /// </summary>
+        internal Exception OccurredException => _exceptions.Count switch
+        {
+            0 => null,
+            1 => _exceptions.Single(),
+            _ => new AggregateException(_exceptions)
+        };
+
+        /// <summary>
+        /// Adds a passed check to the summary.
+        /// </summary>
+        /// <param name="description">The message that describes in a short manner the check that was passed.</param>
+        /// <param name="members">The additional key-value pair members that were involved in the check.</param>
+        internal void AddPassed(string description, params (string, object)[] members)
+        {
+            ArgumentNullException.ThrowIfNull(description);
+
+            string membersDescription = members.Length > 0
+                ? $" ({string.Join(", ", members.Select(m => m.Item1 + "=" + m.Item2))})"
+                : string.Empty;
+
+            _lines.Add("✓ " + description + membersDescription);
+        }
+
+        /// <summary>
+        /// Adds a failed check to the summary.
+        /// </summary>
+        /// <param name="exception">The optional exception that occured during the check.</param>
+        /// <param name="description">The message that describes in a short manner the check that was failed.</param>
+        /// <param name="reason">The message that explains the reason why the check failed.</param>
+        internal void AddFailed(Exception exception, string description, string reason = "exception thrown")
+        {
+            if (exception is not null)
+            {
+                _exceptions.Add(exception);
+            }
+
+            AddFailed(description, reason);
+        }
+
+        /// <summary>
+        /// Adds a failed check to the summary.
+        /// </summary>
+        /// <param name="description">The message that describes in a short manner the check that was failed.</param>
+        /// <param name="reason">The message that explains the reason why the check failed.</param>
+        internal void AddFailed(string description, string reason)
+        {
+            ArgumentNullException.ThrowIfNull(description);
+            ArgumentNullException.ThrowIfNull(reason);
+
+            AddFailed(description + " (" + reason + ")");
+        }
+
+        /// <summary>
+        /// Adds a failed check to the summary.
+        /// </summary>
+        /// <param name="description">The message that describes in a short manner the check that was failed.</param>
+        /// <param name="members">The additional members that were involved in the check (both single values as tuples are supported).</param>
+        internal void AddFailed(string description, params object[] members)
+        {
+            ArgumentNullException.ThrowIfNull(description);
+            ArgumentNullException.ThrowIfNull(members);
+
+            string membersDescription = members.Length > 1
+                ? $" ({string.Join(", ", members.Select(m =>
+                {
+                    return m switch
+                    {
+                        (string name, string value) => $"{name}={value}",
+                        _ => m.ToString()
+                    };
+                }))}"
+                : string.Empty;
+
+            AddFailed(description + membersDescription);
+        }
+
+        private void AddFailed(string description)
+        {
+            _lines.Add("✗ " + description);
+        }
+
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>A string that represents the current object.</returns>
+        public override string ToString()
+        {
+            if (_lines.Count == 1)
+            {
+                return _lines.Single();
+            }
+
+            return Environment.NewLine + string.Join(Environment.NewLine, _lines);
         }
     }
 }

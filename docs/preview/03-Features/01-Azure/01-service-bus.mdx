@@ -138,11 +138,11 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
     options.JobId = Guid.NewGuid().ToString();
 
     // The name for the request operation which will be used in the chosen message correlation system.
-    // Default: Azure Service Bus message processing
+    // (default: Azure Service Bus message processing)
     options.Telemetry.OperationName = "ReceiveOrder";
-
-    // Indicate whether or not messages should be automatically marked as completed 
-    // if no exceptions occurred and processing has finished (default: true).
+    
+    // Indicate whether or not messages should be automatically marked as completed when the handler succeeded (no exceptions thrown) (default: true)
+    // ⚠️ Setting this property to false means you are responsible for completing the message yourself.
     options.Routing.AutoComplete = false;
 
     // Indicate whether or not the default built-in JSON deserialization should ignore additional members 
