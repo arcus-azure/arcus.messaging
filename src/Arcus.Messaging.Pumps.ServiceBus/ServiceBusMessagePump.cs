@@ -27,7 +27,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     internal abstract class ServiceBusMessagePump : BackgroundService
     {
         private readonly ServiceBusMessageRouter _messageRouter;
-        private readonly IDisposable _loggingScope;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessagePump"/> class.
@@ -58,7 +57,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ServiceProvider = serviceProvider;
             Logger = logger ?? NullLogger.Instance;
 
-            _loggingScope = Logger.BeginScope("Job: {JobId}", JobId);
             _messageRouter = new ServiceBusMessageRouter(serviceProvider, options.Routing, serviceProvider.GetService<ILogger<ServiceBusMessageRouter>>());
         }
 
@@ -212,9 +210,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <returns>A <see cref="Task" /> that represents the asynchronous Stop operation.</returns>
         public override Task StopAsync(CancellationToken cancellationToken)
         {
-            _loggingScope?.Dispose();
             IsHostShuttingDown = true;
-
             return base.StopAsync(cancellationToken);
         }
     }

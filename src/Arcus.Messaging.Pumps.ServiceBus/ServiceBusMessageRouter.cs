@@ -53,12 +53,16 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             CancellationToken cancellationToken)
         {
             using IServiceScope serviceScope = ServiceProvider.CreateScope();
-            using var _ = Logger.BeginScope(new Dictionary<string, string> { ["MessageId"] = messageContext.MessageId });
+            using var _ = Logger.BeginScope(new Dictionary<string, object>
+            {
+                ["JobId"] = messageContext.JobId,
+                ["Service Bus namespace"] = messageContext.FullyQualifiedNamespace,
+                ["Service Bus entity name"] = messageContext.EntityPath
+            });
 
             Logger.LogDebug("[Received] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump", messageContext.MessageId, messageContext.EntityType);
 
             string messageBody = LoadMessageBody(message, messageContext);
-
             MessageProcessingResult result =
                 await RouteMessageThroughRegisteredHandlersAsync(serviceScope.ServiceProvider, messageBody, messageContext, correlationInfo, cancellationToken);
 
