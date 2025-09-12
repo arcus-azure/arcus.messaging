@@ -28,7 +28,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessageRouter"/> class.
         /// </summary>
-        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IAzureServiceBusMessageHandler{TMessage}"/> instances.</param>
+        /// <param name="serviceProvider">The service provider instance to retrieve all the <see cref="IServiceBusMessageHandler{TMessage}"/> instances.</param>
         /// <param name="options">The consumer-configurable options to change the behavior of the router.</param>
         /// <param name="logger">The logger instance to write diagnostic trace messages during the routing of the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
@@ -39,7 +39,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         }
 
         /// <summary>
-        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.
+        /// Handle a new <paramref name="message"/> that was received by routing them through registered <see cref="IServiceBusMessageHandler{TMessage}"/>s.
         /// </summary>
         /// <param name="message">The incoming message that needs to be routed through registered message handlers.</param>
         /// <param name="messageContext">The context in which the <paramref name="message"/> should be processed.</param>
@@ -51,7 +51,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <exception cref="InvalidOperationException">Thrown when no message handlers or none matching message handlers are found to process the message.</exception>
         internal async Task<MessageProcessingResult> RouteMessageAsync(
             ServiceBusReceivedMessage message,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
@@ -83,7 +83,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private async Task<MessageProcessingResult> TryRoutingMessageViaRegisteredMessageHandlersAsync(
             IServiceProvider serviceProvider,
             ServiceBusReceivedMessage message,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
@@ -124,7 +124,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             return result;
         }
 
-        private static string LoadMessageBody(ServiceBusReceivedMessage message, AzureServiceBusMessageContext context)
+        private static string LoadMessageBody(ServiceBusReceivedMessage message, ServiceBusMessageContext context)
         {
             Encoding encoding = DetermineEncoding();
             string messageBody = encoding.GetString(message.Body.ToArray());
@@ -150,7 +150,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
         }
 
-        private async Task PotentiallyAutoCompleteMessageAsync(AzureServiceBusMessageContext messageContext)
+        private async Task PotentiallyAutoCompleteMessageAsync(ServiceBusMessageContext messageContext)
         {
             if (_serviceBusOptions.AutoComplete)
             {

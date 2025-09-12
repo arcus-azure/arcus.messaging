@@ -152,7 +152,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Routes the received message to the appropriate registered message handler.
         /// </summary>
-        protected async Task<MessageProcessingResult> RouteMessageAsync(ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext, CancellationToken cancellationToken)
+        protected async Task<MessageProcessingResult> RouteMessageAsync(ServiceBusReceivedMessage message, ServiceBusMessageContext messageContext, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(message);
             ArgumentNullException.ThrowIfNull(messageContext);
