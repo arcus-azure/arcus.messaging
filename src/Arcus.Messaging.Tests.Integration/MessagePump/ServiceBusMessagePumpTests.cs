@@ -95,6 +95,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
         {
             await using var disposables = new DisposableCollection(NullLogger.Instance);
             disposables.Add(Queue);
+            disposables.Add(QueueWithSession);
             disposables.Add(Topic);
             disposables.Add(_client);
         }
