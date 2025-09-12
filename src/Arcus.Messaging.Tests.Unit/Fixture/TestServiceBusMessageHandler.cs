@@ -1,15 +1,12 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
-using Arcus.Messaging.Abstractions.ServiceBus;
-using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 
 namespace Arcus.Messaging.Tests.Unit.Fixture
 {
     /// <summary>
-    /// Test <see cref="IAzureServiceBusMessageHandler{TMessage}"/> implementation processing the <see cref="TestMessage"/>.
+    /// Test <see cref="IServiceBusMessageHandler{TMessage}"/> implementation processing the <see cref="TestMessage"/>.
     /// </summary>
-    public class TestServiceBusMessageHandler : IAzureServiceBusMessageHandler<TestMessage>
+    public class TestServiceBusMessageHandler : IServiceBusMessageHandler<TestMessage>
     {
         /// <summary>
         /// Gets the flag indicating whether or not this message handler was being used to process a message.
@@ -28,7 +25,7 @@ namespace Arcus.Messaging.Tests.Unit.Fixture
         /// <param name="cancellationToken">Cancellation token</param>
         public Task ProcessMessageAsync(
             TestMessage message,
-            AzureServiceBusMessageContext messageContext,
+            ServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {

@@ -1,4 +1,5 @@
 ﻿using System;
+using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
@@ -32,7 +33,7 @@ namespace Microsoft.Extensions.DependencyInjection
                         (bool matchesContext, bool matchesBody) =
                             Bogus.PickRandom((false, true), (true, false), (false, false));
 
-                        handler.AddMessageContextFilter(_ => matchesContext);
+                        handler.AddMessageContextFilter((AzureServiceBusMessageContext _) => matchesContext);
                         handler.AddMessageBodyFilter(_ => matchesBody);
                     });
                     break;
@@ -43,7 +44,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
         private static void WithUnrelatedHandlerFiltering<T>(ServiceBusMessageHandlerOptions<T> options)
         {
-            switch (Bogus.Random.Int(0, 2))
+            switch (Bogus.Random.Int(0, 3))
             {
                 case 0:
                     break;
@@ -54,6 +55,10 @@ namespace Microsoft.Extensions.DependencyInjection
 
                 case 2:
                     options.AddMessageBodyFilter(_ => false);
+                    break;
+
+                case 3:
+                    options.AddMessageContextFilter((AzureServiceBusMessageContext _) => false);
                     break;
             }
 
