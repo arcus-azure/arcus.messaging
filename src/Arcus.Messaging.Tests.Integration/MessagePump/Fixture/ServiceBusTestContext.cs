@@ -123,7 +123,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             void ConfigureWithTrigger(ServiceBusMessagePumpOptions options)
             {
                 ConfigureWithoutTrigger(options);
-                AddServiceBusTrigger(options);
+                AddServiceBusBeforeStartupHook(options);
             }
         }
 
@@ -158,7 +158,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             void ConfigureWithTrigger(ServiceBusMessagePumpOptions options)
             {
                 ConfigureWithoutTrigger(options);
-                AddServiceBusTrigger(options);
+                AddServiceBusBeforeStartupHook(options);
             }
         }
 
@@ -168,7 +168,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             return new ServiceBusClient(_serviceBusConfig.HostName, new DefaultAzureCredential());
         }
 
-        private void AddServiceBusTrigger(ServiceBusMessagePumpOptions options)
+        private void AddServiceBusBeforeStartupHook(ServiceBusMessagePumpOptions options)
         {
             options.Hooks.BeforeStartup(_ =>
             {
