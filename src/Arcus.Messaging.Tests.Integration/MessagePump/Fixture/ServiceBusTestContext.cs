@@ -170,7 +170,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 
         private void AddServiceBusTrigger(ServiceBusMessagePumpOptions options)
         {
-            options.UseStartupTrigger(_ =>
+            options.Hooks.BeforeStartup(_ =>
             {
                 _timedOperations.Add((DateTimeOffset.UtcNow, ServiceBusOperation.TriggerRun));
                 return Task.CompletedTask;

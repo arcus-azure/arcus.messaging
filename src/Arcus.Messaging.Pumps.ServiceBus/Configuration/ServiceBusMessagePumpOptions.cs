@@ -60,22 +60,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
             }
         }
 
-        internal Func<IServiceProvider, Task> OnStartupAsync { get; set; } = _ => Task.CompletedTask;
-
         /// <summary>
-        /// Sets a function on the message pump that should run before the pump receives Azure Service Bus messages.
-        /// Useful for when dependent systems are not always directly available.
+        /// Gets the options related to manipulating the lifecycle of the message pump in the application.
         /// </summary>
-        /// <remarks>
-        ///     ⚠️ Multiple calls will override each other.
-        /// </remarks>
-        /// <param name="onStartupAsync">The function that upon completion 'triggers' the message pump to be started.</param>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="onStartupAsync"/> is <c>null</c>.</exception>
-        public void UseStartupTrigger(Func<IServiceProvider, Task> onStartupAsync)
-        {
-            ArgumentNullException.ThrowIfNull(onStartupAsync);
-            OnStartupAsync = onStartupAsync;
-        }
+        public ServiceBusMessagePumpHooksOptions Hooks { get; } = new();
 
         /// <summary>
         /// Gets the consumer-configurable options to change the behavior of the message router.
@@ -168,6 +156,29 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
                 ArgumentOutOfRangeException.ThrowIfLessThan(value, TimeSpan.Zero);
                 _sessionIdleTimeout = value;
             }
+        }
+    }
+
+    /// <summary>
+    /// Represents the options related to the <see cref="ServiceBusMessagePumpOptions.Hooks"/> of the registered Azure Service Bus message pump.
+    /// </summary>
+    public class ServiceBusMessagePumpHooksOptions
+    {
+        internal Func<IServiceProvider, Task> BeforeStartupAsync { get; set; } = _ => Task.CompletedTask;
+
+        /// <summary>
+        /// Sets a function on the message pump that should run before the pump receives Azure Service Bus messages.
+        /// Useful for when dependent systems are not always directly available.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠️ Multiple calls will override each other.
+        /// </remarks>
+        /// <param name="beforeStartupAsync">The function that upon completion 'triggers' the message pump to be started.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="beforeStartupAsync"/> is <c>null</c>.</exception>
+        public void BeforeStartup(Func<IServiceProvider, Task> beforeStartupAsync)
+        {
+            ArgumentNullException.ThrowIfNull(beforeStartupAsync);
+            BeforeStartupAsync = beforeStartupAsync;
         }
     }
 }
