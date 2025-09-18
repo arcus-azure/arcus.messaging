@@ -265,7 +265,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// </summary>
         internal async Task ShouldConsumeViaMatchedHandlerAsync(IEnumerable<ServiceBusMessage> messages)
         {
-            AssertTimedOperations();
+            AssertHooks();
             foreach (var message in messages)
             {
                 OrderCreatedEventData eventData = await DiskMessageEventConsumer.ConsumeOrderCreatedAsync(message.MessageId);
@@ -278,7 +278,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// </summary>
         internal async Task ShouldCompleteConsumedAsync(IEnumerable<ServiceBusMessage> messages)
         {
-            AssertTimedOperations();
+            AssertHooks();
             foreach (var message in messages)
             {
                 await Poll.Target(() => Queue.Messages.Where(msg => msg.MessageId == message.MessageId).ToListAsync())
@@ -292,7 +292,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// </summary>
         internal async Task ShouldNotConsumeButDeadLetterAsync(IEnumerable<ServiceBusMessage> messages)
         {
-            AssertTimedOperations();
+            AssertHooks();
             foreach (var message in messages)
             {
                 await Poll.Target(() => Queue.Messages.FromDeadLetter().Where(msg => msg.MessageId == message.MessageId).ToListAsync())
@@ -308,7 +308,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// </summary>
         internal async Task ShouldNotConsumeButAbandonAsync(IEnumerable<ServiceBusMessage> messages)
         {
-            AssertTimedOperations();
+            AssertHooks();
             foreach (var message in messages)
             {
                 await Poll.Target(() => Queue.Messages.Where(msg => msg.MessageId == message.MessageId && msg.DeliveryCount > 0).ToListAsync())
@@ -319,7 +319,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             }
         }
 
-        private void AssertTimedOperations()
+        private void AssertHooks()
         {
             if (UseTrigger)
             {
