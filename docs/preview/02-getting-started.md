@@ -31,12 +31,12 @@ First step in creating your message handler, is installing the following package
 PS> Install-Package -Name Arcus.Messaging.Pumps.ServiceBus
 ```
 
-The package makes the `IAzureServiceBusMessageHandler<>` interface available. Implementing this interface is the simplest way of creating a *'message handler'*.
+The package makes the `IServiceBusMessageHandler<>` interface available. Implementing this interface is the simplest way of creating a *'message handler'*.
 
 As the generic type, you can use the DTO (data-transfer object) to which the [`ServiceBusReceivedMessage.Body`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceivedmessage.body) should be deserialized to (default via JSON). In this case: `MyOrder`.
 
 ```csharp
-using Arcus.Messaging.Abstractions.ServiceBus.MessagingHandling;
+using Arcus.Messaging;
 
 public class MyOrder
 {
@@ -44,11 +44,11 @@ public class MyOrder
     public string ProductName { get; set; }
 }
 
-public class MyOrderMessageHandler : IAzureServiceBusMessageHandler<MyOrder>
+public class MyOrderMessageHandler : IServiceBusMessageHandler<MyOrder>
 {
     public async Task ProcessMessageAsync(
         MyOrder order,
-        AzureServiceBusMessageContext context,
+        ServiceBusMessageContext context,
         MessageCorrelationInfo correlation,
         CancellationToken cancellation)
     {

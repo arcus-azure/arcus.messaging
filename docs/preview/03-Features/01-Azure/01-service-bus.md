@@ -20,7 +20,7 @@ To receive the Azure Service Bus message in a deserialized form, you can impleme
 Here is an example of such a message handler that expects messages of type `Order`:
 
 ```csharp
-using Arcus.Messaging.Abstractions.ServiceBus.MessagingHandling;
+using Arcus.Messaging;
 
 public class Order
 {
@@ -28,7 +28,7 @@ public class Order
     public string ProductName { get; set; }
 }
 
-public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
+public class OrderMessageHandler : IServiceBusMessageHandler<Order>
 {
     private readonly ILogger _logger;
 
@@ -41,7 +41,7 @@ public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
     // Directly interact with your custom deserialized model (in this case 'Order'): 
     public async Task ProcessMessageAsync(
         Order order, 
-        AzureServiceBusMessageContext context, 
+        ServiceBusMessageContext context, 
         MessageCorrelationInfo correlation, 
         CancellationToken cancellationToken)
     {
@@ -205,11 +205,13 @@ It is a good practice as application developer to dead-letter the message yourse
 :::
 
 ```csharp
-public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
+using Arcus.Messaging;
+
+public class OrderMessageHandler : IServiceBusMessageHandler<Order>
 {
     public async Task Task ProcessMessageAsync(
         Order message,
-        AzureServiceBusMessageContext messageContext,
+        ServiceBusMessageContext messageContext,
         MessageCorrelationInfo correlation,
         CancellationToken cancellation)
     {
@@ -234,23 +236,20 @@ When your message handler interacts with an external dependency, that dependency
 To interact with the message processing system within your *message handler*, you can inherit from the `CircuitBreakerServiceBusMessageHandler<>`, which allows you to 'enrich' your handler with circuit-breaker functionality.
 
 ```csharp
-using Arcus.Messaging.Pumps.Abstractions.Resiliency;
+using Arcus.Messaging;
 
 // highlight-next-line
-public class OrderMessageHandler : CircuitBreakerServiceBusMessageHandler<Order>
+public class OrderMessageHandler : DefaultCircuitBreakerServiceBusMessageHandler<Order>
 {
-    private readonly IMessagePumpCircuitBreaker _circuitBreaker;
-
     public OrderMessageHandler(
         IMessagePumpCircuitBreaker circuitBreaker,
         ILogger<OrderMessageHandler> logger) : base(circuitBreaker, logger)
     {
-        _circuitBreaker = circuitBreaker;
     }
 
     public override async Task ProcessMessageAsync(
         Order message,
-        AzureServiceBusMessageContext context,
+        ServiceBusMessageContext context,
         MessageCorrelationInfo correlation,
         MessagePumpCircuitBreakerOptions options,
         CancellationToken cancellation)
