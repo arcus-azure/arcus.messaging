@@ -186,7 +186,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
             MessagePumpCircuitBreakerOptions options,
             CancellationToken cancellationToken)
         {
-            return ProcessMessageAsync(message, new AzureServiceBusMessageContext(messageContext), correlationInfo, cancellationToken);
+            return ProcessMessageAsync(message, new AzureServiceBusMessageContext(messageContext), correlationInfo, options, cancellationToken);
         }
     }
 }
