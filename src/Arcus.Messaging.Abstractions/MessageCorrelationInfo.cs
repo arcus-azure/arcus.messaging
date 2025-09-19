@@ -14,7 +14,7 @@ namespace Arcus.Messaging
         /// <param name="transactionId">The unique identifier that spans one or more operations and are considered a transaction/session.</param>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="operationId"/> or <paramref name="transactionId"/> is blank.</exception>
         public MessageCorrelationInfo(string operationId, string transactionId)
-            : this(operationId, transactionId, null)
+            : this(operationId, transactionId, operationParentId: null)
         {
         }
 
