@@ -9,12 +9,21 @@ jobs:
         inputs:
           artifact: 'Build'
           path: '$(Build.SourcesDirectory)'
+
       - task: UseDotNet@2
         displayName: 'Import .NET Core SDK ($(DotNet.Sdk.PreviousVersion))'
         inputs:
           packageType: 'sdk'
           version: '$(DotNet.Sdk.PreviousVersion)'
           includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
+
+      - task: UseDotNet@2
+        displayName: 'Import .NET Core SDK ($(DotNet.Sdk.Version))'
+        inputs:
+          packageType: 'sdk'
+          version: '$(DotNet.Sdk.Version)'
+          includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
+
       - template: test/run-unit-tests.yml@templates
         parameters:
           dotnetSdkVersion: '$(DotNet.Sdk.Version)'
