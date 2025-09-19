@@ -28,3 +28,4 @@ jobs:
         parameters:
           dotnetSdkVersion: '$(DotNet.Sdk.Version)'
           projectName: '$(Project).Tests.Unit'
+          includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
