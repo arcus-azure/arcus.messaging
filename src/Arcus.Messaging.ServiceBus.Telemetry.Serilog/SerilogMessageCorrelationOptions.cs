@@ -1,18 +1,27 @@
 ﻿using System;
-using Arcus.Messaging.Abstractions.Telemetry;
 
-namespace Arcus.Messaging.Abstractions.MessageHandling
+namespace Arcus.Messaging.ServiceBus.Telemetry.Serilog
 {
     /// <summary>
-    /// Represents the consumer configurable options model to change the behavior of the Serilog <see cref="MessageCorrelationInfoEnricher"/>.
+    /// Represents the consumer configurable options model to change the behavior of the registered Serilog message correlation system.
     /// </summary>
-    [Obsolete("Will be removed in v3.0 as W3C will be the only supported correlation format")]
-    public class MessageCorrelationEnricherOptions
+    public class SerilogMessageCorrelationOptions
     {
-        private string _cycleIdPropertyName = "CycleId";
-        private string _operationIdPropertyName = "OperationId";
-        private string _transactionIdPropertyName = "TransactionId";
-        private string _operationParentIdPropertyName = "OperationParentId";
+        /// <summary>
+        /// Gets the options to control the Serilog <see cref="SerilogMessageCorrelationInfoEnricher"/> when the incoming message is routed via the message router.
+        /// </summary>
+        public SerilogMessageCorrelationEnricherOptions Enricher { get; } = new();
+    }
+
+    /// <summary>
+    /// Represents the consumer configurable options model to change the behavior of the Serilog <see cref="SerilogMessageCorrelationInfoEnricher"/>.
+    /// </summary>
+    public class SerilogMessageCorrelationEnricherOptions
+    {
+        private string _cycleIdPropertyName = "CycleId",
+                       _operationIdPropertyName = "OperationId",
+                       _transactionIdPropertyName = "TransactionId",
+                       _operationParentIdPropertyName = "OperationParentId";
 
         /// <summary>
         /// Gets or sets the property name to enrich the log event with the correlation information operation ID.
