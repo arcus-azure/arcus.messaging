@@ -189,7 +189,7 @@ services.AddServiceBusTopicMessagePump(...)
         .WithServiceBusMessageHandler<...>();
 ```
 
-Now Arcus will use the Serilog approach to track Azure Service Bus messages. Make sure that Microsoft's  `TelemetryClient` is registered in the application services.
+Now Arcus will use the Serilog approach to track Azure Service Bus messages. Make sure that Microsoft's  `TelemetryClient` is registered in the application services. (See [Microsoft documentation](https://learn.microsoft.com/en-us/azure/azure-monitor/app/dot-net?tabs=net%2Cnet-1%2Cserver%2Cportal%2Ccsharp%2Cenqueue) for more information.)
 
 </TabItem>
 </Tabs>
