@@ -4,11 +4,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.Abstractions.Telemetry;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Serilog.Context;
 using static Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingError;
 
 #pragma warning disable S1133
@@ -103,10 +101,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
             }
 
             using IServiceScope serviceScope = ServiceProvider.CreateScope();
-#pragma warning disable CS0618 // Type or member is obsolete: will be refactored when moving towards v3.0.
-            using IDisposable _ = LogContext.Push(new MessageCorrelationInfoEnricher(correlationInfo, Options.CorrelationEnricher));
-#pragma warning restore CS0618 // Type or member is obsolete
-
             return await TryRouteMessageWithPotentialFallbackAsync(serviceScope.ServiceProvider, messageReceiver, message, messageContext, correlationInfo, cancellationToken);
         }
 

@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
+using Arcus.Messaging.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
 using Azure.Messaging.ServiceBus;
-using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -26,7 +27,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
     internal abstract class ServiceBusMessagePump : BackgroundService
     {
         private readonly ServiceBusMessageRouter _messageRouter;
-        private readonly IDisposable _loggingScope;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceBusMessagePump"/> class.
@@ -57,7 +57,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ServiceProvider = serviceProvider;
             Logger = logger ?? NullLogger.Instance;
 
-            _loggingScope = Logger.BeginScope("Job: {JobId}", JobId);
             _messageRouter = new ServiceBusMessageRouter(serviceProvider, options.Routing, serviceProvider.GetService<ILogger<ServiceBusMessageRouter>>());
         }
 
@@ -126,7 +125,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
             {
-#pragma warning disable CS0618 // Type or member is obsolete: the entity type will be moved down to this message pump in v3.0.
                 Logger.LogDebug(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' was cancelled", EntityType, JobId, EntityName, Namespace);
             }
             catch (Exception exception)
@@ -162,25 +160,40 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             if (IsHostShuttingDown)
             {
-                Logger.LogWarning("Abandoning message with ID '{MessageId}' as the Azure Service Bus {EntityType} message pump '{JobId}' is shutting down", message.MessageId, EntityType, JobId);
+                Logger.LogDebug("[Settle:Abandon] message (message ID='{MessageId}') on Azure Service Bus {EntityType} message pump => pump is shutting down", message.MessageId, EntityType);
                 await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), cancellationToken);
                 return MessageProcessingResult.Failure(message.MessageId, MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message pump is shutting down");
             }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-            using MessageCorrelationResult correlationResult = DetermineMessageCorrelation(message);
+            var correlation = ServiceProvider.GetService<IServiceBusMessageCorrelationScope>() ?? new DefaultMessageCorrelationScope(message);
+            using var operation = correlation.StartOperation(messageContext, Options.Telemetry);
 
-            MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(message, messageContext, correlationResult.CorrelationInfo, cancellationToken);
+            MessageProcessingResult routingResult = await _messageRouter.RouteMessageAsync(message, messageContext, operation.Correlation, cancellationToken);
+            operation.IsSuccessful = routingResult.IsSuccessful;
+
             return routingResult;
         }
 
-        private MessageCorrelationResult DetermineMessageCorrelation(ServiceBusReceivedMessage message)
+        private sealed class DefaultMessageCorrelationScope(ServiceBusReceivedMessage message) : IServiceBusMessageCorrelationScope
         {
-            (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
-            var client = ServiceProvider.GetRequiredService<TelemetryClient>();
+            public MessageOperationResult StartOperation(AzureServiceBusMessageContext messageContext, MessageTelemetryOptions options)
+            {
+                (string transactionId, string operationParentId) = messageContext.Properties.GetTraceParent();
 
-            return MessageCorrelationResult.Create(client, transactionId, operationParentId);
+                var correlation = new MessageCorrelationInfo(
+                    operationId: message.CorrelationId ?? Guid.NewGuid().ToString(),
+                    transactionId,
+                    operationParentId);
 
+                return new NullMessageOperationResult(correlation);
+            }
+
+            private sealed class NullMessageOperationResult(MessageCorrelationInfo correlation) : MessageOperationResult(correlation)
+            {
+                protected override void StopOperation(bool isSuccessful, DateTimeOffset startTime, TimeSpan duration)
+                {
+                }
+            }
         }
 
         /// <summary>
@@ -198,9 +211,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <returns>A <see cref="Task" /> that represents the asynchronous Stop operation.</returns>
         public override Task StopAsync(CancellationToken cancellationToken)
         {
-            _loggingScope?.Dispose();
             IsHostShuttingDown = true;
-
             return base.StopAsync(cancellationToken);
         }
     }

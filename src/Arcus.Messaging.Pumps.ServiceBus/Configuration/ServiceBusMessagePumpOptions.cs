@@ -96,9 +96,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets the consumer configurable options model to change the behavior of the tracked Azure Service bus request telemetry.
         /// </summary>
-#pragma warning disable CS0618 // Type or member is obsolete
-        public MessageTelemetryOptions Telemetry => Routing.Telemetry;
-#pragma warning restore CS0618 // Type or member is obsolete
+        public MessageTelemetryOptions Telemetry { get; } = new()
+        {
+            OperationName = "Azure Service Bus message processing"
+        };
     }
 
     /// <summary>

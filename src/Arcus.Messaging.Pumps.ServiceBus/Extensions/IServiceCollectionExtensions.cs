@@ -190,8 +190,6 @@ namespace Microsoft.Extensions.DependencyInjection
             var options = new ServiceBusMessagePumpOptions();
             configureOptions?.Invoke(options);
 
-            services.AddApplicationInsightsTelemetryWorkerService();
-
             services.TryAddSingleton<IMessagePumpCircuitBreaker>(provider =>
             {
                 var logger = provider.GetService<ILogger<DefaultAzureServiceBusMessagePumpCircuitBreaker>>();
