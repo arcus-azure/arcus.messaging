@@ -117,6 +117,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <remarks>See <see href="https://docs.microsoft.com/dotnet/core/extensions/workers">Worker Services in .NET</see> for implementation guidelines.</remarks>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            await Options.Hooks.BeforeStartupAsync(ServiceProvider);
             try
             {
                 await StartProcessingMessagesAsync(stoppingToken);

@@ -149,6 +149,14 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
     // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
     options.Routing.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
 
+    // Sets a function that will be run before the message pump starts receiving messages.
+    // Useful for when dependent services are not always directly available.
+    options.Hooks.BeforeStartup(async (IServiceProvider services) =>
+    {
+        var dependency = services.GetRequiredService<IMyDependentService>();
+        await dependency.WaitForStatusAsync(HealthStatus.Available);
+    });
+
     // Configure the message pump to use sessions to receive messages (with or without additional options).
     options.UseSessions();
     options.UseSessions(sessions =>
