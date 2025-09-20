@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -107,33 +108,26 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 return NoHandlersRegistered(messageContext.MessageId);
             }
 
-            try
+            int skippedHandlers = 0;
+            bool hasGoneThroughMessageHandler = false;
+
+            foreach (var handler in handlers)
             {
-                int skippedHandlers = 0;
-                bool hasGoneThroughMessageHandler = false;
+                MessageProcessingResult result = await ProcessMessageHandlerAsync(handler, messageBody, messageContext, correlationInfo, cancellation);
+                hasGoneThroughMessageHandler = result.IsSuccessful || result.Error is MessageProcessingError.ProcessingInterrupted;
 
-                foreach (var handler in handlers)
+                if (result.IsSuccessful)
                 {
-                    MessageProcessingResult result = await ProcessMessageHandlerAsync(handler, messageBody, messageContext, correlationInfo, cancellation);
-                    hasGoneThroughMessageHandler = result.IsSuccessful || result.Error is MessageProcessingError.ProcessingInterrupted;
-
-                    if (result.IsSuccessful)
-                    {
-                        Logger.LogMessageProcessedSummary(messageContext.MessageId, handler.MessageHandlerType, skippedHandlers);
-                        return result;
-                    }
-
-                    skippedHandlers++;
+                    Logger.LogMessageProcessedSummary(messageContext.MessageId, handler.MessageHandlerType, skippedHandlers);
+                    return result;
                 }
 
-                return hasGoneThroughMessageHandler
-                    ? MatchedHandlerFailed(messageContext.MessageId)
-                    : NoMatchedHandler(messageContext.MessageId);
+                skippedHandlers++;
             }
-            catch (Exception exception)
-            {
-                return ExceptionDuringRouting(exception, messageContext.MessageId);
-            }
+
+            return hasGoneThroughMessageHandler
+                ? MatchedHandlerFailed(messageContext.MessageId)
+                : NoMatchedHandler(messageContext.MessageId);
 
             MessageProcessingResult NoHandlersRegistered(string messageId)
             {
@@ -151,12 +145,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             {
                 Logger.LogMatchedHandlerFailedToProcessMessage(messageId);
                 return MessageProcessingResult.Failure(messageId, MessageProcessingError.MatchedHandlerFailed, MatchedHandlerFailedMessage);
-            }
-
-            MessageProcessingResult ExceptionDuringRouting(Exception exception, string messageId)
-            {
-                Logger.LogExceptionDuringRouting(exception, messageId);
-                return MessageProcessingResult.Failure(messageId, MessageProcessingError.ProcessingInterrupted, ExceptionDuringRoutingMessage, exception);
             }
         }
 
@@ -206,7 +194,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
             MessageProcessingResult MatchedHandlerFailed(Exception exception, string errorMessage)
             {
-                summary.AddFailed(exception, "message processing failed", errorMessage);
+                summary.AddFailed(exception, "message processing failed", check => check.AddReason(errorMessage));
 
                 Logger.LogMessageFailedInHandler(messageType, context.MessageId, handler.MessageHandlerType, summary);
                 return MessageProcessingResult.Failure(context.MessageId, MessageProcessingError.ProcessingInterrupted, "n/a");
@@ -278,11 +266,11 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 object deserializedByType = JsonSerializer.Deserialize(messageBody, handlerMessageType, _jsonOptions);
                 if (deserializedByType != null)
                 {
-                    summary.AddPassed("default JSON body parsing passed", ("additional members", Options.Deserialization.AdditionalMembers));
+                    summary.AddPassed("default JSON body parsing passed", check => check.AddMember("additional members", Options.Deserialization.AdditionalMembers.ToString()));
                     return MessageResult.Success(deserializedByType);
                 }
 
-                summary.AddFailed("default JSON body parsing failed", reason: "returns 'null'");
+                summary.AddFailed("default JSON body parsing failed", check => check.AddReason("returns 'null'"));
                 return MessageResult.Failure("n/a");
             }
             catch (JsonException exception)
@@ -349,9 +337,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         [LoggerMessage(LogLevel.Error, "Message '{MessageId}' [Failed in] message pump => ✗ " + MatchedHandlerFailedMessage)]
         internal static partial void LogMatchedHandlerFailedToProcessMessage(this ILogger logger, string messageId);
 
-        [LoggerMessage(LogLevel.Critical, "Message '{MessageId}' [Failed in] message pump => ✗ " + ExceptionDuringRoutingMessage)]
-        internal static partial void LogExceptionDuringRouting(this ILogger logger, Exception exception, string messageId);
-
         internal static void LogMessageSkippedByHandler(this ILogger logger, string messageId, Type messageHandlerType, MessageHandlerSummary summary)
         {
             LogMessageSkippedByHandler(logger, summary.OccurredException, messageId, messageHandlerType.Name, summary);
@@ -411,78 +396,107 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             _ => new AggregateException(_exceptions)
         };
 
-        /// <summary>
-        /// Adds a passed check to the summary.
-        /// </summary>
-        /// <param name="description">The message that describes in a short manner the check that was passed.</param>
-        /// <param name="members">The additional key-value pair members that were involved in the check.</param>
-        internal void AddPassed(string description, params (string, object)[] members)
+        internal class MessageHandlerCheckBuilder
         {
-            ArgumentNullException.ThrowIfNull(description);
+            private readonly Collection<(string memberName, string memberValue)> _members = [];
+            private string _reason;
+            private readonly StringBuilder _result = new();
 
-            string membersDescription = members.Length > 0
-                ? $" ({string.Join(", ", members.Select(m => m.Item1 + "=" + m.Item2))})"
-                : string.Empty;
-
-            _lines.Add("✓ " + description + membersDescription);
-        }
-
-        /// <summary>
-        /// Adds a failed check to the summary.
-        /// </summary>
-        /// <param name="exception">The optional exception that occured during the check.</param>
-        /// <param name="description">The message that describes in a short manner the check that was failed.</param>
-        /// <param name="reason">The message that explains the reason why the check failed.</param>
-        internal void AddFailed(Exception exception, string description, string reason = "exception thrown")
-        {
-            if (exception is not null)
+            private MessageHandlerCheckBuilder(string description)
             {
-                _exceptions.Add(exception);
+                ArgumentException.ThrowIfNullOrWhiteSpace(description);
+                _result.Append(description);
             }
 
-            AddFailed(description, reason);
-        }
+            internal static MessageHandlerCheckBuilder Passed(string description) => new("✓ " + description);
+            internal static MessageHandlerCheckBuilder Failed(string description) => new("✗ " + description);
 
-        /// <summary>
-        /// Adds a failed check to the summary.
-        /// </summary>
-        /// <param name="description">The message that describes in a short manner the check that was failed.</param>
-        /// <param name="reason">The message that explains the reason why the check failed.</param>
-        internal void AddFailed(string description, string reason)
-        {
-            ArgumentNullException.ThrowIfNull(description);
-            ArgumentNullException.ThrowIfNull(reason);
+            /// <summary>
+            /// Adds a key-value pair member to the pre-check message - acts as additional context (i.e. 'using type=MyType').
+            /// </summary>
+            internal MessageHandlerCheckBuilder AddMember(string memberName, string memberValue)
+            {
+                _members.Add((memberName, memberValue));
+                return this;
+            }
 
-            AddFailed(description + " (" + reason + ")");
-        }
+            /// <summary>
+            /// Adds a final reason why the pre-check acted like it did.
+            /// </summary>
+            internal MessageHandlerCheckBuilder AddReason(string reason)
+            {
+                _reason = reason;
+                return this;
+            }
 
-        /// <summary>
-        /// Adds a failed check to the summary.
-        /// </summary>
-        /// <param name="description">The message that describes in a short manner the check that was failed.</param>
-        /// <param name="members">The additional members that were involved in the check (both single values as tuples are supported).</param>
-        internal void AddFailed(string description, params object[] members)
-        {
-            ArgumentNullException.ThrowIfNull(description);
-            ArgumentNullException.ThrowIfNull(members);
-
-            string membersDescription = members.Length > 1
-                ? $" ({string.Join(", ", members.Select(m =>
+            /// <summary>
+            /// Returns a string that represents the current object.
+            /// </summary>
+            /// <returns>A string that represents the current object.</returns>
+            public override string ToString()
+            {
+                if (_members.Count > 0)
                 {
-                    return m switch
-                    {
-                        (string name, string value) => $"{name}={value}",
-                        _ => m.ToString()
-                    };
-                }))}"
-                : string.Empty;
+                    _result.Append(" (");
+                    _result.AppendJoin(", ", _members.Select(m => $"{m.memberName}={m.memberValue}"));
+                    _result.Append(')');
+                }
 
-            AddFailed(description + membersDescription);
+                if (_reason != null)
+                {
+                    _result.Append(": ");
+                    _result.Append(_reason);
+                }
+
+                return _result.ToString();
+            }
         }
 
-        private void AddFailed(string description)
+        /// <summary>
+        /// Adds a passed pre-check line to the summary.
+        /// </summary>
+        /// <param name="description">The short description of the pre-check.</param>
+        /// <param name="configureCheck">The additional information around the pre-check, formatted on the same line.</param>
+        internal void AddPassed(string description, Action<MessageHandlerCheckBuilder> configureCheck = null)
         {
-            _lines.Add("✗ " + description);
+            var builder = MessageHandlerCheckBuilder.Passed(description);
+            configureCheck?.Invoke(builder);
+
+            _lines.Add(builder.ToString());
+        }
+
+        /// <summary>
+        /// Adds a failed pre-check line to the summary.
+        /// </summary>
+        /// <param name="exception">
+        ///     The occurred exception that caused the pre-check to fail
+        ///     - only here to track exceptions (<see cref="OccurredException"/>), not to expose information in the logged line.
+        /// </param>
+        /// <param name="description">The short description of the pre-check.</param>
+        /// <param name="configureCheck">The additional information around the pre-check, formatted on the same line.</param>
+        internal void AddFailed(Exception exception, string description, Action<MessageHandlerCheckBuilder> configureCheck = null)
+        {
+            ArgumentNullException.ThrowIfNull(exception);
+            _exceptions.Add(exception);
+
+            AddFailed(description, check =>
+            {
+                check.AddReason("exception thrown");
+                configureCheck?.Invoke(check);
+            });
+        }
+
+        /// <summary>
+        /// Adds a failed pre-check line to the summary.
+        /// </summary>
+        /// <param name="description">The short description of the pre-check.</param>
+        /// <param name="configureCheck">The additional information around the pre-check, formatted on the same line.</param>
+        internal void AddFailed(string description, Action<MessageHandlerCheckBuilder> configureCheck = null)
+        {
+            var builder = MessageHandlerCheckBuilder.Failed(description);
+            configureCheck?.Invoke(builder);
+
+            _lines.Add(builder.ToString());
         }
 
         /// <summary>
