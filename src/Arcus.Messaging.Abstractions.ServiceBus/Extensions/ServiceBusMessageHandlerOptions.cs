@@ -1,26 +1,26 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Arcus.Messaging;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
-using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Azure.Messaging.ServiceBus;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
 {
     /// <summary>
-    /// Represents the available options when registering an <see cref="IAzureServiceBusMessageHandler{TMessage}"/>.
+    /// Represents the available options when registering an <see cref="IServiceBusMessageHandler{TMessage}"/>.
     /// </summary>
     /// <typeparam name="TMessage">The custom message type to handler.</typeparam>
     public class ServiceBusMessageHandlerOptions<TMessage>
     {
         private readonly Collection<Func<TMessage, bool>> _messageBodyFilters = [];
-        private readonly Collection<Func<AzureServiceBusMessageContext, bool>> _messageContextFilters = [];
+        private readonly Collection<Func<ServiceBusMessageContext, bool>> _messageContextFilters = [];
 
         internal Func<IServiceProvider, IMessageBodySerializer> MessageBodySerializerImplementationFactory { get; private set; }
         internal Func<TMessage, bool> MessageBodyFilter => _messageBodyFilters.Count is 0 ? null : msg => _messageBodyFilters.All(filter => filter(msg));
-        internal Func<AzureServiceBusMessageContext, bool> MessageContextFilter => _messageContextFilters.Count is 0 ? null : ctx => _messageContextFilters.All(filter => filter(ctx));
+        internal Func<ServiceBusMessageContext, bool> MessageContextFilter => _messageContextFilters.Count is 0 ? null : ctx => _messageContextFilters.All(filter => filter(ctx));
 
         /// <summary>
         /// Adds a custom serializer instance that deserializes the incoming <see cref="ServiceBusReceivedMessage.Body"/>.
@@ -68,12 +68,26 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Adds a custom <paramref name="contextFilter"/> to only select a subset of messages, based on its context, that the registered message handler can handle.
         /// </summary>
-        public ServiceBusMessageHandlerOptions<TMessage> AddMessageContextFilter(Func<AzureServiceBusMessageContext, bool> contextFilter)
+        public ServiceBusMessageHandlerOptions<TMessage> AddMessageContextFilter(Func<ServiceBusMessageContext, bool> contextFilter)
         {
             ArgumentNullException.ThrowIfNull(contextFilter);
             _messageContextFilters.Add(contextFilter);
 
             return this;
+        }
+
+        /// <summary>
+        /// Adds a custom <paramref name="contextFilter"/> to only select a subset of messages, based on its context, that the registered message handler can handle.
+        /// </summary>
+        [Obsolete("Will be removed in v4.0, please use " + nameof(ServiceBusMessageContext) + " instead")]
+        public ServiceBusMessageHandlerOptions<TMessage> AddMessageContextFilter(Func<AzureServiceBusMessageContext, bool> contextFilter)
+        {
+            ArgumentNullException.ThrowIfNull(contextFilter);
+            return AddMessageContextFilter(context =>
+            {
+                var deprecated = new AzureServiceBusMessageContext(context);
+                return contextFilter(deprecated);
+            });
         }
 
         /// <summary>

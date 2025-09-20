@@ -23,7 +23,6 @@ using Newtonsoft.Json;
 using Xunit;
 using Order = Arcus.Messaging.Tests.Core.Messages.v1.Order;
 using OrderV2AzureServiceBusMessageHandler = Arcus.Messaging.Tests.Unit.Fixture.OrderV2AzureServiceBusMessageHandler;
-using ServiceBusEntityType = Arcus.Messaging.Abstractions.ServiceBus.ServiceBusEntityType;
 
 namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 {
@@ -55,7 +54,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             var order = OrderGenerator.Generate();
             var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
-            var context = AzureServiceBusMessageContext.Create(jobId, ServiceBusEntityType.Queue, Mock.Of<ServiceBusReceiver>(), message);
+            var context = AzureServiceBusMessageContextFactory.Generate(jobId);
             var correlationInfo = new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}");
 
             MessageProcessingResult result = await router.RouteMessageAsync(Mock.Of<ServiceBusReceiver>(), message, context, correlationInfo, CancellationToken.None);
@@ -370,12 +369,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                 await router.RouteMessageAsync(
                     Mock.Of<ServiceBusReceiver>(),
                     message,
-                    AzureServiceBusMessageContext.Create(
-                        $"job-{Guid.NewGuid()}",
-                        ServiceBusEntityType.Topic,
-                        Mock.Of<ServiceBusReceiver>(),
-                        ServiceBusModelFactory.ServiceBusReceivedMessage(
-                            messageId: $"id-{Guid.NewGuid()}")),
+                    AzureServiceBusMessageContextFactory.Generate(),
                     new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}"),
                     CancellationToken.None);
             }

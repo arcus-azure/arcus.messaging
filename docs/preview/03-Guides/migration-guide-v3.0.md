@@ -49,6 +49,10 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
   * `ServiceBusReceivedMessage.GetCorrelationInfo`
   * `ServiceBusReceivedMessage.GetApplicationProperty`
   * `MessageContext.GetMessageEncodingProperty`
+### ✏️ Renamed functionality
+* Renamed `IAzureServiceBusMessageHandler<>` to `IServiceBusMessageHandler<>` (in namespace `Arcus.Messaging`)
+* Renamed `AzureServiceBusMessageContext` to `ServiceBusMessageContext` (in namespace `Arcus.Messaging`)
+* Renamed `CircuitBreakerServiceBusMessageHandler<>` to `DefaultCircuitBreakerServiceBusMessageHandler<>` (in namespace `Arcus.Messaging`)
 
 ### ✨ New Service Bus message pump registration
 Previously, the registration of the Azure Service Bus message pump involved navigating through the many available extensions, making it rather tedious to find the right authentication mechanism.
@@ -101,12 +105,12 @@ services.AddServiceBusQueueMessagePump(...)
 ### ✨ New Service Bus message settlement
 Previous versions used dedicated 'template classes' that custom message handlers should inherit from to do custom Azure Service Bus message settlement (complete, dead-letter, abandon).
 
-Starting from v3.0, the available operations are moved to the `AzureServiceBusMessageContext`. Making your custom message handlers much more accessible and flexible.
+Starting from v3.0, the available operations are moved to the `ServiceBusMessageContext` (previously called `AzureServiceBusMessageContext`). Making your custom message handlers much more accessible and flexible.
 
 ```diff
 public class OrderServiceBusMessageHandler
 -    : AzureServiceBusMessageHandler<Order>
-+    : IAzureServiceBusMessageHandler<Order>
++    : IServiceBusMessageHandler<Order>
 {
     public OrderServiceBusMessageHandler(ILogger<OrderServiceBusMessageHandler> logger)
 -        : base(logger)
@@ -117,7 +121,8 @@ public class OrderServiceBusMessageHandler
 -    public override async Task ProcessMessageAsync(
 +    public async Task ProcessMessageAsync(
         Order order,
-        AzureServiceBusMessageContext messageContext,
+-       AzureServiceBusMessageContext messageContext,        
++       ServiceBusMessageContext messageContext,
         MessageCorrelationInfo messageCorrelation,
         CancellationToken cancellation)
     {

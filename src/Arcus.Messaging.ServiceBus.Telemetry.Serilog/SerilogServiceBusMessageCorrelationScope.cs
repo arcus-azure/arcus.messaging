@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
@@ -46,7 +45,7 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.Serilog
         /// </summary>
         /// <param name="messageContext">The message context for the currently received Azure Service bus message.</param>
         /// <param name="options">The user-configurable options to manipulate the telemetry.</param>
-        public MessageOperationResult StartOperation(AzureServiceBusMessageContext messageContext, MessageTelemetryOptions options)
+        public MessageOperationResult StartOperation(ServiceBusMessageContext messageContext, MessageTelemetryOptions options)
         {
             ArgumentNullException.ThrowIfNull(messageContext);
             ArgumentNullException.ThrowIfNull(options);
