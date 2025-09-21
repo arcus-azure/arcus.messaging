@@ -56,6 +56,7 @@ stages:
             parameters:
               dotnetSdkVersion: '$(DotNet.Sdk.Version)'
               versionSuffix: '$(packageVersion)'
+              includePreviewVersions: $(DotNet.Sdk.IncludePreviewVersions)
           - task: CopyFiles@2
             displayName: 'Copy build artifacts'
             inputs:
