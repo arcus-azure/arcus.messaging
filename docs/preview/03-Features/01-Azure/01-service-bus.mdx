@@ -299,7 +299,7 @@ public class OrderMessageHandler : CircuitBreakerServiceBusMessageHandler<Order>
         if (!IsMyDependentSystemHealthy())
         {
             // Let the message processing fail with a custom exception.
-            throw new MyDependencyUnnavailableException("My dependency system is temporarily unavailable, please halt message processing for now");
+            throw new MyDependencyUnavailableException("My dependency system is temporarily unavailable, please halt message processing for now");
         }
         // highlight-end
     }
