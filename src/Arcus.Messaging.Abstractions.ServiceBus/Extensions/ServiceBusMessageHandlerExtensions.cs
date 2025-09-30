@@ -5,6 +5,7 @@ using Arcus.Messaging;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace

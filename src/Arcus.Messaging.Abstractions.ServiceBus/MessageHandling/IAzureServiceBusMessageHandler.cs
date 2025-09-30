@@ -1,8 +1,9 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus;
 
-namespace Arcus.Messaging
+namespace Arcus.Messaging.ServiceBus
 {
     /// <summary>
     /// Represents a handler for a specific <see cref="ServiceBusReceivedMessage"/> in a <see cref="ServiceBusMessageContext"/>

@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Arcus.Messaging.ServiceBus;
 
 namespace Arcus.Messaging.Tests.Unit.Fixture
 {

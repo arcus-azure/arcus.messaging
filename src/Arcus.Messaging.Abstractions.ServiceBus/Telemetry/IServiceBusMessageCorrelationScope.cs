@@ -1,5 +1,6 @@
 ﻿using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.Telemetry;
+using Arcus.Messaging.ServiceBus;
 
 namespace Arcus.Messaging.Abstractions.ServiceBus.Telemetry
 {

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Arcus.Messaging;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus;
 
 // ReSharper disable once CheckNamespace

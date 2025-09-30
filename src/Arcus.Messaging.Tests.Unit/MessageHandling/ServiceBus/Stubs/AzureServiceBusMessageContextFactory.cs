@@ -1,5 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus;
 using Bogus;
 using Moq;

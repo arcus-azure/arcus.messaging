@@ -5,9 +5,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus;
 
-namespace Arcus.Messaging
+namespace Arcus.Messaging.ServiceBus
 {
     /// <summary>
     /// Represents the contextual information concerning an Azure Service Bus message.

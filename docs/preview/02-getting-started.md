@@ -36,7 +36,7 @@ The package makes the `IServiceBusMessageHandler<>` interface available. Impleme
 As the generic type, you can use the DTO (data-transfer object) to which the [`ServiceBusReceivedMessage.Body`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceivedmessage.body) should be deserialized to (default via JSON). In this case: `MyOrder`.
 
 ```csharp
-using Arcus.Messaging;
+using Arcus.Messaging.ServiceBus;
 
 public class MyOrder
 {

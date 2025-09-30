@@ -7,6 +7,7 @@ using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

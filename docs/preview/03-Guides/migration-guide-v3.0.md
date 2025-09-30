@@ -50,9 +50,9 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
   * `ServiceBusReceivedMessage.GetApplicationProperty`
   * `MessageContext.GetMessageEncodingProperty`
 ### ✏️ Renamed functionality
-* Renamed `IAzureServiceBusMessageHandler<>` to `IServiceBusMessageHandler<>` (in namespace `Arcus.Messaging`)
-* Renamed `AzureServiceBusMessageContext` to `ServiceBusMessageContext` (in namespace `Arcus.Messaging`)
-* Renamed `CircuitBreakerServiceBusMessageHandler<>` to `DefaultCircuitBreakerServiceBusMessageHandler<>` (in namespace `Arcus.Messaging`)
+* Renamed `IAzureServiceBusMessageHandler<>` to `IServiceBusMessageHandler<>` (in namespace `Arcus.Messaging.ServiceBus`)
+* Renamed `AzureServiceBusMessageContext` to `ServiceBusMessageContext` (in namespace `Arcus.Messaging.ServiceBus`)
+* Renamed `CircuitBreakerServiceBusMessageHandler<>` to `DefaultCircuitBreakerServiceBusMessageHandler<>` (in namespace `Arcus.Messaging.ServiceBus`)
 
 ### ✨ New Service Bus message pump registration
 Previously, the registration of the Azure Service Bus message pump involved navigating through the many available extensions, making it rather tedious to find the right authentication mechanism.
@@ -108,6 +108,8 @@ Previous versions used dedicated 'template classes' that custom message handlers
 Starting from v3.0, the available operations are moved to the `ServiceBusMessageContext` (previously called `AzureServiceBusMessageContext`). Making your custom message handlers much more accessible and flexible.
 
 ```diff
++ using Arcus.Messaging.ServiceBus;
+
 public class OrderServiceBusMessageHandler
 -    : AzureServiceBusMessageHandler<Order>
 +    : IServiceBusMessageHandler<Order>

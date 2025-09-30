@@ -5,9 +5,10 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
+using Arcus.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 
-namespace Arcus.Messaging
+namespace Arcus.Messaging.ServiceBus
 {
     /// <summary>
     /// Represents a template for a message handler that interacts with an unstable dependency system that requires a circuit breaker to prevent overloading the system.
