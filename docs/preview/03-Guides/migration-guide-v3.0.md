@@ -41,6 +41,8 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
   * Removed `(I)MessageCorrelationInfoAccessor`: message correlation is already available via message handlers.
   * Removed `MessageCorrelationResult`: in favor of the new `MessageOperationResult`.
   * `MessageCorrelationInfo` is separated from parent `CorrelationInfo` (originates from Arcus.Observability)
+  * Removed `MessageRouterOptions.Telemetry` options in favor of new `ServiceBusMessagePumpOptions.Telemetry`.
+  * Removed `MessageRouterOptions.CorrelationEnricher` in favor of dedicated (Serilog telemetry package)(#-new-service-bus-message-correlation) where those options are also available.
 * Removed **Arcus.Messaging.ServiceBus.Core** package and transient dependency for **Arcus.Messaging.Pumps.ServiceBus**. This means that the following types/extensions are removed:
   * `ServiceBusMessageBuilder`
   * `ServiceBusSenderMessageCorrelationOptions`
