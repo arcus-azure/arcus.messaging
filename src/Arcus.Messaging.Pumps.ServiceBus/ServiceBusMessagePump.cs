@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -153,7 +153,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Routes the received message to the appropriate registered message handler.
         /// </summary>
-        protected async Task<MessageProcessingResult> RouteMessageAsync(ServiceBusReceivedMessage message, AzureServiceBusMessageContext messageContext, CancellationToken cancellationToken)
+        protected async Task<MessageProcessingResult> RouteMessageAsync(ServiceBusReceivedMessage message, ServiceBusMessageContext messageContext, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(message);
             ArgumentNullException.ThrowIfNull(messageContext);
@@ -176,7 +176,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
         private sealed class DefaultMessageCorrelationScope(ServiceBusReceivedMessage message) : IServiceBusMessageCorrelationScope
         {
-            public MessageOperationResult StartOperation(AzureServiceBusMessageContext messageContext, MessageTelemetryOptions options)
+            public MessageOperationResult StartOperation(ServiceBusMessageContext messageContext, MessageTelemetryOptions options)
             {
                 (string transactionId, string operationParentId) = messageContext.Properties.GetTraceParent();
 

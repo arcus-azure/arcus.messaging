@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Arcus.Messaging.Abstractions
+namespace Arcus.Messaging
 {
     /// <summary>
     /// Represents the information concerning correlation of telemetry &amp; processes with main focus on messaging scenarios.

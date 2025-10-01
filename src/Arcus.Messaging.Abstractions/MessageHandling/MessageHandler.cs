@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using ProcessMessageAsync = System.Func<object, Arcus.Messaging.Abstractions.MessageContext, Arcus.Messaging.Abstractions.MessageCorrelationInfo, System.Threading.CancellationToken, System.Threading.Tasks.Task<Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingResult>>;
+using ProcessMessageAsync = System.Func<object, Arcus.Messaging.Abstractions.MessageContext, Arcus.Messaging.MessageCorrelationInfo, System.Threading.CancellationToken, System.Threading.Tasks.Task<Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingResult>>;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
