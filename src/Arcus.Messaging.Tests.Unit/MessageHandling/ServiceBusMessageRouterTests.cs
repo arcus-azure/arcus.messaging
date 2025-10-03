@@ -14,15 +14,15 @@ using static Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingError
 
 namespace Arcus.Messaging.Tests.Unit.MessageHandling
 {
-    public class MessageRouterTests
+    public class ServiceBusMessageRouterTests
     {
         private readonly ILogger _logger;
         private static readonly Faker Bogus = new();
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageRouterTests"/> class.
+        /// Initializes a new instance of the <see cref="ServiceBusMessageRouterTests"/> class.
         /// </summary>
-        public MessageRouterTests(ITestOutputHelper outputWriter)
+        public ServiceBusMessageRouterTests(ITestOutputHelper outputWriter)
         {
             _logger = new XunitTestLogger(outputWriter);
         }
@@ -46,8 +46,10 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             // Arrange
             var message = Messages.Any;
             var context = Contexts.Any;
-
-            Router.WithMessageHandler(Handlers.AlwaysFailed());
+            var router = CreateMessageRouter(services =>
+            {
+                services.WithMessageHandler()
+            })
 
             // Act
             MessageProcessingResult result = await router.RouteMessageAsync(message, context);
@@ -56,36 +58,19 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             AssertResult.RouteFailed(CannotFindMatchedHandler, result, "no", "matched", "handler");
         }
 
-        private MessageRouterBuilder Router { get; } = new();
-
-
-
-        private sealed class MessageRouterBuilder
-        {
-
-
-            internal MessageRouterBuilder WithMessageHandler(Action<MessageHandlerCollection> implementationFactory)
-            {
-
-            }
-        }
-
-        private static BinaryData CreateMessageBody()
-        {
-            return BinaryData.FromBytes(Bogus.Random.Bytes(10));
-        }
-
-        private SpyTestMessageRouter CreateMessageRouter(
+        private SpyTestServiceBusMessageRouter CreateMessageRouter(
             Action<ServiceBusMessageHandlerCollection> configureServices = null,
             Action<MessageRouterOptions> configureOptions = null)
         {
-            return SpyTestMessageRouter.CreateFor(_logger, configureServices, configureOptions);
+            return SpyTestServiceBusMessageRouter.CreateFor(_logger, configureServices, configureOptions);
         }
 
-        private sealed class SpyTestMessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger logger)
+        private sealed class SpyTestServiceBusMessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger logger)
             : MessageRouter(serviceProvider, options, logger)
         {
-            public static SpyTestMessageRouter CreateFor(
+            private MessageHandlerTriggerHistory TriggerHistory => ServiceProvider.GetRequiredService<MessageHandlerTriggerHistory>();
+
+            public static SpyTestServiceBusMessageRouter CreateFor(
                 ILogger logger,
                 Action<ServiceBusMessageHandlerCollection> configureServices = null,
                 Action<MessageRouterOptions> configureOptions = null)
@@ -98,30 +83,27 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
                 var options = new MessageRouterOptions();
                 configureOptions?.Invoke(options);
 
-                return new SpyTestMessageRouter(services.BuildServiceProvider(), options, logger);
+                return new SpyTestServiceBusMessageRouter(services.BuildServiceProvider(), options, logger);
             }
 
             public Task<MessageProcessingResult> RouteAnyMessageAsync()
             {
-                return RouteMessageAsync(CreateMessageBody(), TestMessageContext.Generate());
+                return RouteMessageAsync(Messages.Any, TestMessageContext.Generate());
             }
 
-            public Task<MessageProcessingResult> RouteMessageAsync<TMessageContext>(BinaryData messageBody, TMessageContext messageContext)
+            public Task<MessageProcessingResult> RouteMessageAsync<TMessageContext>(ITestMessage message, TMessageContext messageContext)
                 where TMessageContext : MessageContext
             {
+                var messageBody = BinaryData.FromObjectAsJson(message);
                 var messageCorrelation = new MessageCorrelationInfo("operation-id", "transaction-id");
                 return RouteMessageThroughRegisteredHandlersAsync(ServiceProvider, messageBody.IsEmpty ? string.Empty : messageBody.ToString(), messageContext, messageCorrelation, CancellationToken.None);
             }
 
-            public void ShouldBeRoutedThrough<TMessageHandler>()
-            {
-                ServiceProvider.GetRequiredService<MessageHandlerTriggerHistory>().ShouldBeFired(typeof(TMessageHandler));
-            }
+            public void ShouldBeRoutedThroughNone() => TriggerHistory.ShouldBeEmpty();
 
-            public void ShouldNotRouteThrough<TMessageHandler>()
-            {
-                ServiceProvider.GetRequiredService<MessageHandlerTriggerHistory>().ShouldNotBeFired(typeof(TMessageHandler));
-            }
+            public void ShouldBeRoutedThrough<TMessageHandler>() => TriggerHistory.ShouldBeFired(typeof(TMessageHandler));
+
+            public void ShouldNotRouteThrough<TMessageHandler>() => TriggerHistory.ShouldNotBeFired(typeof(TMessageHandler));
         }
     }
 }

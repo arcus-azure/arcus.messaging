@@ -42,14 +42,21 @@ namespace Arcus.Messaging
 
         public static MessageHandlerCollection WithMessageHandler<TMessage, TMessageContext>(
             this MessageHandlerCollection collection,
-            Func<IServiceProvider, IMessageHandler<TMessage, TMessageContext>> implementationFactory)
+            Func<IServiceProvider, IMessageHandler<TMessage, TMessageContext>> implementationFactory,
+            Action<MessageHandlerOptions<TMessage, TMessageContext>> configureOptions = null)
             where TMessageContext : MessageContext
         {
+            var options = new MessageHandlerOptions<TMessage, TMessageContext>();
+            configureOptions?.Invoke(options);
+
             collection.Services.AddTransient(
                 provider => MessageHandler.Create(
                     implementationFactory(provider),
                     provider.GetRequiredService<ILogger<IMessageHandler<TMessage, TMessageContext>>>(),
-                    collection.JobId));
+                    collection.JobId,
+                    options.MessageBodyFilter,
+                    options.MessageContextFilter,
+                    options.MessageBodySerializer));
 
             return collection;
         }
@@ -87,6 +94,13 @@ namespace Arcus.Messaging
         }
     }
 
+    public class MessageHandlerOptions<TMessage, TMessageContext> where TMessageContext : MessageContext
+    {
+        public Func<TMessage, bool> MessageBodyFilter { get; set; }
+        public Func<TMessageContext, bool> MessageContextFilter { get; set; }
+        public IMessageBodySerializer MessageBodySerializer { get; set; }
+    }
+
     public class MessageHandlerTriggerHistory
     {
         private readonly Collection<Type> _firedMessageHandlers = [];
@@ -94,6 +108,11 @@ namespace Arcus.Messaging
         public void AddsOccurrence(Type messageHandlerType)
         {
             _firedMessageHandlers.Add(messageHandlerType);
+        }
+
+        public void ShouldBeEmpty()
+        {
+            Assert.Empty(_firedMessageHandlers);
         }
 
         public void ShouldBeFired(Type firedMessageHandler)
