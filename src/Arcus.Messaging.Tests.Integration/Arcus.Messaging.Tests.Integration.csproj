@@ -22,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.ServiceBus.Telemetry.Serilog\Arcus.Messaging.ServiceBus.Telemetry.Serilog.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.Health\Arcus.Messaging.Health.csproj" />

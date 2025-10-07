@@ -28,6 +28,10 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
 * 📦 **Arcus.Messaging.Pumps.EventHubs**
 
 ## 📦 Arcus.Messaging.*ServiceBus\*
+:::info[package rename]
+Starting from v3, the `Arcus.Messaging.Abstractions.ServiceBus` and `Arcus.Messaging.Pumps.ServiceBus` packages have been consolidated into a single `Arcus.Messaging.ServiceBus` package.
+:::
+
 ### 🗑️ Removed functionality
 * Removed built-in Azure Functions support. Both the `Arcus.Messaging.AzureFunctions.ServiceBus` package as the built-in service-to-service correlation and message router registration support for Azure Functions has been removed.
 * Removed fallback message handler functionality in favor of using [custom message settlement](#-new-service-bus-message-settlement). This means that the following types/extensions are removed:

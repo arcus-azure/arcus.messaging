@@ -22,6 +22,6 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
         /// <summary>
         /// Gets or sets the boolean flag to indicate whether the message pump is configured to use sessions.
         /// </summary>
-        public bool UseSessions { get; set; }
+        internal bool UseSessions { get; set; }
     }
 }
