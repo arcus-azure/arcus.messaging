@@ -9,7 +9,7 @@ namespace Microsoft.Extensions.DependencyInjection
     /// Extensions on the <see cref="IServiceCollection"/> to add an <see cref="IAzureServiceBusMessageHandler{TMessage}"/>'s implementations.
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    public static class ServiceBusMessageHandlerCollectionExtensions
+    public static class CircuitBreakerServiceBusMessageHandlerCollectionExtensions
     {
         /// <summary>
         /// Adds an <see cref="ICircuitBreakerEventHandler"/> implementation for a specific message pump to the application services.

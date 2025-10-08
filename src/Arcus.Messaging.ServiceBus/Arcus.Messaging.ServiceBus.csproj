@@ -6,7 +6,7 @@
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
     <Product>Arcus.Messaging</Product>
-    <Description>Provides Azure Service Bus abstractions for message handling in both message pumps and Azure Functions triggers</Description>
+    <Description>Provides capability to run an Azure Service Bus message pump</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
     <PackageProjectUrl>https://messaging.arcus-azure.net/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
@@ -27,11 +27,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="[1.*,2.0.0)" />
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="[7.*,8.0.0)" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Arcus.Messaging.Abstractions\Arcus.Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.Pumps.Abstractions\Arcus.Messaging.Pumps.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

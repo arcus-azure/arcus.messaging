@@ -28,7 +28,7 @@ By using *'message handlers'*, you don't have to worry about routing, deserializ
 First step in creating your message handler, is installing the following package. This is the only package that is required during this walkthrough.
 
 ```powershell
-PS> Install-Package -Name Arcus.Messaging.Pumps.ServiceBus
+PS> Install-Package -Name Arcus.Messaging.ServiceBus
 ```
 
 The package makes the `IServiceBusMessageHandler<>` interface available. Implementing this interface is the simplest way of creating a *'message handler'*.
