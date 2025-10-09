@@ -28,6 +28,10 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
 * 📦 **Arcus.Messaging.Pumps.EventHubs**
 
 ## 📦 Arcus.Messaging.*ServiceBus\*
+:::info[package rename]
+Starting from v3, the `Arcus.Messaging.Abstractions.ServiceBus` and `Arcus.Messaging.Pumps.ServiceBus` packages have been consolidated into a single `Arcus.Messaging.ServiceBus` package.
+:::
+
 ### 🗑️ Removed functionality
 * Removed built-in Azure Functions support. Both the `Arcus.Messaging.AzureFunctions.ServiceBus` package as the built-in service-to-service correlation and message router registration support for Azure Functions has been removed.
 * Removed fallback message handler functionality in favor of using [custom message settlement](#-new-service-bus-message-settlement). This means that the following types/extensions are removed:
@@ -41,6 +45,8 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
   * Removed `(I)MessageCorrelationInfoAccessor`: message correlation is already available via message handlers.
   * Removed `MessageCorrelationResult`: in favor of the new `MessageOperationResult`.
   * `MessageCorrelationInfo` is separated from parent `CorrelationInfo` (originates from Arcus.Observability)
+  * Removed `MessageRouterOptions.Telemetry` options in favor of new `ServiceBusMessagePumpOptions.Telemetry`.
+  * Removed `MessageRouterOptions.CorrelationEnricher` in favor of dedicated (Serilog telemetry package)(#-new-service-bus-message-correlation) where those options are also available.
 * Removed **Arcus.Messaging.ServiceBus.Core** package and transient dependency for **Arcus.Messaging.Pumps.ServiceBus**. This means that the following types/extensions are removed:
   * `ServiceBusMessageBuilder`
   * `ServiceBusSenderMessageCorrelationOptions`
@@ -49,6 +55,10 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
   * `ServiceBusReceivedMessage.GetCorrelationInfo`
   * `ServiceBusReceivedMessage.GetApplicationProperty`
   * `MessageContext.GetMessageEncodingProperty`
+### ✏️ Renamed functionality
+* Renamed `IAzureServiceBusMessageHandler<>` to `IServiceBusMessageHandler<>` (in namespace `Arcus.Messaging.ServiceBus`)
+* Renamed `AzureServiceBusMessageContext` to `ServiceBusMessageContext` (in namespace `Arcus.Messaging.ServiceBus`)
+* Renamed `CircuitBreakerServiceBusMessageHandler<>` to `DefaultCircuitBreakerServiceBusMessageHandler<>` (in namespace `Arcus.Messaging.ServiceBus`)
 
 ### ✨ New Service Bus message pump registration
 Previously, the registration of the Azure Service Bus message pump involved navigating through the many available extensions, making it rather tedious to find the right authentication mechanism.
@@ -101,12 +111,14 @@ services.AddServiceBusQueueMessagePump(...)
 ### ✨ New Service Bus message settlement
 Previous versions used dedicated 'template classes' that custom message handlers should inherit from to do custom Azure Service Bus message settlement (complete, dead-letter, abandon).
 
-Starting from v3.0, the available operations are moved to the `AzureServiceBusMessageContext`. Making your custom message handlers much more accessible and flexible.
+Starting from v3.0, the available operations are moved to the `ServiceBusMessageContext` (previously called `AzureServiceBusMessageContext`). Making your custom message handlers much more accessible and flexible.
 
 ```diff
++ using Arcus.Messaging.ServiceBus;
+
 public class OrderServiceBusMessageHandler
 -    : AzureServiceBusMessageHandler<Order>
-+    : IAzureServiceBusMessageHandler<Order>
++    : IServiceBusMessageHandler<Order>
 {
     public OrderServiceBusMessageHandler(ILogger<OrderServiceBusMessageHandler> logger)
 -        : base(logger)
@@ -117,7 +129,8 @@ public class OrderServiceBusMessageHandler
 -    public override async Task ProcessMessageAsync(
 +    public async Task ProcessMessageAsync(
         Order order,
-        AzureServiceBusMessageContext messageContext,
+-       AzureServiceBusMessageContext messageContext,        
++       ServiceBusMessageContext messageContext,
         MessageCorrelationInfo messageCorrelation,
         CancellationToken cancellation)
     {

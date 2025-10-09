@@ -1,5 +1,6 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus;
 using Bogus;
 using Moq;
@@ -23,13 +24,13 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs
                 messageId: $"message-id-{Guid.NewGuid()}",
                 deliveryCount: Bogus.Random.Int());
 
-            var context = AzureServiceBusMessageContext.Create(
+            var context = ServiceBusMessageContext.Create(
                 jobId ?? $"job-id-{Guid.NewGuid()}",
                 Bogus.PickRandom<ServiceBusEntityType>(),
                 Mock.Of<ServiceBusReceiver>(),
                 message);
 
-            return context;
+            return new Mock<AzureServiceBusMessageContext>(context).Object;
         }
     }
 }

@@ -3,34 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Arcus.Messaging.Abstractions;
+using Arcus.Messaging.Abstractions.ServiceBus;
+using Arcus.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus;
 
-namespace Arcus.Messaging.Abstractions.ServiceBus
+namespace Arcus.Messaging.ServiceBus
 {
-    /// <summary>
-    /// Represents the type of Azure Service Bus entity on which the message was received.
-    /// </summary>
-    public enum ServiceBusEntityType
-    {
-        /// <summary>
-        /// The Azure Service Bus entity is a queue.
-        /// </summary>
-        Queue,
-
-        /// <summary>
-        /// The Azure Service Bus entity is a topic subscription.
-        /// </summary>
-        Topic
-    }
-
     /// <summary>
     /// Represents the contextual information concerning an Azure Service Bus message.
     /// </summary>
-    public class AzureServiceBusMessageContext : MessageContext
+    public class ServiceBusMessageContext : MessageContext
     {
-        private readonly IMessageSettleStrategy _messageSettle;
-
-        private AzureServiceBusMessageContext(
+        internal ServiceBusMessageContext(
             string jobId,
             string fullyQualifiedNamespace,
             ServiceBusEntityType entityType,
@@ -39,7 +24,8 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             ServiceBusReceivedMessage message)
             : base(message.MessageId, jobId, message.ApplicationProperties.ToDictionary(item => item.Key, item => item.Value))
         {
-            _messageSettle = messageSettle;
+            MessageSettle = messageSettle;
+            Message = message;
 
             FullyQualifiedNamespace = fullyQualifiedNamespace;
             EntityPath = entityPath;
@@ -67,7 +53,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         public ServiceBusEntityType EntityType { get; }
 
         /// <summary>
-        /// Gets the contextual properties provided on the message provided by the Azure Service Bus runtime
+        /// Gets the contextual properties provided on the message provided by the Azure Service Bus runtime.
         /// </summary>
         public AzureServiceBusSystemProperties SystemProperties { get; }
 
@@ -83,14 +69,14 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         public int DeliveryCount { get; }
 
         /// <summary>
-        /// Creates a new instance of the <see cref="AzureServiceBusMessageContext"/> based on the current Azure Service bus situation.
+        /// Creates a new instance of the <see cref="ServiceBusMessageContext"/> based on the current Azure Service bus situation.
         /// </summary>
         /// <param name="jobId">The unique ID to identity the Azure Service bus message pump that is responsible for pumping messages from the <paramref name="receiver"/>.</param>
         /// <param name="entityType">The type of Azure Service bus entity that the <paramref name="receiver"/> receives from.</param>
         /// <param name="receiver">The Azure Service bus receiver that is responsible for receiving the <paramref name="message"/>.</param>
         /// <param name="message">The Azure Service bus message that is currently being processed.</param>
         /// <exception cref="ArgumentNullException">Thrown when one of the parameters is <c>null</c>.</exception>
-        public static AzureServiceBusMessageContext Create(
+        public static ServiceBusMessageContext Create(
             string jobId,
             ServiceBusEntityType entityType,
             ServiceBusReceiver receiver,
@@ -101,7 +87,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             ArgumentNullException.ThrowIfNull(message);
 
             var messageSettle = new MessageSettleViaReceiver(receiver, message);
-            return new AzureServiceBusMessageContext(jobId, receiver.FullyQualifiedNamespace, entityType, receiver.EntityPath, messageSettle, message);
+            return new ServiceBusMessageContext(jobId, receiver.FullyQualifiedNamespace, entityType, receiver.EntityPath, messageSettle, message);
         }
 
         /// <summary>
@@ -111,7 +97,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <param name="entityType">The type of Azure Service bus entity that the <paramref name="eventArgs"/> receives from.</param>
         /// <param name="eventArgs">The Azure Service bus event arguments upon receiving the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when one of the parameters is <c>null</c>.</exception>
-        public static AzureServiceBusMessageContext Create(
+        public static ServiceBusMessageContext Create(
             string jobId,
             ServiceBusEntityType entityType,
             ProcessSessionMessageEventArgs eventArgs)
@@ -120,10 +106,12 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             ArgumentNullException.ThrowIfNull(eventArgs);
 
             var messageSettle = new MessageSettleViaSessionEventArgs(eventArgs);
-            return new AzureServiceBusMessageContext(jobId, eventArgs.FullyQualifiedNamespace, entityType, eventArgs.EntityPath, messageSettle, eventArgs.Message);
+            return new ServiceBusMessageContext(jobId, eventArgs.FullyQualifiedNamespace, entityType, eventArgs.EntityPath, messageSettle, eventArgs.Message);
         }
 
-        private interface IMessageSettleStrategy
+        internal IMessageSettleStrategy MessageSettle { get; }
+        internal ServiceBusReceivedMessage Message { get; }
+        internal interface IMessageSettleStrategy
         {
             Task CompleteMessageAsync(CancellationToken cancellationToken);
             Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken);
@@ -131,7 +119,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken);
         }
 
-        private sealed class MessageSettleViaReceiver : IMessageSettleStrategy
+        internal sealed class MessageSettleViaReceiver : IMessageSettleStrategy
         {
             private readonly ServiceBusReceiver _receiver;
             private readonly ServiceBusReceivedMessage _message;
@@ -202,7 +190,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
         public Task CompleteMessageAsync(CancellationToken cancellationToken)
         {
-            return _messageSettle.CompleteMessageAsync(cancellationToken);
+            return MessageSettle.CompleteMessageAsync(cancellationToken);
         }
 
         /// <summary>
@@ -214,7 +202,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized correctly.</exception>
         public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
         {
-            return _messageSettle.DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, cancellationToken);
+            return MessageSettle.DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, cancellationToken);
         }
 
         /// <summary>
@@ -227,7 +215,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <exception cref="InvalidOperationException">Thrown when the message handler was not initialized yet.</exception>
         public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
         {
-            return _messageSettle.DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties, cancellationToken);
+            return MessageSettle.DeadLetterMessageAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties, cancellationToken);
         }
 
         /// <summary>
@@ -243,7 +231,52 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// <exception cref="InvalidOperationException">Thrown when the message context was not initialized correctly.</exception>
         public Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
         {
-            return _messageSettle.AbandonMessageAsync(newMessageProperties, cancellationToken);
+            return MessageSettle.AbandonMessageAsync(newMessageProperties, cancellationToken);
+        }
+    }
+}
+
+namespace Arcus.Messaging.Abstractions.ServiceBus
+{
+    /// <summary>
+    /// Represents the type of Azure Service Bus entity on which the message was received.
+    /// </summary>
+    public enum ServiceBusEntityType
+    {
+        /// <summary>
+        /// The Azure Service Bus entity is a queue.
+        /// </summary>
+        Queue,
+
+        /// <summary>
+        /// The Azure Service Bus entity is a topic subscription.
+        /// </summary>
+        Topic
+    }
+
+    /// <summary>
+    /// Represents the contextual information concerning an Azure Service Bus message.
+    /// </summary>
+    [Obsolete("Will be removed in v4.0, please use the " + nameof(ServiceBusMessageContext) + " instead")]
+    public class AzureServiceBusMessageContext : ServiceBusMessageContext
+    {
+        internal AzureServiceBusMessageContext(
+            string jobId,
+            string fullyQualifiedNamespace,
+            ServiceBusEntityType entityType,
+            string entityPath,
+            IMessageSettleStrategy messageSettle,
+            ServiceBusReceivedMessage message)
+            : base(jobId, fullyQualifiedNamespace, entityType, entityPath, messageSettle, message)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a deprecated <see cref="AzureServiceBusMessageContext"/> from the new <see cref="ServiceBusMessageContext"/>.
+        /// </summary>
+        public AzureServiceBusMessageContext(ServiceBusMessageContext context)
+            : base(context.JobId, context.FullyQualifiedNamespace, context.EntityType, context.EntityPath, context.MessageSettle, context.Message)
+        {
         }
     }
 

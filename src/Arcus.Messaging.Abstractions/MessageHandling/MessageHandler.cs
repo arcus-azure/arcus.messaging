@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using ProcessMessageAsync = System.Func<object, Arcus.Messaging.Abstractions.MessageContext, Arcus.Messaging.Abstractions.MessageCorrelationInfo, System.Threading.CancellationToken, System.Threading.Tasks.Task<Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingResult>>;
+using ProcessMessageAsync = System.Func<object, Arcus.Messaging.Abstractions.MessageContext, Arcus.Messaging.MessageCorrelationInfo, System.Threading.CancellationToken, System.Threading.Tasks.Task<Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingResult>>;
 
 namespace Arcus.Messaging.Abstractions.MessageHandling
 {
@@ -153,18 +153,18 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
                 if (rawMessage is not TMessage message)
                 {
-                    summary.AddFailed("custom body filter failed", ("requires type", typeof(TMessage).Name));
+                    summary.AddFailed("custom body filter failed", check => check.AddMember("requires type", typeof(TMessage).Name));
                     return false;
                 }
 
                 bool matches = messageBodyFilter(message);
                 if (matches)
                 {
-                    summary.AddPassed("custom body filter passed", ("against type", typeof(TMessage).Name));
+                    summary.AddPassed("custom body filter passed", check => check.AddMember("against type", typeof(TMessage).Name));
                     return true;
                 }
 
-                summary.AddFailed("custom body filter failed", reason: "returns 'false'");
+                summary.AddFailed("custom body filter failed", check => check.AddReason("returns 'false'"));
                 return false;
             };
         }
@@ -180,7 +180,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
                 if (jobId is not null && rawContext.JobId != jobId)
                 {
-                    summary.AddFailed("custom context filter failed", ("requires job ID", rawContext.JobId));
+                    summary.AddFailed("custom context filter failed", check => check.AddMember("requires job ID", rawContext.JobId));
                     return false;
                 }
 
@@ -191,18 +191,18 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
                 if (rawContext is not TMessageContext messageContext)
                 {
-                    summary.AddFailed("custom context filter filter failed", ("requires type", typeof(TMessageContext).Name));
+                    summary.AddFailed("custom context filter failed", check => check.AddMember("requires type", typeof(TMessageContext).Name));
                     return false;
                 }
 
                 bool matches = messageContextFilter(messageContext);
                 if (matches)
                 {
-                    summary.AddPassed("custom context filter passed", ("against type", typeof(TMessageContext).Name));
+                    summary.AddPassed("custom context filter passed", check => check.AddMember("against type", typeof(TMessageContext).Name));
                     return true;
                 }
 
-                summary.AddFailed("custom context filter failed", reason: "returns 'false'");
+                summary.AddFailed("custom context filter failed", check => check.AddReason("returns 'false'"));
                 return false;
             };
         }
@@ -283,19 +283,34 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 return MessageResult.Failure("n/a");
             }
 
-            Task<MessageResult> deserializeMessageAsync = _messageBodySerializer.DeserializeMessageAsync(message);
             Type serializerType = _messageBodySerializer.GetType();
-
-            if (deserializeMessageAsync is null)
+            MessageResult result = null;
+            try
             {
-                summary.AddFailed("custom body parsing failed", ("using type", serializerType.Name), "returns 'null'");
-                return MessageResult.Failure("n/a");
+                Task<MessageResult> deserializeMessageAsync = _messageBodySerializer.DeserializeMessageAsync(message);
+
+                if (deserializeMessageAsync is null)
+                {
+                    summary.AddFailed("custom body parsing failed",
+                        check => check.AddMember("using type", serializerType.Name)
+                                      .AddReason("returns 'null'"));
+
+                    return MessageResult.Failure("n/a");
+                }
+
+                result = await deserializeMessageAsync;
+                if (result is null)
+                {
+                    summary.AddFailed("custom body parsing failed",
+                        check => check.AddMember("using type", serializerType.Name)
+                                      .AddReason("returns 'null'"));
+
+                    return MessageResult.Failure("n/a");
+                }
             }
-
-            MessageResult result = await deserializeMessageAsync;
-            if (result is null)
+            catch (Exception exception)
             {
-                summary.AddFailed("custom body parsing failed", ("using type", serializerType.Name), "returns 'null'");
+                summary.AddFailed(exception, "custom body parsing failed", check => check.AddMember("using type", serializerType.Name));
                 return MessageResult.Failure("n/a");
             }
 
@@ -304,15 +319,18 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 Type deserializedMessageType = result.DeserializedMessage.GetType();
                 if (deserializedMessageType == MessageType || deserializedMessageType.IsSubclassOf(MessageType))
                 {
-                    summary.AddPassed("custom body parsing passed", ("using type", serializerType.Name));
+                    summary.AddPassed("custom body parsing passed", check => check.AddMember("using type", serializerType.Name));
                     return result;
                 }
 
-                summary.AddFailed("custom body parsing failed", ("using type", serializerType.Name), ("requires type", MessageType.Name), ("but got type", deserializedMessageType.Name));
+                summary.AddFailed("custom body parsing failed",
+                    check => check.AddMember("using deserializer type", serializerType.Name)
+                                  .AddReason($"requires message type={MessageType.Name}, got type={deserializedMessageType.Name}"));
+
                 return MessageResult.Failure("n/a");
             }
 
-            summary.AddFailed(result.Exception, "custom body parsing failed", result.ErrorMessage);
+            summary.AddFailed(result.Exception, "custom body parsing failed", check => check.AddReason(result.ErrorMessage));
             return MessageResult.Failure("n/a");
         }
 

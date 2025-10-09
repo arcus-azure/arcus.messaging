@@ -6,7 +6,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 # Azure Service Bus messaging
-The `Arcus.Messaging.Pumps.ServiceBus` library provides a way to process Azure Service Bus messages on queues/topic subscriptions via custom routed *message handlers*, instead of interacting with the [`ServiceBusReceiver`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceiver) yourself. 
+The `Arcus.Messaging.ServiceBus` library provides a way to process Azure Service Bus messages on queues/topic subscriptions using *message handlers*.  The library takes care of retrieving messages from Azure Service Bus and route them to the correct *message handler* which will process the message.  This means you don't have to worry about retrieving the messages from Service Bus yourself. 
 
 > 🔗 See the [getting started page](../../02-getting-started.md) to understand the 'message handler' and 'message pump' concepts.
 
@@ -14,7 +14,7 @@ The `Arcus.Messaging.Pumps.ServiceBus` library provides a way to process Azure S
 This features requires to install our NuGet package:
 
 ```powershell
-PS> Install-Package -Name Arcus.Messaging.Pumps.ServiceBus
+PS> Install-Package -Name Arcus.Messaging.ServiceBus
 ```
 
 ## Implementing a message handler
@@ -23,7 +23,7 @@ To receive the Azure Service Bus message in a deserialized form, you can impleme
 Here is an example of such a message handler that expects messages of type `Order`:
 
 ```csharp
-using Arcus.Messaging.Abstractions.ServiceBus.MessagingHandling;
+using Arcus.Messaging.ServiceBus;
 
 public class Order
 {
@@ -31,7 +31,7 @@ public class Order
     public string ProductName { get; set; }
 }
 
-public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
+public class OrderMessageHandler : IServiceBusMessageHandler<Order>
 {
     private readonly ILogger _logger;
 
@@ -44,7 +44,7 @@ public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
     // Directly interact with your custom deserialized model (in this case 'Order'): 
     public async Task ProcessMessageAsync(
         Order order, 
-        AzureServiceBusMessageContext context, 
+        ServiceBusMessageContext context, 
         MessageCorrelationInfo correlation, 
         CancellationToken cancellationToken)
     {
@@ -149,6 +149,14 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
     // when deserializing the incoming message (default: AdditionalMemberHandling.Error).
     options.Routing.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
 
+    // Sets a function that will be run before the message pump starts receiving messages.
+    // Useful for when dependent services are not always directly available.
+    options.Hooks.BeforeStartup(async (IServiceProvider services) =>
+    {
+        var dependency = services.GetRequiredService<IMyDependentService>();
+        await dependency.WaitForStatusAsync(HealthStatus.Available);
+    });
+
     // Configure the message pump to use sessions to receive messages (with or without additional options).
     options.UseSessions();
     options.UseSessions(sessions =>
@@ -236,11 +244,13 @@ It is a good practice as application developer to dead-letter the message yourse
 :::
 
 ```csharp
-public class OrderMessageHandler : IAzureServiceBusMessageHandler<Order>
+using Arcus.Messaging.ServiceBus;
+
+public class OrderMessageHandler : IServiceBusMessageHandler<Order>
 {
     public async Task Task ProcessMessageAsync(
         Order message,
-        AzureServiceBusMessageContext messageContext,
+        ServiceBusMessageContext messageContext,
         MessageCorrelationInfo correlation,
         CancellationToken cancellation)
     {
@@ -265,23 +275,20 @@ When your message handler interacts with an external dependency, that dependency
 To interact with the message processing system within your *message handler*, you can inherit from the `CircuitBreakerServiceBusMessageHandler<>`, which allows you to 'enrich' your handler with circuit-breaker functionality.
 
 ```csharp
-using Arcus.Messaging.Pumps.Abstractions.Resiliency;
+using Arcus.Messaging.ServiceBus;
 
 // highlight-next-line
-public class OrderMessageHandler : CircuitBreakerServiceBusMessageHandler<Order>
+public class OrderMessageHandler : DefaultCircuitBreakerServiceBusMessageHandler<Order>
 {
-    private readonly IMessagePumpCircuitBreaker _circuitBreaker;
-
     public OrderMessageHandler(
         IMessagePumpCircuitBreaker circuitBreaker,
         ILogger<OrderMessageHandler> logger) : base(circuitBreaker, logger)
     {
-        _circuitBreaker = circuitBreaker;
     }
 
     public override async Task ProcessMessageAsync(
         Order message,
-        AzureServiceBusMessageContext context,
+        ServiceBusMessageContext context,
         MessageCorrelationInfo correlation,
         MessagePumpCircuitBreakerOptions options,
         CancellationToken cancellation)
@@ -291,7 +298,7 @@ public class OrderMessageHandler : CircuitBreakerServiceBusMessageHandler<Order>
         if (!IsMyDependentSystemHealthy())
         {
             // Let the message processing fail with a custom exception.
-            throw new MyDependencyUnnavailableException("My dependency system is temporarily unavailable, please halt message processing for now");
+            throw new MyDependencyUnavailableException("My dependency system is temporarily unavailable, please halt message processing for now");
         }
         // highlight-end
     }

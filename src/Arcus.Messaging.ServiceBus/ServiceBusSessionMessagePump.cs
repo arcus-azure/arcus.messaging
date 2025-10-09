@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Pumps.ServiceBus.Configuration;
+using Arcus.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 
@@ -74,7 +75,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
-            var messageContext = AzureServiceBusMessageContext.Create(JobId, EntityType, arg);
+            var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, arg);
             await RouteMessageAsync(message, messageContext, arg.CancellationToken);
         }
 
