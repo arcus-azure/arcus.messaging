@@ -14,13 +14,36 @@ module.exports = {
   themeConfig: {
     image: 'img/arcus.jpg',
     navbar: {
-      title: 'Messaging',
+      title: '',
       logo: {
         alt: 'Arcus',
         src: 'img/arcus.png',
         srcDark: 'img/arcus_for_dark.png',
       },
       items: [
+        {
+          type: 'dropdown',
+          label: '📨 Arcus Message',
+          position: 'left',
+          items: [
+            {
+              label: '📊 Arcus Observability',
+              href: 'https://observability.arcus-azure.net/'
+            },
+            {
+              label: '🧪 Arcus Testing',
+              href: 'https://testing.arcus-azure.net/'
+            },
+            {
+              label: '📜 Arcus Scripting',
+              href: 'https://scripting.arcus-azure.net/'
+            },
+            {
+              label: '🛡️ Arcus Security',
+              href: 'https://security.arcus-azure.net/',
+            }
+          ]
+        },
         {
           type: 'docsVersionDropdown',
 
@@ -76,7 +99,7 @@ module.exports = {
           // Please change this to your repo.
           editUrl:
             'https://github.com/arcus-azure/arcus.messaging/edit/master/docs',
-          includeCurrentVersion:process.env.CONTEXT !== 'production',
+          includeCurrentVersion: process.env.CONTEXT !== 'production',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

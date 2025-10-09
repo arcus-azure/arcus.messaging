@@ -178,7 +178,9 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
 });
 ```
 
-#### Service Bus request tracking
+<details>
+<summary><h3 style={{ margin:0 }}>🔗 Service Bus request tracking </h3></summary>
+
 Arcus Messaging makes it possible to make it visible in a logging system like Azure Application Insights, what happens when a message is received from a Service Bus topic or queue.
 Below, you will find the different options that are supported to enable Service Bus request tracking. When this is enabled, Arcus.Messaging will log a request operation for every message that is received from Service Bus and all traces and interactions to dependent systems that happen during the processing of that message, will be logged as children of this request operation.
 
@@ -201,8 +203,11 @@ Now Arcus will use the Serilog approach to track Azure Service Bus messages. Mak
 
 </TabItem>
 </Tabs>
+</details>
 
-### Message handler routing customization
+<details>
+<summary><h3 style={{ margin:0 }}>🎯 Fine-grained message handler routing</h3></summary>
+
 The following routing options are available when registering an Azure Service Bus message handler on a message pump.
 
 :::tip
@@ -233,8 +238,11 @@ services.AddServiceBus[Topic/Queue]MessagePump(...)
             options.UseMessageBodySerializer(new CustomXmlMessageBodySerializer());
         });
 ```
+</details>
 
-### Custom message settlement
+<details>
+<summary><h3 style={{ margin:0 }}>🧩 Custom message settlement control</h3></summary>
+
 When messages can't be matched to any of your custom registered message handlers, Arcus will dead-letter the message. When one of your message handlers fails to process a message, it will get abandoned and only after the maximum number of redeliveries has been reached, the message will be dead-lettered.
 
 This settlement of received Azure Service Bus messages can also be customized by calling one of the Service Bus operations yourself via the message context.
@@ -264,8 +272,11 @@ The following operations are supported:
 * **Dead-letter**
 * **Abandon**
 * **Complete**
+</details>
 
-### Pause message processing with a circuit breaker
+<details>
+<summary><h3 style={{ margin:0 }}>⏸️ Pause message processing with a circuit breaker</h3></summary>
+
 :::warning[Cannot be used in combination with `options.UseSessions(...)`]
 When the message pump is configured to use Azure Service Bus sessions, the circuit-breaker functionality is unavailable.
 :::
@@ -357,3 +368,4 @@ services.AddServiceBus[Queue/Topic]MessagePump(...)
         .WithCircuitBreakerStateChangedEventHandler<MyFirstCircuitBreakerEventHandler>()
         .WithCircuitBreakerStateChangedEventHandler<MySecondCircuitBreakerEventHandler>();
 ```
+</details>

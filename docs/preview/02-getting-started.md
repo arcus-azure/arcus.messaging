@@ -7,9 +7,10 @@ sidebar_label: Getting started
 
 This page is dedicated to be used as a walkthrough on how to set up Arcus Messaging in a new or existing project. Arcus Messaging is an umbrella term for a set of NuGet packages that kickstart your messaging solution.
 
-**Used terms:**
+:::note[Used terms]
 * *message handler:* a custom implementation of an Arcus Messaging-provided interface that processes a deserialized Azure Service Bus message.
 * *message pump:* an Arcus Messaging-provided registered service that receives Azure Service Bus messages for you, and "pumps" them through your *message handlers*.
+:::
 
 ## The basics
 :::note
@@ -44,13 +45,24 @@ public class MyOrder
     public string ProductName { get; set; }
 }
 
+// highlight-start
 public class MyOrderMessageHandler : IServiceBusMessageHandler<MyOrder>
+// highlight-end
 {
+    private readonly ILogger _logger;
+
+    public MyOrderMessageHandler(ILogger<MyOrderMessageHandler> logger)
+    {
+        _logger = logger;
+    }
+
+// highlight-start
     public async Task ProcessMessageAsync(
         MyOrder order,
         ServiceBusMessageContext context,
         MessageCorrelationInfo correlation,
         CancellationToken cancellation)
+// highlight-end
     {
         // Process further your custom type...
     }
