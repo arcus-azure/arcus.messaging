@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -96,8 +97,8 @@ namespace Arcus.Messaging
 
     public class MessageHandlerOptions<TMessage, TMessageContext> where TMessageContext : MessageContext
     {
-        public Func<TMessage, bool> MessageBodyFilter { get; set; }
-        public Func<TMessageContext, bool> MessageContextFilter { get; set; }
+        public Expression<Func<TMessage, bool>> MessageBodyFilter { get; set; }
+        public Expression<Func<TMessageContext, bool>> MessageContextFilter { get; set; }
         public IMessageBodySerializer MessageBodySerializer { get; set; }
     }
 

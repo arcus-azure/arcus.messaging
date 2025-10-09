@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Unit.Fixture;
 using Arcus.Testing;
 using Bogus;
@@ -46,10 +45,9 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             // Arrange
             var message = Messages.Any;
             var context = Contexts.Any;
-            var router = CreateMessageRouter(services =>
-            {
-                services.WithMessageHandler()
-            })
+
+            var router = new TestMessageRouterBuilder(_logger)
+                .Build();
 
             // Act
             MessageProcessingResult result = await router.RouteMessageAsync(message, context);
@@ -58,32 +56,68 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
             AssertResult.RouteFailed(CannotFindMatchedHandler, result, "no", "matched", "handler");
         }
 
-        private SpyTestServiceBusMessageRouter CreateMessageRouter(
-            Action<ServiceBusMessageHandlerCollection> configureServices = null,
+        private TestMessageRouter CreateMessageRouter(
+            Action<MessageHandlerCollection> configureServices = null,
             Action<MessageRouterOptions> configureOptions = null)
         {
-            return SpyTestServiceBusMessageRouter.CreateFor(_logger, configureServices, configureOptions);
+            return TestMessageRouter.CreateFor(_logger, configureServices, configureOptions);
         }
 
-        private sealed class SpyTestServiceBusMessageRouter(IServiceProvider serviceProvider, MessageRouterOptions options, ILogger logger)
-            : MessageRouter(serviceProvider, options, logger)
+        private sealed class TestMessageRouterBuilder : MessageHandlerCollection
+        {
+            private readonly ILogger _logger;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="TestMessageRouterBuilder"/> class.
+            /// </summary>
+            public TestMessageRouterBuilder(ILogger logger) : base(new ServiceCollection())
+            {
+                _logger = logger;
+            }
+
+            public TestMessageRouterBuilder WithMessageHandler<TMessage, TMessageContext, TMessageHandler>(
+                Func<IServiceProvider, TMessageHandler> implementationFactory,
+                Action<MessageHandlerOptions<TMessage, TMessageContext>> configureOptions = null)
+                where TMessageContext : MessageContext
+                where TMessageHandler : IMessageHandler<TMessage, TMessageContext>
+            {
+                var options = new MessageHandlerOptions<TMessage, TMessageContext>();
+                configureOptions?.Invoke(options);
+
+                _logger.LogDebug("[Test:Setup] register '{MessageHandlerType}<{MessageType}, {MessageContextType}>' message handler", typeof(TMessageHandler).Name, typeof(TMessage).Name, typeof(TMessageContext).Name);
+
+                Services.AddTransient(
+                    provider => MessageHandler.Create(
+                        implementationFactory(provider),
+                        provider.GetRequiredService<ILogger<IMessageHandler<TMessage, TMessageContext>>>(),
+                        JobId,
+                        options.MessageBodyFilter,
+                        options.MessageContextFilter,
+                        options.MessageBodySerializer));
+
+                return this;
+            }
+
+            public TestMessageRouter Build(Action<MessageRouterOptions> configureOptions = null)
+            {
+                return TestMessageRouter.CreateFor(this, _logger, configureOptions);
+            }
+        }
+
+        private sealed class TestMessageRouter(TestMessageRouterBuilder collection, MessageRouterOptions options, ILogger logger)
+            : MessageRouter(collection.Services.BuildServiceProvider(), options, logger)
         {
             private MessageHandlerTriggerHistory TriggerHistory => ServiceProvider.GetRequiredService<MessageHandlerTriggerHistory>();
 
-            public static SpyTestServiceBusMessageRouter CreateFor(
+            public static TestMessageRouter CreateFor(
+                TestMessageRouterBuilder collection,
                 ILogger logger,
-                Action<ServiceBusMessageHandlerCollection> configureServices = null,
                 Action<MessageRouterOptions> configureOptions = null)
             {
-                var services = new ServiceCollection();
-                services.AddSingleton<MessageHandlerTriggerHistory>();
-
-                configureServices?.Invoke(new ServiceBusMessageHandlerCollection(services));
-
                 var options = new MessageRouterOptions();
                 configureOptions?.Invoke(options);
 
-                return new SpyTestServiceBusMessageRouter(services.BuildServiceProvider(), options, logger);
+                return new TestMessageRouter(collection, options, logger);
             }
 
             public Task<MessageProcessingResult> RouteAnyMessageAsync()
