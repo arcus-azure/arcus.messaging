@@ -17,15 +17,17 @@ namespace Arcus.Messaging.Tests.Integration.Health
     [Trait("Category", "Integration")]
     public class TcpHealthListenerTests
     {
-        private const int TcpPort = 5050;
-
         private readonly TcpHealthService _tcpProbeClient;
         private static readonly Faker Bogus = new();
 
         public TcpHealthListenerTests(ITestOutputHelper outputWriter)
         {
+            TcpPort = Bogus.Random.Int(5050, 5060);
+
             _tcpProbeClient = new TcpHealthService(TcpPort, new XunitTestLogger(outputWriter));
         }
+
+        private int TcpPort { get; }
 
         [Fact]
         public async Task TcpHealthProbeWithOrWithoutRejectionOption_AcceptTcpConnection_WhenApplicationIsHealthy()
