@@ -23,7 +23,7 @@ module.exports = {
       items: [
         {
           type: 'dropdown',
-          label: '📨 Arcus Message',
+          label: '📨 Arcus Messaging',
           position: 'left',
           items: [
             {
