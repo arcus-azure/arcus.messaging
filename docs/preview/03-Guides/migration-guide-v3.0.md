@@ -60,6 +60,15 @@ Starting from v3, the `Arcus.Messaging.Abstractions.ServiceBus` and `Arcus.Messa
 * Renamed `AzureServiceBusMessageContext` to `ServiceBusMessageContext` (in namespace `Arcus.Messaging.ServiceBus`)
 * Renamed `CircuitBreakerServiceBusMessageHandler<>` to `DefaultCircuitBreakerServiceBusMessageHandler<>` (in namespace `Arcus.Messaging.ServiceBus`)
 
+### ❌ Common migration failures
+:::danger[`InvalidOperationException`: Could not retrieve telemetry client]
+If Arcus Messaging is used in combination with Arcus Observability, it could happen that upon runtime the following failure occurred:
+```text
+Could not retrieve Microsoft telemetry client from the application registered services, this happens when the Application Insights services are not registered in the application services,please use one of Arcus' extensions like 'services.AddHttpCorrelation()' to automatically register the Application Insights when using the W3C correlation system, when using the Hierarchical correlation system, use the AzureApplicationInsightsWithConnectionString extension without the service provider instead
+```
+This happens because starting from v3, the Azure Service Bus request tracking is removed to a separate package. The telemetry client is therefore not being registered by default. See the [New Service Bus message correlation](#-new-service-bus-message-correlation) section to learn more about this new way of doing telemetry. 
+:::
+
 ### ✨ New Service Bus message pump registration
 Previously, the registration of the Azure Service Bus message pump involved navigating through the many available extensions, making it rather tedious to find the right authentication mechanism.
 
