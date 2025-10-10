@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
+using System.Threading.Tasks;
+using Arcus.Messaging;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.ServiceBus;
@@ -12,45 +12,36 @@ namespace Microsoft.Extensions.DependencyInjection
     /// <summary>
     /// Represents the available options when registering an <see cref="IServiceBusMessageHandler{TMessage}"/>.
     /// </summary>
-    /// <typeparam name="TMessage">The custom message type to handler.</typeparam>
-    public class ServiceBusMessageHandlerOptions<TMessage>
+    /// <typeparam name="TMessage">The custom message type of the message handler.</typeparam>
+    public class ServiceBusMessageHandlerOptions<TMessage> : MessageHandlerOptions<TMessage, ServiceBusMessageContext>
     {
-        private readonly Collection<Func<TMessage, bool>> _messageBodyFilters = [];
-        private readonly Collection<Func<ServiceBusMessageContext, bool>> _messageContextFilters = [];
-
-        internal Func<IServiceProvider, IMessageBodySerializer> MessageBodySerializerImplementationFactory { get; private set; }
-        internal Func<TMessage, bool> MessageBodyFilter => _messageBodyFilters.Count is 0 ? null : msg => _messageBodyFilters.All(filter => filter(msg));
-        internal Func<ServiceBusMessageContext, bool> MessageContextFilter => _messageContextFilters.Count is 0 ? null : ctx => _messageContextFilters.All(filter => filter(ctx));
-
         /// <summary>
         /// Adds a custom serializer instance that deserializes the incoming <see cref="ServiceBusReceivedMessage.Body"/>.
         /// </summary>
-        /// <typeparam name="TSerializer">The custom <see cref="IMessageBodySerializer"/> type load from the application services.</typeparam>
-        public ServiceBusMessageHandlerOptions<TMessage> UseMessageBodySerializer<TSerializer>()
-            where TSerializer : IMessageBodySerializer
+        /// <typeparam name="TDeserializer">The custom <see cref="IMessageBodyDeserializer"/> type load from the application services.</typeparam>
+        public ServiceBusMessageHandlerOptions<TMessage> UseMessageBodyDeserializer<TDeserializer>()
+            where TDeserializer : IMessageBodyDeserializer
         {
-            return UseMessageBodySerializer(serviceProvider => serviceProvider.GetRequiredService<TSerializer>());
+            return UseMessageBodyDeserializer(serviceProvider => serviceProvider.GetRequiredService<TDeserializer>());
         }
 
         /// <summary>
         /// Adds a custom serializer instance that deserializes the incoming <see cref="ServiceBusReceivedMessage.Body"/>.
         /// </summary>
-        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serializer"/> is <c>null</c>.</exception>
-        public ServiceBusMessageHandlerOptions<TMessage> UseMessageBodySerializer(IMessageBodySerializer serializer)
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="deserializer"/> is <c>null</c>.</exception>
+        public ServiceBusMessageHandlerOptions<TMessage> UseMessageBodyDeserializer(IMessageBodyDeserializer deserializer)
         {
-            ArgumentNullException.ThrowIfNull(serializer);
-            return UseMessageBodySerializer(_ => serializer);
+            ArgumentNullException.ThrowIfNull(deserializer);
+            return UseMessageBodyDeserializer(_ => deserializer);
         }
 
         /// <summary>
         /// Adds a custom serializer instance that deserializes the incoming <see cref="ServiceBusReceivedMessage.Body"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        public ServiceBusMessageHandlerOptions<TMessage> UseMessageBodySerializer(Func<IServiceProvider, IMessageBodySerializer> implementationFactory)
+        public ServiceBusMessageHandlerOptions<TMessage> UseMessageBodyDeserializer(Func<IServiceProvider, IMessageBodyDeserializer> implementationFactory)
         {
-            ArgumentNullException.ThrowIfNull(implementationFactory);
-            MessageBodySerializerImplementationFactory = implementationFactory;
-
+            UseBodyDeserializer(implementationFactory);
             return this;
         }
 
@@ -59,9 +50,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         public ServiceBusMessageHandlerOptions<TMessage> AddMessageBodyFilter(Func<TMessage, bool> bodyFilter)
         {
-            ArgumentNullException.ThrowIfNull(bodyFilter);
-            _messageBodyFilters.Add(bodyFilter);
-
+            AddBodyFilter(bodyFilter);
             return this;
         }
 
@@ -70,9 +59,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// </summary>
         public ServiceBusMessageHandlerOptions<TMessage> AddMessageContextFilter(Func<ServiceBusMessageContext, bool> contextFilter)
         {
-            ArgumentNullException.ThrowIfNull(contextFilter);
-            _messageContextFilters.Add(contextFilter);
-
+            AddContextFilter(contextFilter);
             return this;
         }
 
@@ -94,20 +81,50 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a custom serializer instance that deserializes the incoming <see cref="ServiceBusReceivedMessage.Body"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serializer"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v4.0, please use " + nameof(UseMessageBodySerializer) + " which provides the exact same functionality")]
+        [Obsolete("Will be removed in v4.0, please use " + nameof(UseMessageBodyDeserializer) + " which provides the exact same functionality")]
         public ServiceBusMessageHandlerOptions<TMessage> AddMessageBodySerializer(IMessageBodySerializer serializer)
         {
-            return UseMessageBodySerializer(serializer);
+            return AddMessageBodySerializer(_ => serializer);
         }
 
         /// <summary>
         /// Adds a custom serializer instance that deserializes the incoming <see cref="ServiceBusReceivedMessage.Body"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v4.0, please use " + nameof(UseMessageBodySerializer) + " which provides the exact same functionality")]
+        [Obsolete("Will be removed in v4.0, please use " + nameof(UseMessageBodyDeserializer) + " which provides the exact same functionality")]
         public ServiceBusMessageHandlerOptions<TMessage> AddMessageBodySerializer(Func<IServiceProvider, IMessageBodySerializer> implementationFactory)
         {
-            return UseMessageBodySerializer(implementationFactory);
+            return UseMessageBodyDeserializer(serviceProvider =>
+            {
+                var deprecated = implementationFactory(serviceProvider);
+                return new DeprecatedMessageBodyDeserializerAdapter(deprecated);
+            });
+        }
+
+        [Obsolete("Will be removed in v3.0")]
+        private sealed class DeprecatedMessageBodyDeserializerAdapter(IMessageBodySerializer deprecated) : IMessageBodyDeserializer
+        {
+            public async Task<MessageBodyResult> DeserializeMessageAsync(BinaryData messageBody)
+            {
+                try
+                {
+                    string messageBodyTxt = messageBody.IsEmpty ? string.Empty : messageBody.ToString();
+                    MessageResult deprecatedResult = await deprecated.DeserializeMessageAsync(messageBodyTxt);
+
+                    if (deprecatedResult.IsSuccess)
+                    {
+                        return MessageBodyResult.Success(deprecatedResult.DeserializedMessage);
+                    }
+
+                    return deprecatedResult.Exception is not null
+                        ? MessageBodyResult.Failure(deprecatedResult.ErrorMessage, deprecatedResult.Exception)
+                        : MessageBodyResult.Failure(deprecatedResult.ErrorMessage);
+                }
+                catch (Exception deserializationException)
+                {
+                    return MessageBodyResult.Failure("deserialization of message body was interrupted by an unexpected exception", deserializationException);
+                }
+            }
         }
     }
 }

@@ -230,12 +230,12 @@ services.AddServiceBus[Topic/Queue]MessagePump(...)
 
             // Adds a custom message deserializer to the message handler registration:
             // Only messages that gets deserialized successfully goes through this message handler.
-            // 👉 Custom implementations of the `Arcus.Messaging.Abstractions.MessageHandling.IMessageBodySerializer` interface.
-            //      public interface IMessageBodySerializer
+            // 👉 Custom implementations of the `Arcus.Messaging.IMessageBodyDeserializer` interface.
+            //      public interface IMessageBodyDeserializer
             //      {
-            //          Task<MessageResult> DeserializeMessageAsync(string messageBody);
+            //          Task<MessageBodyResult> DeserializeMessageAsync(BinaryData messageBody);
             //      }
-            options.UseMessageBodySerializer(new CustomXmlMessageBodySerializer());
+            options.UseMessageBodyDeserializer(new CustomXmlMessageBodyDeserializer());
         });
 ```
 </details>

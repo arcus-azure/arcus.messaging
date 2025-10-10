@@ -74,7 +74,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             serviceBus.WhenServiceBusQueueMessagePump()
                       .WithMatchedServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(handler =>
                       {
-                          handler.UseMessageBodySerializer<OrderBatchMessageBodySerializer>();
+                          handler.UseMessageBodyDeserializer<OrderBatchMessageBodySerializer>();
                       });
 
             // Act
@@ -123,7 +123,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                       {
                           handler.AddMessageContextFilter(context => context.Properties.Contains(contextProperty))
                                  .AddMessageBodyFilter(message => message.Orders.Length == 1)
-                                 .UseMessageBodySerializer<OrderBatchMessageBodySerializer>();
+                                 .UseMessageBodyDeserializer<OrderBatchMessageBodySerializer>();
                       });
 
             // Act
