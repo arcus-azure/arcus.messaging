@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.ServiceBus;
@@ -87,32 +84,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
 
             return result;
-        }
-
-        private static string LoadMessageBody(ServiceBusReceivedMessage message, ServiceBusMessageContext context)
-        {
-            Encoding encoding = DetermineEncoding();
-            string messageBody = encoding.GetString(message.Body.ToArray());
-
-            return messageBody;
-
-            Encoding DetermineEncoding()
-            {
-                Encoding fallbackEncoding = Encoding.UTF8;
-
-                if (context.Properties.TryGetValue(PropertyNames.Encoding, out object encodingNameObj)
-                    && encodingNameObj is string encodingName
-                    && !string.IsNullOrWhiteSpace(encodingName))
-                {
-                    EncodingInfo foundEncoding =
-                        Encoding.GetEncodings()
-                                .FirstOrDefault(e => e.Name.Equals(encodingName, StringComparison.OrdinalIgnoreCase));
-
-                    return foundEncoding?.GetEncoding() ?? fallbackEncoding;
-                }
-
-                return fallbackEncoding;
-            }
         }
 
         private async Task PotentiallyAutoCompleteMessageAsync(ServiceBusMessageContext messageContext)
