@@ -87,6 +87,7 @@ namespace Arcus.Messaging
         /// <remarks>
         ///     Only available when the deserialization was not successful (<see cref="IsSuccess"/> is <c>false</c>).
         /// </remarks>
+        /// <exception cref="InvalidOperationException">Thrown when this instance does not represent a failed result.</exception>
         public string FailureMessage => !IsSuccess ? _failureMessage : throw new InvalidOperationException("[Arcus] the message body result represents a successful result, therefore no failure message is available");
 
         /// <summary>
