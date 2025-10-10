@@ -2,6 +2,10 @@
 Starting from v3.0, there are some major breaking changes related to the [lightweight exercise](https://github.com/arcus-azure/arcus.messaging/discussions/470) that the Messaging library gone through. This guide will make it easier for you to migrate towards this version from an older v2.x version.
 
 ## General
+:::info[package rename]
+Starting from v3, the `Arcus.Messaging.Abstractions` and `Arcus.Messaging.Pumps.Abstractions` packages have been consolidated into a single `Arcus.Messaging.Core` package.
+:::
+
 * 🗑️ .NET 6 & .NET Standard 2.1 support is removed.
 * 🗑️ Transient `Newtonsoft.Json` dependency is replaced by built-in `System.Text.Json`
 * 🗑️ Transient `GuardNET` dependency is replaced by built-in argument checking.

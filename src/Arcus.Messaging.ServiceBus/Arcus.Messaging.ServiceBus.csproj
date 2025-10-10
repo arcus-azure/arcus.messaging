@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Arcus.Messaging.Pumps.Abstractions\Arcus.Messaging.Pumps.Abstractions.csproj" />
+    <ProjectReference Include="..\Arcus.Messaging.Core\Arcus.Messaging.Core.csproj" />
   </ItemGroup>
 
 </Project>

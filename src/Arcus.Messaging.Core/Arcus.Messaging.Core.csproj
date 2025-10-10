@@ -6,7 +6,7 @@
     <Authors>Arcus</Authors>
     <Company>Arcus</Company>
     <Product>Arcus.Messaging</Product>
-    <Description>Provides abstractions for running message pumps</Description>
+    <Description>Provides abstractions for running an Azure Service Bus message pump</Description>
     <Copyright>Copyright (c) Arcus</Copyright>
     <PackageProjectUrl>https://messaging.arcus-azure.net/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
@@ -26,8 +26,8 @@
     <None Include="..\..\docs\static\img\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="[8.*,10.0.0)" />
-    </ItemGroup>
-
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="[8.*,10.0.0)" />
+  </ItemGroup>
+  
 </Project>
