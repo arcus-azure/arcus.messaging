@@ -62,9 +62,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             Logger.LogDebug("[Received] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump", messageContext.MessageId, messageContext.EntityType);
 
-            string messageBody = LoadMessageBody(message, messageContext);
             MessageProcessingResult result =
-                await RouteMessageThroughRegisteredHandlersAsync(serviceScope.ServiceProvider, messageBody, messageContext, correlationInfo, cancellationToken);
+                await RouteMessageThroughRegisteredHandlersAsync(serviceScope.ServiceProvider, message.Body, messageContext, correlationInfo, cancellationToken);
 
             if (result.IsSuccessful)
             {
