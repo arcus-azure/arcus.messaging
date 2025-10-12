@@ -179,7 +179,7 @@ To still benefit from the original W3C message correlation tracking with **Arcus
           .WithServiceBusMessageHandler<...>()
           .WithServiceBusMessageHandler<...>();
   ```
-* 👀 Check that the `TelemetryClient` is registered in the application services (registering Azure Application Insights services is not done automatically anymore).
+* 👀 Check that the `TelemetryClient` is registered in the application services (registering Azure Application Insights services is not done automatically anymore, see [Microsoft's documentation on registering Azure Monitor in worker services](https://docs.azure.cn/en-us/azure-monitor/app/worker-service)).
 * 🎉 The original (< v3.0) message correlation is now restored.
 
 We expect other kinds of message correlation registrations in the future. Switching between them would be a matter of choosing the correct `.WithServiceBus...RequestTracking()`.
