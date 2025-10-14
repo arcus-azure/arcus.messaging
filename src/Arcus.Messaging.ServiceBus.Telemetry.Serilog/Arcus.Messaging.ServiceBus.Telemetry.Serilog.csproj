@@ -27,7 +27,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.ApplicationInsights" Version="[2.*,3.0.0)" />
-    <PackageReference Include="Serilog" Version="[2.*,3.0.0)" />
+    <PackageReference Include="Serilog" Version="[4.*,5.0.0)" />
   </ItemGroup>
 
   <ItemGroup>

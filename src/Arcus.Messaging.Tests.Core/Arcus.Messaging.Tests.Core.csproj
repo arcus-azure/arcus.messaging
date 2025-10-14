@@ -13,7 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Arcus.Messaging.Pumps.Abstractions\Arcus.Messaging.Pumps.Abstractions.csproj" />
     <ProjectReference Include="..\Arcus.Messaging.ServiceBus\Arcus.Messaging.ServiceBus.csproj" />
   </ItemGroup>
 

@@ -11,9 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Health", "A
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.ServiceBus", "Arcus.Messaging.ServiceBus\Arcus.Messaging.ServiceBus.csproj", "{B21CD154-120D-49C5-AC2B-AC3ABDE97641}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Pumps.Abstractions", "Arcus.Messaging.Pumps.Abstractions\Arcus.Messaging.Pumps.Abstractions.csproj", "{49ECCDCE-C814-4034-B1D3-ABAAEE04ACAB}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Abstractions", "Arcus.Messaging.Abstractions\Arcus.Messaging.Abstractions.csproj", "{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Core", "Arcus.Messaging.Core\Arcus.Messaging.Core.csproj", "{49ECCDCE-C814-4034-B1D3-ABAAEE04ACAB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Unit", "Arcus.Messaging.Tests.Unit\Arcus.Messaging.Tests.Unit.csproj", "{9EED9AD7-B69D-45D5-870F-D4F63A1C3495}"
 EndProject
@@ -50,10 +48,6 @@ Global
 		{49ECCDCE-C814-4034-B1D3-ABAAEE04ACAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49ECCDCE-C814-4034-B1D3-ABAAEE04ACAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49ECCDCE-C814-4034-B1D3-ABAAEE04ACAB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9EED9AD7-B69D-45D5-870F-D4F63A1C3495}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9EED9AD7-B69D-45D5-870F-D4F63A1C3495}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9EED9AD7-B69D-45D5-870F-D4F63A1C3495}.Release|Any CPU.ActiveCfg = Release|Any CPU
