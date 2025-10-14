@@ -91,7 +91,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <exception cref="ArgumentNullException">Thrown when one of the arguments is <c>null</c>.</exception>
         protected async Task<MessageProcessingResult> RouteMessageThroughRegisteredHandlersAsync<TMessageContext>(
             IServiceProvider services,
-            string messageBody,
+            BinaryData messageBody,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellation)
@@ -150,7 +150,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
         private async Task<MessageProcessingResult> ProcessMessageHandlerAsync<TMessageContext>(
             MessageHandler handler,
-            string messageBody,
+            BinaryData messageBody,
             TMessageContext context,
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellation)
@@ -164,20 +164,20 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 return MatchedHandlerSkipped();
             }
 
-            MessageResult bodyResult = await DeserializeMessageAsync(handler, messageBody, handler.MessageType, summary);
+            MessageBodyResult bodyResult = await DeserializeMessageAsync(messageBody, context, handler, summary);
             if (!bodyResult.IsSuccess)
             {
                 return MatchedHandlerSkipped();
             }
 
-            if (!handler.MatchesMessageBody(bodyResult.DeserializedMessage, summary))
+            if (!handler.MatchesMessageBody(bodyResult.DeserializedBody, summary))
             {
                 return MatchedHandlerSkipped();
             }
 
-            Type messageType = bodyResult.DeserializedMessage.GetType();
+            Type messageType = bodyResult.DeserializedBody.GetType();
 
-            MessageProcessingResult processResult = await handler.TryProcessMessageAsync(bodyResult.DeserializedMessage, context, correlationInfo, cancellation);
+            MessageProcessingResult processResult = await handler.TryProcessMessageAsync(bodyResult.DeserializedBody, context, correlationInfo, cancellation);
             if (!processResult.IsSuccessful)
             {
                 return MatchedHandlerFailed(processResult.ProcessingException, processResult.ErrorMessage);
@@ -234,50 +234,75 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message with message context '{handler.MessageContextType.Name}'");
             }
 
-            MessageResult deserializationResult = await DeserializeMessageAsync(handler, message, handler.MessageType);
+            MessageBodyResult deserializationResult = await DeserializeMessageAsync(BinaryData.FromString(message), messageContext, handler);
             if (!deserializationResult.IsSuccess)
             {
                 Logger.LogTrace("Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message '{MessageType}' that the message handler can handle", messageHandlerType.Name, handler.MessageType.Name);
                 return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message because it can't be deserialized to message type '{handler.MessageType.Name}'");
             }
 
-            bool canProcessDeserializedMessage = handler.CanProcessMessageBasedOnMessage(deserializationResult.DeserializedMessage);
+            bool canProcessDeserializedMessage = handler.CanProcessMessageBasedOnMessage(deserializationResult.DeserializedBody);
             if (canProcessDeserializedMessage)
             {
-                return deserializationResult;
+                return MessageResult.Success(deserializationResult.DeserializedBody);
             }
 
             Logger.LogTrace("Message handler '{MessageHandlerType}' is not able to process the message because the incoming message '{MessageType}' doesn't match the registered message filter", messageHandlerType.Name, handler.MessageType.Name);
             return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message because it fails the '{handler.MessageType.Name}' filter");
         }
 
-        private async Task<MessageResult> DeserializeMessageAsync(MessageHandler handler, string messageBody, Type handlerMessageType, MessageHandlerSummary summary = null)
+        private async Task<MessageBodyResult> DeserializeMessageAsync(
+            BinaryData messageBody,
+            MessageContext context,
+            MessageHandler handler,
+            MessageHandlerSummary summary = null)
         {
             summary ??= new MessageHandlerSummary();
 
-            MessageResult result = await handler.TryCustomDeserializeMessageAsync(messageBody, summary);
+            MessageBodyResult result = await handler.TryCustomDeserializeMessageAsync(messageBody, summary);
             if (result.IsSuccess)
             {
                 return result;
             }
 
+            Encoding encoding = DetermineEncoding(context);
+            string json = messageBody.IsEmpty ? string.Empty : encoding.GetString(messageBody.ToArray());
+
             try
             {
-                object deserializedByType = JsonSerializer.Deserialize(messageBody, handlerMessageType, _jsonOptions);
+                object deserializedByType = JsonSerializer.Deserialize(json, handler.MessageType, _jsonOptions);
                 if (deserializedByType != null)
                 {
                     summary.AddPassed("default JSON body parsing passed", check => check.AddMember("additional members", Options.Deserialization.AdditionalMembers.ToString()));
-                    return MessageResult.Success(deserializedByType);
+                    return MessageBodyResult.Success(deserializedByType);
                 }
 
                 summary.AddFailed("default JSON body parsing failed", check => check.AddReason("returns 'null'"));
-                return MessageResult.Failure("n/a");
+                return MessageBodyResult.Failure("n/a");
             }
             catch (JsonException exception)
             {
                 summary.AddFailed(exception, "default JSON body parsing failed");
-                return MessageResult.Failure(exception);
+                return MessageBodyResult.Failure("n/n", exception);
             }
+        }
+
+        private static Encoding DetermineEncoding(MessageContext context)
+        {
+            Encoding fallbackEncoding = Encoding.UTF8;
+
+            if (context.Properties.TryGetValue(PropertyNames.Encoding, out object encodingNameObj)
+                && encodingNameObj is string encodingName
+                && !string.IsNullOrWhiteSpace(encodingName))
+            {
+                EncodingInfo foundEncoding =
+                    Encoding.GetEncodings()
+                            .FirstOrDefault(e => e.Name.Equals(encodingName, StringComparison.OrdinalIgnoreCase));
+
+                return foundEncoding?.GetEncoding() ?? fallbackEncoding;
+            }
+
+            return fallbackEncoding;
         }
 
         /// <summary>

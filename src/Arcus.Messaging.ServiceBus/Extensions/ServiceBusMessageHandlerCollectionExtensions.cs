@@ -6,7 +6,6 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.ServiceBus;
-using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -89,12 +88,10 @@ namespace Microsoft.Extensions.DependencyInjection
 
             handlers.Services.AddTransient(
                 serviceProvider => MessageHandler.Create(
-                    implementationFactory(serviceProvider),
-                    serviceProvider.GetService<ILogger<TMessageHandler>>(),
-                    handlers.JobId,
-                    options.MessageBodyFilter,
-                    options.MessageContextFilter,
-                    options.MessageBodySerializerImplementationFactory?.Invoke(serviceProvider)));
+                    implementationFactory,
+                    options,
+                    serviceProvider,
+                    handlers.JobId));
 
             return handlers;
         }
