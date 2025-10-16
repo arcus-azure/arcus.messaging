@@ -7,12 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="MessageHandling\NewFolder\**" />
-    <EmbeddedResource Remove="MessageHandling\NewFolder\**" />
-    <None Remove="MessageHandling\NewFolder\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Arcus.Security.Core" Version="2.0.0" />
     <PackageReference Include="Arcus.Testing.Security.Providers.InMemory" Version="1.2.0" />
     <PackageReference Include="Arcus.Testing.Logging.Xunit.v3" Version="2.0.0" />

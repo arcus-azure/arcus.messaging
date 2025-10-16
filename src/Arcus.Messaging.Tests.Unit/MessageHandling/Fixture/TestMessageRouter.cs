@@ -48,7 +48,7 @@ namespace Arcus.Messaging
         /// <summary>
         /// Creates a <see cref="TestMessageRouter"/> based on a set of message handler <paramref name="registrations"/>.
         /// </summary>
-        public static TestMessageRouter Create(
+        internal static TestMessageRouter Create(
             TestMessageHandlerRegistration[] registrations,
             ITestOutputHelper outputWriter,
             Action<MessageRouterOptions> configureOptions = null,
@@ -82,7 +82,7 @@ namespace Arcus.Messaging
         /// <summary>
         /// Routes the given <paramref name="message"/> model through the registered message handlers.
         /// </summary>
-        public async Task<MessageProcessingResult> RouteMessageAsync(object message, MessageContext messageContext, Encoding messageEncoding = null)
+        internal async Task<MessageProcessingResult> RouteMessageAsync(object message, MessageContext messageContext, Encoding messageEncoding = null)
         {
             Type contextType = Contexts.GetContextTypeName(messageContext);
             string registrationDescription = CreateRegistrationsDescription(message?.GetType(), contextType);
@@ -197,18 +197,34 @@ namespace Arcus.Messaging
             MessageHandlerType = messageHandlerType;
         }
 
+        /// <summary>
+        /// Gets the unique identifier to locate a single <see cref="IMessageHandler{TMessage,TMessageContext}"/> in the application services.
+        /// </summary>
         internal string HandlerId { get; }
+
+        /// <summary>
+        /// Gets type of registered <see cref="IMessageHandler{TMessage,TMessageContext}"/>.
+        /// </summary>
         internal Type MessageHandlerType { get; }
 
-        internal bool OfMessageType(Type messageType) => MessageHandlerType.GenericTypeArguments[0] == messageType || messageType.IsSubclassOf(MessageHandlerType.GenericTypeArguments[0]);
+        /// <summary>
+        /// Determines if this <see cref="IMessageHandler{TMessage,TMessageContext}"/> is of the given <paramref name="messageType"/>.
+        /// </summary>
+        internal bool IsOfMessageType(Type messageType) => MessageHandlerType.GenericTypeArguments[0] == messageType || messageType.IsSubclassOf(MessageHandlerType.GenericTypeArguments[0]);
 
-        internal bool OfContextType(Type contextType) => MessageHandlerType.GenericTypeArguments[1] == contextType || contextType.IsSubclassOf(MessageHandlerType.GenericTypeArguments[1]);
+        /// <summary>
+        /// Determines if this <see cref="IMessageHandler{TMessage,TMessageContext}"/> is of the given <paramref name="contextType"/>.
+        /// </summary>
+        internal bool IsOfContextType(Type contextType) => MessageHandlerType.GenericTypeArguments[1] == contextType || contextType.IsSubclassOf(MessageHandlerType.GenericTypeArguments[1]);
 
+        /// <summary>
+        /// Creates a <see cref="TestMessageHandlerRegistration"/> for a specific <see cref="IMessageHandler{TMessage,TMessageContext}"/>.
+        /// </summary>
         internal static TestMessageHandlerRegistration Create<TMessage, TMessageContext, TMessageHandler>(
-                Func<IServiceProvider, string, TMessageHandler> implementationFactory,
-                Action<TestMessageHandlerOptions<TMessage, TMessageContext>> configureOptions = null)
-                where TMessageContext : MessageContext
-                where TMessageHandler : IMessageHandler<TMessage, TMessageContext>
+            Func<IServiceProvider, string, TMessageHandler> implementationFactory,
+            Action<TestMessageHandlerOptions<TMessage, TMessageContext>> configureOptions = null)
+            where TMessageContext : MessageContext
+            where TMessageHandler : IMessageHandler<TMessage, TMessageContext>
         {
             string handlerId = Guid.NewGuid().ToString();
             return new TestMessageHandlerRegistration(typeof(TMessageHandler), handlerId, serviceProvider =>
@@ -224,11 +240,19 @@ namespace Arcus.Messaging
             });
         }
 
+        /// <summary>
+        /// Creates a <see cref="MessageHandler"/> instance based on this registration,
+        /// which the <see cref="MessageRouter"/> looks up in the application services.
+        /// </summary>
         internal MessageHandler CreateMessageHandler(IServiceProvider provider)
         {
             return _implementationFactory(provider);
         }
 
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>A string that represents the current object.</returns>
         public override string ToString()
         {
             return $"{MessageHandlerType.Name}< {string.Join(", ", MessageHandlerType.GenericTypeArguments.Select(arg => arg.Name))} >";
@@ -270,17 +294,24 @@ namespace Arcus.Messaging
             return GetEnumerator();
         }
 
+        /// <summary>
+        /// Filters out <see cref="TestMessageHandlerRegistration"/> instances that can handle the given combination of message and context.
+        /// </summary>
         internal TestMessageHandlerRegistrations ExceptWith(object messageInstance, MessageContext contextInstance)
         {
             Type messageType = messageInstance.GetType();
             Type contextType = contextInstance.GetType();
 
-            return new(_registrations.Except(_registrations.Where(r => r.OfMessageType(messageType) && r.OfContextType(contextType))));
+            return new(_registrations.Except(_registrations.Where(r => r.IsOfMessageType(messageType) && r.IsOfContextType(contextType))));
         }
 
-        public static Arbitrary<TestMessageHandlerRegistrations> ArbWithoutMatching => Arb.From(GenWithoutMatching, Shrinker);
+        /// <summary>
+        /// Gets the arbitrary instance to generate <see cref="TestMessageHandlerRegistrations"/>
+        /// without any message handler that can match a message in a context.
+        /// </summary>
+        internal static Arbitrary<TestMessageHandlerRegistrations> ArbWithoutMatching => Arb.From(GenWithoutMatching, ShrinkNotMatching);
 
-        public static Gen<TestMessageHandlerRegistrations> GenWithoutMatching => Gen.Fresh(() =>
+        private static Gen<TestMessageHandlerRegistrations> GenWithoutMatching => Gen.Fresh(() =>
         {
             var registrations =
                 Bogus.Make(Bogus.Random.Int(5, 10), Handlers.Unrelated)
@@ -289,7 +320,7 @@ namespace Arcus.Messaging
             return new TestMessageHandlerRegistrations(registrations);
         });
 
-        public static Func<TestMessageHandlerRegistrations, IEnumerable<TestMessageHandlerRegistrations>> Shrinker => currentRegistrations =>
+        private static IEnumerable<TestMessageHandlerRegistrations> ShrinkNotMatching(TestMessageHandlerRegistrations currentRegistrations)
         {
             var xs = currentRegistrations.ToList();
             if (xs.Count == 1)
@@ -308,11 +339,15 @@ namespace Arcus.Messaging
             {
                 return Enumerable.Range(0, toBeRemoved.Length).Select(index => current.Except(toBeRemoved[..index]));
             }
-        };
+        }
 
         private static bool IsFailed(TestMessageHandlerRegistration r) => r.MessageHandlerType.Name.StartsWith("Failed");
         private static bool IsUnrelated(TestMessageHandlerRegistration r) => r.MessageHandlerType.Name.StartsWith("Unrelated");
 
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>A string that represents the current object.</returns>
         public override string ToString()
         {
             if (_registrations.Count <= 0)
