@@ -237,15 +237,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         {
             return async (rawMessage, generalMessageContext, correlationInfo, cancellationToken) =>
             {
-                if (rawMessage is not TMessage message)
-                {
-                    return MessageProcessingResult.Failure(generalMessageContext.MessageId, MessageProcessingError.MatchedHandlerFailed, $"requires message type {typeof(TMessage).Name}");
-                }
-
-                if (generalMessageContext is not TMessageContext messageContext)
-                {
-                    return MessageProcessingResult.Failure(generalMessageContext.MessageId, MessageProcessingError.MatchedHandlerFailed, $"requires message context type {typeof(TMessageContext).Name}");
-                }
+                var message = (TMessage) rawMessage;
+                var messageContext = (TMessageContext) generalMessageContext;
 
                 await messageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
                 return MessageProcessingResult.Success(generalMessageContext.MessageId);
@@ -339,6 +332,13 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             where TMessageContext : MessageContext
         {
             ArgumentNullException.ThrowIfNull(context);
+
+            if (typeof(TMessageContext) != MessageContextType && !typeof(TMessageContext).IsSubclassOf(MessageContextType))
+            {
+                summary.AddFailed($"requires message context type {MessageContextType.Name}");
+                return false;
+            }
+
             try
             {
                 return _messageContextFilter(context, summary);
