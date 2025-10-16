@@ -219,10 +219,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             MessageHandler handler)
             where TMessageContext : MessageContext
         {
-            if (handler is null)
-            {
-                throw new ArgumentNullException(nameof(handler));
-            }
+            ArgumentNullException.ThrowIfNull(handler);
 
             Type messageHandlerType = handler.GetMessageHandlerType();
             Logger.LogTrace("Determine if message handler '{MessageHandlerType}' can process the message...", messageHandlerType.Name);
@@ -283,7 +280,12 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             catch (JsonException exception)
             {
                 summary.AddFailed(exception, "default JSON body parsing failed");
-                return MessageBodyResult.Failure("n/n", exception);
+                return MessageBodyResult.Failure("n/a", exception);
+            }
+            catch (NotSupportedException exception)
+            {
+                summary.AddFailed(exception, "default JSON body parsing failed", check => check.AddReason("unsupported type"));
+                return MessageBodyResult.Failure("n/a", exception);
             }
         }
 
@@ -318,10 +320,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         [Obsolete("Will be removed in v3.0 in favor of centralizing message routing, use the " + nameof(RouteMessageThroughRegisteredHandlersAsync) + " instead")]
         protected virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object result)
         {
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                throw new ArgumentException("Requires a non-blank message to deserialize to a given type", nameof(message));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(message);
 
             Logger.LogTrace("Try to JSON deserialize incoming message to message type '{MessageType}'...", messageType.Name);
             try
