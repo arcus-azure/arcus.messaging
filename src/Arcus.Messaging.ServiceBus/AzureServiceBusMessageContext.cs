@@ -257,7 +257,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
     /// <summary>
     /// Represents the contextual information concerning an Azure Service Bus message.
     /// </summary>
-    [Obsolete("Will be removed in v4.0, please use the " + nameof(ServiceBusMessageContext) + " instead")]
+    [Obsolete("Will be removed in v4.0, please use the " + nameof(ServiceBusMessageContext) + " instead", DiagnosticId = "ARCUS")]
     public class AzureServiceBusMessageContext : ServiceBusMessageContext
     {
         internal AzureServiceBusMessageContext(

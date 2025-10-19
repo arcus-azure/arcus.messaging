@@ -55,6 +55,7 @@ namespace Arcus.Messaging.Tests.Integration.Fixture
                     LogEventLevel.Information => LogLevel.Information,
                     LogEventLevel.Verbose => LogLevel.Trace,
                     LogEventLevel.Warning => LogLevel.Warning,
+                    _ => throw new ArgumentOutOfRangeException(nameof(logEvent), logEvent.Level, "Unknown log level")
                 };
 
                 logger.Log(level, logEvent.Exception, logEvent.RenderMessage());
