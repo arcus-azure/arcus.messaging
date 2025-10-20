@@ -8,7 +8,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// Represents a handler that provides a deserialization strategy for the incoming message during the message processing of message pump or router.
     /// </summary>
     /// <seealso cref="IMessageHandler{TMessage,TMessageContext}"/>
-    [Obsolete("Will be removed in v3.0 in favor of using the new " + nameof(IMessageBodyDeserializer) + " interface")]
+    [Obsolete("Will be removed in v3.0 in favor of using the new " + nameof(IMessageBodyDeserializer) + " interface", DiagnosticId = "ARCUS")]
     public interface IMessageBodySerializer
     {
         /// <summary>
