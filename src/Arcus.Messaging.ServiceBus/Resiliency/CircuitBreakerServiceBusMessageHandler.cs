@@ -116,7 +116,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Resiliency
     /// Represents a template for a message handler that interacts with an unstable dependency system that requires a circuit breaker to prevent overloading the system.
     /// </summary>
     /// <typeparam name="TMessage">The type of the message that this handler can process.</typeparam>
-    [Obsolete("Will be removed in v4.0, please implement the Arcus.Messaging." + nameof(DefaultCircuitBreakerServiceBusMessageHandler<object>) + " one instead")]
+    [Obsolete("Will be removed in v4.0, please implement the Arcus.Messaging." + nameof(DefaultCircuitBreakerServiceBusMessageHandler<object>) + " one instead", DiagnosticId = "ARCUS")]
     public abstract class CircuitBreakerServiceBusMessageHandler<TMessage> : DefaultCircuitBreakerServiceBusMessageHandler<TMessage>, IAzureServiceBusMessageHandler<TMessage>
     {
         /// <summary>
