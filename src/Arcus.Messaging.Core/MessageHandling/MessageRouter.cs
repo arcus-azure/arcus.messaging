@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -18,8 +16,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// </summary>
     public abstract class MessageRouter
     {
-        private readonly JsonSerializerOptions _jsonOptions;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageRouter"/> class.
         /// </summary>
@@ -32,17 +28,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             Options = options ?? new MessageRouterOptions();
             Logger = logger ?? NullLogger<MessageRouter>.Instance;
-
-            _jsonOptions = new JsonSerializerOptions
-            {
-                UnmappedMemberHandling = Options.Deserialization?.AdditionalMembers switch
-                {
-                    null => JsonUnmappedMemberHandling.Disallow,
-                    AdditionalMemberHandling.Error => JsonUnmappedMemberHandling.Disallow,
-                    AdditionalMemberHandling.Ignore => JsonUnmappedMemberHandling.Skip,
-                    _ => JsonUnmappedMemberHandling.Disallow
-                }
-            };
         }
 
         /// <summary>
@@ -65,7 +50,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         /// <param name="serviceProvider">The scoped service provider from which the registered message handlers will be extracted.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 in favor of centralizing message routing functionality, please use the " + nameof(RouteMessageThroughRegisteredHandlersAsync))]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message routing functionality, please use the " + nameof(RouteMessageThroughRegisteredHandlersAsync), DiagnosticId = "ARCUS")]
         protected IEnumerable<MessageHandler> GetRegisteredMessageHandlers(IServiceProvider serviceProvider)
         {
             ArgumentNullException.ThrowIfNull(serviceProvider);
@@ -113,7 +98,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
             foreach (var handler in handlers)
             {
-                MessageProcessingResult result = await ProcessMessageHandlerAsync(handler, messageBody, messageContext, correlationInfo, cancellation);
+                MessageProcessingResult result = await handler.TryProcessMessageAsync(messageBody, messageContext, correlationInfo, Options.Deserialization, cancellation);
                 hasGoneThroughMessageHandler = result.IsSuccessful || result.Error is MessageProcessingError.ProcessingInterrupted;
 
                 if (result.IsSuccessful)
@@ -148,59 +133,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
         }
 
-        private async Task<MessageProcessingResult> ProcessMessageHandlerAsync<TMessageContext>(
-            MessageHandler handler,
-            BinaryData messageBody,
-            TMessageContext context,
-            MessageCorrelationInfo correlationInfo,
-            CancellationToken cancellation)
-            where TMessageContext : MessageContext
-        {
-            using var _ = Logger.BeginScope(new Dictionary<string, object> { ["JobId"] = context.JobId });
-            var summary = new MessageHandlerSummary();
-
-            if (!handler.MatchesMessageContext(context, summary))
-            {
-                return MatchedHandlerSkipped();
-            }
-
-            MessageBodyResult bodyResult = await DeserializeMessageAsync(messageBody, context, handler, summary);
-            if (!bodyResult.IsSuccess)
-            {
-                return MatchedHandlerSkipped();
-            }
-
-            if (!handler.MatchesMessageBody(bodyResult.DeserializedBody, summary))
-            {
-                return MatchedHandlerSkipped();
-            }
-
-            Type messageType = bodyResult.DeserializedBody.GetType();
-
-            MessageProcessingResult processResult = await handler.TryProcessMessageAsync(bodyResult.DeserializedBody, context, correlationInfo, cancellation);
-            if (!processResult.IsSuccessful)
-            {
-                return MatchedHandlerFailed(processResult.ProcessingException, processResult.ErrorMessage);
-            }
-
-            Logger.LogMessageProcessedByHandler(messageType, context.MessageId, handler.MessageHandlerType, summary);
-            return MessageProcessingResult.Success(context.MessageId);
-
-            MessageProcessingResult MatchedHandlerSkipped()
-            {
-                Logger.LogMessageSkippedByHandler(context.MessageId, handler.MessageHandlerType, summary);
-                return MessageProcessingResult.Failure(context.MessageId, MessageProcessingError.MatchedHandlerFailed, "n/a");
-            }
-
-            MessageProcessingResult MatchedHandlerFailed(Exception exception, string errorMessage)
-            {
-                summary.AddFailed(exception, "message processing failed", check => check.AddReason(errorMessage));
-
-                Logger.LogMessageFailedInHandler(messageType, context.MessageId, handler.MessageHandlerType, summary);
-                return MessageProcessingResult.Failure(context.MessageId, MessageProcessingError.ProcessingInterrupted, "n/a");
-            }
-        }
-
         /// <summary>
         /// Deserializes the incoming <paramref name="message"/> within the <paramref name="messageContext"/> for a specific <paramref name="handler"/>.
         /// </summary>
@@ -212,17 +144,14 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     and all the required predicates that the <paramref name="handler"/> requires are met; [<see cref="MessageResult.Failure(string)"/>] otherwise.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handler"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v3.0 in favor of centralizing message routing functionality, please use the " + nameof(RouteMessageThroughRegisteredHandlersAsync))]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message routing functionality, please use the " + nameof(RouteMessageThroughRegisteredHandlersAsync), DiagnosticId = "ARCUS")]
         protected async Task<MessageResult> DeserializeMessageForHandlerAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,
             MessageHandler handler)
             where TMessageContext : MessageContext
         {
-            if (handler is null)
-            {
-                throw new ArgumentNullException(nameof(handler));
-            }
+            ArgumentNullException.ThrowIfNull(handler);
 
             Type messageHandlerType = handler.GetMessageHandlerType();
             Logger.LogTrace("Determine if message handler '{MessageHandlerType}' can process the message...", messageHandlerType.Name);
@@ -234,7 +163,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message with message context '{handler.MessageContextType.Name}'");
             }
 
-            MessageBodyResult deserializationResult = await DeserializeMessageAsync(BinaryData.FromString(message), messageContext, handler);
+            MessageBodyResult deserializationResult = await handler.DeserializeMessageAsync(BinaryData.FromString(message), messageContext, Options.Deserialization, new MessageHandlerSummary());
             if (!deserializationResult.IsSuccess)
             {
                 Logger.LogTrace("Message handler '{MessageHandlerType}' is not able to process the message because the incoming message cannot be deserialized to the message '{MessageType}' that the message handler can handle", messageHandlerType.Name, handler.MessageType.Name);
@@ -249,97 +178,6 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
 
             Logger.LogTrace("Message handler '{MessageHandlerType}' is not able to process the message because the incoming message '{MessageType}' doesn't match the registered message filter", messageHandlerType.Name, handler.MessageType.Name);
             return MessageResult.Failure($"Message handler '{messageHandlerType.Name}' can't process message because it fails the '{handler.MessageType.Name}' filter");
-        }
-
-        private async Task<MessageBodyResult> DeserializeMessageAsync(
-            BinaryData messageBody,
-            MessageContext context,
-            MessageHandler handler,
-            MessageHandlerSummary summary = null)
-        {
-            summary ??= new MessageHandlerSummary();
-
-            MessageBodyResult result = await handler.TryCustomDeserializeMessageAsync(messageBody, summary);
-            if (result.IsSuccess)
-            {
-                return result;
-            }
-
-            Encoding encoding = DetermineEncoding(context);
-            string json = messageBody.IsEmpty ? string.Empty : encoding.GetString(messageBody.ToArray());
-
-            try
-            {
-                object deserializedByType = JsonSerializer.Deserialize(json, handler.MessageType, _jsonOptions);
-                if (deserializedByType != null)
-                {
-                    summary.AddPassed("default JSON body parsing passed", check => check.AddMember("additional members", Options.Deserialization.AdditionalMembers.ToString()));
-                    return MessageBodyResult.Success(deserializedByType);
-                }
-
-                summary.AddFailed("default JSON body parsing failed", check => check.AddReason("returns 'null'"));
-                return MessageBodyResult.Failure("n/a");
-            }
-            catch (JsonException exception)
-            {
-                summary.AddFailed(exception, "default JSON body parsing failed");
-                return MessageBodyResult.Failure("n/n", exception);
-            }
-        }
-
-        private static Encoding DetermineEncoding(MessageContext context)
-        {
-            Encoding fallbackEncoding = Encoding.UTF8;
-
-            if (context.Properties.TryGetValue(PropertyNames.Encoding, out object encodingNameObj)
-                && encodingNameObj is string encodingName
-                && !string.IsNullOrWhiteSpace(encodingName))
-            {
-                EncodingInfo foundEncoding =
-                    Encoding.GetEncodings()
-                            .FirstOrDefault(e => e.Name.Equals(encodingName, StringComparison.OrdinalIgnoreCase));
-
-                return foundEncoding?.GetEncoding() ?? fallbackEncoding;
-            }
-
-            return fallbackEncoding;
-        }
-
-        /// <summary>
-        /// Tries to parse the given raw <paramref name="message"/> to the contract of the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.
-        /// </summary>
-        /// <param name="message">The raw incoming message that will be tried to parse against the <see cref="IMessageHandler{TMessage,TMessageContext}"/>'s message contract.</param>
-        /// <param name="messageType">The type of the message that the message handler can process.</param>
-        /// <param name="result">The resulted parsed message when the <paramref name="message"/> conforms with the message handlers' contract.</param>
-        /// <returns>
-        ///     [true] if the <paramref name="message"/> conforms the <see cref="IMessageHandler{TMessage,TMessageContext}"/>'s contract; otherwise [false].
-        /// </returns>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="messageType"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0 in favor of centralizing message routing, use the " + nameof(RouteMessageThroughRegisteredHandlersAsync) + " instead")]
-        protected virtual bool TryDeserializeToMessageFormat(string message, Type messageType, out object result)
-        {
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                throw new ArgumentException("Requires a non-blank message to deserialize to a given type", nameof(message));
-            }
-
-            Logger.LogTrace("Try to JSON deserialize incoming message to message type '{MessageType}'...", messageType.Name);
-            try
-            {
-                result = JsonSerializer.Deserialize(message, messageType, _jsonOptions);
-                if (result != null)
-                {
-                    Logger.LogTrace("Incoming message was successfully JSON deserialized to message type '{MessageType}'", messageType.Name);
-                    return true;
-                }
-            }
-            catch (JsonException exception)
-            {
-                Logger.LogTrace(exception, "Incoming message failed to be JSON deserialized to message type '{MessageType}' due to an exception", messageType.Name);
-            }
-
-            result = null;
-            return false;
         }
     }
 

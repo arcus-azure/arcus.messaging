@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -180,7 +182,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="logger">The logger instance to write diagnostic messages during the message handler interaction.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageHandler"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        [Obsolete("Will be removed in v3.0 in favor of the new factory method with message handler options", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of the new factory method with message handler options", DiagnosticId = "ARCUS")]
         public static MessageHandler Create<TMessage, TMessageContext>(
             IMessageHandler<TMessage, TMessageContext> messageHandler,
             ILogger logger,
@@ -206,7 +208,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 logger: logger);
         }
 
-        [Obsolete("Will be removed in v3.0", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0", DiagnosticId = "ARCUS")]
         private sealed class DeprecatedMessageBodyDeserializerAdapter(IMessageBodySerializer deprecated) : IMessageBodyDeserializer
         {
             public async Task<MessageBodyResult> DeserializeMessageAsync(BinaryData messageBody)
@@ -237,15 +239,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         {
             return async (rawMessage, generalMessageContext, correlationInfo, cancellationToken) =>
             {
-                if (rawMessage is not TMessage message)
-                {
-                    return MessageProcessingResult.Failure(generalMessageContext.MessageId, MessageProcessingError.MatchedHandlerFailed, $"requires message type {typeof(TMessage).Name}");
-                }
-
-                if (generalMessageContext is not TMessageContext messageContext)
-                {
-                    return MessageProcessingResult.Failure(generalMessageContext.MessageId, MessageProcessingError.MatchedHandlerFailed, $"requires message context type {typeof(TMessageContext).Name}");
-                }
+                var message = (TMessage) rawMessage;
+                var messageContext = (TMessageContext) generalMessageContext;
 
                 await messageHandler.ProcessMessageAsync(message, messageContext, correlationInfo, cancellationToken);
                 return MessageProcessingResult.Success(generalMessageContext.MessageId);
@@ -320,7 +315,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets the concrete class type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
         /// </summary>
-        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
         public object GetMessageHandlerInstance()
         {
             return _messageHandlerInstance;
@@ -329,16 +324,23 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
         /// </summary>
-        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
         public Type GetMessageHandlerType()
         {
             return MessageHandlerType;
         }
 
-        internal bool MatchesMessageContext<TMessageContext>(TMessageContext context, MessageHandlerSummary summary)
+        private bool MatchesMessageContext<TMessageContext>(TMessageContext context, MessageHandlerSummary summary)
             where TMessageContext : MessageContext
         {
             ArgumentNullException.ThrowIfNull(context);
+
+            if (typeof(TMessageContext) != MessageContextType && !typeof(TMessageContext).IsSubclassOf(MessageContextType))
+            {
+                summary.AddFailed($"requires message context type {MessageContextType.Name}");
+                return false;
+            }
+
             try
             {
                 return _messageContextFilter(context, summary);
@@ -355,14 +357,14 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
         /// <param name="messageContext">The context in which the incoming message is processed.</param>
-        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
         public bool CanProcessMessageBasedOnContext<TMessageContext>(TMessageContext messageContext)
             where TMessageContext : MessageContext
         {
             return MatchesMessageContext(messageContext, new MessageHandlerSummary());
         }
 
-        internal bool MatchesMessageBody(object message, MessageHandlerSummary summary)
+        private bool MatchesMessageBody(object message, MessageHandlerSummary summary)
         {
             ArgumentNullException.ThrowIfNull(message);
             try
@@ -380,13 +382,13 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// Determines if the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> can process the incoming deserialized message based on the consumer-provided message predicate.
         /// </summary>
         /// <param name="message">The incoming deserialized message body.</param>
-        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
         public bool CanProcessMessageBasedOnMessage(object message)
         {
             return MatchesMessageBody(message, new MessageHandlerSummary());
         }
 
-        internal async Task<MessageBodyResult> TryCustomDeserializeMessageAsync(BinaryData messageBody, MessageHandlerSummary summary)
+        private async Task<MessageBodyResult> TryCustomDeserializeMessageAsync(BinaryData messageBody, MessageHandlerSummary summary)
         {
             if (_messageBodyDeserializer is null)
             {
@@ -460,7 +462,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <returns>
         ///     A <see cref="MessageResult"/> instance that either represents a successful or faulted deserialization of the incoming <paramref name="message"/>.
         /// </returns>
-        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
         public async Task<MessageResult> TryCustomDeserializeMessageAsync(string message)
         {
             if (_messageBodyDeserializer is null)
@@ -525,7 +527,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler cannot process the message correctly.</exception>
         /// <exception cref="AmbiguousMatchException">Thrown when more than a single processing method was found on the message handler.</exception>
-        [Obsolete("Will be removed in v3.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
         public async Task<bool> ProcessMessageAsync<TMessageContext>(
             object message,
             TMessageContext messageContext,
@@ -541,24 +543,140 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         }
 
         /// <summary>
-        /// Process the given <paramref name="message"/> in the current <see cref="IMessageHandler{TMessage,TMessageContext}"/> representation.
+        /// Process the given <paramref name="messageBody"/> in the current <see cref="IMessageHandler{TMessage,TMessageContext}"/> representation.
         /// </summary>
         /// <typeparam name="TMessageContext">The type of the message context used in the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</typeparam>
-        /// <param name="message">The parsed message to be processed by the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</param>
-        /// <param name="messageContext">The context providing more information concerning the processing.</param>
+        /// <param name="messageBody">The parsed message to be processed by the <see cref="IMessageHandler{TMessage,TMessageContext}"/>.</param>
+        /// <param name="context">The context providing more information concerning the processing.</param>
         /// <param name="correlationInfo">
         ///     The information concerning correlation of telemetry and processes by using a variety of unique
         ///     identifiers.
         /// </param>
-        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <param name="options">The options configured on the message router related to deserializing a message.</param>
+        /// <param name="cancellation">The token to cancel the message processing in the handler.</param>
         /// <returns>
         ///     [true] if the message handler was able to successfully process the message; [false] otherwise.
         /// </returns>
         /// <exception cref="ArgumentNullException">
-        ///     Thrown when the <paramref name="message"/>, <paramref name="messageContext"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
+        ///     Thrown when the <paramref name="messageBody"/>, <paramref name="context"/>, or <paramref name="correlationInfo"/> is <c>null</c>.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler cannot process the message correctly.</exception>
         internal async Task<MessageProcessingResult> TryProcessMessageAsync<TMessageContext>(
+            BinaryData messageBody,
+            TMessageContext context,
+            MessageCorrelationInfo correlationInfo,
+            MessageDeserializationOptions options,
+            CancellationToken cancellation)
+            where TMessageContext : MessageContext
+        {
+            ArgumentNullException.ThrowIfNull(messageBody);
+            ArgumentNullException.ThrowIfNull(context);
+            ArgumentNullException.ThrowIfNull(correlationInfo);
+            ArgumentNullException.ThrowIfNull(options);
+
+            using var _ = _logger.BeginScope(new Dictionary<string, object> { ["JobId"] = context.JobId });
+            var summary = new MessageHandlerSummary();
+
+            if (!MatchesMessageContext(context, summary))
+            {
+                return MatchedHandlerSkipped();
+            }
+
+            MessageBodyResult bodyResult = await DeserializeMessageAsync(messageBody, context, options, summary);
+            if (!bodyResult.IsSuccess)
+            {
+                return MatchedHandlerSkipped();
+            }
+
+            if (!MatchesMessageBody(bodyResult.DeserializedBody, summary))
+            {
+                return MatchedHandlerSkipped();
+            }
+
+            Type messageType = bodyResult.DeserializedBody.GetType();
+
+            MessageProcessingResult processResult = await TryProcessMessageAsync(bodyResult.DeserializedBody, context, correlationInfo, cancellation);
+            if (!processResult.IsSuccessful)
+            {
+                return MatchedHandlerFailed(processResult.ProcessingException, processResult.ErrorMessage);
+            }
+
+            _logger.LogMessageProcessedByHandler(messageType, context.MessageId, MessageHandlerType, summary);
+            return MessageProcessingResult.Success(context.MessageId);
+
+            MessageProcessingResult MatchedHandlerSkipped()
+            {
+                _logger.LogMessageSkippedByHandler(context.MessageId, MessageHandlerType, summary);
+                return MessageProcessingResult.Failure(context.MessageId, MessageProcessingError.MatchedHandlerFailed, "n/a");
+            }
+
+            MessageProcessingResult MatchedHandlerFailed(Exception exception, string errorMessage)
+            {
+                summary.AddFailed(exception, "message processing failed", check => check.AddReason(errorMessage));
+
+                _logger.LogMessageFailedInHandler(messageType, context.MessageId, MessageHandlerType, summary);
+                return MessageProcessingResult.Failure(context.MessageId, MessageProcessingError.ProcessingInterrupted, "n/a");
+            }
+        }
+
+        internal async Task<MessageBodyResult> DeserializeMessageAsync(
+            BinaryData messageBody,
+            MessageContext context,
+            MessageDeserializationOptions options,
+            MessageHandlerSummary summary)
+        {
+            MessageBodyResult result = await TryCustomDeserializeMessageAsync(messageBody, summary);
+            if (result.IsSuccess)
+            {
+                return result;
+            }
+
+            Encoding encoding = DetermineEncoding(context);
+            string json = messageBody.IsEmpty ? string.Empty : encoding.GetString(messageBody.ToArray());
+
+            try
+            {
+                object deserializedByType = JsonSerializer.Deserialize(json, MessageType, options.JsonOptions);
+                if (deserializedByType != null)
+                {
+                    summary.AddPassed("default JSON body parsing passed", check => check.AddMember("additional members", options.AdditionalMembers.ToString()));
+                    return MessageBodyResult.Success(deserializedByType);
+                }
+
+                summary.AddFailed("default JSON body parsing failed", check => check.AddReason("returns 'null'"));
+                return MessageBodyResult.Failure("n/a");
+            }
+            catch (JsonException exception)
+            {
+                summary.AddFailed(exception, "default JSON body parsing failed");
+                return MessageBodyResult.Failure("n/a", exception);
+            }
+            catch (NotSupportedException exception)
+            {
+                summary.AddFailed(exception, "default JSON body parsing failed", check => check.AddReason("unsupported type"));
+                return MessageBodyResult.Failure("n/a", exception);
+            }
+        }
+
+        private static Encoding DetermineEncoding(MessageContext context)
+        {
+            Encoding fallbackEncoding = Encoding.UTF8;
+
+            if (context.Properties.TryGetValue(PropertyNames.Encoding, out object encodingNameObj)
+                && encodingNameObj is string encodingName
+                && !string.IsNullOrWhiteSpace(encodingName))
+            {
+                EncodingInfo foundEncoding =
+                    Encoding.GetEncodings()
+                            .FirstOrDefault(e => e.Name.Equals(encodingName, StringComparison.OrdinalIgnoreCase));
+
+                return foundEncoding?.GetEncoding() ?? fallbackEncoding;
+            }
+
+            return fallbackEncoding;
+        }
+
+        private async Task<MessageProcessingResult> TryProcessMessageAsync<TMessageContext>(
             object message,
             TMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
