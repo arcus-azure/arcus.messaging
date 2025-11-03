@@ -72,7 +72,7 @@ public class MyOrderMessageHandler : IServiceBusMessageHandler<MyOrder>
 ## Register your message handlers
 A messaging solution usually has more than one type of message it receives. Differentiating between types, properties, can be a hassle to set up.
 
-*'Message handlers'* are registered on a *'message pump'* in your application. This 'pump' receives the Azure Service Bus messages for you and routes them to the right handler.
+*'Message handlers'* are registered on a *'message pump'* in your application. This 'pump' retrieves the Azure Service Bus messages for you and routes them to the right handler.
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
