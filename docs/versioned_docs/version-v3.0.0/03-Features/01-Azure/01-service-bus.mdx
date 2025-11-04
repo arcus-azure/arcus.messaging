@@ -158,7 +158,6 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
     });
 
     // Configure the message pump to use sessions to receive messages (with or without additional options).
-    options.UseSessions();
     options.UseSessions(sessions =>
     {
         // The maximum number of calls to the callback the processor will initiate per session.
