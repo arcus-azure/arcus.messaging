@@ -10,7 +10,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// </summary>
     public class ServiceBusMessagePumpOptions
     {
-        private int _maxMessages = 1;
+        private int _maxMessagesPerBatch = 1;
         private int _prefetchCount = 0;
         private string _jobId = Guid.NewGuid().ToString();
 
@@ -19,11 +19,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         /// <remarks>The default value is 1</remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
-        [Obsolete("Will be removed in v4, use " + nameof(MaxMessages) + " instead", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4, use " + nameof(MaxMessagesPerBatch) + " instead", DiagnosticId = "ARCUS")]
         public int MaxConcurrentCalls
         {
-            get => MaxMessages;
-            set => MaxMessages = value;
+            get => MaxMessagesPerBatch;
+            set => MaxMessagesPerBatch = value;
         }
 
         /// <summary>
@@ -31,13 +31,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         /// <remarks>The default value is 1</remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
-        public int MaxMessages
+        public int MaxMessagesPerBatch
         {
-            get => _maxMessages;
+            get => _maxMessagesPerBatch;
             set
             {
                 ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, 0);
-                _maxMessages = value;
+                _maxMessagesPerBatch = value;
             }
         }
 
