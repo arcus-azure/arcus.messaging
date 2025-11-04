@@ -9,7 +9,7 @@ This page is dedicated to be used as a walkthrough on how to set up Arcus Messag
 
 :::note[Used terms]
 * *message handler:* a custom implementation of an Arcus Messaging-provided interface that processes a deserialized Azure Service Bus message.
-* *message pump:* an Arcus Messaging-provided registered service that receives Azure Service Bus messages for you, and "pumps" them through your *message handlers*.
+* *message pump:* an Arcus Messaging-provided registered service that retrieves Azure Service Bus messages for you, and "pumps" them through your *message handlers*.
 :::
 
 ## The basics
@@ -70,9 +70,9 @@ public class MyOrderMessageHandler : IServiceBusMessageHandler<MyOrder>
 ```
 
 ## Register your message handlers
-A messaging solution usually has more than one type of message it receives. Differentiating between types, properties, can be a hassle to set up.
+A messaging solution usually has more than one type of message it retrieves. Differentiating between types, properties, can be a hassle to set up.
 
-*'Message handlers'* are registered on a *'message pump'* in your application. This 'pump' receives the Azure Service Bus messages for you and routes them to the right handler.
+*'Message handlers'* are registered on a *'message pump'* in your application. This 'pump' retrieves the Azure Service Bus messages for you and routes them to the right handler.
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
