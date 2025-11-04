@@ -213,7 +213,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, _messageReceiver, message);
             MessageProcessingResult routingResult = await RouteMessageAsync(message, messageContext, cancellationToken);
-
             return routingResult;
         }
 
