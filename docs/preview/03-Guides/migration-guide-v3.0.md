@@ -2,6 +2,10 @@
 Starting from v3.0, there are some major breaking changes related to the [lightweight exercise](https://github.com/arcus-azure/arcus.messaging/discussions/470) that the Messaging library gone through. This guide will make it easier for you to migrate towards this version from an older v2.x version.
 
 ## General
+:::info[package rename]
+Starting from v3, the `Arcus.Messaging.Abstractions` and `Arcus.Messaging.Pumps.Abstractions` packages have been consolidated into a single `Arcus.Messaging.Core` package.
+:::
+
 * 🗑️ .NET 6 & .NET Standard 2.1 support is removed.
 * 🗑️ Transient `Newtonsoft.Json` dependency is replaced by built-in `System.Text.Json`
 * 🗑️ Transient `GuardNET` dependency is replaced by built-in argument checking.
@@ -28,6 +32,10 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
 * 📦 **Arcus.Messaging.Pumps.EventHubs**
 
 ## 📦 Arcus.Messaging.*ServiceBus\*
+:::info[package rename]
+Starting from v3, the `Arcus.Messaging.Abstractions.ServiceBus` and `Arcus.Messaging.Pumps.ServiceBus` packages have been consolidated into a single `Arcus.Messaging.ServiceBus` package.
+:::
+
 ### 🗑️ Removed functionality
 * Removed built-in Azure Functions support. Both the `Arcus.Messaging.AzureFunctions.ServiceBus` package as the built-in service-to-service correlation and message router registration support for Azure Functions has been removed.
 * Removed fallback message handler functionality in favor of using [custom message settlement](#-new-service-bus-message-settlement). This means that the following types/extensions are removed:
@@ -41,6 +49,8 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
   * Removed `(I)MessageCorrelationInfoAccessor`: message correlation is already available via message handlers.
   * Removed `MessageCorrelationResult`: in favor of the new `MessageOperationResult`.
   * `MessageCorrelationInfo` is separated from parent `CorrelationInfo` (originates from Arcus.Observability)
+  * Removed `MessageRouterOptions.Telemetry` options in favor of new `ServiceBusMessagePumpOptions.Telemetry`.
+  * Removed `MessageRouterOptions.CorrelationEnricher` in favor of dedicated (Serilog telemetry package)(#-new-service-bus-message-correlation) where those options are also available.
 * Removed **Arcus.Messaging.ServiceBus.Core** package and transient dependency for **Arcus.Messaging.Pumps.ServiceBus**. This means that the following types/extensions are removed:
   * `ServiceBusMessageBuilder`
   * `ServiceBusSenderMessageCorrelationOptions`
@@ -49,6 +59,19 @@ All Azure EventHubs-related functionality has been removed from v3.0. This means
   * `ServiceBusReceivedMessage.GetCorrelationInfo`
   * `ServiceBusReceivedMessage.GetApplicationProperty`
   * `MessageContext.GetMessageEncodingProperty`
+### ✏️ Renamed functionality
+* Renamed `IAzureServiceBusMessageHandler<>` to `IServiceBusMessageHandler<>` (in namespace `Arcus.Messaging.ServiceBus`)
+* Renamed `AzureServiceBusMessageContext` to `ServiceBusMessageContext` (in namespace `Arcus.Messaging.ServiceBus`)
+* Renamed `CircuitBreakerServiceBusMessageHandler<>` to `DefaultCircuitBreakerServiceBusMessageHandler<>` (in namespace `Arcus.Messaging.ServiceBus`)
+
+### ❌ Common migration failures
+:::danger[`InvalidOperationException`: Could not retrieve telemetry client]
+If Arcus Messaging is used in combination with Arcus Observability, it could happen that upon runtime the following failure occurred:
+```text
+Could not retrieve Microsoft telemetry client from the application registered services, this happens when the Application Insights services are not registered in the application services,please use one of Arcus' extensions like 'services.AddHttpCorrelation()' to automatically register the Application Insights when using the W3C correlation system, when using the Hierarchical correlation system, use the AzureApplicationInsightsWithConnectionString extension without the service provider instead
+```
+This happens because starting from v3, the Azure Service Bus request tracking is removed to a separate package. The telemetry client is therefore not being registered by default. See the [New Service Bus message correlation](#-new-service-bus-message-correlation) section to learn more about this new way of doing telemetry. 
+:::
 
 ### ✨ New Service Bus message pump registration
 Previously, the registration of the Azure Service Bus message pump involved navigating through the many available extensions, making it rather tedious to find the right authentication mechanism.
@@ -101,12 +124,14 @@ services.AddServiceBusQueueMessagePump(...)
 ### ✨ New Service Bus message settlement
 Previous versions used dedicated 'template classes' that custom message handlers should inherit from to do custom Azure Service Bus message settlement (complete, dead-letter, abandon).
 
-Starting from v3.0, the available operations are moved to the `AzureServiceBusMessageContext`. Making your custom message handlers much more accessible and flexible.
+Starting from v3.0, the available operations are moved to the `ServiceBusMessageContext` (previously called `AzureServiceBusMessageContext`). Making your custom message handlers much more accessible and flexible.
 
 ```diff
++ using Arcus.Messaging.ServiceBus;
+
 public class OrderServiceBusMessageHandler
 -    : AzureServiceBusMessageHandler<Order>
-+    : IAzureServiceBusMessageHandler<Order>
++    : IServiceBusMessageHandler<Order>
 {
     public OrderServiceBusMessageHandler(ILogger<OrderServiceBusMessageHandler> logger)
 -        : base(logger)
@@ -117,7 +142,8 @@ public class OrderServiceBusMessageHandler
 -    public override async Task ProcessMessageAsync(
 +    public async Task ProcessMessageAsync(
         Order order,
-        AzureServiceBusMessageContext messageContext,
+-       AzureServiceBusMessageContext messageContext,        
++       ServiceBusMessageContext messageContext,
         MessageCorrelationInfo messageCorrelation,
         CancellationToken cancellation)
     {
@@ -153,10 +179,11 @@ To still benefit from the original W3C message correlation tracking with **Arcus
 * 🔨 Register Serilog as the message correlation system by adding this line:
   ```diff
   services.AddServiceBusTopicMessagePump(...)
-  +       .WithServiceBusSerilogRequestTracking()           
+  +       .UseServiceBusSerilogRequestTracking()           
           .WithServiceBusMessageHandler<...>()
           .WithServiceBusMessageHandler<...>();
   ```
+* 👀 Check that the `TelemetryClient` is registered in the application services (registering Azure Application Insights services is not done automatically anymore, see [Microsoft's documentation on registering Azure Monitor in worker services](https://docs.azure.cn/en-us/azure-monitor/app/worker-service)).
 * 🎉 The original (< v3.0) message correlation is now restored.
 
 We expect other kinds of message correlation registrations in the future. Switching between them would be a matter of choosing the correct `.WithServiceBus...RequestTracking()`.

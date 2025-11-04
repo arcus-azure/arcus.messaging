@@ -9,9 +9,9 @@ using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using static Arcus.Messaging.Tests.Integration.MessagePump.Fixture.ServiceBusTestContext;
+using ServiceBusEntityType = Arcus.Messaging.Abstractions.ServiceBus.ServiceBusEntityType;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump
 {
@@ -74,7 +74,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             serviceBus.WhenServiceBusQueueMessagePump()
                       .WithMatchedServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(handler =>
                       {
-                          handler.UseMessageBodySerializer<OrderBatchMessageBodySerializer>();
+                          handler.UseMessageBodyDeserializer<OrderBatchMessageBodySerializer>();
                       });
 
             // Act
@@ -123,7 +123,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                       {
                           handler.AddMessageContextFilter(context => context.Properties.Contains(contextProperty))
                                  .AddMessageBodyFilter(message => message.Orders.Length == 1)
-                                 .UseMessageBodySerializer<OrderBatchMessageBodySerializer>();
+                                 .UseMessageBodyDeserializer<OrderBatchMessageBodySerializer>();
                       });
 
             // Act
@@ -142,7 +142,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             await using var serviceBus = GivenServiceBus();
 
-            serviceBus.WhenServiceBusQueueMessagePump(pump =>
+            serviceBus.WhenOnlyServiceBusQueueMessagePump(pump =>
             {
                 pump.Routing.Deserialization.AdditionalMembers = AdditionalMemberHandling.Ignore;
 

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
-using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.Telemetry;
 using Arcus.Messaging.Abstractions.Telemetry;
 using Microsoft.Extensions.Logging;
@@ -34,7 +32,7 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
         /// </summary>
         /// <param name="messageContext">The message context for the currently received Azure Service bus message.</param>
         /// <param name="options">The user-configurable options to manipulate the telemetry.</param>
-        public MessageOperationResult StartOperation(AzureServiceBusMessageContext messageContext, MessageTelemetryOptions options)
+        public MessageOperationResult StartOperation(ServiceBusMessageContext messageContext, MessageTelemetryOptions options)
         {
             ArgumentNullException.ThrowIfNull(messageContext);
             ArgumentNullException.ThrowIfNull(options);
@@ -98,7 +96,7 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
 
         private sealed class UnlinkedMessageOperationResult : MessageOperationResult
         {
-            internal UnlinkedMessageOperationResult(string transactionId, string operationParentId) 
+            internal UnlinkedMessageOperationResult(string transactionId, string operationParentId)
                 : base(new MessageCorrelationInfo(Guid.NewGuid().ToString(), transactionId, operationParentId))
             {
             }

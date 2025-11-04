@@ -9,17 +9,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{A1369CCD
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Health", "Arcus.Messaging.Health\Arcus.Messaging.Health.csproj", "{1C456BF4-4947-4171-BF6F-80A9A511F740}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Pumps.ServiceBus", "Arcus.Messaging.Pumps.ServiceBus\Arcus.Messaging.Pumps.ServiceBus.csproj", "{B21CD154-120D-49C5-AC2B-AC3ABDE97641}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.ServiceBus", "Arcus.Messaging.ServiceBus\Arcus.Messaging.ServiceBus.csproj", "{B21CD154-120D-49C5-AC2B-AC3ABDE97641}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Pumps.Abstractions", "Arcus.Messaging.Pumps.Abstractions\Arcus.Messaging.Pumps.Abstractions.csproj", "{49ECCDCE-C814-4034-B1D3-ABAAEE04ACAB}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Abstractions", "Arcus.Messaging.Abstractions\Arcus.Messaging.Abstractions.csproj", "{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Core", "Arcus.Messaging.Core\Arcus.Messaging.Core.csproj", "{49ECCDCE-C814-4034-B1D3-ABAAEE04ACAB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Unit", "Arcus.Messaging.Tests.Unit\Arcus.Messaging.Tests.Unit.csproj", "{9EED9AD7-B69D-45D5-870F-D4F63A1C3495}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Tests.Core", "Arcus.Messaging.Tests.Core\Arcus.Messaging.Tests.Core.csproj", "{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Arcus.Messaging.Abstractions.ServiceBus", "Arcus.Messaging.Abstractions.ServiceBus\Arcus.Messaging.Abstractions.ServiceBus.csproj", "{864C12DF-DE3D-421F-8687-EC3918FFB8BE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ServiceBus", "ServiceBus", "{2CD090E7-7306-49A0-9680-6ED78CFECAE1}"
 EndProject
@@ -27,6 +23,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Messaging.ServiceBus.Telemetry.Serilog", "Arcus.Messaging.ServiceBus.Telemetry.Serilog\Arcus.Messaging.ServiceBus.Telemetry.Serilog.csproj", "{6F6E82EA-9A4A-4AB6-B48F-71C1B45EA3F5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry", "Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry\Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry.csproj", "{4C2DCD91-2D47-493C-82FC-03A76CFA2CB1}"
 EndProject
@@ -52,10 +50,6 @@ Global
 		{49ECCDCE-C814-4034-B1D3-ABAAEE04ACAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49ECCDCE-C814-4034-B1D3-ABAAEE04ACAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49ECCDCE-C814-4034-B1D3-ABAAEE04ACAB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B53BF9F5-AC72-4462-87DE-C19CA7C74C9D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9EED9AD7-B69D-45D5-870F-D4F63A1C3495}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9EED9AD7-B69D-45D5-870F-D4F63A1C3495}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9EED9AD7-B69D-45D5-870F-D4F63A1C3495}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -64,6 +58,10 @@ Global
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6F6E82EA-9A4A-4AB6-B48F-71C1B45EA3F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F6E82EA-9A4A-4AB6-B48F-71C1B45EA3F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F6E82EA-9A4A-4AB6-B48F-71C1B45EA3F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F6E82EA-9A4A-4AB6-B48F-71C1B45EA3F5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{864C12DF-DE3D-421F-8687-EC3918FFB8BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -81,6 +79,7 @@ Global
 		{B21CD154-120D-49C5-AC2B-AC3ABDE97641} = {2CD090E7-7306-49A0-9680-6ED78CFECAE1}
 		{9EED9AD7-B69D-45D5-870F-D4F63A1C3495} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
 		{55DE6D12-4C54-4570-BDFA-00B0FFDE5AB6} = {A1369CCD-42D1-43F6-98BC-D8EDA62C2B13}
+		{6F6E82EA-9A4A-4AB6-B48F-71C1B45EA3F5} = {2CD090E7-7306-49A0-9680-6ED78CFECAE1}
 		{864C12DF-DE3D-421F-8687-EC3918FFB8BE} = {2CD090E7-7306-49A0-9680-6ED78CFECAE1}
 		{4C2DCD91-2D47-493C-82FC-03A76CFA2CB1} = {2CD090E7-7306-49A0-9680-6ED78CFECAE1}
 	EndGlobalSection

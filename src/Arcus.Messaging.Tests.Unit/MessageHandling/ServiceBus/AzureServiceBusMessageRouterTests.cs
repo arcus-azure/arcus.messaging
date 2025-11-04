@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
@@ -54,7 +53,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             var order = OrderGenerator.Generate();
             var message = ServiceBusModelFactory.ServiceBusReceivedMessage(BinaryData.FromObjectAsJson(order), messageId: "message-id");
-            var context = AzureServiceBusMessageContext.Create(jobId, ServiceBusEntityType.Unknown, Mock.Of<ServiceBusReceiver>(), message);
+            var context = AzureServiceBusMessageContextFactory.Generate(jobId);
             var correlationInfo = new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}");
 
             MessageProcessingResult result = await router.RouteMessageAsync(Mock.Of<ServiceBusReceiver>(), message, context, correlationInfo, CancellationToken.None);
@@ -212,7 +211,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var expectedMessage = new TestMessage { TestProperty = "Some value" };
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, OrderGenerator.Generate());
-            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: _ => spyHandler, options => options.UseMessageBodySerializer(serializer))
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: _ => spyHandler, options => options.AddMessageBodySerializer(serializer))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: _ => ignoredHandler);
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
@@ -241,7 +240,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var expectedMessage = new TestMessage { TestProperty = "Some value" };
             string expectedBody = JsonConvert.SerializeObject(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, new SubOrder());
-            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: _ => spyHandler, options => options.UseMessageBodySerializer(serializer))
+            collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: _ => spyHandler, options => options.AddMessageBodySerializer(serializer))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: _ => ignoredHandler);
 
             AzureServiceBusMessageRouter router = CreateMessageRouter(collection);
@@ -278,14 +277,13 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                           implementationFactory: _ => ignoredHandler3,
                           options => options.AddMessageContextFilter(ctx => ctx != null)
-                                            .AddMessageBodyFilter(body => body != null)
-                                            .UseMessageBodySerializer(new TestMessageBodySerializer(expectedBody, new Customer())))
+                                            .AddMessageBodyFilter(body => body != null).AddMessageBodySerializer(new TestMessageBodySerializer(expectedBody, new Customer())))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(
                           implementationFactory: _ => ignoredHandler2,
                           opt => opt.AddMessageBodyFilter(body => body is null))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
                           implementationFactory: _ => spyHandler,
-                          options => options.UseMessageBodySerializer(serializer)
+                          options => options.AddMessageBodySerializer(serializer)
                                             .AddMessageBodyFilter(body => body.Customer != null)
                                             .AddMessageContextFilter(ctx => ctx.MessageId.StartsWith("message-id")))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>()
@@ -369,12 +367,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
                 await router.RouteMessageAsync(
                     Mock.Of<ServiceBusReceiver>(),
                     message,
-                    AzureServiceBusMessageContext.Create(
-                        $"job-{Guid.NewGuid()}",
-                        ServiceBusEntityType.Unknown,
-                        Mock.Of<ServiceBusReceiver>(),
-                        ServiceBusModelFactory.ServiceBusReceivedMessage(
-                            messageId: $"id-{Guid.NewGuid()}")),
+                    AzureServiceBusMessageContextFactory.Generate(),
                     new MessageCorrelationInfo($"operation-{Guid.NewGuid()}", $"transaction-{Guid.NewGuid()}"),
                     CancellationToken.None);
             }

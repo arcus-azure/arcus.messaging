@@ -7,9 +7,10 @@ sidebar_label: Getting started
 
 This page is dedicated to be used as a walkthrough on how to set up Arcus Messaging in a new or existing project. Arcus Messaging is an umbrella term for a set of NuGet packages that kickstart your messaging solution.
 
-**Used terms:**
+:::note[Used terms]
 * *message handler:* a custom implementation of an Arcus Messaging-provided interface that processes a deserialized Azure Service Bus message.
 * *message pump:* an Arcus Messaging-provided registered service that receives Azure Service Bus messages for you, and "pumps" them through your *message handlers*.
+:::
 
 ## The basics
 :::note
@@ -28,15 +29,15 @@ By using *'message handlers'*, you don't have to worry about routing, deserializ
 First step in creating your message handler, is installing the following package. This is the only package that is required during this walkthrough.
 
 ```powershell
-PS> Install-Package -Name Arcus.Messaging.Pumps.ServiceBus
+PS> Install-Package -Name Arcus.Messaging.ServiceBus
 ```
 
-The package makes the `IAzureServiceBusMessageHandler<>` interface available. Implementing this interface is the simplest way of creating a *'message handler'*.
+The package makes the `IServiceBusMessageHandler<>` interface available. Implementing this interface is the simplest way of creating a *'message handler'*.
 
 As the generic type, you can use the DTO (data-transfer object) to which the [`ServiceBusReceivedMessage.Body`](https://learn.microsoft.com/en-us/dotnet/api/azure.messaging.servicebus.servicebusreceivedmessage.body) should be deserialized to (default via JSON). In this case: `MyOrder`.
 
 ```csharp
-using Arcus.Messaging.Abstractions.ServiceBus.MessagingHandling;
+using Arcus.Messaging.ServiceBus;
 
 public class MyOrder
 {
@@ -44,13 +45,24 @@ public class MyOrder
     public string ProductName { get; set; }
 }
 
-public class MyOrderMessageHandler : IAzureServiceBusMessageHandler<MyOrder>
+// highlight-start
+public class MyOrderMessageHandler : IServiceBusMessageHandler<MyOrder>
+// highlight-end
 {
+    private readonly ILogger _logger;
+
+    public MyOrderMessageHandler(ILogger<MyOrderMessageHandler> logger)
+    {
+        _logger = logger;
+    }
+
+// highlight-start
     public async Task ProcessMessageAsync(
         MyOrder order,
-        AzureServiceBusMessageContext context,
+        ServiceBusMessageContext context,
         MessageCorrelationInfo correlation,
         CancellationToken cancellation)
+// highlight-end
     {
         // Process further your custom type...
     }
