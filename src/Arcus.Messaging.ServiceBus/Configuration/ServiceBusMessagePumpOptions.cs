@@ -19,7 +19,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         /// <remarks>The default value is 1</remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
-        [Obsolete("Will be removed in v4, use " + nameof(MaxMessages) + " instead")]
+        [Obsolete("Will be removed in v4, use " + nameof(MaxMessages) + " instead", DiagnosticId = "ARCUS")]
         public int MaxConcurrentCalls
         {
             get => MaxMessages;
