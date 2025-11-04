@@ -128,7 +128,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         private async Task ProcessMultipleMessagesAsync(CancellationToken cancellationToken)
         {
             IReadOnlyList<ServiceBusReceivedMessage> messages =
-                await _messageReceiver.ReceiveMessagesAsync(Options.MaxConcurrentCalls, cancellationToken: _receiveMessagesCancellation.Token);
+                await _messageReceiver.ReceiveMessagesAsync(Options.MaxMessages, cancellationToken: _receiveMessagesCancellation.Token);
 
             await Task.WhenAll(messages.Select(msg => ProcessMessageAsync(msg, cancellationToken)));
         }
