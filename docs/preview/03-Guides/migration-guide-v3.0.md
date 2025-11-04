@@ -66,7 +66,7 @@ Starting from v3, the `Arcus.Messaging.Abstractions.ServiceBus` and `Arcus.Messa
 
 ### ❌ Common migration failures
 :::danger[`InvalidOperationException`: Could not retrieve telemetry client]
-If Arcus Messaging is used in combination with Arcus Observability, it could happen that upon runtime the following failure occurred:
+If Arcus Messaging is used in combination with Arcus Observability, it could happen that upon runtime the following failure occurs:
 ```text
 Could not retrieve Microsoft telemetry client from the application registered services, this happens when the Application Insights services are not registered in the application services,please use one of Arcus' extensions like 'services.AddHttpCorrelation()' to automatically register the Application Insights when using the W3C correlation system, when using the Hierarchical correlation system, use the AzureApplicationInsightsWithConnectionString extension without the service provider instead
 ```
