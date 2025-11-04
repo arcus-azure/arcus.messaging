@@ -126,10 +126,10 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
 {
     // The amount of messages that will be retrieved in one batch from Azure Service Bus.
     // (default: 1).
-    options.MaxMessages = 5;
+    options.MaxMessagesPerBatch = 5;
 
     // Specifies the amount of messages that will be eagerly requested during processing.
-    // Setting the PrefetchCount to a value higher then the MaxMessages value helps 
+    // Setting the PrefetchCount to a value higher then the MaxMessagesPerBatch value helps 
     // maximizing throughput by allowing the message pump to receive from a local cache rather then waiting on a service request.
     options.PrefetchCount = 10;
 
