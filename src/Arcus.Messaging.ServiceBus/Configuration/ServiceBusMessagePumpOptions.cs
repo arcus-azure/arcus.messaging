@@ -29,7 +29,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets the amount of messages that will be retrieved in one batch from Azure Service Bus.
         /// </summary>
-        /// <remarks>The default value is 1</remarks>
+        /// <remarks>The default value is 1.</remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
         public int MaxMessagesPerBatch
         {
