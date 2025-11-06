@@ -1,0 +1,44 @@
+name: 🐞 Bug report
+description: Report a bug in the Arcus Testing library.
+title: "🐞 [Bug]: "
+labels:
+  - bug
+projects:
+  - arcus-azure/1
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your contribution to the Arcus library!
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+      placeholder: Ex. I expected that the test fixture component would...
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual behavior
+      description: A clear and concise description of what actually happened.
+      placeholder: Ex. The test fixture component incorrectly...
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Steps to reproduce the incorrect behavior.
+      placeholder: |
+        1. Provide the test fixture with a configuration
+        2. Run the test
+        3. Notice how the test output is incorrect
+  - type: input
+    id: arcus-version
+    attributes:
+      label: Arcus version
+      description: The version of the Arcus library where the bug occurred.
+      placeholder: Ex. 1.0.0
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      placeholder: Add the link to the page(s) or any other context/screenshots related to the bug report here.

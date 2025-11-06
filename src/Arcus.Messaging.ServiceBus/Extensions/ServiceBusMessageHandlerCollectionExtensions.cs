@@ -6,7 +6,6 @@ using Arcus.Messaging.Abstractions.MessageHandling;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.ServiceBus;
-using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection
@@ -89,12 +88,10 @@ namespace Microsoft.Extensions.DependencyInjection
 
             handlers.Services.AddTransient(
                 serviceProvider => MessageHandler.Create(
-                    implementationFactory(serviceProvider),
-                    serviceProvider.GetService<ILogger<TMessageHandler>>(),
-                    handlers.JobId,
-                    options.MessageBodyFilter,
-                    options.MessageContextFilter,
-                    options.MessageBodySerializerImplementationFactory?.Invoke(serviceProvider)));
+                    implementationFactory,
+                    options,
+                    serviceProvider,
+                    handlers.JobId));
 
             return handlers;
         }
@@ -113,7 +110,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <typeparam name="TMessage">The type of the message that the message handler will process.</typeparam>
         /// <param name="handlers">The collection of handlers to use in the application.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v4.0, please implement " + nameof(IServiceBusMessageHandler<object>) + " instead")]
+        [Obsolete("Will be removed in v4.0, please implement " + nameof(IServiceBusMessageHandler<object>) + " instead", DiagnosticId = "ARCUS")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(this ServiceBusMessageHandlerCollection handlers)
             where TMessageHandler : class, IAzureServiceBusMessageHandler<TMessage>
             where TMessage : class
@@ -129,7 +126,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="handlers">The collection of handlers to use in the application.</param>
         /// <param name="configureOptions">The additional set of options to configure the registration of the message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v4.0, please implement " + nameof(IServiceBusMessageHandler<object>) + " instead")]
+        [Obsolete("Will be removed in v4.0, please implement " + nameof(IServiceBusMessageHandler<object>) + " instead", DiagnosticId = "ARCUS")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Action<ServiceBusMessageHandlerOptions<TMessage>> configureOptions)
@@ -147,7 +144,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="handlers">The collection of handlers to use in the application.</param>
         /// <param name="implementationFactory">The function that creates the message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v4.0, please implement " + nameof(IServiceBusMessageHandler<object>) + " instead")]
+        [Obsolete("Will be removed in v4.0, please implement " + nameof(IServiceBusMessageHandler<object>) + " instead", DiagnosticId = "ARCUS")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<IServiceProvider, TMessageHandler> implementationFactory)
@@ -166,7 +163,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="implementationFactory">The function that creates the message handler.</param>
         /// <param name="configureOptions">The additional set of options to configure the registration of the message handler.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handlers"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v4.0, please implement " + nameof(IServiceBusMessageHandler<object>) + " instead")]
+        [Obsolete("Will be removed in v4.0, please implement " + nameof(IServiceBusMessageHandler<object>) + " instead", DiagnosticId = "ARCUS")]
         public static ServiceBusMessageHandlerCollection WithServiceBusMessageHandler<TMessageHandler, TMessage>(
             this ServiceBusMessageHandlerCollection handlers,
             Func<IServiceProvider, TMessageHandler> implementationFactory,
@@ -182,8 +179,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 configureOptions);
         }
 
-        [Obsolete("Will be removed in v4.0")]
-        private class DeprecatedServiceBusMessageHandlerAdapter<TMessage> : IServiceBusMessageHandler<TMessage>
+        [Obsolete("Will be removed in v4.0", DiagnosticId = "ARCUS")]
+        private sealed class DeprecatedServiceBusMessageHandlerAdapter<TMessage> : IServiceBusMessageHandler<TMessage>
         {
             private readonly IAzureServiceBusMessageHandler<TMessage> _deprecatedHandler;
 

@@ -99,10 +99,19 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         public static MessageProcessingResult Failure(string messageId, MessageProcessingError error, string errorMessage, Exception processingException)
         {
             return new MessageProcessingResult(
-                messageId, 
-                error, 
-                errorMessage, 
+                messageId,
+                error,
+                errorMessage,
                 processingException ?? throw new ArgumentNullException(nameof(processingException)));
+        }
+
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>A string that represents the current object.</returns>
+        public override string ToString()
+        {
+            return IsSuccessful ? $"[Success]: {MessageId}" : $"[Failure]: {Error} {ErrorMessage}";
         }
     }
 }

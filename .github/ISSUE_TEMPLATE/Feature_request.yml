@@ -1,0 +1,29 @@
+name: ✨ Feature request
+description: Suggest a new feature to the Arcus library.
+title: "✨ [New]: "
+labels:
+  - feature-request
+projects:
+  - arcus-azure/1
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for you contribution to the Arcus library!
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Is your feature request related to a problem? Please describe.
+      placeholder: A clear and concise description of what the problem is. Ex. I'm always frustrated when...
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution
+      description: Describe the solution you'd like to see.
+      placeholder: A clear and concise description of what you want to happen.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      placeholder: Add the link to the page(s) or any other context/screenshots related to the feature request here.

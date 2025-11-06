@@ -6,6 +6,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     /// Represents a type that's the result of a successful or faulted message deserialization of an <see cref="IMessageBodySerializer"/> instance.
     /// </summary>
     /// <seealso cref="IMessageBodySerializer"/>
+    [Obsolete("Will be removed in v3.0 in favor of using the new " + nameof(MessageBodyResult) + " model", DiagnosticId = "ARCUS")]
     public class MessageResult
     {
         private MessageResult(object result)
@@ -31,7 +32,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// Gets a flag indicating whether or not the message was successfully deserialized.
         /// </summary>
         public bool IsSuccess { get; }
-        
+
         /// <summary>
         /// Gets the deserialized message instance after the <see cref="IMessageBodySerializer"/>.
         /// </summary>
