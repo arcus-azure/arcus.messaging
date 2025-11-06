@@ -1,33 +1,33 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
-        <Authors>Arcus</Authors>
-        <Company>Arcus</Company>
-        <Product>Arcus.Messaging</Product>
-        <Description>Provides capability to track message correlation information using OpenTelemetry for Azure Service Bus message pumps</Description>
-        <Copyright>Copyright (c) Arcus</Copyright>
-        <PackageProjectUrl>https://messaging.arcus-azure.net/</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
-        <PackageLicenseFile>LICENSE</PackageLicenseFile>
-        <PackageIcon>icon.png</PackageIcon>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <RepositoryType>Git</RepositoryType>
-        <PackageTags>Azure;Messaging;ServiceBus</PackageTags>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Authors>Arcus</Authors>
+    <Company>Arcus</Company>
+    <Product>Arcus.Messaging</Product>
+    <Description>Provides capability to track message correlation information using OpenTelemetry for Azure Service Bus message pumps</Description>
+    <Copyright>Copyright (c) Arcus</Copyright>
+    <PackageProjectUrl>https://messaging.arcus-azure.net/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/arcus-azure/arcus.messaging</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>Git</RepositoryType>
+    <PackageTags>Azure;Messaging;ServiceBus</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>S1133</NoWarn>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-        <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
-        <None Include="..\..\docs\static\img\icon.png" Pack="true" PackagePath="\" />
-    </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+    <None Include="..\..\docs\static\img\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Arcus.Messaging.ServiceBus\Arcus.Messaging.ServiceBus.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Arcus.Messaging.ServiceBus\Arcus.Messaging.ServiceBus.csproj" />
+  </ItemGroup>
 
 </Project>

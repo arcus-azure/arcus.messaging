@@ -10,7 +10,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// </summary>
     public class ServiceBusMessagePumpOptions
     {
-        private int _maxConcurrentCalls = 1;
+        private int _maxMessagesPerBatch = 1;
         private int _prefetchCount = 0;
         private string _jobId = Guid.NewGuid().ToString();
 
@@ -19,13 +19,25 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         /// <remarks>The default value is 1</remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
+        [Obsolete("Will be removed in v4, use " + nameof(MaxMessagesPerBatch) + " instead", DiagnosticId = "ARCUS")]
         public int MaxConcurrentCalls
         {
-            get => _maxConcurrentCalls;
+            get => MaxMessagesPerBatch;
+            set => MaxMessagesPerBatch = value;
+        }
+
+        /// <summary>
+        /// Gets the amount of messages that will be retrieved in one batch from Azure Service Bus.
+        /// </summary>
+        /// <remarks>The default value is 1.</remarks>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
+        public int MaxMessagesPerBatch
+        {
+            get => _maxMessagesPerBatch;
             set
             {
                 ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, 0);
-                _maxConcurrentCalls = value;
+                _maxMessagesPerBatch = value;
             }
         }
 
@@ -114,8 +126,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// <para>Gets or sets the maximum number of calls to the callback the processor will initiate per session.</para>
         /// <para>Total number of callbacks = <see cref="MaxConcurrentSessions"/> x <see cref="MaxConcurrentCallsPerSession"/>.</para>
-        /// <para>(default: 1)</para>
         /// </summary>
+        /// <remarks>The default value is 1.</remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
         public int MaxConcurrentCallsPerSession
         {
@@ -130,8 +142,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// <para>Gets or sets the maximum number of sessions that will be processed concurrently by the processor.</para>
         /// <para>Total number of callbacks = <see cref="MaxConcurrentSessions"/> x <see cref="MaxConcurrentCallsPerSession"/>.</para>
-        /// <para>(default: 8).</para>
         /// </summary>
+        /// <remarks>The default value is 8.</remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than zero.</exception>
         public int MaxConcurrentSessions
         {
@@ -146,8 +158,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// <summary>
         /// Gets or sets the maximum amount of time to wait for a message to be received for the currently active session.
         /// After this time has elapsed, the processor will close the session and attempt to process another session.
-        /// (default: 1 minute)
         /// </summary>
+        /// <remarks>The default value is 1 minute.</remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than <see cref="TimeSpan.Zero"/>.</exception>
         public TimeSpan SessionIdleTimeout
         {
