@@ -39,7 +39,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         }
 
         [Fact]
-        public async Task Route_WithMatchedHandlerThrowsUnhandledException_FailsWithMatchedHandlerFailed()
+        public async Task Route_WithMatchedHandlerThrowsUnhandledExceptionFollowedBySkippedHandler_FailsWithMatchedHandlerFailed()
         {
             // Arrange
             var router = CreateMessageRouter(
