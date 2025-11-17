@@ -39,6 +39,24 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling
         }
 
         [Fact]
+        public async Task Route_WithMatchedHandlerThrowsUnhandledExceptionFollowedBySkippedHandler_FailsWithMatchedHandlerFailed()
+        {
+            // Arrange
+            var router = CreateMessageRouter(
+            [
+                Handlers.Unrelated(),
+                Handlers.FailedT<NewStarDiscovered, DefaultMessageContext>(),
+                Handlers.Unrelated(),
+            ]);
+
+            // Act
+            MessageProcessingResult result = await router.RouteMessageAsync(Messages.NewStarDiscovered, Contexts.Default);
+
+            // Assert
+            Assert.Equal(MessageProcessingError.MatchedHandlerFailed, result.Error);
+        }
+
+        [Fact]
         public async Task Route_WithoutMatchingRegisteredHandlerContextType_FailsWithNoMatchingHandlerExample()
         {
             // Arrange

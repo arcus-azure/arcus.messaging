@@ -94,12 +94,17 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
             }
 
             int skippedHandlers = 0;
-            bool hasGoneThroughMessageHandler = false;
+            bool hasGoneThroughAnyHandler = false;
 
             foreach (var handler in handlers)
             {
                 MessageProcessingResult result = await handler.TryProcessMessageAsync(messageBody, messageContext, correlationInfo, Options.Deserialization, cancellation);
-                hasGoneThroughMessageHandler = result.IsSuccessful || result.Error is MessageProcessingError.ProcessingInterrupted;
+                bool messageWentThroughThisHandler = result.IsSuccessful || result.Error is MessageProcessingError.ProcessingInterrupted;
+
+                if (!hasGoneThroughAnyHandler && messageWentThroughThisHandler)
+                {
+                    hasGoneThroughAnyHandler = true;
+                }
 
                 if (result.IsSuccessful)
                 {
@@ -110,7 +115,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 skippedHandlers++;
             }
 
-            return hasGoneThroughMessageHandler
+            return hasGoneThroughAnyHandler
                 ? MatchedHandlerFailed(messageContext.MessageId)
                 : NoMatchedHandler(messageContext.MessageId);
 
