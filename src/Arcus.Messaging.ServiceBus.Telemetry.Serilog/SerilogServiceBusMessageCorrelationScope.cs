@@ -125,6 +125,7 @@ namespace Arcus.Messaging.ServiceBus.Telemetry.Serilog
             context = context is null ? new Dictionary<string, object>() : new Dictionary<string, object>(context);
             context["ServiceBus-Endpoint"] = serviceBusNamespace;
             context["ServiceBus-EntityName"] = entityName;
+            context["ServiceBus-Entity"] = entityType;
             context["ServiceBus-EntityType"] = entityType;
 
             logger.LogWarning("{@Request}", RequestLogEntry.CreateForServiceBus(operationName, isSuccessful, duration, startTime, context));
