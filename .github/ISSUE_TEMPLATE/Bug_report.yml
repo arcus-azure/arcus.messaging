@@ -1,5 +1,5 @@
 name: 🐞 Bug report
-description: Report a bug in the Arcus Testing library.
+description: Report a bug in the Arcus library.
 title: "🐞 [Bug]: "
 labels:
   - bug
