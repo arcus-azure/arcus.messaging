@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Data.SqlClient;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
@@ -13,17 +13,29 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
 {
     public class OrderWithAutoTrackingAzureServiceBusMessageHandler : IAzureServiceBusMessageHandler<Order>
     {
+        private readonly bool _isSuccessful;
         private readonly ILogger<OrderWithAutoTrackingAzureServiceBusMessageHandler> _logger;
+
+        private static readonly HttpClient HttpClient = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="OrderWithAutoTrackingAzureServiceBusMessageHandler" /> class.
         /// </summary>
         public OrderWithAutoTrackingAzureServiceBusMessageHandler(ILogger<OrderWithAutoTrackingAzureServiceBusMessageHandler> logger)
+            : this(isSuccessful: true, logger)
         {
-            _logger = logger;
         }
 
-        public Task ProcessMessageAsync(
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OrderWithAutoTrackingAzureServiceBusMessageHandler"/> class.
+        /// </summary>
+        public OrderWithAutoTrackingAzureServiceBusMessageHandler(bool isSuccessful, ILogger<OrderWithAutoTrackingAzureServiceBusMessageHandler> logger)
+        {
+            _logger = logger;
+            _isSuccessful = isSuccessful;
+        }
+
+        public async Task ProcessMessageAsync(
             Order message,
             AzureServiceBusMessageContext messageContext,
             MessageCorrelationInfo correlationInfo,
@@ -31,8 +43,13 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
         {
             _logger.LogAzureKeyVaultDependency("https://my-vault.azure.net", "Sql-connection-string", isSuccessful: true, DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
             SimulateSqlQueryWithMicrosoftTracking();
+            await SimulateHttpClientWithMicrosoftTrackingAsync();
 
-            return Task.CompletedTask;
+            if (!_isSuccessful)
+            {
+                throw new InvalidOperationException(
+                    "[Test] Sabotage this message processing to let the message correlation system pick up an 'unsuccessful request'");
+            }
         }
 
         private static void SimulateSqlQueryWithMicrosoftTracking()
@@ -57,6 +74,11 @@ namespace Arcus.Messaging.Tests.Workers.ServiceBus.MessageHandlers
                 // We only want to simulate a SQL connection/command, no need to actually set this up.
                 // A failure will still result in a dependency telemetry instance that we can assert on.
             }
+        }
+
+        private static async Task SimulateHttpClientWithMicrosoftTrackingAsync()
+        {
+            string _ = await HttpClient.GetStringAsync("https://codit.eu");
         }
     }
 }

@@ -184,6 +184,36 @@ Arcus Messaging makes it possible to make it visible in a logging system like Az
 Below, you will find the different options that are supported to enable Service Bus request tracking. When this is enabled, Arcus.Messaging will log a request operation for every message that is received from Service Bus and all traces and interactions to dependent systems that happen during the processing of that message, will be logged as children of this request operation.
 
 <Tabs groupId="correlation-systems">
+<TabItem value="open-telemetry" label="OpenTelemetry">
+
+```powershell
+PS> Install-Package -Name Arcus.Messaging.ServiceBus.Telemetry.OpenTelemetry
+```
+
+Make sure to include the following line to your message pump registration:
+```diff
++ ActivitySource applicationSource = new("<activity-source-name>");
+
+services.AddServiceBusTopicMessagePump(...)
++       .UseServiceBusOpenTelemetryRequestTracking(applicationSource)           
+        .WithServiceBusMessageHandler<...>()
+        .WithServiceBusMessageHandler<...>();
+```
+
+Now Arcus will use the OpenTelemetry approach to track Azure Service Bus messages. Make sure that the `ActivitySource` that is passed, is also tracked by OpenTelemetry:
+```csharp
+IServiceCollection services = ...
+
+services.AddOpenTelemetry()
+        .AddTraces(traces =>
+        {
+            traces.AddSource("<activity-source-name>");
+        });
+```
+
+> 🔗 [More info on OpenTelemetry on Azure](https://learn.microsoft.com/en-us/azure/azure-monitor/app/opentelemetry) 
+
+</TabItem>
 <TabItem value="serilog" label="Serilog">
 
 ```powershell
@@ -338,7 +368,9 @@ Both the recovery period after the circuit is open and the interval between mess
 }
 ```
 
-#### 🔔 Get notified on a circuit breaker state transition
+<details>
+<summary>**🔔 Get notified on a circuit breaker state transition**</summary>
+
 To get notified on circuit-breaker state transitions, you can register one or more event handlers on a message pump.
 
 These event handlers should implement the `ICircuitBreakerEventHandler` interface:
