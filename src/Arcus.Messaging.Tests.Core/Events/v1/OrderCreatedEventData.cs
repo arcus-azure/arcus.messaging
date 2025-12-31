@@ -1,22 +1,25 @@
-﻿using Arcus.Messaging.Abstractions;
-
-namespace Arcus.Messaging.Tests.Core.Events.v1
+﻿namespace Arcus.Messaging.Tests.Core.Events.v1
 {
     public class OrderCreatedEventData
     {
-        public OrderCreatedEventData(string id, int amount, string articleNumber, string customerName, MessageCorrelationInfo correlationInfo)
-        {
-            Id = id;
-            Amount = amount;
-            ArticleNumber = articleNumber;
-            CustomerName = customerName;
-            CorrelationInfo = correlationInfo;
-        }
-
         public string Id { get; set; }
         public int Amount { get; set; }
         public string ArticleNumber { get; set; }
         public string CustomerName { get; set; }
-        public MessageCorrelationInfo CorrelationInfo { get; set; }
+        public OrderCreatedCorrelationInfo CorrelationInfo { get; set; }
+        public OrderCreatedEventMessageContext MessageContext { get; set; }
+    }
+
+    public class OrderCreatedCorrelationInfo
+    {
+        public string OperationId { get; set; }
+        public string TransactionId { get; set; }
+        public string OperationParentId { get; set; }
+    }
+
+    public class OrderCreatedEventMessageContext
+    {
+        public string EntityName { get; set; }
+        public string SubscriptionName { get; set; }
     }
 }

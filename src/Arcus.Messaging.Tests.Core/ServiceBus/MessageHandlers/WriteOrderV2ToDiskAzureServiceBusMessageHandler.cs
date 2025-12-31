@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Events.v1;
@@ -37,12 +36,24 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             string filePath = Path.Combine(dirPath, fileName);
 
             string json = JsonConvert.SerializeObject(
-                new OrderCreatedEventData(
-                    message.Id,
-                    message.Amount,
-                    message.ArticleNumber,
-                    message.Customer.FirstName + " " + message.Customer.LastName,
-                    correlationInfo));
+                new OrderCreatedEventData
+                {
+                    Id = message.Id,
+                    Amount = message.Amount,
+                    ArticleNumber = message.ArticleNumber,
+                    CustomerName = message.Customer.FirstName + " " + message.Customer.LastName,
+                    CorrelationInfo = new()
+                    {
+                        OperationId = correlationInfo.OperationId,
+                        TransactionId = correlationInfo.TransactionId,
+                        OperationParentId = correlationInfo.OperationParentId,
+                    },
+                    MessageContext = new()
+                    {
+                        EntityName = messageContext.EntityPath,
+                        SubscriptionName = messageContext.SubscriptionName
+                    }
+                });
 
             await File.WriteAllTextAsync(filePath, json, cancellationToken);
         }

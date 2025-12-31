@@ -24,6 +24,8 @@ namespace Arcus.Messaging.ServiceBus
             ServiceBusReceivedMessage message)
             : base(message.MessageId, jobId, message.ApplicationProperties.ToDictionary(item => item.Key, item => item.Value))
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(entityPath);
+
             MessageSettle = messageSettle;
             Message = message;
 
@@ -33,6 +35,15 @@ namespace Arcus.Messaging.ServiceBus
             SystemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
             LockToken = message.LockToken;
             DeliveryCount = message.DeliveryCount;
+
+            if (EntityType is ServiceBusEntityType.Topic && !string.IsNullOrWhiteSpace(EntityPath))
+            {
+                string[] entityPathParts = EntityPath.Split(["/Subscriptions/"], StringSplitOptions.RemoveEmptyEntries);
+                if (entityPathParts.Length is 2)
+                {
+                    SubscriptionName = entityPathParts[1];
+                }
+            }
         }
 
         /// <summary>
@@ -46,6 +57,14 @@ namespace Arcus.Messaging.ServiceBus
         /// specific to the Azure Service bus namespace that contains it.
         /// </summary>
         public string EntityPath { get; }
+
+        /// <summary>
+        /// Gets the optional available subscription name on the Azure Service Bus Topic that the message was received from via the message pump.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠️ Only set when the <see cref="EntityType"/> is <see cref="ServiceBusEntityType.Topic"/>, otherwise <c>null</c>.
+        /// </remarks>
+        public string SubscriptionName { get; }
 
         /// <summary>
         /// Gets the type of the Azure Service Bus entity on which the message was received.
