@@ -109,10 +109,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             string sessionAwareDescription = UseSessions ? " session-aware" : string.Empty;
             _logger.LogTrace("[Test:Setup] Register Azure Service Bus{SessionDescription} queue message pump", sessionAwareDescription);
 
-            var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions { TenantId = _serviceBusConfig.ServicePrincipal.TenantId });
             return UseTrigger
                 ? Services.AddServiceBusQueueMessagePump(Queue.Name, _ => CreateServiceBusClient(), ConfigureWithTrigger)
-                : Services.AddServiceBusQueueMessagePump(Queue.Name, _serviceBusConfig.HostName, credential, ConfigureWithoutTrigger);
+                : Services.AddServiceBusQueueMessagePump(Queue.Name, _serviceBusConfig.HostName, new DefaultAzureCredential(), ConfigureWithoutTrigger);
 
             void ConfigureWithoutTrigger(ServiceBusMessagePumpOptions options)
             {
@@ -144,10 +143,9 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             string sessionAwareDescription = UseSessions ? " session-aware" : string.Empty;
             _logger.LogTrace("[Test:Setup] Register Azure Service Bus{SessionDescription} topic message pump", sessionAwareDescription);
 
-            var credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions { TenantId = _serviceBusConfig.ServicePrincipal.TenantId });
             var collection = UseTrigger
                 ? Services.AddServiceBusTopicMessagePump(Topic.Name, subscriptionName, _ => CreateServiceBusClient(), ConfigureWithTrigger)
-                : Services.AddServiceBusTopicMessagePump(Topic.Name, subscriptionName, _serviceBusConfig.HostName, credential, ConfigureWithoutTrigger);
+                : Services.AddServiceBusTopicMessagePump(Topic.Name, subscriptionName, _serviceBusConfig.HostName, new DefaultAzureCredential(), ConfigureWithoutTrigger);
 
             return collection.WithUnrelatedServiceBusMessageHandler()
                              .WithUnrelatedServiceBusMessageHandler();

@@ -36,7 +36,7 @@ namespace Arcus.Messaging.ServiceBus
             LockToken = message.LockToken;
             DeliveryCount = message.DeliveryCount;
 
-            if (EntityType is ServiceBusEntityType.Topic && !string.IsNullOrWhiteSpace(EntityPath))
+            if (EntityType is ServiceBusEntityType.Topic)
             {
                 string[] entityPathParts = EntityPath.Split(["/Subscriptions/"], StringSplitOptions.RemoveEmptyEntries);
                 if (entityPathParts.Length is 2)
