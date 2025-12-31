@@ -19,7 +19,7 @@
 
     public class OrderCreatedEventMessageContext
     {
-        public string EntityName { get; set; }
+        public string EntityPath { get; set; }
         public string SubscriptionName { get; set; }
     }
 }
