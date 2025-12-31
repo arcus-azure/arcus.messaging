@@ -24,8 +24,6 @@ namespace Arcus.Messaging.ServiceBus
             ServiceBusReceivedMessage message)
             : base(message.MessageId, jobId, message.ApplicationProperties.ToDictionary(item => item.Key, item => item.Value))
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(entityPath);
-
             MessageSettle = messageSettle;
             Message = message;
 
@@ -36,7 +34,7 @@ namespace Arcus.Messaging.ServiceBus
             LockToken = message.LockToken;
             DeliveryCount = message.DeliveryCount;
 
-            if (EntityType is ServiceBusEntityType.Topic)
+            if (EntityType is ServiceBusEntityType.Topic && !string.IsNullOrWhiteSpace(EntityPath))
             {
                 string[] entityPathParts = EntityPath.Split(["/Subscriptions/"], StringSplitOptions.RemoveEmptyEntries);
                 if (entityPathParts.Length is 2)

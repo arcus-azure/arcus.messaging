@@ -50,7 +50,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
                     },
                     MessageContext = new()
                     {
-                        EntityName = messageContext.EntityPath,
+                        EntityPath = messageContext.EntityPath,
                         SubscriptionName = messageContext.SubscriptionName
                     }
                 });

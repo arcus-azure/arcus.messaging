@@ -357,12 +357,12 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             switch (EntityType)
             {
                 case ServiceBusEntityType.Topic:
-                    Assert.Equal(Topic.Name, receivedEventData.MessageContext.EntityName);
+                    Assert.StartsWith(Topic.Name, receivedEventData.MessageContext.EntityPath);
                     Assert.Contains(receivedEventData.MessageContext.SubscriptionName, _subscriptionNames);
                     break;
 
                 case ServiceBusEntityType.Queue:
-                    Assert.Equal(Queue.Name, receivedEventData.MessageContext.EntityName);
+                    Assert.Equal(Queue.Name, receivedEventData.MessageContext.EntityPath);
                     break;
             }
 
