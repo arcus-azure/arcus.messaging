@@ -160,10 +160,10 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
     // Configure the message pump to use sessions to receive messages (with or without additional options).
     options.UseSessions(sessions =>
     {
-        // The maximum number of calls to the callback the processor will initiate per session.
-        // The total number of callbacks = MaxConcurrentSessions * MaxConcurrentCallsPerSession
+        // The maximum number of messages to batch in a single Azure Service Bus session
+        // The total number of messages = MaxConcurrentSessions x MaxMessagesPerSession
         // (default: 1).
-        options.MaxConcurrentCallsPerSession = 5;
+        options.MaxMessagesPerSession = 5;
 
         // The maximum number of sessions that will be processed concurrently by the processor
         // (default: 8).
