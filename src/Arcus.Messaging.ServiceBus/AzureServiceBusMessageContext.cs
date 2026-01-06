@@ -20,6 +20,7 @@ namespace Arcus.Messaging.ServiceBus
             string fullyQualifiedNamespace,
             ServiceBusEntityType entityType,
             string entityPath,
+            string subscriptionName,
             IMessageSettleStrategy messageSettle,
             ServiceBusReceivedMessage message)
             : base(message.MessageId, jobId, message.ApplicationProperties.ToDictionary(item => item.Key, item => item.Value))
@@ -29,19 +30,11 @@ namespace Arcus.Messaging.ServiceBus
 
             FullyQualifiedNamespace = fullyQualifiedNamespace;
             EntityPath = entityPath;
+            SubscriptionName = subscriptionName;
             EntityType = entityType;
             SystemProperties = AzureServiceBusSystemProperties.CreateFrom(message);
             LockToken = message.LockToken;
             DeliveryCount = message.DeliveryCount;
-
-            if (EntityType is ServiceBusEntityType.Topic && !string.IsNullOrWhiteSpace(EntityPath))
-            {
-                string[] entityPathParts = EntityPath.Split(["/Subscriptions/"], StringSplitOptions.RemoveEmptyEntries);
-                if (entityPathParts.Length is 2)
-                {
-                    SubscriptionName = entityPathParts[1];
-                }
-            }
         }
 
         /// <summary>
@@ -99,12 +92,31 @@ namespace Arcus.Messaging.ServiceBus
             ServiceBusReceiver receiver,
             ServiceBusReceivedMessage message)
         {
+            return Create(jobId, entityType, subscriptionName: null, receiver, message);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="ServiceBusMessageContext"/> based on the current Azure Service bus situation.
+        /// </summary>
+        /// <param name="jobId">The unique ID to identity the Azure Service bus message pump that is responsible for pumping messages from the <paramref name="receiver"/>.</param>
+        /// <param name="entityType">The type of Azure Service bus entity that the <paramref name="receiver"/> receives from.</param>
+        /// <param name="subscriptionName">The name of the topic subscription where the <paramref name="message"/> was received from.</param>
+        /// <param name="receiver">The Azure Service bus receiver that is responsible for receiving the <paramref name="message"/>.</param>
+        /// <param name="message">The Azure Service bus message that is currently being processed.</param>
+        /// <exception cref="ArgumentNullException">Thrown when one of the parameters is <c>null</c>.</exception>
+        public static ServiceBusMessageContext Create(
+            string jobId,
+            ServiceBusEntityType entityType,
+            string subscriptionName,
+            ServiceBusReceiver receiver,
+            ServiceBusReceivedMessage message)
+        {
             ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
             ArgumentNullException.ThrowIfNull(receiver);
             ArgumentNullException.ThrowIfNull(message);
 
             var messageSettle = new MessageSettleViaReceiver(receiver, message);
-            return new ServiceBusMessageContext(jobId, receiver.FullyQualifiedNamespace, entityType, receiver.EntityPath, messageSettle, message);
+            return new ServiceBusMessageContext(jobId, receiver.FullyQualifiedNamespace, entityType, receiver.EntityPath, subscriptionName, messageSettle, message);
         }
 
         /// <summary>
@@ -122,8 +134,28 @@ namespace Arcus.Messaging.ServiceBus
             ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
             ArgumentNullException.ThrowIfNull(eventArgs);
 
+            return Create(jobId, entityType, subscriptionName: null, eventArgs);
+        }
+
+        /// <summary>
+        /// Creates a new instance of the <see cref="AzureServiceBusMessageContext"/> based on the current Azure Service bus situation.
+        /// </summary>
+        /// <param name="jobId">The unique ID to identity the Azure Service bus message pump that is responsible for pumping messages from the <paramref name="eventArgs"/>.</param>
+        /// <param name="entityType">The type of Azure Service bus entity that the <paramref name="eventArgs"/> receives from.</param>
+        /// <param name="subscriptionName">The name of the topic subscription where the message was received from.</param>
+        /// <param name="eventArgs">The Azure Service bus event arguments upon receiving the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when one of the parameters is <c>null</c>.</exception>
+        public static ServiceBusMessageContext Create(
+            string jobId,
+            ServiceBusEntityType entityType,
+            string subscriptionName,
+            ProcessSessionMessageEventArgs eventArgs)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
+            ArgumentNullException.ThrowIfNull(eventArgs);
+
             var messageSettle = new MessageSettleViaSessionEventArgs(eventArgs);
-            return new ServiceBusMessageContext(jobId, eventArgs.FullyQualifiedNamespace, entityType, eventArgs.EntityPath, messageSettle, eventArgs.Message);
+            return new ServiceBusMessageContext(jobId, eventArgs.FullyQualifiedNamespace, entityType, eventArgs.EntityPath, subscriptionName, messageSettle, eventArgs.Message);
         }
 
         internal IMessageSettleStrategy MessageSettle { get; }
@@ -284,7 +316,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             string entityPath,
             IMessageSettleStrategy messageSettle,
             ServiceBusReceivedMessage message)
-            : base(jobId, fullyQualifiedNamespace, entityType, entityPath, messageSettle, message)
+            : base(jobId, fullyQualifiedNamespace, entityType, entityPath, subscriptionName: null, messageSettle, message)
         {
         }
 
@@ -292,7 +324,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
         /// Initializes a deprecated <see cref="AzureServiceBusMessageContext"/> from the new <see cref="ServiceBusMessageContext"/>.
         /// </summary>
         public AzureServiceBusMessageContext(ServiceBusMessageContext context)
-            : base(context.JobId, context.FullyQualifiedNamespace, context.EntityType, context.EntityPath, context.MessageSettle, context.Message)
+            : base(context.JobId, context.FullyQualifiedNamespace, context.EntityType, context.EntityPath, subscriptionName: null, context.MessageSettle, context.Message)
         {
         }
     }
