@@ -9,13 +9,13 @@
 
   <ItemGroup>
     <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Sinks.ApplicationInsights" Version="3.*" />
-    <PackageReference Include="Arcus.Testing.Logging.Xunit.v3" Version="2.2.0" />
-    <PackageReference Include="Arcus.Testing.Messaging.ServiceBus" Version="2.2.0" />
+    <PackageReference Include="Arcus.Testing.Logging.Xunit.v3" Version="2.*" />
+    <PackageReference Include="Arcus.Testing.Messaging.ServiceBus" Version="2.*" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.21.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.*" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="3.1.0" />
-    <PackageReference Include="xunit.v3" Version="3.1.*" />
+    <PackageReference Include="xunit.v3" Version="3.*" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.*">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

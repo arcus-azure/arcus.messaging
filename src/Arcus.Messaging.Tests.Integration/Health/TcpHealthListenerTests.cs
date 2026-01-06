@@ -22,12 +22,10 @@ namespace Arcus.Messaging.Tests.Integration.Health
 
         public TcpHealthListenerTests(ITestOutputHelper outputWriter)
         {
-            TcpPort = Bogus.Random.Int(5050, 5060);
-
             _tcpProbeClient = new TcpHealthService(TcpPort, new XunitTestLogger(outputWriter));
         }
 
-        private int TcpPort { get; }
+        private static int TcpPort { get; } = Bogus.Random.Int(5040, 5060);
 
         [Fact]
         public async Task TcpHealthProbeWithOrWithoutRejectionOption_AcceptTcpConnection_WhenApplicationIsHealthy()
