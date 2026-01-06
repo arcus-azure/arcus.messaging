@@ -124,7 +124,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         private TimeSpan _sessionIdleTimeout = TimeSpan.FromMinutes(1);
 
         /// <summary>
-        /// <para>Gets or sets the maximum number of messages to batch in a single Azure Service Bus session.</para>
+        /// <para>Gets or sets the maximum number of messages to retrieve in a single Azure Service Bus session.</para>
         /// <para>Total number of messages = <see cref="MaxConcurrentSessions"/> x <see cref="MaxMessagesPerSession"/>.</para>
         /// </summary>
         /// <remarks>The default value is 1.</remarks>
