@@ -160,7 +160,7 @@ services.AddServiceBus[Topic/Queue]MessagePump(..., options =>
     // Configure the message pump to use sessions to receive messages (with or without additional options).
     options.UseSessions(sessions =>
     {
-        // The maximum number of messages to batch in a single Azure Service Bus session
+        // The maximum number of messages to retrieve in a single Azure Service Bus session
         // The total number of messages = MaxConcurrentSessions x MaxMessagesPerSession
         // (default: 1).
         options.MaxMessagesPerSession = 5;
