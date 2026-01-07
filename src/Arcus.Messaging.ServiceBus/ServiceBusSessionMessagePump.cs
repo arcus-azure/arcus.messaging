@@ -58,7 +58,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 PrefetchCount = Options.PrefetchCount,
                 MaxConcurrentSessions = Options.Session.MaxConcurrentSessions,
-                MaxConcurrentCallsPerSession = Options.Session.MaxConcurrentCallsPerSession,
+                MaxConcurrentCallsPerSession = Options.Session.MaxMessagesPerSession,
                 SessionIdleTimeout = Options.Session.SessionIdleTimeout,
             };
 
