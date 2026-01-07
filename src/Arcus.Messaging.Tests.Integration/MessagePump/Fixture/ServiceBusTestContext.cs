@@ -52,6 +52,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             Services.AddTestLogging(logger);
         }
 
+        private ServiceBusEntityType EntityType { get; set; }
         private TemporaryQueue Queue => UseSessions ? _serviceBus.QueueWithSession : _serviceBus.Queue;
         private TemporaryTopic Topic => _serviceBus.Topic;
         private bool UseTrigger { get; } = Bogus.Random.Bool();
@@ -103,6 +104,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
 
         internal ServiceBusMessageHandlerCollection WhenOnlyServiceBusQueueMessagePump(Action<ServiceBusMessagePumpOptions> configureOptions = null)
         {
+            EntityType = ServiceBusEntityType.Queue;
+
             string sessionAwareDescription = UseSessions ? " session-aware" : string.Empty;
             _logger.LogTrace("[Test:Setup] Register Azure Service Bus{SessionDescription} queue message pump", sessionAwareDescription);
 
@@ -132,6 +135,8 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         /// </summary>
         internal ServiceBusMessageHandlerCollection WhenServiceBusTopicMessagePump(Action<ServiceBusMessagePumpOptions> configureOptions = null)
         {
+            EntityType = ServiceBusEntityType.Topic;
+
             string subscriptionName = $"test-{Guid.NewGuid()}";
             _subscriptionNames.Add(subscriptionName);
 
@@ -333,7 +338,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             }
         }
 
-        private static void AssertReceivedOrderEventDataForW3C(
+        private void AssertReceivedOrderEventDataForW3C(
             ServiceBusMessage message,
             OrderCreatedEventData receivedEventData)
         {
@@ -348,6 +353,19 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             Assert.Equal(order.Id, receivedEventData.Id);
             Assert.Equal(order.Amount, receivedEventData.Amount);
             Assert.Equal(order.ArticleNumber, receivedEventData.ArticleNumber);
+
+            switch (EntityType)
+            {
+                case ServiceBusEntityType.Topic:
+                    Assert.StartsWith(Topic.Name, receivedEventData.MessageContext.EntityPath);
+                    Assert.Contains(receivedEventData.MessageContext.SubscriptionName, _subscriptionNames);
+                    break;
+
+                case ServiceBusEntityType.Queue:
+                    Assert.Equal(Queue.Name, receivedEventData.MessageContext.EntityPath);
+                    break;
+            }
+
             Assert.Equal(transactionId, receivedEventData.CorrelationInfo.TransactionId);
             Assert.NotNull(receivedEventData.CorrelationInfo.OperationId);
             Assert.Equal(operationParentId, receivedEventData.CorrelationInfo.OperationParentId);

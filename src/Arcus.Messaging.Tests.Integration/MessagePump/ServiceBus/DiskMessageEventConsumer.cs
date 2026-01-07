@@ -2,7 +2,6 @@
 using System.IO;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Core.Events.v1;
-using Arcus.Messaging.Tests.Workers.ServiceBus.Fixture;
 using Arcus.Testing;
 using Newtonsoft.Json;
 using Xunit;
@@ -29,7 +28,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
                           .FailWith(errorMessage);
 
             string json = await File.ReadAllTextAsync(file.FullName);
-            var eventData = JsonConvert.DeserializeObject<TResult>(json, new MessageCorrelationInfoJsonConverter());
+            var eventData = JsonConvert.DeserializeObject<TResult>(json);
 
             return eventData;
         }
