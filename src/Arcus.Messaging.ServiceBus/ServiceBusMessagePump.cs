@@ -157,7 +157,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             ArgumentNullException.ThrowIfNull(message);
             ArgumentNullException.ThrowIfNull(messageContext);
-            cancellationToken.ThrowIfCancellationRequested();
 
             if (IsHostShuttingDown)
             {
