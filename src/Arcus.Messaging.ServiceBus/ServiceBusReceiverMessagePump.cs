@@ -75,14 +75,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' started", EntityType, JobId, EntityName, Namespace);
 
-            _receiveMessagesCancellation = new CancellationTokenSource();
+            _receiveMessagesCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
             while (CircuitState.IsClosed
                    && !_messageReceiver.IsClosed
                    && !_receiveMessagesCancellation.IsCancellationRequested)
             {
                 try
                 {
-                    await ProcessMultipleMessagesAsync(cancellationToken);
+                    await ProcessMultipleMessagesAsync();
 
                     if (CircuitState.IsOpen)
                     {
@@ -125,12 +126,12 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 : client.CreateReceiver(EntityName, SubscriptionName, new ServiceBusReceiverOptions { PrefetchCount = Options.PrefetchCount });
         }
 
-        private async Task ProcessMultipleMessagesAsync(CancellationToken cancellationToken)
+        private async Task ProcessMultipleMessagesAsync()
         {
             IReadOnlyList<ServiceBusReceivedMessage> messages =
                 await _messageReceiver.ReceiveMessagesAsync(Options.MaxMessagesPerBatch, cancellationToken: _receiveMessagesCancellation.Token);
 
-            await Task.WhenAll(messages.Select(msg => ProcessMessageAsync(msg, cancellationToken)));
+            await Task.WhenAll(messages.Select(msg => ProcessMessageAsync(msg)));
         }
 
         private async Task<MessageProcessingResult> TryProcessProcessSingleMessageAsync()
@@ -157,7 +158,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
 
             try
             {
-                MessageProcessingResult isSuccessfullyProcessed = await ProcessMessageAsync(message, CancellationToken.None);
+                MessageProcessingResult isSuccessfullyProcessed = await ProcessMessageAsync(message);
                 return isSuccessfullyProcessed;
             }
             catch (Exception exception)
@@ -194,16 +195,17 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
+            _receiveMessagesCancellation?.Dispose();
+
             if (_messageReceiver != null)
             {
                 await _messageReceiver.CloseAsync();
             }
 
             await base.StopAsync(cancellationToken);
-            _receiveMessagesCancellation?.Dispose();
         }
 
-        private async Task<MessageProcessingResult> ProcessMessageAsync(ServiceBusReceivedMessage message, CancellationToken cancellationToken)
+        private async Task<MessageProcessingResult> ProcessMessageAsync(ServiceBusReceivedMessage message)
         {
             if (message is null)
             {
@@ -211,9 +213,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return MessageProcessingResult.Failure("<unavailable>", MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message is was 'null'");
             }
 
+            using var cancellationHandler = CancellationTokenSource.CreateLinkedTokenSource(_receiveMessagesCancellation.Token);
             var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, _messageReceiver, message);
 
-            MessageProcessingResult routingResult = await RouteMessageAsync(message, messageContext, cancellationToken);
+            MessageProcessingResult routingResult = await RouteMessageAsync(message, messageContext, cancellationHandler.Token);
             return routingResult;
         }
 
