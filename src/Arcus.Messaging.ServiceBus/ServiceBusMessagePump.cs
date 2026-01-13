@@ -161,7 +161,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             if (IsHostShuttingDown)
             {
                 Logger.LogDebug("[Settle:Abandon] message (message ID='{MessageId}') on Azure Service Bus {EntityType} message pump => pump is shutting down", message.MessageId, EntityType);
-                await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), cancellationToken);
+                await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), CancellationToken.None);
                 return MessageProcessingResult.Failure(message.MessageId, MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message pump is shutting down");
             }
 
