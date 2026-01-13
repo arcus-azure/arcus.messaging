@@ -89,11 +89,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         protected string SubscriptionName { get; }
 
         /// <summary>
-        /// Gets the namespace of the Azure Service Bus entity that this message pump is processing messages for.
-        /// </summary>
-        protected abstract string Namespace { get; }
-
-        /// <summary>
         /// Gets the options the user has configured for this message pump.
         /// </summary>
         protected ServiceBusMessagePumpOptions Options { get; }
@@ -125,11 +120,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
             {
-                Logger.LogDebug(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' was cancelled", EntityType, JobId, EntityName, Namespace);
+                Logger.LogDebug(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' was cancelled", EntityType, JobId, EntityName);
             }
             catch (Exception exception)
             {
-                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", EntityType, JobId, EntityName, Namespace);
+                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}'", EntityType, JobId, EntityName);
             }
             finally
             {

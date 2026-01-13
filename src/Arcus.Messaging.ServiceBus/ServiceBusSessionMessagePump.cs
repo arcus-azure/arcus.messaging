@@ -34,11 +34,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         }
 
         /// <summary>
-        /// Gets the namespace of the Azure Service Bus entity that this message pump is processing messages for.
-        /// </summary>
-        protected override string Namespace => _sessionProcessor?.FullyQualifiedNamespace;
-
-        /// <summary>
         /// Sets up the message pump to start processing messages from the Azure Service Bus entity.
         /// </summary>
         protected override async Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
