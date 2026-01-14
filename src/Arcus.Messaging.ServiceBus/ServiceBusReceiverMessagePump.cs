@@ -55,8 +55,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// </summary>
         protected override async Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
         {
-            await using ServiceBusReceiver messageReceiver = CreateMessageReceiver();
-
             if (IsStarted)
             {
                 return;
@@ -70,6 +68,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                    https://github.com/arcus-azure/arcus.messaging/issues/176 */
 #pragma warning restore S1135
 
+            await using ServiceBusReceiver messageReceiver = CreateMessageReceiver();
             Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' started", EntityType, JobId, EntityName);
 
             _receiveMessagesCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -79,19 +78,19 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 try
                 {
-                    await ProcessMultipleMessagesAsync(messageReceiver);
+                    await ProcessMultipleMessagesAsync(messageReceiver, _receiveMessagesCancellation.Token);
 
                     if (CircuitState.IsOpen)
                     {
-                        await WaitMessageRecoveryPeriodAsync(cancellationToken);
+                        await WaitMessageRecoveryPeriodAsync(_receiveMessagesCancellation.Token);
 
                         MessageProcessingResult singleProcessingResult;
                         do
                         {
-                            singleProcessingResult = await TryProcessProcessSingleMessageAsync(messageReceiver);
+                            singleProcessingResult = await TryProcessProcessSingleMessageAsync(messageReceiver, _receiveMessagesCancellation.Token);
                             if (!singleProcessingResult.IsSuccessful)
                             {
-                                await WaitMessageIntervalDuringRecoveryAsync(cancellationToken);
+                                await WaitMessageIntervalDuringRecoveryAsync(_receiveMessagesCancellation.Token);
                             }
 
                         } while (!singleProcessingResult.IsSuccessful);
@@ -122,32 +121,32 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 : client.CreateReceiver(EntityName, SubscriptionName, new ServiceBusReceiverOptions { PrefetchCount = Options.PrefetchCount });
         }
 
-        private async Task ProcessMultipleMessagesAsync(ServiceBusReceiver messageReceiver)
+        private async Task ProcessMultipleMessagesAsync(ServiceBusReceiver messageReceiver, CancellationToken cancellationToken)
         {
             IReadOnlyList<ServiceBusReceivedMessage> messages =
-                await messageReceiver.ReceiveMessagesAsync(Options.MaxMessagesPerBatch, cancellationToken: _receiveMessagesCancellation.Token);
+                await messageReceiver.ReceiveMessagesAsync(Options.MaxMessagesPerBatch, cancellationToken: cancellationToken);
 
-            await Task.WhenAll(messages.Select(msg => ProcessMessageAsync(messageReceiver, msg)));
+            await Task.WhenAll(messages.Select(msg => ProcessMessageAsync(messageReceiver, msg, cancellationToken)));
         }
 
-        private async Task<MessageProcessingResult> TryProcessProcessSingleMessageAsync(ServiceBusReceiver messageReceiver)
+        private async Task<MessageProcessingResult> TryProcessProcessSingleMessageAsync(ServiceBusReceiver messageReceiver, CancellationToken cancellationToken)
         {
             Logger.LogDebug("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' tries to process single message during half-open circuit...", EntityType, JobId, EntityName);
 
             ServiceBusReceivedMessage message = null;
             while (message is null)
             {
-                message = await messageReceiver.ReceiveMessageAsync();
+                message = await messageReceiver.ReceiveMessageAsync(cancellationToken: cancellationToken);
                 if (message is null)
                 {
                     Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' failed to receive a single message, trying again...", EntityType, JobId, EntityName);
-                    await Task.Delay(WaitBetweenSingleMessageReceiveInHalfOpenState);
+                    await Task.Delay(WaitBetweenSingleMessageReceiveInHalfOpenState, cancellationToken);
                 }
             }
 
             try
             {
-                MessageProcessingResult isSuccessfullyProcessed = await ProcessMessageAsync(messageReceiver, message);
+                MessageProcessingResult isSuccessfullyProcessed = await ProcessMessageAsync(messageReceiver, message, cancellationToken);
                 return isSuccessfullyProcessed;
             }
             catch (Exception exception)
@@ -155,6 +154,21 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 Logger.LogError(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' failed to process single message during half-open circuit, retrying after circuit delay", EntityType, JobId, EntityName);
                 return MessageProcessingResult.Failure(message.MessageId, MessageProcessingError.ProcessingInterrupted, "Failed to process single message during half-open circuit due to an unexpected exception", exception);
             }
+        }
+
+        private async Task<MessageProcessingResult> ProcessMessageAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message, CancellationToken cancellationToken)
+        {
+            if (message is null)
+            {
+                Logger.LogWarning("Received message on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", EntityType, JobId);
+                return MessageProcessingResult.Failure("<unavailable>", MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message is was 'null'");
+            }
+
+            using var cancellationHandler = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, messageReceiver, message);
+
+            MessageProcessingResult routingResult = await RouteMessageAsync(message, messageContext, cancellationHandler.Token);
+            return routingResult;
         }
 
         /// <summary>
@@ -176,21 +190,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 await _receiveMessagesCancellation.CancelAsync();
             }
-        }
-
-        private async Task<MessageProcessingResult> ProcessMessageAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message)
-        {
-            if (message is null)
-            {
-                Logger.LogWarning("Received message on Azure Service Bus {EntityType} message pump '{JobId}' was null, skipping", EntityType, JobId);
-                return MessageProcessingResult.Failure("<unavailable>", MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message is was 'null'");
-            }
-
-            using var cancellationHandler = CancellationTokenSource.CreateLinkedTokenSource(_receiveMessagesCancellation.Token);
-            var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, messageReceiver, message);
-
-            MessageProcessingResult routingResult = await RouteMessageAsync(message, messageContext, cancellationHandler.Token);
-            return routingResult;
         }
 
         private async Task WaitMessageRecoveryPeriodAsync(CancellationToken cancellationToken)
