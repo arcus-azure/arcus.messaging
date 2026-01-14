@@ -66,11 +66,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         internal string JobId => Options.JobId;
 
         /// <summary>
-        /// Gets a boolean flag that indicates whether the message pump is currently shutting down.
-        /// </summary>
-        protected bool IsHostShuttingDown { get; private set; }
-
-        /// <summary>
         /// Gets the type of the Azure Service Bus entity that this message pump is processing messages for.
         /// </summary>
         protected ServiceBusEntityType EntityType { get; }
@@ -153,7 +148,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ArgumentNullException.ThrowIfNull(message);
             ArgumentNullException.ThrowIfNull(messageContext);
 
-            if (IsHostShuttingDown || cancellationToken.IsCancellationRequested)
+            if (cancellationToken.IsCancellationRequested)
             {
                 Logger.LogDebug("[Settle:Abandon] message (message ID='{MessageId}') on Azure Service Bus {EntityType} message pump => pump is shutting down", message.MessageId, EntityType);
                 await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), CancellationToken.None);
@@ -194,20 +189,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Sets up the message pump to stop processing messages from the Azure Service Bus entity.
         /// </summary>
-        protected virtual Task StopProcessingMessagesAsync()
-        {
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Triggered when the application host is performing a graceful shutdown.
-        /// </summary>
-        /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
-        /// <returns>A <see cref="Task" /> that represents the asynchronous Stop operation.</returns>
-        public override Task StopAsync(CancellationToken cancellationToken)
-        {
-            IsHostShuttingDown = true;
-            return base.StopAsync(cancellationToken);
-        }
+        protected abstract Task StopProcessingMessagesAsync();
     }
 }
