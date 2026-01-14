@@ -75,7 +75,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             _receiveMessagesCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
             while (CircuitState.IsClosed
-                   && !messageReceiver.IsClosed
                    && !_receiveMessagesCancellation.IsCancellationRequested)
             {
                 try
@@ -177,17 +176,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 await _receiveMessagesCancellation.CancelAsync();
             }
-        }
-
-        /// <summary>
-        ///     Triggered when the Azure Service Bus message pump is performing a graceful shutdown.
-        /// </summary>
-        /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
-        public override async Task StopAsync(CancellationToken cancellationToken)
-        {
-            _receiveMessagesCancellation?.Dispose();
-
-            await base.StopAsync(cancellationToken);
         }
 
         private async Task<MessageProcessingResult> ProcessMessageAsync(ServiceBusReceiver messageReceiver, ServiceBusReceivedMessage message)
