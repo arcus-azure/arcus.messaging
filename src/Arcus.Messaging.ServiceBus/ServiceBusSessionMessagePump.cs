@@ -71,8 +71,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
+            using var cancellationHandler = CancellationTokenSource.CreateLinkedTokenSource(arg.CancellationToken);
             var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, arg);
-            await RouteMessageAsync(message, messageContext, arg.CancellationToken);
+            await RouteMessageAsync(message, messageContext, cancellationHandler.Token);
         }
 
         private Task ProcessErrorAsync(ProcessErrorEventArgs arg)
@@ -88,19 +89,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         }
 
         /// <summary>
-        /// Triggered when the application host is performing a graceful shutdown.
+        /// Sets up the message pump to stop processing messages from the Azure Service Bus entity.
         /// </summary>
-        /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
-        /// <returns>A <see cref="Task" /> that represents the asynchronous Stop operation.</returns>
-        public override async Task StopAsync(CancellationToken cancellationToken)
+        protected override async Task StopProcessingMessagesAsync()
         {
             if (_sessionProcessor != null)
             {
-                await _sessionProcessor.StopProcessingAsync(cancellationToken);
-                await _sessionProcessor.CloseAsync(cancellationToken);
+                await _sessionProcessor.StopProcessingAsync();
+                await _sessionProcessor.CloseAsync();
             }
-
-            await base.StopAsync(cancellationToken);
         }
     }
 }
