@@ -40,7 +40,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             _sessionProcessor = CreateSessionProcessor();
 
-            _sessionProcessor.ProcessMessageAsync += ProcessMessageAsync;
+            _sessionProcessor.ProcessMessageAsync += args => ProcessMessageAsync(args, cancellationToken);
             _sessionProcessor.ProcessErrorAsync += ProcessErrorAsync;
 
             await _sessionProcessor.StartProcessingAsync(cancellationToken);
@@ -62,7 +62,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 : client.CreateSessionProcessor(EntityName, SubscriptionName, clientOptions);
         }
 
-        private async Task ProcessMessageAsync(ProcessSessionMessageEventArgs arg)
+        private async Task ProcessMessageAsync(ProcessSessionMessageEventArgs arg, CancellationToken cancellationToken)
         {
             ServiceBusReceivedMessage message = arg?.Message;
             if (message is null)
@@ -72,7 +72,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
 
             var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, arg);
-            await RouteMessageAsync(message, messageContext, arg.CancellationToken);
+            await RouteMessageAsync(message, messageContext, cancellationToken);
         }
 
         private Task ProcessErrorAsync(ProcessErrorEventArgs arg)
