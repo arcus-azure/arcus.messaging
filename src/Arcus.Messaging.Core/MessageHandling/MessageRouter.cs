@@ -50,7 +50,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         /// <param name="serviceProvider">The scoped service provider from which the registered message handlers will be extracted.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serviceProvider"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v4.0 in favor of centralizing message routing functionality, please use the " + nameof(RouteMessageThroughRegisteredHandlersAsync), DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message routing functionality, please use the " + nameof(RouteMessageThroughRegisteredHandlersAsync), DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         protected IEnumerable<MessageHandler> GetRegisteredMessageHandlers(IServiceProvider serviceProvider)
         {
             ArgumentNullException.ThrowIfNull(serviceProvider);
@@ -149,7 +149,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         ///     and all the required predicates that the <paramref name="handler"/> requires are met; [<see cref="MessageResult.Failure(string)"/>] otherwise.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handler"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v4.0 in favor of centralizing message routing functionality, please use the " + nameof(RouteMessageThroughRegisteredHandlersAsync), DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message routing functionality, please use the " + nameof(RouteMessageThroughRegisteredHandlersAsync), DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         protected async Task<MessageResult> DeserializeMessageForHandlerAsync<TMessageContext>(
             string message,
             TMessageContext messageContext,

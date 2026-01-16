@@ -182,7 +182,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <param name="logger">The logger instance to write diagnostic messages during the message handler interaction.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="messageHandler"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        [Obsolete("Will be removed in v4.0 in favor of the new factory method with message handler options", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of the new factory method with message handler options", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static MessageHandler Create<TMessage, TMessageContext>(
             IMessageHandler<TMessage, TMessageContext> messageHandler,
             ILogger logger,
@@ -208,7 +208,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
                 logger: logger);
         }
 
-        [Obsolete("Will be removed in v4.0", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         private sealed class DeprecatedMessageBodyDeserializerAdapter(IMessageBodySerializer deprecated) : IMessageBodyDeserializer
         {
             public async Task<MessageBodyResult> DeserializeMessageAsync(BinaryData messageBody)
@@ -315,7 +315,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets the concrete class type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
         /// </summary>
-        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public object GetMessageHandlerInstance()
         {
             return _messageHandlerInstance;
@@ -324,7 +324,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <summary>
         /// Gets the type of the <see cref="IMessageHandler{TMessage,TMessageContext}"/> instance.
         /// </summary>
-        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public Type GetMessageHandlerType()
         {
             return MessageHandlerType;
@@ -357,7 +357,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         /// <typeparam name="TMessageContext">The type of the message context.</typeparam>
         /// <param name="messageContext">The context in which the incoming message is processed.</param>
-        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public bool CanProcessMessageBasedOnContext<TMessageContext>(TMessageContext messageContext)
             where TMessageContext : MessageContext
         {
@@ -382,7 +382,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// Determines if the registered <see cref="IMessageHandler{TMessage,TMessageContext}"/> can process the incoming deserialized message based on the consumer-provided message predicate.
         /// </summary>
         /// <param name="message">The incoming deserialized message body.</param>
-        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public bool CanProcessMessageBasedOnMessage(object message)
         {
             return MatchesMessageBody(message, new MessageHandlerSummary());
@@ -462,7 +462,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// <returns>
         ///     A <see cref="MessageResult"/> instance that either represents a successful or faulted deserialization of the incoming <paramref name="message"/>.
         /// </returns>
-        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public async Task<MessageResult> TryCustomDeserializeMessageAsync(string message)
         {
             if (_messageBodyDeserializer is null)
@@ -527,7 +527,7 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the message handler cannot process the message correctly.</exception>
         /// <exception cref="AmbiguousMatchException">Thrown when more than a single processing method was found on the message handler.</exception>
-        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0 in favor of centralizing message handler matching in message router", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public async Task<bool> ProcessMessageAsync<TMessageContext>(
             object message,
             TMessageContext messageContext,

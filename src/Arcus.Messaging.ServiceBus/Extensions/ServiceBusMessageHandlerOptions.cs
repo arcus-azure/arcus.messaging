@@ -66,7 +66,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <summary>
         /// Adds a custom <paramref name="contextFilter"/> to only select a subset of messages, based on its context, that the registered message handler can handle.
         /// </summary>
-        [Obsolete("Will be removed in v4.0, please use " + nameof(ServiceBusMessageContext) + " instead", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0, please use " + nameof(ServiceBusMessageContext) + " instead", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public ServiceBusMessageHandlerOptions<TMessage> AddMessageContextFilter(Func<AzureServiceBusMessageContext, bool> contextFilter)
         {
             ArgumentNullException.ThrowIfNull(contextFilter);
@@ -81,7 +81,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a custom serializer instance that deserializes the incoming <see cref="ServiceBusReceivedMessage.Body"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="serializer"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v4.0, please use " + nameof(UseMessageBodyDeserializer) + " which provides the exact same functionality", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0, please use " + nameof(UseMessageBodyDeserializer) + " which provides the exact same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public ServiceBusMessageHandlerOptions<TMessage> AddMessageBodySerializer(IMessageBodySerializer serializer)
         {
             return AddMessageBodySerializer(_ => serializer);
@@ -91,7 +91,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// Adds a custom serializer instance that deserializes the incoming <see cref="ServiceBusReceivedMessage.Body"/>.
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="implementationFactory"/> is <c>null</c>.</exception>
-        [Obsolete("Will be removed in v4.0, please use " + nameof(UseMessageBodyDeserializer) + " which provides the exact same functionality", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4.0, please use " + nameof(UseMessageBodyDeserializer) + " which provides the exact same functionality", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public ServiceBusMessageHandlerOptions<TMessage> AddMessageBodySerializer(Func<IServiceProvider, IMessageBodySerializer> implementationFactory)
         {
             return UseMessageBodyDeserializer(serviceProvider =>
@@ -101,7 +101,7 @@ namespace Microsoft.Extensions.DependencyInjection
             });
         }
 
-        [Obsolete("Will be removed in v3.0", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v3.0", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         private sealed class DeprecatedMessageBodyDeserializerAdapter(IMessageBodySerializer deprecated) : IMessageBodyDeserializer
         {
             public async Task<MessageBodyResult> DeserializeMessageAsync(BinaryData messageBody)
