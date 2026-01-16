@@ -20,7 +20,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
     /// Represents a handler for a specific <see cref="ServiceBusReceivedMessage"/> in a <see cref="AzureServiceBusMessageContext"/>
     /// during the processing of the messages in Azure Service Bus.
     /// </summary>
-    [Obsolete("Will be removed in v4.0, please implement " + nameof(IServiceBusMessageHandler<object>) + " instead", DiagnosticId = "ARCUS")]
+    [Obsolete("Will be removed in v4.0, please implement " + nameof(IServiceBusMessageHandler<object>) + " instead", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
     public interface IAzureServiceBusMessageHandler<in TMessage> : IMessageHandler<TMessage, AzureServiceBusMessageContext>
     {
     }

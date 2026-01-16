@@ -12,7 +12,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
     /// Represents a default implementation of the <see cref="IMessagePumpCircuitBreaker"/>
     /// that starts and stops a configured message pump by its configured <see cref="MessagePumpCircuitBreakerOptions"/>.
     /// </summary>
-    [Obsolete("Will be removed in v4.0, please use implementations of the " + nameof(IMessagePumpCircuitBreaker) + " directly available with the concrete message pumps")]
+    [Obsolete("Will be removed in v4.0, please use implementations of the " + nameof(IMessagePumpCircuitBreaker) + " directly available with the concrete message pumps", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
     public class DefaultMessagePumpCircuitBreaker : IMessagePumpCircuitBreaker
     {
         private readonly IServiceProvider _serviceProvider;

@@ -1,4 +1,5 @@
 ﻿using System;
+using Arcus.Messaging;
 using Arcus.Messaging.Pumps.Abstractions.Resiliency;
 
 // ReSharper disable once CheckNamespace
@@ -18,7 +19,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="jobId">The unique ID to distinguish the message pump to register this event handler for.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        [Obsolete("Will be removed in v4.0, please use dedicated extensions related to the message pumps instead")]
+        [Obsolete("Will be removed in v4.0, please use dedicated extensions related to the message pumps instead", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static IServiceCollection AddCircuitBreakerEventHandler<TEventHandler>(this IServiceCollection services, string jobId)
             where TEventHandler : ICircuitBreakerEventHandler
         {
@@ -34,7 +35,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <param name="implementationFactory">The factory function to create the custom <see cref="ICircuitBreakerEventHandler"/> implementation.</param>
         /// <exception cref="ArgumentNullException">Thrown when the <paramref name="services"/> or <paramref name="implementationFactory"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="jobId"/> is blank.</exception>
-        [Obsolete("Will be removed in v4.0, please use dedicated extensions related to the message pumps instead")]
+        [Obsolete("Will be removed in v4.0, please use dedicated extensions related to the message pumps instead", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public static IServiceCollection AddCircuitBreakerEventHandler<TEventHandler>(
             this IServiceCollection services,
             string jobId,
