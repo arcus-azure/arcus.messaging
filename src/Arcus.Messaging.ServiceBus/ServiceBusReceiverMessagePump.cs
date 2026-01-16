@@ -69,7 +69,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             await using ServiceBusReceiver messageReceiver = CreateMessageReceiver();
             Logger.LogTrace("Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' started", EntityType, JobId, EntityName);
 
-            while (CircuitState.IsClosed)
+            while (CircuitState.IsClosed && !cancellationToken.IsCancellationRequested)
             {
                 try
                 {
