@@ -119,9 +119,25 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
     /// </summary>
     public class ServiceBusSessionOptions
     {
-        private int _maxConcurrentCallsPerSession = 1;
+        private int _maxMessagesPerSession = 1;
         private int _maxConcurrentSessions = 8;
         private TimeSpan _sessionIdleTimeout = TimeSpan.FromMinutes(1);
+
+        /// <summary>
+        /// <para>Gets or sets the maximum number of messages to retrieve in a single Azure Service Bus session.</para>
+        /// <para>Total number of messages = <see cref="MaxConcurrentSessions"/> x <see cref="MaxMessagesPerSession"/>.</para>
+        /// </summary>
+        /// <remarks>The default value is 1.</remarks>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
+        public int MaxMessagesPerSession
+        {
+            get => _maxMessagesPerSession;
+            set
+            {
+                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, 0);
+                _maxMessagesPerSession = value;
+            }
+        }
 
         /// <summary>
         /// <para>Gets or sets the maximum number of calls to the callback the processor will initiate per session.</para>
@@ -129,14 +145,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         /// <remarks>The default value is 1.</remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
+        [Obsolete("Will be removed in v4, use " + nameof(MaxMessagesPerSession) + " instead", DiagnosticId = "ARCUS")]
         public int MaxConcurrentCallsPerSession
         {
-            get => _maxConcurrentCallsPerSession;
-            set
-            {
-                ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(value, 0);
-                _maxConcurrentCallsPerSession = value;
-            }
+            get => MaxMessagesPerSession;
+            set => MaxMessagesPerSession = value;
         }
 
         /// <summary>

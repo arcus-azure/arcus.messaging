@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
+using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
-using Arcus.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using static Arcus.Messaging.Abstractions.MessageHandling.MessageProcessingError;
 
-namespace Arcus.Messaging.Pumps.ServiceBus
+namespace Arcus.Messaging.ServiceBus
 {
     /// <summary>
     /// Represents an <see cref="IAzureServiceBusMessageRouter"/> that can route Azure Service Bus <see cref="ServiceBusReceivedMessage"/>s.
@@ -49,6 +49,14 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                Logger.LogAbandonMessage(messageContext.MessageId, messageContext.EntityType, "message was cancelled");
+                await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), CancellationToken.None);
+
+                return MessageProcessingResult.Failure(message.MessageId, ProcessingInterrupted, "message was cancelled");
+            }
+
             using IServiceScope serviceScope = ServiceProvider.CreateScope();
             using var _ = Logger.BeginScope(new Dictionary<string, object>
             {
@@ -57,8 +65,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 ["Service Bus entity name"] = messageContext.EntityPath
             });
 
-            Logger.LogDebug("[Received] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump", messageContext.MessageId, messageContext.EntityType);
-
+            Logger.LogReceivedMessage(messageContext.MessageId, messageContext.EntityType);
             MessageProcessingResult result =
                 await RouteMessageThroughRegisteredHandlersAsync(serviceScope.ServiceProvider, message.Body, messageContext, correlationInfo, cancellationToken);
 
@@ -72,13 +79,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 {
                     case ProcessingInterrupted:
                     case MatchedHandlerFailed:
-                        Logger.LogDebug("[Settle:Abandon] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump => {ErrorMessage}", messageContext.MessageId, messageContext.EntityType, result.ErrorMessage);
+                        Logger.LogAbandonMessage(messageContext.MessageId, messageContext.EntityType, result.ErrorMessage);
                         await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), CancellationToken.None);
                         break;
 
                     case CannotFindMatchedHandler:
-                        Logger.LogDebug("[Settle:DeadLetter] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump => {ErrorMessage}", messageContext.MessageId, messageContext.EntityType, result.ErrorMessage);
-                        await messageContext.DeadLetterMessageAsync(CannotFindMatchedHandler.ToString(), result.ErrorMessage, CancellationToken.None);
+                        Logger.LogDeadLetterMessage(messageContext.MessageId, messageContext.EntityType, result.ErrorMessage);
+                        await messageContext.DeadLetterMessageAsync(nameof(CannotFindMatchedHandler), result.ErrorMessage, CancellationToken.None);
                         break;
                 }
             }
@@ -96,9 +103,24 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 }
                 catch (ServiceBusException exception) when (exception.Reason is ServiceBusFailureReason.MessageLockLost)
                 {
-                    Logger.LogTrace(exception, "[Skipped] auto-completion of message '{MessageId}' in Azure Service Bus message pump (already settled)", messageContext.MessageId);
+                    Logger.LogAutocompleteMessageFailed(exception, messageContext.MessageId, messageContext.EntityType);
                 }
             }
         }
+    }
+
+    internal static partial class ServiceBusMessageRouterILoggerExtensions
+    {
+        [LoggerMessage(LogLevel.Debug, "[Pump:Received] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump")]
+        internal static partial void LogReceivedMessage(this ILogger logger, string messageId, ServiceBusEntityType entityType);
+
+        [LoggerMessage(LogLevel.Debug, "[Pump.Settle:Abandon] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump => {ErrorMessage}")]
+        internal static partial void LogAbandonMessage(this ILogger logger, string messageId, ServiceBusEntityType entityType, string errorMessage);
+
+        [LoggerMessage(LogLevel.Debug, "[Pump.Settle:DeadLetter] message (message ID={MessageId}) on Azure Service Bus {EntityType} message pump => {ErrorMessage}")]
+        internal static partial void LogDeadLetterMessage(this ILogger logger, string messageId, ServiceBusEntityType entityType, string errorMessage);
+
+        [LoggerMessage(LogLevel.Warning, "[Pump.Settle:AutoComplete=Failed] message '{MessageId}' in Azure Service Bus {EntityType} message pump was skipped => already settled")]
+        internal static partial void LogAutocompleteMessageFailed(this ILogger logger, Exception exception, string messageId, ServiceBusEntityType entityType);
     }
 }

@@ -34,11 +34,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         }
 
         /// <summary>
-        /// Gets the namespace of the Azure Service Bus entity that this message pump is processing messages for.
-        /// </summary>
-        protected override string Namespace => _sessionProcessor?.FullyQualifiedNamespace;
-
-        /// <summary>
         /// Sets up the message pump to start processing messages from the Azure Service Bus entity.
         /// </summary>
         protected override async Task StartProcessingMessagesAsync(CancellationToken cancellationToken)
@@ -58,7 +53,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             {
                 PrefetchCount = Options.PrefetchCount,
                 MaxConcurrentSessions = Options.Session.MaxConcurrentSessions,
-                MaxConcurrentCallsPerSession = Options.Session.MaxConcurrentCallsPerSession,
+                MaxConcurrentCallsPerSession = Options.Session.MaxMessagesPerSession,
                 SessionIdleTimeout = Options.Session.SessionIdleTimeout,
             };
 
@@ -76,8 +71,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
-            var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, SubscriptionName, arg);
-            await RouteMessageAsync(message, messageContext, arg.CancellationToken);
+            using var cancellationHandler = CancellationTokenSource.CreateLinkedTokenSource(arg.CancellationToken);
+            var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, arg);
+            await RouteMessageAsync(message, messageContext, cancellationHandler.Token);
         }
 
         private Task ProcessErrorAsync(ProcessErrorEventArgs arg)
@@ -93,19 +89,15 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         }
 
         /// <summary>
-        /// Triggered when the application host is performing a graceful shutdown.
+        /// Sets up the message pump to stop processing messages from the Azure Service Bus entity.
         /// </summary>
-        /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
-        /// <returns>A <see cref="Task" /> that represents the asynchronous Stop operation.</returns>
-        public override async Task StopAsync(CancellationToken cancellationToken)
+        protected override async Task StopProcessingMessagesAsync()
         {
             if (_sessionProcessor != null)
             {
-                await _sessionProcessor.StopProcessingAsync(cancellationToken);
-                await _sessionProcessor.CloseAsync(cancellationToken);
+                await _sessionProcessor.StopProcessingAsync();
+                await _sessionProcessor.CloseAsync();
             }
-
-            await base.StopAsync(cancellationToken);
         }
     }
 }

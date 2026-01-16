@@ -66,11 +66,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         internal string JobId => Options.JobId;
 
         /// <summary>
-        /// Gets a boolean flag that indicates whether the message pump is currently shutting down.
-        /// </summary>
-        protected bool IsHostShuttingDown { get; private set; }
-
-        /// <summary>
         /// Gets the type of the Azure Service Bus entity that this message pump is processing messages for.
         /// </summary>
         protected ServiceBusEntityType EntityType { get; }
@@ -87,11 +82,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         ///     Only available when the <see cref="EntityType"/> is <see cref="ServiceBusEntityType.Topic"/>.
         /// </remarks>
         protected string SubscriptionName { get; }
-
-        /// <summary>
-        /// Gets the namespace of the Azure Service Bus entity that this message pump is processing messages for.
-        /// </summary>
-        protected abstract string Namespace { get; }
 
         /// <summary>
         /// Gets the options the user has configured for this message pump.
@@ -125,11 +115,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             }
             catch (Exception exception) when (exception is TaskCanceledException || exception is OperationCanceledException)
             {
-                Logger.LogDebug(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}' was cancelled", EntityType, JobId, EntityName, Namespace);
+                Logger.LogDebug(exception, "Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' was cancelled", EntityType, JobId, EntityName);
             }
             catch (Exception exception)
             {
-                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}' in namespace '{Namespace}'", EntityType, JobId, EntityName, Namespace);
+                Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}'", EntityType, JobId, EntityName);
             }
             finally
             {
@@ -158,10 +148,10 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             ArgumentNullException.ThrowIfNull(message);
             ArgumentNullException.ThrowIfNull(messageContext);
 
-            if (IsHostShuttingDown)
+            if (cancellationToken.IsCancellationRequested)
             {
                 Logger.LogDebug("[Settle:Abandon] message (message ID='{MessageId}') on Azure Service Bus {EntityType} message pump => pump is shutting down", message.MessageId, EntityType);
-                await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), cancellationToken);
+                await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), CancellationToken.None);
                 return MessageProcessingResult.Failure(message.MessageId, MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message pump is shutting down");
             }
 
@@ -199,20 +189,6 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// <summary>
         /// Sets up the message pump to stop processing messages from the Azure Service Bus entity.
         /// </summary>
-        protected virtual Task StopProcessingMessagesAsync()
-        {
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// Triggered when the application host is performing a graceful shutdown.
-        /// </summary>
-        /// <param name="cancellationToken">Indicates that the shutdown process should no longer be graceful.</param>
-        /// <returns>A <see cref="Task" /> that represents the asynchronous Stop operation.</returns>
-        public override Task StopAsync(CancellationToken cancellationToken)
-        {
-            IsHostShuttingDown = true;
-            return base.StopAsync(cancellationToken);
-        }
+        protected abstract Task StopProcessingMessagesAsync();
     }
 }
