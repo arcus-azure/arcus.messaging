@@ -49,6 +49,14 @@ namespace Arcus.Messaging.ServiceBus
             MessageCorrelationInfo correlationInfo,
             CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                Logger.LogAbandonMessage(messageContext.MessageId, messageContext.EntityType, "message was cancelled");
+                await messageContext.AbandonMessageAsync(new Dictionary<string, object>(), CancellationToken.None);
+
+                return MessageProcessingResult.Failure(message.MessageId, ProcessingInterrupted, "message was cancelled");
+            }
+
             using IServiceScope serviceScope = ServiceProvider.CreateScope();
             using var _ = Logger.BeginScope(new Dictionary<string, object>
             {
