@@ -71,9 +71,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
-            using var cancellationHandler = CancellationTokenSource.CreateLinkedTokenSource(arg.CancellationToken);
             var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, arg);
-            await RouteMessageAsync(message, messageContext, cancellationHandler.Token);
+            await RouteMessageAsync(message, messageContext, arg.CancellationToken);
         }
 
         private Task ProcessErrorAsync(ProcessErrorEventArgs arg)
