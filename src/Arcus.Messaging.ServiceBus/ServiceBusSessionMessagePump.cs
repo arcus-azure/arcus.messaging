@@ -40,7 +40,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         {
             _sessionProcessor = CreateSessionProcessor();
 
-            _sessionProcessor.ProcessMessageAsync += ProcessMessageAsync;
+            _sessionProcessor.ProcessMessageAsync += args => ProcessMessageAsync(args, cancellationToken);
             _sessionProcessor.ProcessErrorAsync += ProcessErrorAsync;
 
             await _sessionProcessor.StartProcessingAsync(cancellationToken);
@@ -62,29 +62,28 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 : client.CreateSessionProcessor(EntityName, SubscriptionName, clientOptions);
         }
 
-        private async Task ProcessMessageAsync(ProcessSessionMessageEventArgs arg)
+        private async Task ProcessMessageAsync(ProcessSessionMessageEventArgs args, CancellationToken cancellationToken)
         {
-            ServiceBusReceivedMessage message = arg?.Message;
+            ServiceBusReceivedMessage message = args?.Message;
             if (message is null)
             {
                 Logger.LogWarning("Received message on Azure Service Bus {EntityType} session-aware message pump '{JobId}' was null, skipping", EntityType, JobId);
                 return;
             }
 
-            using var cancellationHandler = CancellationTokenSource.CreateLinkedTokenSource(arg.CancellationToken);
-            var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, arg);
-            await RouteMessageAsync(message, messageContext, cancellationHandler.Token);
+            var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, args);
+            await RouteMessageAsync(message, messageContext, cancellationToken);
         }
 
-        private Task ProcessErrorAsync(ProcessErrorEventArgs arg)
+        private Task ProcessErrorAsync(ProcessErrorEventArgs args)
         {
-            if (arg.Exception is null)
+            if (args.Exception is null)
             {
                 Logger.LogWarning("Thrown exception on Azure Service Bus {EntityType} session-aware message pump '{JobId}' was null, skipping", EntityType, JobId);
                 return Task.CompletedTask;
             }
 
-            Logger.LogCritical(arg.Exception, "Azure Service Bus session-aware message pump '{JobId}' was unable to process message: {Message}", JobId, arg.Exception.Message);
+            Logger.LogCritical(args.Exception, "Azure Service Bus session-aware message pump '{JobId}' was unable to process message: {Message}", JobId, args.Exception.Message);
             return Task.CompletedTask;
         }
 
