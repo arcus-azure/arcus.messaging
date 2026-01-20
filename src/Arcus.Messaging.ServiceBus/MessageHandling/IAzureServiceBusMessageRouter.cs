@@ -9,7 +9,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus.MessageHandling
     /// <summary>
     /// Represents an instance that can route Azure Service Bus <see cref="ServiceBusReceivedMessage"/>s through registered <see cref="IAzureServiceBusMessageHandler{TMessage}"/>s.
     /// </summary>
-    [Obsolete("Will be removed in v4.0 as the message router is being made internal", DiagnosticId = "ARCUS")]
+    [Obsolete("Will be removed in v4.0 as the message router is being made internal", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
     public interface IAzureServiceBusMessageRouter
     {
         /// <summary>

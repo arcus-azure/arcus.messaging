@@ -13,7 +13,7 @@ namespace Arcus.Messaging.Pumps.Abstractions
     /// <summary>
     /// Represents the foundation for building message pumps.
     /// </summary>
-    [Obsolete("Will be removed in v4.0, please directly implement the " + nameof(BackgroundService) + " to represent concrete message pumps")]
+    [Obsolete("Will be removed in v4.0, please directly implement the " + nameof(BackgroundService) + " to represent concrete message pumps", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
     public abstract class MessagePump : BackgroundService
     {
         /// <summary>

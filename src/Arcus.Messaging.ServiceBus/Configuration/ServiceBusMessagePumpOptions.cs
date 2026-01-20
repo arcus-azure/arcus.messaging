@@ -19,7 +19,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         /// <remarks>The default value is 1</remarks>
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
-        [Obsolete("Will be removed in v4, use " + nameof(MaxMessagesPerBatch) + " instead", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4, use " + nameof(MaxMessagesPerBatch) + " instead", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public int MaxConcurrentCalls
         {
             get => MaxMessagesPerBatch;
@@ -145,7 +145,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// </summary>
         /// <remarks>The default value is 1.</remarks>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="value"/> is less than or equal to zero.</exception>
-        [Obsolete("Will be removed in v4, use " + nameof(MaxMessagesPerSession) + " instead", DiagnosticId = "ARCUS")]
+        [Obsolete("Will be removed in v4, use " + nameof(MaxMessagesPerSession) + " instead", DiagnosticId = ObsoleteDefaults.DiagnosticId)]
         public int MaxConcurrentCallsPerSession
         {
             get => MaxMessagesPerSession;
