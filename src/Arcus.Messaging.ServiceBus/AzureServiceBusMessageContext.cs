@@ -21,6 +21,7 @@ namespace Arcus.Messaging.ServiceBus
         /// <summary>
         /// Gets or sets the unique ID to identity the Azure Service bus message pump that is responsible for pumping messages from the Azure Service bus.
         /// </summary>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is blank.</exception>
         public string JobId
         {
             get => _jobId;
