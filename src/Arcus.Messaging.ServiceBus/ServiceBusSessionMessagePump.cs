@@ -71,7 +71,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return;
             }
 
-            var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, args);
+            var messageContext = ServiceBusMessageContext.Create(args, options =>
+            {
+                options.JobId = JobId;
+                options.SubscriptionName = SubscriptionName;
+            });
             await RouteMessageAsync(message, messageContext, cancellationToken);
         }
 
