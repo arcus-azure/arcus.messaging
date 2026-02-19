@@ -9,6 +9,7 @@ using Arcus.Messaging.Tests.Core.Messages.v2;
 using Arcus.Messaging.Tests.Workers.MessageBodyHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using static Arcus.Messaging.Tests.Integration.MessagePump.Fixture.ServiceBusTestContext;
 using ServiceBusEntityType = Arcus.Messaging.Abstractions.ServiceBus.ServiceBusEntityType;
@@ -116,14 +117,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
             // Arrange
             await using var serviceBus = GivenServiceBus();
 
-            serviceBus.Services.AddSingleton<OrderBatchMessageBodySerializer>();
             var contextProperty = new KeyValuePair<string, object>(Bogus.Lorem.Word(), Bogus.Lorem.Sentence());
             serviceBus.WhenServiceBusQueueMessagePump()
                       .WithMatchedServiceBusMessageHandler<OrderBatchMessageHandler, OrderBatch>(handler =>
                       {
                           handler.AddMessageContextFilter(context => context.Properties.Contains(contextProperty))
                                  .AddMessageBodyFilter(message => message.Orders.Length == 1)
-                                 .UseMessageBodyDeserializer<OrderBatchMessageBodySerializer>();
+                                 .UseMessageBodyDeserializer(new OrderBatchMessageBodySerializer(NullLogger<OrderBatchMessageBodySerializer>.Instance));
                       });
 
             // Act
