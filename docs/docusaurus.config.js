@@ -23,23 +23,23 @@ module.exports = {
       items: [
         {
           type: 'dropdown',
-          label: '📨 Arcus Messaging',
+          label: 'Arcus Messaging',
           position: 'left',
           items: [
             {
-              label: '📊 Arcus Observability',
+              label: 'Arcus Observability',
               href: 'https://observability.arcus-azure.net/'
             },
             {
-              label: '🧪 Arcus Testing',
+              label: 'Arcus Testing',
               href: 'https://testing.arcus-azure.net/'
             },
             {
-              label: '📜 Arcus Scripting',
+              label: 'Arcus Scripting',
               href: 'https://scripting.arcus-azure.net/'
             },
             {
-              label: '🛡️ Arcus Security',
+              label: 'Arcus Security',
               href: 'https://security.arcus-azure.net/',
             }
           ]
@@ -73,13 +73,55 @@ module.exports = {
           title: 'Community',
           items: [
             {
-              label: 'Arcus Azure Github',
-              href: 'https://github.com/arcus-azure',
+              label: 'Github',
+              href: 'https://github.com/arcus-azure/arcus.messaging',
             },
+            {
+              label: 'Contribution guide',
+              href: 'https://github.com/arcus-azure/.github/blob/main/CONTRIBUTING.md'
+            },
+            {
+              label: 'Report an issue',
+              href: 'https://github.com/arcus-azure/arcus.messaging/issues/new/choose'
+            },
+            {
+              label: 'Discuss an idea',
+              href: 'https://github.com/arcus-azure/arcus.messaging/discussions/new/choose'
+            }
           ],
         },
+        {
+          title: 'Features',
+          items: [
+            {
+              label: 'Azure Service Bus messaging',
+              to: 'Features/Azure/service-bus'
+            },
+            {
+              label: 'TCP health probe',
+              to: 'Features/tcp-health-probe'
+            }
+          ]
+        },
+        {
+          title: 'Support',
+          items: [
+            {
+              label: 'Getting started',
+              to: 'getting-started'
+            },
+            {
+              label: 'Migrate v0 to v1',
+              to: 'Guides/migration-guide-v1.0'
+            },
+            {
+              label: 'Migrate v2 to v3',
+              to: 'Guides/migration-guide-v3.0'
+            }
+          ]
+        }
       ],
-      copyright: `Copyright © ${new Date().getFullYear()}, Arcus - Messaging maintained by arcus-azure`,
+      copyright: `Copyright © ${new Date().getFullYear()}, Arcus - Messaging maintained by Codit`,
     },
     prism: {
       theme: lightCodeTheme,
