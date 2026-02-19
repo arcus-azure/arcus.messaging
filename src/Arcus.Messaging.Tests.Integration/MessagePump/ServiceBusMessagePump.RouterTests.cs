@@ -123,7 +123,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump
                       {
                           handler.AddMessageContextFilter(context => context.Properties.Contains(contextProperty))
                                  .AddMessageBodyFilter(message => message.Orders.Length == 1)
-                                 .UseMessageBodyDeserializer(new OrderBatchMessageBodySerializer(NullLogger<OrderBatchMessageBodySerializer>.Instance));
+                                 .UseMessageBodyDeserializer(new OrderBatchMessageBodySerializer());
                       });
 
             // Act
