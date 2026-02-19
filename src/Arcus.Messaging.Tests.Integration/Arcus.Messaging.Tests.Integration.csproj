@@ -11,6 +11,10 @@
     <PackageReference Include="Arcus.Observability.Telemetry.Serilog.Sinks.ApplicationInsights" Version="3.*" />
     <PackageReference Include="Arcus.Testing.Logging.Xunit.v3" Version="2.*" />
     <PackageReference Include="Arcus.Testing.Messaging.ServiceBus" Version="2.*" />
+    <PackageReference Include="coverlet.collector" Version="6.*">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.21.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.*" />
