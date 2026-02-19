@@ -12,7 +12,7 @@ pr:
   paths:
     include:
       - src/*
-      - build/ci-build.yml
+      - build/*
 
 parameters:
   - name: 'Package.Version.ManualTrigger'
@@ -68,26 +68,19 @@ stages:
               targetPath: '$(Pipeline.Workspace)/build'
               artifactName: Build
 
-  - stage: UnitTests
-    displayName: Unit Tests
+  - stage: Tests
     dependsOn: Build
     condition: succeeded()
     jobs:
       - template: templates/unit-tests.yml
-
-  - stage: IntegrationTests
-    displayName: Integration Tests
-    dependsOn: Build
-    condition: succeeded()
-    jobs:
       - template: templates/integration-tests.yml
         parameters:
           azureServiceConnection: '${{ parameters.azureServiceConnection }}'
+      - template: templates/publish-coverage.yml
 
   - stage: ReleaseToMyGet
     displayName: 'Release to MyGet'
-    dependsOn:
-      [IntegrationTests, UnitTests]
+    dependsOn: [IntegrationTests, UnitTests]
     condition: succeeded()
     jobs:
       - job: PushToMyGet
