@@ -80,7 +80,7 @@ stages:
 
   - stage: ReleaseToMyGet
     displayName: 'Release to MyGet'
-    dependsOn: [IntegrationTests, UnitTests]
+    dependsOn: Tests
     condition: succeeded()
     jobs:
       - job: PushToMyGet
