@@ -1,24 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Core.Messages.v1;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Tests.Workers.MessageBodyHandlers
 {
     public class OrderBatchMessageBodySerializer : IMessageBodyDeserializer
     {
-        private readonly ILogger<OrderBatchMessageBodySerializer> _logger;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="OrderBatchMessageBodySerializer"/> class.
-        /// </summary>
-        public OrderBatchMessageBodySerializer(ILogger<OrderBatchMessageBodySerializer> logger)
-        {
-            _logger = logger ?? NullLogger<OrderBatchMessageBodySerializer>.Instance;
-        }
-
         /// <summary>
         /// Tries to deserialize the incoming <paramref name="messageBody"/> to a message instance.
         /// </summary>
