@@ -50,10 +50,7 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
             MessagePumpCircuitState oldState,
             MessagePumpCircuitState newState)
         {
-            if (string.IsNullOrWhiteSpace(jobId))
-            {
-                throw new ArgumentException("Requires a non-blank job ID for the circuit breaker event state change registration", nameof(jobId));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
 
             JobId = jobId;
             OldState = oldState;
@@ -87,15 +84,8 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
         /// </summary>
         public CircuitBreakerEventHandler(string jobId, ICircuitBreakerEventHandler handler)
         {
-            if (string.IsNullOrWhiteSpace(jobId))
-            {
-                throw new ArgumentException("Requires a non-blank job ID for the circuit breaker event handler registration", nameof(jobId));
-            }
-
-            if (handler is null)
-            {
-                throw new ArgumentNullException(nameof(handler));
-            }
+            ArgumentException.ThrowIfNullOrWhiteSpace(jobId);
+            ArgumentNullException.ThrowIfNull(handler);
 
             JobId = jobId;
             Handler = handler;
@@ -146,9 +136,10 @@ namespace Arcus.Messaging.Pumps.Abstractions.Resiliency
 
         private MessagePumpCircuitState(CircuitBreakerState state, MessagePumpCircuitBreakerOptions options)
         {
-            _state = state;
+            ArgumentNullException.ThrowIfNull(options);
 
-            Options = options ?? throw new ArgumentNullException(nameof(options));
+            _state = state;
+            Options = options;
         }
 
         /// <summary>

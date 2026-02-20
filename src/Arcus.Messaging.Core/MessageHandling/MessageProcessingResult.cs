@@ -33,13 +33,15 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
     {
         private MessageProcessingResult(string messageId)
         {
-            MessageId = messageId ?? throw new ArgumentNullException(nameof(messageId));
+            ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
+            MessageId = messageId;
             IsSuccessful = true;
         }
 
         private MessageProcessingResult(string messageId, MessageProcessingError error, string errorMessage, Exception processingException)
         {
-            MessageId = messageId ?? throw new ArgumentNullException(nameof(messageId));
+            ArgumentException.ThrowIfNullOrWhiteSpace(messageId);
+            MessageId = messageId;
             Error = error;
             ErrorMessage = errorMessage;
             ProcessingException = processingException;
@@ -98,11 +100,8 @@ namespace Arcus.Messaging.Abstractions.MessageHandling
         /// </summary>
         public static MessageProcessingResult Failure(string messageId, MessageProcessingError error, string errorMessage, Exception processingException)
         {
-            return new MessageProcessingResult(
-                messageId,
-                error,
-                errorMessage,
-                processingException ?? throw new ArgumentNullException(nameof(processingException)));
+            ArgumentNullException.ThrowIfNull(processingException);
+            return new MessageProcessingResult(messageId, error, errorMessage, processingException);
         }
 
         /// <summary>
