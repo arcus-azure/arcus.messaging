@@ -97,6 +97,11 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
         internal ServiceBusMessageHandlerCollection WhenServiceBusQueueMessagePump(Action<ServiceBusMessagePumpOptions> configureOptions = null)
         {
             return WhenOnlyServiceBusQueueMessagePump(configureOptions)
+                   .WithIntermediaryServiceBusMessageHandler(context =>
+                   {
+                       Assert.Contains(Queue.Name, context.EntityPath);
+                       Assert.Equal(Queue.FullyQualifiedNamespace, context.FullyQualifiedNamespace);
+                   })
                    .WithUnrelatedServiceBusMessageHandler()
                    .WithUnrelatedServiceBusMessageHandler();
         }
@@ -142,7 +147,13 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
                 ? Services.AddServiceBusTopicMessagePump(Topic.Name, subscriptionName, _ => CreateServiceBusClient(), ConfigureWithTrigger)
                 : Services.AddServiceBusTopicMessagePump(Topic.Name, subscriptionName, _serviceBusConfig.HostName, new DefaultAzureCredential(), ConfigureWithoutTrigger);
 
-            return collection.WithUnrelatedServiceBusMessageHandler()
+            return collection.WithIntermediaryServiceBusMessageHandler(context =>
+                             {
+                                 Assert.Contains(Topic.Name, context.EntityPath);
+                                 Assert.Equal(subscriptionName, context.SubscriptionName);
+                                 Assert.Equal(Topic.FullyQualifiedNamespace, context.FullyQualifiedNamespace);
+                             })
+                             .WithUnrelatedServiceBusMessageHandler()
                              .WithUnrelatedServiceBusMessageHandler();
 
             void ConfigureWithoutTrigger(ServiceBusMessagePumpOptions options)

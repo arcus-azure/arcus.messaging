@@ -25,10 +25,18 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus.Stubs
                 deliveryCount: Bogus.Random.Int());
 
             var context = ServiceBusMessageContext.Create(
-                jobId ?? $"job-id-{Guid.NewGuid()}",
-                Bogus.PickRandom<ServiceBusEntityType>(),
                 Mock.Of<ServiceBusReceiver>(),
-                message);
+                message,
+                options =>
+                {
+                    options.JobId = jobId ?? $"job-id-{Guid.NewGuid()}";
+                    options.SubscriptionName = Bogus.PickRandom<ServiceBusEntityType>() switch
+                    {
+                        ServiceBusEntityType.Queue => null,
+                        ServiceBusEntityType.Topic => $"subscription-{Guid.NewGuid()}",
+                        _ => throw new ArgumentOutOfRangeException(nameof(options), "Invalid Azure Service Bus entity type")
+                    };
+                });
 
             return new Mock<AzureServiceBusMessageContext>(context).Object;
         }

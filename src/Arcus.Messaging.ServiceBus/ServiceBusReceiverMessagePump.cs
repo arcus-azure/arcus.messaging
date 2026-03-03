@@ -159,7 +159,11 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                 return MessageProcessingResult.Failure("<unavailable>", MessageProcessingError.ProcessingInterrupted, "Cannot process received message as the message is was 'null'");
             }
 
-            var messageContext = ServiceBusMessageContext.Create(JobId, EntityType, messageReceiver, message);
+            var messageContext = ServiceBusMessageContext.Create(messageReceiver, message, options =>
+            {
+                options.JobId = JobId;
+                options.SubscriptionName = SubscriptionName;
+            });
 
             MessageProcessingResult routingResult = await RouteMessageAsync(message, messageContext, cancellationToken);
             return routingResult;
