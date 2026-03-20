@@ -1,7 +1,9 @@
 ﻿using System;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
+using Arcus.Messaging.ServiceBus;
 using Arcus.Messaging.Tests.Core.Messages.v1;
+using Arcus.Messaging.Tests.Core.ServiceBus.MessageHandlers;
 using Arcus.Messaging.Tests.Workers.MessageHandlers;
 using Bogus;
 
@@ -64,6 +66,14 @@ namespace Microsoft.Extensions.DependencyInjection
 
             options.AddMessageContextFilter(_ => true)
                    .AddMessageBodyFilter(_ => true);
+        }
+
+        internal static ServiceBusMessageHandlerCollection WithIntermediaryServiceBusMessageHandler(
+            this ServiceBusMessageHandlerCollection collection,
+            Action<ServiceBusMessageContext> customAssertion)
+        {
+            return collection.WithServiceBusMessageHandler<IntermediaryServiceBusMessageHandler, Order>(
+                _ => new IntermediaryServiceBusMessageHandler(customAssertion));
         }
 
         internal static ServiceBusMessageHandlerCollection WithMatchedServiceBusMessageHandler(
