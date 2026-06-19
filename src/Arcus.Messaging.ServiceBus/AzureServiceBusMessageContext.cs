@@ -115,58 +115,54 @@ namespace Arcus.Messaging.ServiceBus
         {
             private bool _messageIsSettled = false;
 
-            public Task CompleteMessageAsync(CancellationToken cancellationToken)
+            public async Task CompleteMessageAsync(CancellationToken cancellationToken)
             {
                 if (_messageIsSettled)
                 {
-                    return Task.CompletedTask;
+                    return;
                 }
 
-                var result = CompleteMessageCoreAsync(cancellationToken);
+                await CompleteMessageCoreAsync(cancellationToken);
                 _messageIsSettled = true;
-                return result;
             }
 
             protected abstract Task CompleteMessageCoreAsync(CancellationToken cancellationToken);
 
-            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+            public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
             {
                 if (_messageIsSettled)
                 {
-                    return Task.CompletedTask;
+                    return;
                 }
 
-                var result = DeadLetterMessageCoreAsync(deadLetterReason, deadLetterErrorDescription, cancellationToken);
+                await DeadLetterMessageCoreAsync(deadLetterReason, deadLetterErrorDescription, cancellationToken);
                 _messageIsSettled = true;
-                return result;
             }
 
             protected abstract Task DeadLetterMessageCoreAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken);
 
-            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
             {
                 if (_messageIsSettled)
                 {
-                    return Task.CompletedTask;
+                    return;
                 }
 
-                var result = DeadLetterMessageCoreAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties, cancellationToken);
+                await DeadLetterMessageCoreAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties, cancellationToken);
                 _messageIsSettled = true;
-                return result;
             }
 
             protected abstract Task DeadLetterMessageCoreAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken);
 
-            public Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            public async Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
             {
                 if (_messageIsSettled)
                 {
-                    return Task.CompletedTask;
+                    return;
                 }
 
-                var result = AbandonMessageCoreAsync(newMessageProperties, cancellationToken);
+                await AbandonMessageCoreAsync(newMessageProperties, cancellationToken);
                 _messageIsSettled = true;
-                return result;
             }
 
             protected abstract Task AbandonMessageCoreAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken);
