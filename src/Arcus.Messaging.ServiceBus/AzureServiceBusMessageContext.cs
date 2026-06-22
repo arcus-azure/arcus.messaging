@@ -20,7 +20,7 @@ namespace Arcus.Messaging.ServiceBus
             string fullyQualifiedNamespace,
             ServiceBusEntityType entityType,
             string entityPath,
-            IMessageSettleStrategy messageSettle,
+            MessageSettleStrategy messageSettle,
             ServiceBusReceivedMessage message)
             : base(message.MessageId, jobId, message.ApplicationProperties.ToDictionary(item => item.Key, item => item.Value))
         {
@@ -109,17 +109,66 @@ namespace Arcus.Messaging.ServiceBus
             return new ServiceBusMessageContext(jobId, eventArgs.FullyQualifiedNamespace, entityType, eventArgs.EntityPath, messageSettle, eventArgs.Message);
         }
 
-        internal IMessageSettleStrategy MessageSettle { get; }
+        internal MessageSettleStrategy MessageSettle { get; }
         internal ServiceBusReceivedMessage Message { get; }
-        internal interface IMessageSettleStrategy
+        internal abstract class MessageSettleStrategy
         {
-            Task CompleteMessageAsync(CancellationToken cancellationToken);
-            Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken);
-            Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken);
-            Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken);
+            private bool _messageIsSettled = false;
+
+            public async Task CompleteMessageAsync(CancellationToken cancellationToken)
+            {
+                if (_messageIsSettled)
+                {
+                    return;
+                }
+
+                await CompleteMessageCoreAsync(cancellationToken);
+                _messageIsSettled = true;
+            }
+
+            protected abstract Task CompleteMessageCoreAsync(CancellationToken cancellationToken);
+
+            public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+            {
+                if (_messageIsSettled)
+                {
+                    return;
+                }
+
+                await DeadLetterMessageCoreAsync(deadLetterReason, deadLetterErrorDescription, cancellationToken);
+                _messageIsSettled = true;
+            }
+
+            protected abstract Task DeadLetterMessageCoreAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken);
+
+            public async Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            {
+                if (_messageIsSettled)
+                {
+                    return;
+                }
+
+                await DeadLetterMessageCoreAsync(deadLetterReason, deadLetterErrorDescription, newMessageProperties, cancellationToken);
+                _messageIsSettled = true;
+            }
+
+            protected abstract Task DeadLetterMessageCoreAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken);
+
+            public async Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            {
+                if (_messageIsSettled)
+                {
+                    return;
+                }
+
+                await AbandonMessageCoreAsync(newMessageProperties, cancellationToken);
+                _messageIsSettled = true;
+            }
+
+            protected abstract Task AbandonMessageCoreAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken);
         }
 
-        internal sealed class MessageSettleViaReceiver : IMessageSettleStrategy
+        private sealed class MessageSettleViaReceiver : MessageSettleStrategy
         {
             private readonly ServiceBusReceiver _receiver;
             private readonly ServiceBusReceivedMessage _message;
@@ -132,28 +181,28 @@ namespace Arcus.Messaging.ServiceBus
                 _message = message;
             }
 
-            public Task CompleteMessageAsync(CancellationToken cancellationToken)
+            protected override Task CompleteMessageCoreAsync(CancellationToken cancellationToken)
             {
                 return _receiver.CompleteMessageAsync(_message, cancellationToken);
             }
 
-            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+            protected override Task DeadLetterMessageCoreAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
             {
                 return _receiver.DeadLetterMessageAsync(_message, deadLetterReason, deadLetterErrorDescription, cancellationToken);
             }
 
-            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            protected override Task DeadLetterMessageCoreAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
             {
                 return _receiver.DeadLetterMessageAsync(_message, newMessageProperties, deadLetterReason, deadLetterErrorDescription, cancellationToken);
             }
 
-            public Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            protected override Task AbandonMessageCoreAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
             {
                 return _receiver.AbandonMessageAsync(_message, newMessageProperties, cancellationToken);
             }
         }
 
-        private sealed class MessageSettleViaSessionEventArgs : IMessageSettleStrategy
+        private sealed class MessageSettleViaSessionEventArgs : MessageSettleStrategy
         {
             private readonly ProcessSessionMessageEventArgs _eventArgs;
 
@@ -163,22 +212,22 @@ namespace Arcus.Messaging.ServiceBus
                 _eventArgs = eventArgs;
             }
 
-            public Task CompleteMessageAsync(CancellationToken cancellationToken)
+            protected override Task CompleteMessageCoreAsync(CancellationToken cancellationToken)
             {
                 return _eventArgs.CompleteMessageAsync(_eventArgs.Message, cancellationToken);
             }
 
-            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
+            protected override Task DeadLetterMessageCoreAsync(string deadLetterReason, string deadLetterErrorDescription, CancellationToken cancellationToken)
             {
                 return _eventArgs.DeadLetterMessageAsync(_eventArgs.Message, deadLetterReason, deadLetterErrorDescription, cancellationToken);
             }
 
-            public Task DeadLetterMessageAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            protected override Task DeadLetterMessageCoreAsync(string deadLetterReason, string deadLetterErrorDescription, IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
             {
                 return _eventArgs.DeadLetterMessageAsync(_eventArgs.Message, newMessageProperties.ToDictionary(), deadLetterReason, deadLetterErrorDescription, cancellationToken);
             }
 
-            public Task AbandonMessageAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
+            protected override Task AbandonMessageCoreAsync(IDictionary<string, object> newMessageProperties, CancellationToken cancellationToken)
             {
                 return _eventArgs.AbandonMessageAsync(_eventArgs.Message, newMessageProperties, cancellationToken);
             }
@@ -265,7 +314,7 @@ namespace Arcus.Messaging.Abstractions.ServiceBus
             string fullyQualifiedNamespace,
             ServiceBusEntityType entityType,
             string entityPath,
-            IMessageSettleStrategy messageSettle,
+            MessageSettleStrategy messageSettle,
             ServiceBusReceivedMessage message)
             : base(jobId, fullyQualifiedNamespace, entityType, entityPath, messageSettle, message)
         {
