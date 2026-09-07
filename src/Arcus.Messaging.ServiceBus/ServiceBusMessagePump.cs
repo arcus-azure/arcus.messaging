@@ -120,6 +120,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             catch (Exception exception)
             {
                 Logger.LogCritical(exception, "Unexpected failure occurred during processing of messages in the Azure Service Bus {EntityType} message pump '{JobId}' on entity path '{EntityPath}'", EntityType, JobId, EntityName);
+                throw;
             }
             finally
             {
