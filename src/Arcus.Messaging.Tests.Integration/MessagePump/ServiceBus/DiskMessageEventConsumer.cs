@@ -1,16 +1,18 @@
 ﻿using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Workers.ServiceBus.Fixture;
 using Arcus.Testing;
-using Newtonsoft.Json;
 using Xunit;
 
 namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
 {
     public static class DiskMessageEventConsumer
     {
+        private static readonly JsonSerializerOptions MessageCorrelationInfoJsonOptions = CreateMessageCorrelationInfoJsonOptionsJsonOptions();
+
         public static async Task<OrderCreatedEventData> ConsumeOrderCreatedAsync(string messageId, TimeSpan? timeout = null)
         {
             return await ConsumeEventAsync<OrderCreatedEventData>(messageId,
@@ -29,9 +31,18 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.ServiceBus
                           .FailWith(errorMessage);
 
             string json = await File.ReadAllTextAsync(file.FullName);
-            var eventData = JsonConvert.DeserializeObject<TResult>(json, new MessageCorrelationInfoJsonConverter());
+            var eventData = JsonSerializer.Deserialize<TResult>(
+                json,
+                MessageCorrelationInfoJsonOptions);
 
             return eventData;
+        }
+
+        private static JsonSerializerOptions CreateMessageCorrelationInfoJsonOptionsJsonOptions()
+        {
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new MessageCorrelationInfoJsonConverter());
+            return options;
         }
     }
 }

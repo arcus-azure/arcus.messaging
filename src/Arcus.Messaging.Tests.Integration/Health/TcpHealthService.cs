@@ -6,12 +6,12 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Arcus.Testing;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Sdk;
 
@@ -73,11 +73,11 @@ namespace Arcus.Messaging.Tests.Integration.Health
             using var reader = new StreamReader(clientStream, encoding ?? Encoding.UTF8);
             string txt = await reader.ReadToEndAsync();
 
-            JObject json = JObject.Parse(txt);
+            JsonElement json = JsonSerializer.Deserialize<JsonElement>(txt);
 
-            if (json.TryGetValue("entries", out JToken entries)
-                && json.TryGetValue("status", out JToken status)
-                && json.TryGetValue("totalDuration", out JToken totalDuration))
+            if (json.TryGetProperty("entries", out JsonElement entries)
+                && json.TryGetProperty("status", out JsonElement status)
+                && json.TryGetProperty("totalDuration", out JsonElement totalDuration))
             {
                 HealthReport report = ParseHealthReport(entries, status, totalDuration);
 
@@ -89,15 +89,15 @@ namespace Arcus.Messaging.Tests.Integration.Health
             return null;
         }
 
-        private static HealthReport ParseHealthReport(JToken entries, JToken status, JToken totalDuration)
+        private static HealthReport ParseHealthReport(JsonElement entries, JsonElement status, JsonElement totalDuration)
         {
             Dictionary<string, HealthReportEntry> reportEntries =
-                entries.Children()
-                       .Select(CreateHealthReportEntry)
-                       .ToDictionary(entry => entry.Key, entry => entry.Value);
+                entries.EnumerateObject()
+               .Select(CreateHealthReportEntry)
+               .ToDictionary(entry => entry.Key, entry => entry.Value);
 
-            var healthStatus = Enum.Parse<HealthStatus>(status.Value<string>());
-            TimeSpan duration = TimeSpan.Parse(totalDuration.Value<string>());
+            var healthStatus = Enum.Parse<HealthStatus>(status.GetString());
+            TimeSpan duration = TimeSpan.Parse(totalDuration.GetString());
 
             var report = new HealthReport(
                 new ReadOnlyDictionary<string, HealthReportEntry>(reportEntries),
@@ -107,18 +107,22 @@ namespace Arcus.Messaging.Tests.Integration.Health
             return report;
         }
 
-        private static KeyValuePair<string, HealthReportEntry> CreateHealthReportEntry(JToken healthEntryJson)
+        private static KeyValuePair<string, HealthReportEntry> CreateHealthReportEntry(JsonProperty healthEntryJson)
         {
-            JToken token = healthEntryJson.First;
+            string name = healthEntryJson.Name;
 
-            string name = healthEntryJson.Path["entries[".Length..].Trim(']', '\'');
-            var healthStatus = token["status"].ToObject<HealthStatus>();
-            var description = token["description"]?.ToObject<string>();
-            var duration = token["duration"].ToObject<TimeSpan>();
-            var exception = token["exception"]?.ToObject<Exception>();
-            var data = token["data"]?.ToObject<Dictionary<string, object>>();
-            var readOnlyDictionary = new ReadOnlyDictionary<string, object>(data ?? new Dictionary<string, object>());
-            var tags = token["tags"]?.ToObject<string[]>();
+            JsonElement token = healthEntryJson.Value
+                                               .EnumerateArray()
+                                               .First();
+
+            var healthStatus = token.GetProperty("status").Deserialize<HealthStatus>();
+            var description = token.GetProperty("description").Deserialize<string>();
+            var duration = token.GetProperty("duration").Deserialize<TimeSpan>();
+            var exception = token.GetProperty("exception").Deserialize<Exception>();
+            var data = token.GetProperty("data").Deserialize<Dictionary<string, object>>();
+            var tags = token.GetProperty("tags").Deserialize<string[]>();
+
+            var readOnlyDictionary = new ReadOnlyDictionary<string, object>(data ?? []);
 
             var healthEntry = new HealthReportEntry(healthStatus, description, duration, exception, readOnlyDictionary, tags);
             return new KeyValuePair<string, HealthReportEntry>(name, healthEntry);

@@ -1,13 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace Arcus.Messaging.Tests.Core.Messages.v1
 {
     public class Customer
     {
-        [JsonProperty]
+        [JsonPropertyName("firstName")]
         public string FirstName { get; private set; }
 
-        [JsonProperty]
+        [JsonPropertyName("lastName")]
         public string LastName { get; private set; }
     }
 }
