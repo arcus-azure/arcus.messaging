@@ -7,7 +7,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Arcus.Messaging.Tests.Workers.ServiceBus.Fixture;
 using Arcus.Testing;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -26,6 +28,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
 
         private readonly int _healthTcpPort;
         private readonly ILogger _logger;
+        private static JsonSerializerOptions JsonStringEnumConverterOptions => CreateJsonStringEnumConverterOptions();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TcpHealthService"/> class.
@@ -91,7 +94,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
 
         private static HealthReport ParseHealthReport(JsonElement entries, JsonElement status, JsonElement totalDuration)
         {
-            Dictionary<string, HealthReportEntry> reportEntries =
+             Dictionary<string, HealthReportEntry> reportEntries =
                 entries.EnumerateObject()
                .Select(CreateHealthReportEntry)
                .ToDictionary(entry => entry.Key, entry => entry.Value);
@@ -111,21 +114,60 @@ namespace Arcus.Messaging.Tests.Integration.Health
         {
             string name = healthEntryJson.Name;
 
-            JsonElement token = healthEntryJson.Value
-                                               .EnumerateArray()
-                                               .First();
+            JsonElement token = healthEntryJson.Value;
 
-            var healthStatus = token.GetProperty("status").Deserialize<HealthStatus>();
+            var healthStatus = token.GetProperty("status").Deserialize<HealthStatus>(JsonStringEnumConverterOptions);
             var description = token.GetProperty("description").Deserialize<string>();
             var duration = token.GetProperty("duration").Deserialize<TimeSpan>();
-            var exception = token.GetProperty("exception").Deserialize<Exception>();
-            var data = token.GetProperty("data").Deserialize<Dictionary<string, object>>();
+            var data = token.GetProperty("data")
+                .Deserialize<Dictionary<string, object>>()
+                .ToDictionary(
+                    x => x.Key,
+                    x => UnwrapJsonElement(x.Value)
+                );
             var tags = token.GetProperty("tags").Deserialize<string[]>();
+
+
+            Exception exception = null;
+            var exceptionFound = token.TryGetProperty("exception", out JsonElement exceptionElement);
+            if (exceptionFound)
+            {
+                exception = exceptionElement.Deserialize<Exception>();
+            }
 
             var readOnlyDictionary = new ReadOnlyDictionary<string, object>(data ?? []);
 
             var healthEntry = new HealthReportEntry(healthStatus, description, duration, exception, readOnlyDictionary, tags);
             return new KeyValuePair<string, HealthReportEntry>(name, healthEntry);
+        }
+
+        private static JsonSerializerOptions CreateJsonStringEnumConverterOptions()
+        {
+            return new JsonSerializerOptions()
+            {
+                Converters =
+                {
+                    new JsonStringEnumConverter()
+                }
+            };
+        }
+
+        private static object? UnwrapJsonElement(object? value)
+        {
+            if (value is not JsonElement element)
+                return value;
+
+            return element.ValueKind switch
+            {
+                JsonValueKind.String => element.GetString(),
+                JsonValueKind.Number => element.TryGetInt64(out long l)
+                    ? l
+                    : element.GetDouble(),
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Null => null,
+                _ => element
+            };
         }
     }
 }
