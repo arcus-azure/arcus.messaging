@@ -9,7 +9,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Arcus.Messaging.Tests.Workers.ServiceBus.Fixture;
 using Arcus.Testing;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -92,14 +91,14 @@ namespace Arcus.Messaging.Tests.Integration.Health
             return null;
         }
 
-        private static HealthReport ParseHealthReport(JsonElement entries, JsonElement status, JsonElement totalDuration)
+        private HealthReport ParseHealthReport(JsonElement entries, JsonElement status, JsonElement totalDuration)
         {
              Dictionary<string, HealthReportEntry> reportEntries =
                 entries.EnumerateObject()
                .Select(CreateHealthReportEntry)
                .ToDictionary(entry => entry.Key, entry => entry.Value);
 
-            var healthStatus = Enum.Parse<HealthStatus>(status.GetString());
+            var healthStatus = status.Deserialize<HealthStatus>(JsonStringEnumConverterOptions);
             TimeSpan duration = TimeSpan.Parse(totalDuration.GetString());
 
             var report = new HealthReport(
@@ -130,7 +129,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
 
             Exception exception = null;
             var exceptionFound = token.TryGetProperty("exception", out JsonElement exceptionElement);
-            if (exceptionFound)
+            if (exceptionFound && exceptionElement.ValueKind != JsonValueKind.Null)
             {
                 exception = exceptionElement.Deserialize<Exception>();
             }
@@ -152,7 +151,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
             };
         }
 
-        private static object? UnwrapJsonElement(object? value)
+        private static object UnwrapJsonElement(object? value)
         {
             if (value is not JsonElement element)
                 return value;
