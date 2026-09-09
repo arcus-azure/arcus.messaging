@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
-using Azure.Core.Amqp;
+using System.Text.Json;
 using Bogus;
-using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
 namespace Azure.Messaging.ServiceBus
@@ -31,7 +28,7 @@ namespace Azure.Messaging.ServiceBus
         {
             ArgumentNullException.ThrowIfNull(messageBody);
 
-            string serializedMessageBody = JsonConvert.SerializeObject(messageBody);
+            string serializedMessageBody = JsonSerializer.Serialize(messageBody);
             byte[] rawMessage = Encoding.UTF8.GetBytes(serializedMessageBody);
 
             var serviceBusMessage = ServiceBusModelFactory.ServiceBusReceivedMessage(

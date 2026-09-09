@@ -6,12 +6,13 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Arcus.Testing;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Sdk;
 
@@ -26,6 +27,7 @@ namespace Arcus.Messaging.Tests.Integration.Health
 
         private readonly int _healthTcpPort;
         private readonly ILogger _logger;
+        private static JsonSerializerOptions JsonStringEnumConverterOptions => CreateJsonStringEnumConverterOptions();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TcpHealthService"/> class.
@@ -73,11 +75,11 @@ namespace Arcus.Messaging.Tests.Integration.Health
             using var reader = new StreamReader(clientStream, encoding ?? Encoding.UTF8);
             string txt = await reader.ReadToEndAsync();
 
-            JObject json = JObject.Parse(txt);
+            JsonElement json = JsonSerializer.Deserialize<JsonElement>(txt);
 
-            if (json.TryGetValue("entries", out JToken entries)
-                && json.TryGetValue("status", out JToken status)
-                && json.TryGetValue("totalDuration", out JToken totalDuration))
+            if (json.TryGetProperty("entries", out JsonElement entries)
+                && json.TryGetProperty("status", out JsonElement status)
+                && json.TryGetProperty("totalDuration", out JsonElement totalDuration))
             {
                 HealthReport report = ParseHealthReport(entries, status, totalDuration);
 
@@ -89,15 +91,15 @@ namespace Arcus.Messaging.Tests.Integration.Health
             return null;
         }
 
-        private static HealthReport ParseHealthReport(JToken entries, JToken status, JToken totalDuration)
+        private HealthReport ParseHealthReport(JsonElement entries, JsonElement status, JsonElement totalDuration)
         {
-            Dictionary<string, HealthReportEntry> reportEntries =
-                entries.Children()
-                       .Select(CreateHealthReportEntry)
-                       .ToDictionary(entry => entry.Key, entry => entry.Value);
+             Dictionary<string, HealthReportEntry> reportEntries =
+                entries.EnumerateObject()
+               .Select(CreateHealthReportEntry)
+               .ToDictionary(entry => entry.Key, entry => entry.Value);
 
-            var healthStatus = Enum.Parse<HealthStatus>(status.Value<string>());
-            TimeSpan duration = TimeSpan.Parse(totalDuration.Value<string>());
+            var healthStatus = status.Deserialize<HealthStatus>(JsonStringEnumConverterOptions);
+            TimeSpan duration = TimeSpan.Parse(totalDuration.GetString());
 
             var report = new HealthReport(
                 new ReadOnlyDictionary<string, HealthReportEntry>(reportEntries),
@@ -107,21 +109,64 @@ namespace Arcus.Messaging.Tests.Integration.Health
             return report;
         }
 
-        private static KeyValuePair<string, HealthReportEntry> CreateHealthReportEntry(JToken healthEntryJson)
+        private static KeyValuePair<string, HealthReportEntry> CreateHealthReportEntry(JsonProperty healthEntryJson)
         {
-            JToken token = healthEntryJson.First;
+            string name = healthEntryJson.Name;
 
-            string name = healthEntryJson.Path["entries[".Length..].Trim(']', '\'');
-            var healthStatus = token["status"].ToObject<HealthStatus>();
-            var description = token["description"]?.ToObject<string>();
-            var duration = token["duration"].ToObject<TimeSpan>();
-            var exception = token["exception"]?.ToObject<Exception>();
-            var data = token["data"]?.ToObject<Dictionary<string, object>>();
-            var readOnlyDictionary = new ReadOnlyDictionary<string, object>(data ?? new Dictionary<string, object>());
-            var tags = token["tags"]?.ToObject<string[]>();
+            JsonElement token = healthEntryJson.Value;
+
+            var healthStatus = token.GetProperty("status").Deserialize<HealthStatus>(JsonStringEnumConverterOptions);
+            var description = token.GetProperty("description").Deserialize<string>();
+            var duration = token.GetProperty("duration").Deserialize<TimeSpan>();
+            var data = token.GetProperty("data")
+                .Deserialize<Dictionary<string, object>>()
+                .ToDictionary(
+                    x => x.Key,
+                    x => UnwrapJsonElement(x.Value)
+                );
+            var tags = token.GetProperty("tags").Deserialize<string[]>();
+
+
+            Exception exception = null;
+            var exceptionFound = token.TryGetProperty("exception", out JsonElement exceptionElement);
+            if (exceptionFound && exceptionElement.ValueKind != JsonValueKind.Null)
+            {
+                exception = exceptionElement.Deserialize<Exception>();
+            }
+
+            var readOnlyDictionary = new ReadOnlyDictionary<string, object>(data ?? []);
 
             var healthEntry = new HealthReportEntry(healthStatus, description, duration, exception, readOnlyDictionary, tags);
             return new KeyValuePair<string, HealthReportEntry>(name, healthEntry);
+        }
+
+        private static JsonSerializerOptions CreateJsonStringEnumConverterOptions()
+        {
+            return new JsonSerializerOptions()
+            {
+                Converters =
+                {
+                    new JsonStringEnumConverter()
+                }
+            };
+        }
+
+        private static object UnwrapJsonElement(object? value)
+        {
+            if (value is not JsonElement element)
+                return value;
+
+            return element.ValueKind switch
+            {
+                JsonValueKind.String => element.GetString(),
+                JsonValueKind.Number => element.TryGetInt64(out long l)
+                    ? l
+                    : element.GetDouble(),
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Null => null,
+                _ => element
+            };
         }
     }
 }

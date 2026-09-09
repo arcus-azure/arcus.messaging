@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
@@ -19,7 +20,6 @@ using Bogus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
 using Xunit;
 using ServiceBusEntityType = Arcus.Messaging.Abstractions.ServiceBus.ServiceBusEntityType;
 using ServiceBusMessagePumpOptions = Arcus.Messaging.Pumps.ServiceBus.Configuration.ServiceBusMessagePumpOptions;
@@ -340,7 +340,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
             var encoding = Encoding.GetEncoding(message.ApplicationProperties[PropertyNames.Encoding].ToString() ?? Encoding.UTF8.WebName);
             string json = encoding.GetString(message.Body);
 
-            var order = JsonConvert.DeserializeObject<Order>(json);
+            var order = JsonSerializer.Deserialize<Order>(json);
 
             (string transactionId, string operationParentId) = message.ApplicationProperties.GetTraceParent();
             Assert.NotNull(receivedEventData);
@@ -419,7 +419,7 @@ namespace Arcus.Messaging.Tests.Integration.MessagePump.Fixture
                 Order order = OrderGenerator.Generate();
                 Assert.All(_bodyConfigurations, configureBody => configureBody(order));
 
-                string json = JsonConvert.SerializeObject(order);
+                string json = JsonSerializer.Serialize(order);
                 byte[] raw = _encoding.GetBytes(json);
 
                 var message = new ServiceBusMessage(raw)

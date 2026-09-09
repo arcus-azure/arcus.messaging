@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Arcus.Messaging.Tests.Core.Messages.v1;
-using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Tests.Workers.MessageBodyHandlers
 {
@@ -16,14 +16,14 @@ namespace Arcus.Messaging.Tests.Workers.MessageBodyHandlers
         /// </returns>
         public Task<MessageBodyResult> DeserializeMessageAsync(BinaryData messageBody)
         {
-            var order = JsonConvert.DeserializeObject<Order>(messageBody.IsEmpty ? string.Empty : messageBody.ToString());
+            var order = JsonSerializer.Deserialize<Order>(messageBody.IsEmpty ? string.Empty : messageBody.ToString());
 
             if (order is null)
             {
                 return Task.FromResult(MessageBodyResult.Failure("Cannot deserialize incoming message to an 'Order', so can't use 'Order'"));
             }
 
-            return Task.FromResult(MessageBodyResult.Success(new OrderBatch { Orders = new[] { order } }));
+            return Task.FromResult(MessageBodyResult.Success(new OrderBatch { Orders = [order] }));
         }
     }
 }

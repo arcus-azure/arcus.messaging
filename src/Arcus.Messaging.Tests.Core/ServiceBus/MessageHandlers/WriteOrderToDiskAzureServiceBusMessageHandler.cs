@@ -1,13 +1,12 @@
 ﻿using System.IO;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Arcus.Messaging.Abstractions;
 using Arcus.Messaging.Abstractions.ServiceBus;
 using Arcus.Messaging.Abstractions.ServiceBus.MessageHandling;
 using Arcus.Messaging.Tests.Core.Events.v1;
 using Arcus.Messaging.Tests.Core.Messages.v1;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Arcus.Messaging.Tests.Workers.MessageHandlers
 {
@@ -36,7 +35,7 @@ namespace Arcus.Messaging.Tests.Workers.MessageHandlers
             string dirPath = Directory.GetCurrentDirectory();
             string filePath = Path.Combine(dirPath, fileName);
 
-            string json = JsonConvert.SerializeObject(
+            string json = JsonSerializer.Serialize(
                 new OrderCreatedEventData(
                     message.Id,
                     message.Amount,

@@ -1,20 +1,20 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Arcus.Messaging.Tests.Core.Messages.v1
 {
     public class Shipment
     {
-        [JsonProperty]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
 
-        [JsonProperty]
+        [JsonPropertyName("code")]
         public int Code { get; set; }
         
-        [JsonProperty]
+        [JsonPropertyName("date")]
         public DateTimeOffset Date { get; set; }
         
-        [JsonProperty]
+        [JsonPropertyName("description")]
         public string Description { get; set; }
     }
 }

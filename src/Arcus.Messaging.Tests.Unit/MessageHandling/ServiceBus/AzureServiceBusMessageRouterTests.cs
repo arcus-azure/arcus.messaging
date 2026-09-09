@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Arcus.Messaging.Abstractions.MessageHandling;
@@ -18,7 +19,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Newtonsoft.Json;
 using Xunit;
 using Order = Arcus.Messaging.Tests.Core.Messages.v1.Order;
 using OrderV2AzureServiceBusMessageHandler = Arcus.Messaging.Tests.Unit.Fixture.OrderV2AzureServiceBusMessageHandler;
@@ -209,7 +209,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var spyHandler = new StubServiceBusMessageHandler<Order>();
 
             var expectedMessage = new TestMessage { TestProperty = "Some value" };
-            string expectedBody = JsonConvert.SerializeObject(expectedMessage);
+            string expectedBody = JsonSerializer.Serialize(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, OrderGenerator.Generate());
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: _ => spyHandler, options => options.AddMessageBodySerializer(serializer))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: _ => ignoredHandler);
@@ -238,7 +238,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
             var spyHandler = new StubServiceBusMessageHandler<Order>();
 
             var expectedMessage = new TestMessage { TestProperty = "Some value" };
-            string expectedBody = JsonConvert.SerializeObject(expectedMessage);
+            string expectedBody = JsonSerializer.Serialize(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, new SubOrder());
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(implementationFactory: _ => spyHandler, options => options.AddMessageBodySerializer(serializer))
                       .WithServiceBusMessageHandler<StubServiceBusMessageHandler<TestMessage>, TestMessage>(implementationFactory: _ => ignoredHandler);
@@ -271,7 +271,7 @@ namespace Arcus.Messaging.Tests.Unit.MessageHandling.ServiceBus
 
             AzureServiceBusMessageContext context = AzureServiceBusMessageContextFactory.Generate();
             var expectedMessage = new TestMessage { TestProperty = "Some value" };
-            string expectedBody = JsonConvert.SerializeObject(expectedMessage);
+            string expectedBody = JsonSerializer.Serialize(expectedMessage);
             var serializer = new TestMessageBodySerializer(expectedBody, OrderGenerator.Generate());
 
             collection.WithServiceBusMessageHandler<StubServiceBusMessageHandler<Order>, Order>(
