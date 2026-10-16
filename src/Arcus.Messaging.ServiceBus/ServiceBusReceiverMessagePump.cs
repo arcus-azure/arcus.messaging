@@ -269,6 +269,8 @@ namespace Arcus.Messaging.Pumps.ServiceBus
         /// </summary>
         protected override Task StopProcessingMessagesAsync()
         {
+            IsStarted = false;
+            _circuitBreakerStateMachine.MarkPumpStopped();
             return Task.CompletedTask;
         }
 
