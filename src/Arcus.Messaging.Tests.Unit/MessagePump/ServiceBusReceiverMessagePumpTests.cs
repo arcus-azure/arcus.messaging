@@ -184,6 +184,45 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
         }
 
         [Fact]
+        public async Task StartProcessingMessages_WithFullBatchAndBlockedHandler_RefillsFreedSlotsWithoutWaitingForBlockedHandler()
+        {
+            // Arrange
+            const int maxMessagesPerBatch = 2;
+            var blockedHandler = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var spy = new MessageProcessingSpy
+            {
+                // Block the first handler indefinitely; every other handler completes immediately.
+                OnProcessingAsync = attempt => attempt == 1 ? blockedHandler.Task : Task.CompletedTask
+            };
+            var receiver = new StubServiceBusReceiver(CreateOrderMessage) { MessagesPerBatch = maxMessagesPerBatch };
+
+            await using MessagePumpHost host = CreateMessagePumpHost(
+                receiver,
+                spy,
+                collection => collection.WithServiceBusMessageHandler<TrackingOrderMessageHandler, Order>(),
+                options => options.MaxMessagesPerBatch = maxMessagesPerBatch);
+
+            // Act
+            await host.StartAsync();
+
+            // Assert: only one of the first batch can complete, so processing more than that proves the freed slot was refilled.
+            await spy.ShouldProcessAtLeastAsync(maxMessagesPerBatch + 1, PumpActivityTimeout);
+
+            Assert.False(blockedHandler.Task.IsCompleted);
+            Assert.Equal(maxMessagesPerBatch, spy.MaxConcurrentHandlers);
+            Assert.Equal(maxMessagesPerBatch, receiver.RequestedBatchSizes.First());
+            Assert.All(receiver.RequestedBatchSizes.Skip(1), batchSize => Assert.Equal(1, batchSize));
+
+            // Releasing the blocked handler lets the remaining message of the first batch complete as well.
+            blockedHandler.SetResult();
+            await Wait.UntilAsync(
+                () => receiver.MessageIdsOfBatch(1).All(receiver.CompletedMessageIds.Contains),
+                PumpActivityTimeout,
+                () => $"message pump should have completed the blocked message of the first batch after it was released, but only completed [{string.Join(", ", receiver.CompletedMessageIds)}]");
+        }
+
+        [Fact]
         public async Task StopProcessingMessages_AfterProcessingMessages_DisposesReceiverAndOpensCircuit()
         {
             // Arrange
