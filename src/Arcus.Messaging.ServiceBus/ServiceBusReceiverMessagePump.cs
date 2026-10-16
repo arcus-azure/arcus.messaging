@@ -100,7 +100,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                             messages = await messageReceiver.ReceiveMessagesAsync(freeSlots, TimeSpan.FromSeconds(1), cancellationToken);
                         }
 
-                        // Re-check: a handler may have opened the circuit while we were waiting or receiving.
+                        // A handler may have opened the circuit while we were waiting or receiving.
                         if (!CircuitState.IsClosed)
                         {
                             // Abandon all messages that were freshly received while the circuit was open, so they can be redelivered later.
@@ -110,12 +110,13 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                             messageProcessingTasks.Clear();
 
                             await RecoverFromOpenCircuitAsync(messageReceiver, cancellationToken);
-                            continue;
                         }
-
-                        foreach (var message in messages)
+                        else
                         {
-                            messageProcessingTasks.Add(ProcessMessageAsync(messageReceiver, message, cancellationToken));
+                            foreach (ServiceBusReceivedMessage message in messages)
+                            {
+                                messageProcessingTasks.Add(ProcessMessageAsync(messageReceiver, message, cancellationToken));
+                            }
                         }
                     }
                     catch (Exception exception) when (exception is OperationCanceledException or ObjectDisposedException)
