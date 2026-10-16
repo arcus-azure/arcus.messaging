@@ -64,7 +64,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump.Fixture
             try
             {
                 int attempt = Interlocked.Increment(ref _attempts);
-                await OnProcessingAsync(attempt);
+                await OnProcessingAsync(attempt).WaitAsync(cancellationToken);
 
                 if (!DependencyIsAvailable)
                 {
