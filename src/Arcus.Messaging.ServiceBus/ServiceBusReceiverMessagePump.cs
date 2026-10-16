@@ -38,7 +38,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             : base(entityType, entityName, subscriptionName, serviceProvider, options, logger)
         {
             _clientImplementationFactory = clientImplementationFactory;
-            _circuitBreakerStateMachine = new CircuitBreakerStateMachine(JobId, serviceProvider, logger);
+            _circuitBreakerStateMachine = new CircuitBreakerStateMachine(JobId, serviceProvider, Logger);
         }
 
         private volatile bool _isStarted;
