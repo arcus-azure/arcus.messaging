@@ -77,7 +77,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
             var messageProcessingTasks = new List<Task>();
             try
             {
-                while (CircuitState.IsClosed && !cancellationToken.IsCancellationRequested)
+                while (!cancellationToken.IsCancellationRequested)
                 {
                     try
                     {
