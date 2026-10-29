@@ -101,6 +101,7 @@ namespace Arcus.Messaging.Pumps.ServiceBus
                         }
 
                         // A handler may have opened the circuit while we were waiting or receiving.
+                        // That's why the CircuitState is checked again (instead of having an else branch for the previous if statement).
                         if (!CircuitState.IsClosed)
                         {
                             // Abandon all messages that were freshly received while the circuit was open, so they can be redelivered later.
