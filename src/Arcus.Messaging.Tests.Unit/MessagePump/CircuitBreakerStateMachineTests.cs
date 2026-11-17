@@ -225,7 +225,7 @@ namespace Arcus.Messaging.Tests.Unit.MessagePump
             machine.TryClose();
 
             // Assert
-            await Poll.Target(async () => await Task.FromResult(matchingHandler.Transitions.Count))
+            await Poll.Target(() => matchingHandler.Transitions.Count)
                 .Until(numberOfTransitions => numberOfTransitions >= 3)
                 .Every(TimeSpan.FromMilliseconds(25))
                 .Timeout(NotificationTimeout)
