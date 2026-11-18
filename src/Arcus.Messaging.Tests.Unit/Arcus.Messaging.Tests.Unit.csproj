@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Arcus.Testing.Core" Version="2.2.3" />
     <PackageReference Include="Arcus.Testing.Logging.Xunit.v3" Version="2.*" />
     <PackageReference Include="coverlet.collector" Version="6.*">
         <PrivateAssets>all</PrivateAssets>

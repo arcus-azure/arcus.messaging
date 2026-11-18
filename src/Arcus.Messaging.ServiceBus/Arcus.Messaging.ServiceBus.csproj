@@ -26,6 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Arcus.Messaging.Tests.Unit" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
     <None Include="..\..\docs\static\img\icon.png" Pack="true" PackagePath="\" />

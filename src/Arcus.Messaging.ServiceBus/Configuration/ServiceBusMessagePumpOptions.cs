@@ -45,9 +45,9 @@ namespace Arcus.Messaging.Pumps.ServiceBus.Configuration
         /// Gets or sets the number of messages that will be eagerly requested from
         /// Queues or Subscriptions and queued locally, intended to help maximize throughput
         /// by allowing the processor to receive from a local cache rather than waiting on a service request.
-        /// </summary>
+        /// </summary>        
         /// <exception cref="ArgumentException">Thrown when the <paramref name="value"/> is less than zero.</exception>
-        /// <remarks>The default value is 0.</remarks>
+        /// <remarks>The default value is 0, keep the PrefetchCount small relative to MaxMessagesPerBatch when message-handlers are long-running.</remarks>
         public int PrefetchCount
         {
             get => _prefetchCount;
